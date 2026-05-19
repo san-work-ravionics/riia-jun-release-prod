@@ -342,7 +342,7 @@ _dashboard_dir = Path(__file__).parent.parent.parent / "dashboard"
 if _dashboard_dir.exists():
     app.mount("/dashboard", StaticFiles(directory=_dashboard_dir, html=True), name="dashboard")
 
-_agent_ops_dir = Path(__file__).parent.parent.parent.parent / "data" / "agent-ops"
+_agent_ops_dir = Path(__file__).parent.parent.parent / "data" / "agent-ops"
 if _agent_ops_dir.exists():
     app.mount("/agent-ops-data", StaticFiles(directory=_agent_ops_dir), name="agent-ops-data")
 
