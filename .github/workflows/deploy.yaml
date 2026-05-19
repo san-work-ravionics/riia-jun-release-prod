@@ -57,6 +57,7 @@ jobs:
             RITA_JWT_SECRET='${{ secrets.RITA_JWT_SECRET }}' \
             GOOGLE_CLIENT_ID='${{ secrets.GOOGLE_CLIENT_ID }}' \
             GOOGLE_CLIENT_SECRET='${{ secrets.GOOGLE_CLIENT_SECRET }}' \
+            EC2_IP='${{ secrets.AWS_EC2_IP }}' \
             IMAGE='${{ env.IMAGE }}' \
             bash << 'ENDSSH'
               set -e
@@ -77,6 +78,7 @@ jobs:
                 -e RITA_JWT_SECRET="$RITA_JWT_SECRET" \
                 -e RITA_GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
                 -e RITA_GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET" \
+                -e RITA_BASE_URL="http://$EC2_IP" \
                 -v /opt/rita_input:/app/data:ro \
                 -v /opt/rita_output:/app/rita_output \
                 --memory 900m \

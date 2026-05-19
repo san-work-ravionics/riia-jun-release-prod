@@ -37,12 +37,22 @@ def login(request: Request, body: TokenRequest) -> TokenResponse:
     token = create_access_token(subject=body.username)
     return TokenResponse(access_token=token)
 
+def _callback_uri(request: Request, settings) -> str:
+    """Build the OAuth callback URI.
+
+    Uses RITA_BASE_URL when set (needed for EC2/HTTP deployments where there
+    is no reverse proxy to rewrite the scheme).  Falls back to auto-detection
+    from the incoming request.
+    """
+    if settings.security.base_url:
+        return settings.security.base_url.rstrip("/") + "/auth/google/callback"
+    return str(request.url_for("google_callback"))
+
+
 @router.get("/google/login")
 def google_login(request: Request):
     settings = get_settings()
-    redirect_uri = str(request.url_for("google_callback"))
-    if "localhost" not in redirect_uri and "127.0.0.1" not in redirect_uri:
-        redirect_uri = redirect_uri.replace("http://", "https://")
+    redirect_uri = _callback_uri(request, settings)
 
     url = (
         "https://accounts.google.com/o/oauth2/v2/auth?"
@@ -57,9 +67,7 @@ def google_login(request: Request):
 @router.get("/google/callback")
 def google_callback(request: Request, code: str, db: Session = Depends(get_db)):
     settings = get_settings()
-    redirect_uri = str(request.url_for("google_callback"))
-    if "localhost" not in redirect_uri and "127.0.0.1" not in redirect_uri:
-        redirect_uri = redirect_uri.replace("http://", "https://")
+    redirect_uri = _callback_uri(request, settings)
 
     # Exchange code for token
     token_url = "https://oauth2.googleapis.com/token"

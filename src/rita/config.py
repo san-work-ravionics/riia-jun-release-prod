@@ -134,12 +134,16 @@ class SecuritySettings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:8000"]
 
     google_client_id: str = Field(
-        default="", 
+        default="",
         validation_alias="RITA_GOOGLE_CLIENT_ID"
     )
     google_client_secret: SecretStr = Field(
         default=SecretStr(""),
         validation_alias="RITA_GOOGLE_CLIENT_SECRET",
+    )
+    base_url: str = Field(
+        default="",
+        validation_alias="RITA_BASE_URL",
     )
 
 
