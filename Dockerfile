@@ -52,4 +52,4 @@ USER rita
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "alembic upgrade head && uvicorn rita.main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "/app/venv/bin/alembic upgrade head && /app/venv/bin/uvicorn rita.main:app --host 0.0.0.0 --port 8000"]
