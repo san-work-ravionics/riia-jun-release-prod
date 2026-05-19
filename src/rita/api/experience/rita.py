@@ -1104,6 +1104,7 @@ def technical_commentary(
 # ── GET /api/v1/experience/rita/geography-overview ────────────────────────────
 
 _EU_COUNTRY_CODES = frozenset({"NL", "DE", "FR", "GB", "BE", "CH", "SE", "ES", "IT", "AT", "FI", "DK", "IE", "PL", "PT"})
+_EU_COUNTRY_NAMES = frozenset({"netherlands", "germany", "france", "united kingdom", "belgium", "switzerland", "sweden", "spain", "italy", "austria", "finland", "denmark", "ireland", "poland", "portugal"})
 
 _REGION_FLAGS = {
     "US":    "\U0001f1fa\U0001f1f8",
@@ -1114,13 +1115,19 @@ _REGION_FLAGS = {
 
 
 def _country_to_region(country_code: str) -> str:
-    """Map a country_code string to a geography bucket."""
-    cc = (country_code or "").upper()
-    if cc == "IN":
+    """Map a country_code string to a geography bucket.
+
+    Accepts both ISO-2 codes ('US', 'IN') and full names ('United States',
+    'India') because yfinance returns full names which get stored as-is.
+    """
+    raw = (country_code or "").strip()
+    cc = raw.upper()
+    name = raw.lower()
+    if cc in ("IN",) or name == "india":
         return "India"
-    if cc == "US":
+    if cc in ("US", "USA") or name in ("united states", "united states of america"):
         return "US"
-    if cc in _EU_COUNTRY_CODES:
+    if cc in _EU_COUNTRY_CODES or name in _EU_COUNTRY_NAMES:
         return "EU"
     return "Other"
 

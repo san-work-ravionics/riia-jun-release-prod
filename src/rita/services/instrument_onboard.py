@@ -23,6 +23,37 @@ from rita.core.data_loader import load_ohlcv_csv
 
 log = structlog.get_logger()
 
+_COUNTRY_NAME_TO_ISO2: dict[str, str] = {
+    "united states": "US",
+    "united states of america": "US",
+    "usa": "US",
+    "india": "IN",
+    "netherlands": "NL",
+    "germany": "DE",
+    "france": "FR",
+    "united kingdom": "GB",
+    "belgium": "BE",
+    "switzerland": "CH",
+    "sweden": "SE",
+    "spain": "ES",
+    "italy": "IT",
+    "austria": "AT",
+    "finland": "FI",
+    "denmark": "DK",
+    "ireland": "IE",
+    "poland": "PL",
+    "portugal": "PT",
+}
+
+
+def _normalize_country_code(raw: str) -> str:
+    """Convert full country names from yfinance to ISO-2 codes."""
+    if not raw:
+        return ""
+    if len(raw.strip()) == 2:
+        return raw.strip().upper()
+    return _COUNTRY_NAME_TO_ISO2.get(raw.strip().lower(), raw)
+
 
 def search_tickers(query: str, max_results: int = 10) -> list[dict[str, Any]]:
     """Search Yahoo Finance for equity listings matching *query*.
@@ -55,7 +86,7 @@ def search_tickers(query: str, max_results: int = 10) -> list[dict[str, Any]]:
             "name":       r.get("longname") or r.get("shortname", ""),
             "exchange":   r.get("exchange", ""),
             "currency":   r.get("currency", ""),
-            "country":    r.get("country", ""),
+            "country":    _normalize_country_code(r.get("country", "")),
             "quote_type": "EQUITY",
         })
 
