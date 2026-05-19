@@ -77,7 +77,7 @@ jobs:
                 -e RITA_JWT_SECRET="$RITA_JWT_SECRET" \
                 -e RITA_GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
                 -e RITA_GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET" \
-                -v /opt/rita_input:/app/rita_input:ro \
+                -v /opt/rita_input:/app/data:ro \
                 -v /opt/rita_output:/app/rita_output \
                 --memory 900m \
                 "$IMAGE"
