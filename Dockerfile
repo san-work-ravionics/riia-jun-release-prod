@@ -46,7 +46,8 @@ ENV PATH="/app/venv/bin:$PATH"
 ENV PYTHONPATH="/app/src"
 
 # Run as a non-root user
-RUN useradd --uid 1000 --no-create-home --shell /sbin/nologin rita
+RUN useradd --uid 1000 --no-create-home --shell /sbin/nologin rita && \
+    mkdir -p /app/logs && chown rita:rita /app/logs
 USER rita
 
 EXPOSE 8000
