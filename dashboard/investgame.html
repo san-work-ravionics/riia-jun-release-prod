@@ -17,6 +17,11 @@ html{scroll-behavior:smooth}
   --danger:#9B1C1C;--danger-bg:#FEF2F2;--danger-bd:#FCA5A5;
   --info:#0056B8;
   --game:#B45309;--game-bg:#FEF3C7;--game-bd:#FCD34D;--game-light:#FFFBEB;
+  --p01:#1A6B3C;--p01-bg:#EDF7F2;--p01-bd:#B6DEC9;
+  --p02:#0056B8;--p02-bg:#EDF4FF;--p02-bd:#AECBF5;
+  --p03:#92480A;--p03-bg:#FEF4EB;--p03-bd:#F5C99A;
+  --p04:#6B2FA0;--p04-bg:#F5EFFE;--p04-bd:#CFADF0;
+  --pos:#1A6B3C;--neg:#9B1C1C;--neg-bg:#FEF2F2;--neg-bd:#FCA5A5;
   --fd:'Epilogue',sans-serif;--fm:'IBM Plex Mono',monospace;--fs:'Instrument Serif',serif;
   --r:6px;
   --sh:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
@@ -88,6 +93,19 @@ input[type="date"]:focus{border-color:var(--game);}
 .pnl-net-row td{background:var(--surface2);border-top:1.5px solid var(--border);border-bottom:none;}
 .pnl-net-row .pnl-value{font-size:14px;font-weight:700;}
 
+/* ── FnO-style card + table ── */
+.card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);margin-bottom:18px;}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);}
+.card-title{font-size:13px;font-weight:600;}
+.card-sub{font-size:11px;color:var(--t3);}
+.card-body{padding:16px;}
+.tbl-wrap{overflow-x:auto;overflow-y:auto;max-height:360px;}
+.tbl-footer{padding:10px 14px;border-top:1.5px solid var(--border);background:var(--surface2);display:flex;gap:20px;flex-wrap:wrap;font-family:var(--fm);font-size:11px;align-items:center;}
+.tbl-footer .lbl{color:var(--t3);}
+.tbl-footer .val{font-weight:600;}
+.tbl-footer .val.pos{color:var(--pos);}
+.tbl-footer .val.neg{color:var(--neg);}
+
 /* ── Winner banner ── */
 .winner-banner{position:sticky;top:52px;z-index:150;display:flex;align-items:center;justify-content:center;gap:14px;padding:10px 28px;border-bottom:2px solid var(--game-bd);background:var(--game-bg);}
 .winner-banner-label{font-family:var(--fs);font-size:16px;color:var(--game);}
@@ -96,19 +114,22 @@ input[type="date"]:focus{border-color:var(--game);}
 #winner-badge.ai-wins{background:var(--danger);color:#fff;}
 #winner-badge.tie{background:var(--game);color:#fff;}
 
-/* ── Transposed Journal table ── */
-.table-wrap{overflow-x:auto;}
-#game-table{border-collapse:collapse;font-size:11px;white-space:nowrap;width:100%;}
-#game-table th,#game-table td{padding:0;border:1px solid var(--border);}
-.row-label{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);padding:6px 10px;background:var(--surface2);white-space:nowrap;min-width:60px;vertical-align:middle;}
-.day-col{font-family:var(--fm);font-size:10px;font-weight:500;color:var(--text);padding:6px 8px;text-align:center;background:var(--surface2);min-width:90px;}
+/* ── Investing Journal table (FnO Active Positions style) ── */
+#game-table{border-collapse:collapse;font-size:12px;width:100%;}
+#game-table thead th{font-family:var(--fm);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);background:var(--surface2);padding:8px 12px;text-align:center;position:sticky;top:0;z-index:2;border-bottom:1px solid var(--border);white-space:nowrap;}
+#game-table tbody tr{border-bottom:1px solid var(--border);}
+#game-table tbody tr:last-child{border-bottom:none;}
+#game-table tbody tr:hover{background:var(--surface2);}
+#game-table tbody td{padding:8px 12px;color:var(--t2);white-space:nowrap;text-align:center;vertical-align:middle;}
+.row-label{font-family:var(--fm);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);background:var(--surface2);padding:8px 12px;text-align:left;position:sticky;left:0;z-index:1;min-width:80px;border-right:1px solid var(--border);}
+.day-col{font-family:var(--fm);font-size:10px;font-weight:500;color:var(--text);padding:8px 12px;text-align:center;background:var(--surface2);min-width:100px;}
 .greyed-out{opacity:.25;pointer-events:none;}
 .day-col.warmup{color:var(--t3);}
-.day-col.active-col{background:var(--game-bg);color:var(--game);}
+.day-col.active-col{background:var(--p03-bg);color:var(--p03);}
 .day-tag{display:block;font-size:8px;font-weight:400;color:var(--t4);text-transform:uppercase;letter-spacing:.05em;margin-top:1px;}
-.day-data{padding:6px 8px;text-align:center;vertical-align:middle;font-family:var(--fm);font-size:11px;color:var(--t2);min-width:90px;}
+.day-data{padding:8px 12px;text-align:center;vertical-align:middle;font-family:var(--fm);font-size:11px;color:var(--t2);min-width:100px;}
 .day-data.warmup{background:var(--surface2);color:var(--t3);}
-.day-data.active-col{background:var(--game-light);}
+.day-data.active-col{background:var(--p03-bg);}
 .col-actions{display:flex;flex-direction:column;gap:3px;}
 .btn-buy,.btn-sell,.btn-hold{width:100%;padding:3px 6px;border-radius:4px;border:1.5px solid;font-family:var(--fd);font-size:10px;font-weight:600;cursor:pointer;transition:all .12s;}
 .btn-buy{background:var(--ok-bg);color:var(--ok);border-color:var(--ok-bd);}
@@ -131,9 +152,10 @@ input[type="date"]:focus{border-color:var(--game);}
 .gate-cell{display:flex;flex-direction:column;gap:2px;align-items:center;}
 .gate-rule{font-family:var(--fm);font-size:9px;color:var(--t3);white-space:normal;text-align:center;max-width:110px;}
 .comp-insight{font-size:10px;color:var(--t3);font-style:italic;white-space:normal;text-align:center;max-width:110px;}
-.status-badge{display:inline-flex;align-items:center;font-family:var(--fm);font-size:9px;padding:1px 7px;border-radius:100px;border:1px solid;}
-.status-badge.ok{background:var(--ok-bg);color:var(--ok);border-color:var(--ok-bd);}
-.status-badge.flag{background:var(--danger-bg);color:var(--danger);border-color:var(--danger-bd);}
+#game-table tbody td.comp-insight{white-space:normal;min-width:130px;max-width:160px;line-height:1.4;padding:8px 14px;}
+.status-badge{display:inline-flex;align-items:center;font-family:var(--fm);font-size:9px;font-weight:500;padding:2px 7px;border-radius:3px;border:1px solid;text-transform:uppercase;letter-spacing:.04em;}
+.status-badge.ok{background:var(--p01-bg);color:var(--p01);border-color:var(--p01-bd);}
+.status-badge.flag{background:var(--neg-bg);color:var(--neg);border-color:var(--neg-bd);}
 </style>
 </head>
 <body>
@@ -238,11 +260,13 @@ input[type="date"]:focus{border-color:var(--game);}
   </div>
 
   <!-- Investing Journal — days = columns (3–10 active, 1–2 warmup) -->
-  <section id="row-game-table" class="game-row">
-    <div class="row-hdr">
-      <h2>Investing Journal</h2>
+  <section id="row-game-table" class="card">
+    <div class="card-hdr">
+      <span class="card-title">Investing Journal</span>
+      <span class="card-sub" id="journal-sub">—</span>
     </div>
-    <div class="table-wrap">
+    <div class="card-body" style="padding:0">
+    <div class="tbl-wrap">
       <table id="game-table">
         <thead>
           <tr>
@@ -346,6 +370,7 @@ input[type="date"]:focus{border-color:var(--game);}
           </tr>
         </tbody>
       </table>
+    </div>
     </div>
   </section>
 
