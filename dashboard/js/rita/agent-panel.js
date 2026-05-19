@@ -1,10 +1,11 @@
 import { api } from './api.js';
 import { mkChart, C } from './charts.js';
+import { randomUUID } from '../shared/utils.js';
 
 // ── Module state ──────────────────────────────────────────────────────────────
 let apState = {
   dayIndex: 0,
-  threadId: crypto.randomUUID(),
+  threadId: randomUUID(),
   loaded: false,
 };
 
@@ -102,7 +103,7 @@ export function resetAgentPanel() {
   _twToken++; // cancel any in-flight typewriter
   _hideHitl();
   localStorage.removeItem('riia_agent_history');
-  apState = { dayIndex: 0, threadId: crypto.randomUUID(), loaded: true };
+  apState = { dayIndex: 0, threadId: randomUUID(), loaded: true };
 
   const status = document.getElementById('agent-panel-status');
   if (status) { status.className = 'badge neu'; status.textContent = 'Ready'; }

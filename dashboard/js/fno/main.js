@@ -1,7 +1,8 @@
 // ── FnO Dashboard — Entry Point ───────────────────────────────────────────────
 import { initApp, checkStatus, fetchPositions } from './app-init.js';
+import { randomUUID } from '../shared/utils.js';
 
-const SESSION_TRACE_ID = crypto.randomUUID();
+const SESSION_TRACE_ID = randomUUID();
 
 async function apiFetch(url, opts = {}) {
     try {
