@@ -1,12 +1,11 @@
 # ── Stage 1: builder ────────────────────────────────────────────────────────
 FROM python:3.11-slim AS builder
 
-WORKDIR /build
+WORKDIR /app
 
-# Install dependencies into a venv before copying the full source so that
-# Docker can cache this layer when only application code changes.
-RUN python -m venv /build/venv
-ENV PATH="/build/venv/bin:$PATH"
+# Build venv at /app/venv so shebang paths match the runtime container
+RUN python -m venv /app/venv
+ENV PATH="/app/venv/bin:$PATH"
 
 COPY pyproject.toml .
 # Install dependencies first (layer cached when only app code changes), then
@@ -31,7 +30,7 @@ FROM python:3.11-slim AS runtime
 WORKDIR /app
 
 # Copy only the pre-built venv from the builder stage
-COPY --from=builder /build/venv /app/venv
+COPY --from=builder /app/venv /app/venv
 
 # Copy application source and config
 COPY src/ /app/src/
