@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RIIA — Investor Onboarding Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500&family=Epilogue:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+
+/* ── RITA design tokens ── */
+:root{
+  --bg:#F5F3EE;--surface:#FFFFFF;--surface2:#F9F8F5;--border:#E4E0D8;--border2:#D0CBBC;
+  --text:#1A1814;--t2:#4A4640;--t3:#8C877A;--t4:#B8B2A6;
+  --ops:#0E7490;--ops-bg:#ECFEFF;--ops-bd:#67E8F9;
+  --ok:#1A6B3C;--ok-bg:#EDF7F2;--ok-bd:#B6DEC9;
+  --warn:#92480A;--warn-bg:#FEF4EB;--warn-bd:#F5C99A;
+  --danger:#9B1C1C;--danger-bg:#FEF2F2;--danger-bd:#FCA5A5;
+  --info:#0056B8;--info-bg:#EDF4FF;--info-bd:#AECBF5;
+  --fd:'Epilogue',sans-serif;--fm:'IBM Plex Mono',monospace;--fs:'Instrument Serif',serif;
+  --r:6px;
+  --sh:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+  --shm:0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.05);
+}
+
+/* ── Shell: topbar-only (no sidebar — centred demo canvas) ── */
+body{
+  background:var(--bg);color:var(--text);
+  font-family:var(--fd);font-size:13px;line-height:1.5;
+  min-height:100vh;display:flex;flex-direction:column;
+}
+
+/* ── Topbar ── */
+.topbar{
+  background:var(--surface);border-bottom:1.5px solid var(--border);
+  display:flex;align-items:center;padding:0 20px;height:52px;
+  position:sticky;top:0;z-index:200;box-shadow:var(--sh);flex-shrink:0;
+}
+.logo{display:flex;align-items:center;gap:9px;text-decoration:none;color:inherit;}
+.logo-icon{
+  width:26px;height:26px;background:var(--text);border-radius:5px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.logo-icon svg{fill:var(--surface);}
+.logo-name{font-family:var(--fs);font-size:16px;letter-spacing:-.01em;}
+.logo-sub{color:var(--t3);font-size:10px;font-family:var(--fm);letter-spacing:.08em;}
+.t-sep{width:1px;height:24px;background:var(--border);margin:0 14px;}
+.t-crumb{font-family:var(--fm);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;}
+.t-crumb span{color:var(--text);font-weight:500;}
+.t-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.status-pill{
+  display:flex;align-items:center;gap:5px;
+  font-family:var(--fm);font-size:10px;color:var(--t2);
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:100px;padding:3px 10px;
+}
+.status-dot{width:7px;height:7px;border-radius:50%;background:#aaa;}
+.status-dot.ok{background:var(--ok);}
+.t-nav-link{font-family:var(--fm);font-size:11px;color:var(--t3);text-decoration:none;display:flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid var(--border);border-radius:var(--r);transition:color .12s,border-color .12s;}
+.t-nav-link:hover{color:var(--text);border-color:var(--border2);}
+.t-nav-link.game{background:var(--warn-bg);border-color:var(--warn-bd);color:var(--warn);font-weight:600;}
+
+/* ── Page canvas ── */
+.page-body{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:32px 0;
+}
+
+/* ────────────────────────────────────────────────────────────
+   CARD STAGE — token-mapped from invest-flow styles.css
+   Tokens remapped:  --ink → --text  |  --ink-2 → --t2
+                     --ink-3 → --t3  |  --ink-4 → --border
+                     --paper → --bg  |  --paper-2 → --surface2
+                     --accent → --ok |  --accent-soft → --ok-bg
+                     --warn/--bad stay but use RITA semantic vars
+   Fonts:  Inter → Epilogue  |  Architects Daughter → Instrument Serif
+           JetBrains Mono → IBM Plex Mono
+──────────────────────────────────────────────────────────── */
+
+/* --- invest-flow CSS variables (remapped to RITA tokens) --- */
+.stage, .stage *{
+  --ink:      var(--text);
+  --ink-2:    var(--t2);
+  --ink-3:    var(--t3);
+  --ink-4:    var(--border);
+  --paper:    var(--bg);
+  --paper-2:  var(--surface2);
+  --line:     var(--text);
+  --accent:   var(--ok);
+  --accent-soft: var(--ok-bg);
+  --bad:      var(--danger);
+  --bad-soft: var(--danger-bg);
+  --warn-soft:var(--warn-bg);
+  --hand:     var(--fs);
+  --ui:       var(--fd);
+  --mono:     var(--fm);
+}
+
+/* Stage canvas */
+.stage{
+  position:relative;
+  width:calc(100% - 40px);height:720px;
+  overflow:hidden;
+}
+
+/* Card shell */
+.card{
+  position:absolute;top:20px;
+  width:900px;height:660px;
+  border-radius:22px;overflow:hidden;
+  box-shadow:0 4px 18px rgba(0,0,0,0.07);
+  transition:all 0.65s cubic-bezier(0.25,1,0.5,1);
+  cursor:default;
+}
+
+/* Phone at landscape tablet dimensions 900×660 */
+.card .phone{
+  width:900px !important;height:660px !important;
+  transform:scale(1);transform-origin:top left;
+  border-radius:0 !important;
+}
+
+/* WAITING — right pile, staggered (translateX set by JS) */
+.card.waiting{opacity:0.35;filter:grayscale(0.8);z-index:1;}
+#card-0.waiting{z-index:8;opacity:1.00;filter:none;}
+#card-1.waiting{z-index:7;opacity:0.72;filter:grayscale(0.2);}
+#card-2.waiting{z-index:6;opacity:0.60;filter:grayscale(0.4);}
+#card-3.waiting{z-index:5;opacity:0.50;filter:grayscale(0.6);}
+#card-4.waiting{z-index:4;opacity:0.42;filter:grayscale(0.7);}
+#card-5.waiting{z-index:3;opacity:0.36;filter:grayscale(0.8);}
+#card-6.waiting{z-index:2;opacity:0.30;filter:grayscale(1);}
+#card-7.waiting{z-index:1;opacity:0.25;filter:grayscale(1);}
+
+/* Tick mark: hidden by default, shown only on selected choice */
+.choice .tick { display: none; flex-shrink: 0; }
+.choice.selected .tick { display: block; }
+
+/* ── Light-blue theme overrides ── */
+.btn:not(.ghost){background:#4a9ed8 !important;border-color:#4a9ed8 !important;color:#fff !important;}
+.choice.selected{background:#4a9ed8 !important;border-color:#4a9ed8 !important;color:#fff !important;}
+.choice.selected .choice-meta{color:rgba(255,255,255,0.75) !important;}
+.choice.selected .glyph{border-color:#fff !important;}
+.tile.selected{background:#4a9ed8 !important;border-color:#4a9ed8 !important;color:#fff !important;}
+.chip.selected{background:#4a9ed8 !important;border-color:#4a9ed8 !important;color:#fff !important;}
+.tabs .tab.active{background:#4a9ed8 !important;color:#fff !important;}
+
+/* ACTIVE — centre (translateX set by JS) */
+.card.active{
+  opacity:1;filter:none;z-index:10;
+  box-shadow:0 24px 56px rgba(0,0,0,0.18);
+  border:2px solid #4a9ed8;
+}
+
+/* DONE — left slivers (translateX set by JS) */
+.card.done{opacity:0.38;filter:grayscale(1);z-index:1;}
+.card.done:nth-child(1){z-index:8;}
+.card.done:nth-child(2){z-index:7;}
+.card.done:nth-child(3){z-index:6;}
+.card.done:nth-child(4){z-index:5;}
+.card.done:nth-child(5){z-index:4;}
+.card.done:nth-child(6){z-index:3;}
+.card.done:nth-child(7){z-index:2;}
+.card.done:nth-child(8){z-index:1;}
+
+/* Nav-bottom: only on active + front waiting */
+.card .nav-bottom{display:none !important;}
+.card.active .nav-bottom{display:flex !important;}
+#card-0.waiting .nav-bottom{display:flex !important;}
+
+/* Hide gesture bar */
+.card .gesture-bar{display:none !important;}
+
+/* Stage labels */
+.stage-labels{
+  width:calc(100% - 40px);
+  display:flex;justify-content:space-between;
+  font-family:var(--fs);font-size:12px;color:var(--t3);
+  margin-top:10px;padding:0 6px;
+}
+
+/* ── Phone shell (inlined from styles.css, tokens remapped) ── */
+.phone{
+  width:900px;height:660px;
+  background:var(--bg);
+  font-family:var(--fd);color:var(--text);
+  position:relative;display:flex;flex-direction:column;
+  overflow:hidden;user-select:none;
+}
+.status-bar{
+  height:28px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;font-size:12px;font-weight:600;color:var(--t2);
+  border-bottom:1px dashed var(--border);flex-shrink:0;
+}
+.status-bar .icons{display:flex;gap:6px;align-items:center;}
+.app-bar{
+  height:52px;display:flex;align-items:center;gap:12px;
+  padding:0 16px;flex-shrink:0;border-bottom:1px solid var(--border);
+}
+.app-bar .title{font-size:14px;font-weight:600;}
+.app-bar .step-pill{
+  margin-left:auto;font-family:var(--fs);font-size:13px;
+  padding:3px 10px;border:1.5px solid var(--text);border-radius:999px;
+  background:var(--surface2);
+}
+.body{flex:1;overflow-y:auto;padding:18px 18px 90px;scrollbar-width:none;}
+.body::-webkit-scrollbar{display:none;}
+.nav-bottom{
+  position:absolute;bottom:0;left:0;right:0;height:78px;
+  padding:14px 18px 22px;
+  background:linear-gradient(to top,var(--bg) 70%,transparent);
+  display:flex;gap:10px;align-items:center;
+}
+.gesture-bar{
+  position:absolute;bottom:6px;left:50%;transform:translateX(-50%);
+  width:110px;height:4px;background:var(--text);border-radius:2px;
+  opacity:0.4;pointer-events:none;
+}
+
+/* Sketch primitives */
+.sketch{
+  border:1.5px solid var(--text);
+  border-radius:8px 7px 9px 6px / 7px 9px 6px 8px;
+  background:#fff;
+}
+.sketch.fill{background:var(--surface2);}
+.sketch.dashed{border-style:dashed;}
+
+/* Typography */
+.label{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);}
+.h1{font-size:22px;font-weight:700;line-height:1.2;letter-spacing:-.01em;}
+.h2{font-size:16px;font-weight:600;line-height:1.3;}
+.h3{font-size:14px;font-weight:600;}
+.body-text{font-size:13px;line-height:1.45;color:var(--t2);}
+.tiny{font-size:11px;color:var(--t3);}
+.hand{font-family:var(--fs);}
+.mono{font-family:var(--fm);}
+
+/* Buttons */
+.btn{
+  flex:1;height:50px;border:2px solid var(--text);border-radius:8px;
+  background:var(--text);color:var(--bg);
+  font-family:var(--fd);font-size:15px;font-weight:600;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:transform .08s;
+}
+.btn:active{transform:translateY(1px);}
+.btn.ghost{background:transparent;color:var(--text);}
+.btn.icon-only{flex:0 0 50px;}
+
+/* Choices */
+.choice{
+  width:100%;display:flex;align-items:center;gap:14px;padding:14px;
+  border:1.5px solid var(--text);
+  border-radius:8px 7px 9px 6px / 7px 9px 6px 8px;
+  background:#fff;cursor:pointer;text-align:left;
+  font-family:inherit;transition:background .12s,transform .08s;
+}
+.choice:hover{background:var(--surface2);}
+.choice:active{transform:scale(0.99);}
+.choice.selected{background:var(--text);color:var(--bg);}
+.choice.selected .choice-meta{color:var(--t4);}
+.choice .glyph{
+  width:36px;height:36px;border:1.5px solid currentColor;
+  border-radius:50%;display:grid;place-items:center;
+  flex-shrink:0;font-size:16px;font-weight:600;
+}
+.choice.selected .glyph{border-color:var(--bg);}
+.choice .choice-title{font-size:14px;font-weight:600;}
+.choice .choice-meta{font-size:11px;color:var(--t3);margin-top:2px;}
+
+/* Tiles */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.tile{
+  border:1.5px solid var(--text);
+  border-radius:8px 7px 9px 6px / 7px 9px 6px 8px;
+  background:#fff;padding:14px 10px;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  cursor:pointer;text-align:center;font-family:inherit;min-height:96px;
+}
+.tile:hover{background:var(--surface2);}
+.tile.selected{background:var(--text);color:var(--bg);}
+.tile .tile-icon{width:28px;height:28px;display:grid;place-items:center;}
+.tile .tile-label{font-size:12px;font-weight:600;}
+
+/* Slider */
+.slider{
+  width:100%;-webkit-appearance:none;height:4px;
+  background:var(--border);border-radius:2px;outline:none;margin:12px 0;
+}
+.slider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:22px;height:22px;border-radius:50%;
+  background:var(--bg);border:2px solid var(--text);cursor:pointer;
+}
+.slider::-moz-range-thumb{
+  width:22px;height:22px;border-radius:50%;
+  background:var(--bg);border:2px solid var(--text);cursor:pointer;
+}
+.slider-ticks{
+  display:flex;justify-content:space-between;
+  font-size:10px;color:var(--t3);font-family:var(--fm);
+}
+
+/* Input row */
+.input-row{
+  display:flex;align-items:baseline;gap:8px;
+  border-bottom:2px solid var(--text);padding:6px 0;
+}
+.input-row .currency{font-size:18px;font-weight:600;color:var(--t2);}
+.input-row input{
+  flex:1;border:none;background:transparent;outline:none;
+  font-size:24px;font-weight:700;font-family:var(--fd);width:100%;min-width:0;
+}
+
+/* Badge */
+.badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 10px;border-radius:999px;
+  font-size:11px;font-weight:600;border:1.5px solid currentColor;
+}
+.badge.good{color:var(--ok);background:var(--ok-bg);border-color:var(--ok);}
+.badge.warn{color:var(--warn);background:var(--warn-bg);border-color:var(--warn);}
+.badge.bad{color:var(--danger);background:var(--danger-bg);border-color:var(--danger);}
+
+/* Bar waterfall */
+.bar-row{display:flex;align-items:center;gap:10px;font-size:12px;margin-bottom:8px;}
+.bar-row .bar-label{width:76px;color:var(--t2);flex-shrink:0;}
+.bar-row .bar-track{
+  flex:1;height:14px;
+  background:repeating-linear-gradient(-45deg,transparent,transparent 4px,var(--border) 4px,var(--border) 5px);
+  border:1.5px solid var(--text);border-radius:3px;position:relative;overflow:hidden;
+}
+.bar-row .bar-fill{height:100%;background:var(--text);}
+.bar-row .bar-fill.good{background:var(--ok);}
+.bar-row .bar-fill.warn{background:var(--warn);}
+.bar-row .bar-fill.bad{background:var(--danger);}
+.bar-row .bar-val{width:50px;text-align:right;font-family:var(--fm);font-weight:600;flex-shrink:0;}
+
+/* Compare */
+.compare{
+  display:grid;grid-template-columns:1fr 1fr;
+  border:1.5px solid var(--text);border-radius:8px;overflow:hidden;
+}
+.compare > div{padding:14px 12px;display:flex;flex-direction:column;gap:4px;}
+.compare > div + div{border-left:1.5px dashed var(--border);}
+.compare .compare-label{font-size:10px;text-transform:uppercase;font-weight:700;letter-spacing:.08em;color:var(--t3);}
+.compare .compare-num{font-size:28px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;}
+.compare .compare-foot{font-size:11px;color:var(--t3);}
+.compare .net{background:var(--ok-bg);}
+.compare .net .compare-num{color:#066d44;}
+
+/* Stepper (advanced settings) */
+.row-input{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 0;border-bottom:1px dashed var(--border);
+}
+.row-input:last-child{border-bottom:none;}
+.row-input .row-label{font-size:13px;font-weight:500;}
+.stepper{display:flex;border:1.5px solid var(--text);border-radius:5px;overflow:hidden;}
+.stepper button{
+  width:26px;height:26px;border:none;background:#fff;cursor:pointer;
+  font-size:14px;font-weight:700;
+}
+.stepper button+button{border-left:1.5px solid var(--text);}
+.stepper .num{
+  min-width:50px;text-align:center;display:grid;place-items:center;
+  font-family:var(--fm);font-weight:600;font-size:13px;
+  background:var(--surface2);
+  border-left:1.5px solid var(--text);border-right:1.5px solid var(--text);
+}
+
+/* Tabs */
+.tabs{
+  display:flex;border:1.5px solid var(--text);border-radius:6px;
+  padding:3px;background:var(--surface2);
+}
+.tabs .tab{
+  flex:1;padding:7px;text-align:center;font-size:11px;font-weight:600;
+  border-radius:4px;cursor:pointer;border:none;background:transparent;
+  font-family:inherit;color:var(--t2);
+}
+.tabs .tab.active{background:var(--text);color:var(--bg);}
+
+/* Scribble hero */
+.scribble{
+  width:100%;height:180px;
+  border:1.5px dashed var(--border);border-radius:8px;
+  display:grid;place-items:center;
+  background:
+    radial-gradient(circle at 20% 30%,var(--ok-bg) 0%,transparent 35%),
+    radial-gradient(circle at 80% 70%,var(--surface2) 0%,transparent 40%),
+    var(--bg);
+  position:relative;overflow:hidden;
+}
+
+/* Hint */
+.hint{
+  display:flex;gap:10px;align-items:flex-start;
+  padding:10px 12px;background:var(--surface2);
+  border-left:3px solid var(--text);border-radius:0 6px 6px 0;
+  font-size:12px;line-height:1.4;
+}
+.hint .hint-icon{
+  width:18px;height:18px;border:1.5px solid var(--text);border-radius:50%;
+  display:grid;place-items:center;font-size:11px;font-weight:700;
+  flex-shrink:0;margin-top:1px;
+}
+
+/* Accordion */
+.accordion-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 0;cursor:pointer;
+  border-top:1.5px solid var(--text);border-bottom:1.5px solid var(--text);
+}
+.accordion-head .chev{transition:transform .15s;}
+.accordion-head.open .chev{transform:rotate(180deg);}
+
+/* Big number */
+.big-number{font-size:48px;font-weight:800;letter-spacing:-0.03em;line-height:1;font-variant-numeric:tabular-nums;}
+
+/* Step indicator strip */
+.step-strip{display:flex;gap:4px;padding:8px 16px 0;flex-shrink:0;}
+.step-strip .seg{flex:1;height:3px;background:var(--border);border-radius:2px;}
+.step-strip .seg.done{background:var(--text);}
+.step-strip .seg.active{background:var(--ok);}
+
+/* Chips */
+.chip{
+  padding:5px 10px;border:1.5px solid var(--text);border-radius:999px;
+  background:#fff;font-size:11px;font-weight:600;cursor:pointer;
+  font-family:inherit;
+}
+.chip.selected{background:var(--text);color:var(--bg);}
+
+/* Reset overlay */
+#reset-overlay{
+  display:none;position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);z-index:20;
+  background:var(--surface);border:2px solid var(--text);
+  border-radius:14px;padding:28px 36px;text-align:center;
+  box-shadow:0 24px 56px rgba(0,0,0,0.18);font-family:var(--fd);
+}
+</style>
+</head>
+<body>
+
+<!-- ── RITA Topbar ── -->
+<header class="topbar">
+  <a class="logo" href="#">
+    <div class="logo-icon">
+      <svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 12 7 2l5 10H2z"/></svg>
+    </div>
+    <div>
+      <div class="logo-name">RIIA</div>
+      <div class="logo-sub">INVESTOR FLOW</div>
+    </div>
+  </a>
+  <div class="t-sep"></div>
+  <div class="t-crumb">Portfolio &rsaquo; <span>Investor Onboarding</span></div>
+  <div class="t-right">
+    <a id="topbar-game-link" class="t-nav-link game" href="#">&#9654; Try Invest Game</a>
+    <div class="status-pill"><div class="status-dot ok"></div>Demo &middot; 7 steps</div>
+  </div>
+</header>
+
+<!-- ── Page canvas ── -->
+<main class="page-body">
+
+  <div class="stage" id="stage">
+
+    <!-- CARD 0 — Get Started -->
+    <div class="card waiting" id="card-0">
+      <div class="phone">
+        <div class="status-bar"><span>9:41</span><div class="icons">
+          <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+          <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+        </div></div>
+        <div class="body" style="padding-top:16px;display:flex;flex-direction:column;gap:14px">
+          <div style="font-size:10px;color:var(--t3);line-height:1.5;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 10px">
+            <strong style="color:var(--t2)">Disclaimer:</strong> This platform is intended solely for research and informational purposes. It should not be considered financial, investment, or trading advice or recommendations.
+            <div style="margin-top:5px">We use only essential functional cookies to improve user experience and platform performance, respecting privacy and data protection regulations.</div>
+          </div>
+          <div>
+            <div class="h1" style="font-size:26px;line-height:1.1">Plan for future <span style="border-bottom:3px solid var(--ok)">with eyes open.</span></div>
+            <div class="body-text" style="margin-top:10px">Tell us about your goals, we will show you real return after ecosystem cost.</div>
+          </div>
+          <div class="scribble" style="height:140px">
+            <div style="display:flex;gap:8px;align-items:flex-end;height:90px">
+              <div style="width:18px;height:25px;background:var(--border);border-radius:2px"></div>
+              <div style="width:18px;height:42px;background:var(--border);border-radius:2px"></div>
+              <div style="width:18px;height:62px;background:var(--border);border-radius:2px"></div>
+              <div style="width:18px;height:80px;background:var(--t3);border-radius:2px"></div>
+              <span class="hand" style="font-size:11px;margin-left:4px;margin-bottom:2px">= gross</span>
+            </div>
+            <div class="hand" style="position:absolute;bottom:12px;right:14px;color:var(--ok);font-size:12px">↓ what you keep</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span style="font-size:13px;font-weight:600;color:var(--text)">Goal</span>
+            <span class="hand" style="color:var(--ok);font-size:18px">→</span>
+            <span style="font-size:13px;font-weight:600;color:var(--text)">Timelines</span>
+            <span class="hand" style="color:var(--ok);font-size:18px">→</span>
+            <span style="font-size:13px;font-weight:600;color:var(--text)">Ecosystem costs</span>
+            <span class="hand" style="color:var(--ok);font-size:18px">→</span>
+            <span style="font-size:13px;font-weight:600;color:var(--text)">Real returns</span>
+          </div>
+        </div>
+        <div class="nav-bottom">
+          <button class="btn" onclick="go()">Get started <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD 1 — Step 1: Investor Type -->
+    <div class="card waiting" id="card-1">
+      <div class="phone">
+        <div class="status-bar"><span>9:41</span><div class="icons">
+          <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+          <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+        </div></div>
+        <div class="app-bar"><div class="title">Set up your plan</div><div class="step-pill">Step 1 / 7</div></div>
+        <div class="step-strip"><div class="seg active"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div></div>
+        <div class="body">
+          <div class="label" style="margin-top:12px">Step 1 of 7</div>
+          <div class="h1" style="margin-top:6px">What type of investor are you?</div>
+          <div class="body-text" style="margin-top:6px">This sets your default risk level. You can change it later.</div>
+          <div data-choice-group="investor" style="display:flex;flex-direction:column;gap:10px;margin-top:18px">
+            <button class="choice" data-choice="short"><div class="glyph">1y</div><div style="flex:1"><div class="choice-title">I can take risk</div><div class="choice-meta">Short horizon.</div></div><svg class="tick" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7l3 3 5-6"/></svg></button>
+            <button class="choice selected" data-choice="goal"><div class="glyph">5y</div><div style="flex:1"><div class="choice-title">I want steady growth</div><div class="choice-meta">Around 5 years.</div></div><svg class="tick" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7l3 3 5-6"/></svg></button>
+            <button class="choice" data-choice="long"><div class="glyph">10y+</div><div style="flex:1"><div class="choice-title">Protect capital, decent returns</div><div class="choice-meta">10 to 15 years.</div></div><svg class="tick" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7l3 3 5-6"/></svg></button>
+          </div>
+          <div class="hint" style="margin-top:16px"><div class="hint-icon">i</div><div>Your timeline shapes the rest of your plan.</div></div>
+        </div>
+        <div class="nav-bottom">
+          <button class="btn ghost icon-only" onclick="back()"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></button>
+          <button class="btn" onclick="go()">Continue <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD 2 — Step 2: Goal -->
+    <div class="card waiting" id="card-2">
+      <div class="phone">
+        <div class="status-bar"><span>9:41</span><div class="icons">
+          <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+          <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+        </div></div>
+        <div class="app-bar"><div class="title">Goal</div><div class="step-pill">Step 2 / 7</div></div>
+        <div class="step-strip"><div class="seg done"></div><div class="seg active"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div></div>
+        <div class="body">
+          <div class="label" style="margin-top:12px">Pick one</div>
+          <div class="h1" style="margin-top:6px">What's the money for?</div>
+          <div class="grid-2" style="margin-top:18px;gap:10px" data-choice-group="goal">
+            <button class="tile" data-choice="purchase"><div class="tile-icon"><svg width="28" height="28" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M6 2L4 6H18L16 2"/><rect x="2" y="6" width="18" height="14" rx="1"/><path d="M9 11a2 2 0 004 0"/></svg></div><div class="tile-label">Next Purchase</div><div class="tiny" style="margin-top:2px;color:var(--t3)">Horizon: up to 1 yr</div></button>
+            <button class="tile" data-choice="edu"><div class="tile-icon"><svg width="28" height="28" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 8l9-4 9 4-9 4-9-4z"/><path d="M6 10v4c0 1.5 2.5 3 5 3s5-1.5 5-3v-4M19 9v5"/></svg></div><div class="tile-label">Education</div><div class="tiny" style="margin-top:2px;color:var(--t3)">Horizon: 5 to 10 yrs</div></button>
+            <button class="tile selected" data-choice="retire" style="grid-column:span 2"><div class="tile-icon"><svg width="28" height="28" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 18h16M5 18V8l6-4 6 4v10M9 18v-5h4v5"/></svg></div><div class="tile-label">Retirement</div><div class="tiny" style="margin-top:2px;color:var(--t3)">Horizon: 20 to 30 yrs</div></button>
+          </div>
+          <div class="hint" style="margin-top:16px"><div class="hint-icon">i</div><div>We'll pre-fill your timeline on the next screen based on your choice.</div></div>
+        </div>
+        <div class="nav-bottom">
+          <button class="btn ghost icon-only" onclick="back()"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></button>
+          <button class="btn" onclick="go()">Continue <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD 3 — Step 3: Timeline & Numbers -->
+    <div class="card waiting" id="card-3">
+      <div class="phone">
+        <div class="status-bar"><span>9:41</span><div class="icons">
+          <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+          <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+        </div></div>
+        <div class="app-bar"><div class="title">Timeline &amp; plan</div><div class="step-pill">Step 3 / 6</div></div>
+        <div class="step-strip"><div class="seg done"></div><div class="seg done"></div><div class="seg active"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div></div>
+        <div class="body">
+          <div class="label" style="margin-top:12px">Step 3 of 6</div>
+          <div class="h1" style="margin-top:6px">Your timeline &amp; numbers</div>
+          <div class="sketch" style="margin-top:16px;padding:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div class="label">Your investment horizon</div>
+              <span class="tiny" style="color:var(--t3)">set by investor type</span>
+            </div>
+            <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px"><span class="big-number" style="font-size:34px" id="c3-h-display">5y</span></div>
+            <input id="c3-slider" type="range" min="1" max="5" step="1" value="5" class="slider">
+            <div id="c3-ticks" class="slider-ticks"><span>1</span><span>10</span><span>20</span><span>30</span><span>40</span></div>
+            <div id="c3-milestones" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px;min-height:24px"></div>
+            <div style="display:flex;gap:8px;margin-top:8px;align-items:center"><span class="badge warn" data-risk-badge>Balanced</span><span class="tiny">· Medium tolerance</span></div>
+          </div>
+          <div class="sketch" style="margin-top:12px;padding:14px">
+            <div class="label">Monthly investment</div>
+            <div class="input-row" style="margin-top:4px"><span class="currency">€</span><input type="number" value="250" data-recalc><span class="tiny">/mo</span></div>
+            <div class="label" style="margin-top:14px">Target goal</div>
+            <div class="input-row" style="margin-top:4px"><span class="currency">€</span><input id="c3-target" type="number" value="15000" data-recalc></div>
+          </div>
+        </div>
+        <div class="nav-bottom">
+          <button class="btn ghost icon-only" onclick="back()"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></button>
+          <button class="btn" onclick="go()">Continue <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD 5 — Step 5: Advanced assumptions -->
+    <div class="card waiting" id="card-5">
+      <div class="phone">
+        <div class="status-bar"><span>9:41</span><div class="icons">
+          <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+          <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+        </div></div>
+        <div class="app-bar"><div class="title">Fine-tune</div><div class="step-pill">Step 4 / 6</div></div>
+        <div class="step-strip"><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg active"></div><div class="seg"></div><div class="seg"></div></div>
+        <div class="body">
+          <div class="label" style="margin-top:12px">Step 4 of 6 — optional</div>
+          <div class="h1" style="margin-top:6px">Fine-tune assumptions</div>
+          <div class="body-text" style="margin-top:6px">We pre-filled sensible defaults. Adjust if you have specific numbers.</div>
+          <div data-accordion style="margin-top:18px">
+            <div class="accordion-head open">
+              <div style="display:flex;align-items:center;gap:8px"><span class="h3">Reality factors</span><span class="badge good" style="padding:2px 8px;font-size:10px">4 set</span></div>
+              <span class="chev"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 5l3 3 3-3"/></svg></span>
+            </div>
+            <div class="accordion-body" style="padding:4px 2px">
+              <div class="row-input"><div><div class="row-label">Inflation rate</div><div class="tiny">EU avg ≈ 2–3%</div></div><div class="stepper" data-stepper data-value="2.5" data-step-by="0.1"><button data-step="minus">−</button><div class="num">2.5%</div><button data-step="plus">+</button></div></div>
+              <div class="row-input"><div><div class="row-label">Tax on gains</div><div class="tiny">NL box-3 ≈ 25–36%</div></div><div class="stepper" data-stepper data-value="25" data-step-by="1"><button data-step="minus">−</button><div class="num">25%</div><button data-step="plus">+</button></div></div>
+              <div class="row-input"><div><div class="row-label">Investment costs</div><div class="tiny">ETF: 0.2–1.5% TER</div></div><div class="stepper" data-stepper data-value="1.2" data-step-by="0.1"><button data-step="minus">−</button><div class="num">1.2%</div><button data-step="plus">+</button></div></div>
+              <div class="row-input"><div><div class="row-label">Expected gross return</div><div class="tiny">Stocks long-run ≈ 7–9%</div></div><div class="stepper" data-stepper data-value="8" data-step-by="0.5"><button data-step="minus">−</button><div class="num">8%</div><button data-step="plus">+</button></div></div>
+            </div>
+          </div>
+          <div class="hint" style="margin-top:16px"><div class="hint-icon">!</div><div>Costs &amp; tax compound the wrong way. A 1% fee can eat 20%+ of your final pot.</div></div>
+        </div>
+        <div class="nav-bottom">
+          <button class="btn ghost icon-only" onclick="back()"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></button>
+          <button class="btn" onclick="go()">See results <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD 6 — Step 6: Results -->
+    <div class="card waiting" id="card-6">
+      <div class="phone">
+        <div class="status-bar"><span>9:41</span><div class="icons">
+          <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+          <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+        </div></div>
+        <div class="app-bar"><div class="title">Reality check</div><div class="step-pill">Step 5 / 6</div></div>
+        <div class="step-strip"><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg active"></div><div class="seg"></div></div>
+        <div class="body" style="padding-bottom:90px">
+
+          <!-- Row 1: Gross return | What you keep -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:10px;border:1.5px solid var(--text);border-radius:8px;overflow:hidden">
+            <div style="padding:12px;border-right:1px dashed var(--border)">
+              <div class="label">Gross return</div>
+              <div style="font-size:26px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums" id="r-gross-fv">€61k</div>
+              <div style="font-size:11px;color:var(--t3);margin-top:2px" id="r-gross-rate">at 8% /yr</div>
+            </div>
+            <div style="padding:12px;background:var(--ok-bg)">
+              <div class="label" style="color:var(--ok)">What you keep</div>
+              <div style="font-size:26px;font-weight:800;margin-top:4px;color:var(--ok);font-variant-numeric:tabular-nums" id="r-net-fv">€38k</div>
+              <div style="font-size:11px;color:var(--t3);margin-top:2px" id="r-net-rate">at 3.4% real</div>
+            </div>
+          </div>
+
+          <!-- Row 2: Single stacked bar — Costs + Tax + Inflation + You keep, legends aligned below -->
+          <div style="margin-top:12px;border:2px solid var(--text);border-radius:8px;padding:12px">
+            <div class="label">From your total return</div>
+            <!-- Bar -->
+            <div style="margin-top:8px;height:32px;border:1.5px solid var(--border);border-radius:4px;overflow:hidden;display:flex">
+              <div id="r-stack-costs" style="background:var(--danger);height:100%;width:15%;flex-shrink:0;transition:width .3s"></div>
+              <div id="r-stack-tax"   style="background:var(--warn);height:100%;width:21%;flex-shrink:0;transition:width .3s"></div>
+              <div id="r-stack-infl"  style="background:#f59e0b;height:100%;width:31%;flex-shrink:0;transition:width .3s"></div>
+              <div id="r-stack-net"   style="background:var(--ok);height:100%;width:33%;flex-shrink:0;transition:width .3s"></div>
+            </div>
+            <!-- Legends aligned under each segment -->
+            <div style="display:flex;margin-top:4px">
+              <div id="r-leg-costs" style="width:15%;flex-shrink:0;overflow:hidden;text-align:center;font-size:10px;color:var(--danger)">
+                <div>Costs</div><strong id="r-bv-costs">−1.2%</strong>
+              </div>
+              <div id="r-leg-tax" style="width:21%;flex-shrink:0;overflow:hidden;text-align:center;font-size:10px;color:var(--warn)">
+                <div>Tax</div><strong id="r-bv-tax">−1.7%</strong>
+              </div>
+              <div id="r-leg-infl" style="width:31%;flex-shrink:0;overflow:hidden;text-align:center;font-size:10px;color:#b45309">
+                <div>Inflation</div><strong id="r-bv-infl">−2.5%</strong>
+              </div>
+              <div id="r-leg-net" style="width:33%;flex-shrink:0;overflow:hidden;text-align:center;font-size:10px;color:var(--ok)">
+                <div>You keep</div><strong id="r-bv-net">3.4%</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="sketch fill" style="margin-top:10px;padding:12px;border-style:dashed">
+            <div class="label">Insight</div>
+            <div class="hand" id="r-insight" style="font-size:13px;margin-top:4px;line-height:1.3">"Costs matter more than most investors expect."</div>
+          </div>
+        </div>
+        <div class="nav-bottom">
+          <button class="btn ghost icon-only" onclick="back()"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></button>
+          <button class="btn" onclick="go()">Next steps <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD 7 — Step 7: Actions -->
+    <div class="card waiting" id="card-7">
+      <div class="phone">
+        <div class="status-bar"><span>9:41</span><div class="icons">
+          <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+          <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+        </div></div>
+        <div class="app-bar"><div class="title">Your plan is ready</div></div>
+        <div class="step-strip"><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg active"></div></div>
+        <div class="body">
+          <div class="hand" style="font-size:14px;margin-top:8px">nice work ✓</div>
+          <div class="h1" style="margin-top:4px">What now?</div>
+          <div class="sketch fill" style="margin-top:14px;padding:12px">
+            <div style="display:flex;justify-content:space-between">
+              <div><div class="tiny">Plan</div><div id="r-summary-plan" style="font-size:13px;font-weight:600;margin-top:2px">€250/mo · 5y</div></div>
+              <div style="text-align:right"><div class="tiny">You keep</div><div id="r-summary-net" style="font-size:15px;font-weight:800;color:var(--ok)">—</div></div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
+            <div class="choice" onclick="goToCard(1)" style="cursor:pointer"><div class="glyph"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 2l3 3-7 7H2v-3z"/></svg></div><div style="flex:1"><div class="choice-title">Adjust Plan</div><div class="choice-meta">Go back to investor type and reset your profile</div></div></div>
+            <a id="card7-game-link" class="choice" href="#" target="_blank" style="background:var(--warn-bg);border-color:var(--warn-bd);color:var(--warn);text-decoration:none"><div class="glyph" style="border-color:var(--warn-bd)">▶</div><div style="flex:1"><div class="choice-title">Try the Invest Game</div><div style="font-size:11px;opacity:0.8;margin-top:2px">Experience the Market volatility and make your choices</div></div></a>
+            <a class="choice" href="http://localhost:8000/dashboard/" target="_blank" style="background:var(--info);border-color:var(--info);color:#fff;text-decoration:none"><div class="glyph" style="border-color:rgba(255,255,255,0.5)">→</div><div style="flex:1"><div class="choice-title">Start research with RIIA, an AI assisted research platform</div></div></a>
+          </div>
+          <div class="hint" style="margin-top:14px"><div class="hint-icon">↗</div><div>Your plan settings carry over to RIIA so the portfolio matches.</div></div>
+        </div>
+        <div class="nav-bottom">
+          <button class="btn ghost icon-only" onclick="back()"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></button>
+          <button class="btn ghost" onclick="reset()">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reset overlay -->
+    <div id="reset-overlay">
+      <div style="font-family:var(--fs);font-size:20px;margin-bottom:6px">all done ✓</div>
+      <div style="font-size:12px;color:var(--t3);margin-bottom:18px">Your plan is set. Run it again?</div>
+      <button onclick="reset()" style="height:46px;padding:0 28px;border:2px solid var(--text);border-radius:8px;background:var(--text);color:var(--bg);font-family:var(--fd);font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;">
+        ↺ Start over
+      </button>
+    </div>
+
+  </div><!-- /stage -->
+
+  <!-- Stage labels -->
+  <div class="stage-labels">
+    <span id="lbl-done">← completed steps</span>
+    <span id="lbl-active" style="color:var(--text);font-weight:600"></span>
+    <span id="lbl-queue">steps ahead →</span>
+  </div>
+
+</main>
+
+<!-- ── Inlined app.js (invest-flow math + interaction engine) ── -->
+<script>
+(function () {
+  // ── Math ──
+  function fv(monthly, months, annualRate) {
+    if (monthly <= 0 || months <= 0) return 0;
+    var rm = Math.pow(1 + annualRate, 1 / 12) - 1;
+    if (Math.abs(rm) < 1e-9) return monthly * months;
+    return monthly * ((Math.pow(1 + rm, months) - 1) / rm);
+  }
+  function requiredRate(monthly, months, target) {
+    if (monthly <= 0 || months <= 0) return null;
+    var lo = -0.5, hi = 1.0;
+    var f = function(r) { return fv(monthly, months, r) - target; };
+    for (var i = 0; i < 80; i++) {
+      var mid = (lo + hi) / 2;
+      if (f(mid) > 0) hi = mid; else lo = mid;
+    }
+    return (lo + hi) / 2;
+  }
+  var fmtEur = function(n) {
+    if (n == null || isNaN(n)) return '€—';
+    var abs = Math.abs(n);
+    if (abs >= 1000000) return '€' + (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+    if (abs >= 10000)   return '€' + Math.round(n / 1000) + 'k';
+    if (abs >= 1000)    return '€' + (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    return '€' + Math.round(n);
+  };
+  var fmtPct = function(r) {
+    return r == null || isNaN(r) ? '—%' : (r * 100).toFixed(1).replace(/\.0$/, '') + '%';
+  };
+
+  // ── Choice toggling ──
+  document.querySelectorAll('[data-choice-group]').forEach(function(group) {
+    group.addEventListener('click', function(e) {
+      var btn = e.target.closest('[data-choice]');
+      if (!btn || !group.contains(btn)) return;
+      group.querySelectorAll('[data-choice]').forEach(function(b) { b.classList.remove('selected'); });
+      btn.classList.add('selected');
+    });
+  });
+
+  // ── Tabs ──
+  document.querySelectorAll('[data-tabs]').forEach(function(wrap) {
+    wrap.addEventListener('click', function(e) {
+      var tab = e.target.closest('.tab');
+      if (!tab) return;
+      wrap.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+      tab.classList.add('active');
+      var tabId = tab.dataset.tab;
+      var panes = wrap.closest('.phone') && wrap.closest('.phone').querySelectorAll('[data-tab-pane]');
+      if (panes) panes.forEach(function(p) { p.style.display = p.dataset.tabPane === tabId ? '' : 'none'; });
+      if (window.recalc) window.recalc();
+    });
+  });
+
+  // ── Accordion ──
+  document.querySelectorAll('[data-accordion]').forEach(function(acc) {
+    var head = acc.querySelector('.accordion-head');
+    var body = acc.querySelector('.accordion-body');
+    head.addEventListener('click', function() {
+      var open = head.classList.toggle('open');
+      body.style.display = open ? '' : 'none';
+    });
+  });
+
+  // ── Steppers ──
+  document.querySelectorAll('[data-stepper]').forEach(function(wrap) {
+    var numEl  = wrap.querySelector('.num');
+    var minus  = wrap.querySelector('[data-step="minus"]');
+    var plus   = wrap.querySelector('[data-step="plus"]');
+    var step   = parseFloat(wrap.dataset.stepBy || '0.1');
+    var min    = parseFloat(wrap.dataset.min || '0');
+    var suffix = wrap.dataset.suffix || '%';
+    var val    = parseFloat(wrap.dataset.value || '0');
+    var render = function() {
+      numEl.textContent = val.toFixed(1).replace(/\.0$/, '') + suffix;
+      wrap.dataset.value = String(val);
+      if (window.recalc) window.recalc();
+    };
+    minus.addEventListener('click', function() { val = Math.max(min, +(val - step).toFixed(2)); render(); });
+    plus.addEventListener('click',  function() { val = +(val + step).toFixed(2); render(); });
+    render();
+  });
+
+  // ── Slider live label + risk badge ──
+  document.querySelectorAll('input[type=range][data-bind]').forEach(function(sl) {
+    var target = document.querySelector(sl.dataset.bind);
+    var update = function() {
+      if (target) target.textContent = sl.value;
+      var riskBadge = document.querySelector('[data-risk-badge]');
+      if (riskBadge) {
+        var v = +sl.value;
+        riskBadge.classList.remove('good', 'warn', 'bad');
+        if (v < 5)       { riskBadge.classList.add('bad');  riskBadge.textContent = 'Aggressive'; }
+        else if (v < 15) { riskBadge.classList.add('warn'); riskBadge.textContent = 'Balanced'; }
+        else             { riskBadge.classList.add('good'); riskBadge.textContent = 'Growth + compound'; }
+      }
+      if (window.recalc) window.recalc();
+    };
+    sl.addEventListener('input', update);
+    update();
+  });
+
+  // ── Number inputs ──
+  document.querySelectorAll('input[type=number][data-recalc]').forEach(function(inp) {
+    inp.addEventListener('input', function() { if (window.recalc) window.recalc(); });
+  });
+
+  // ── Horizon chip select ──
+  document.querySelectorAll('[data-chip-group]').forEach(function(group) {
+    group.addEventListener('click', function(e) {
+      var chip = e.target.closest('.chip');
+      if (!chip) return;
+      group.querySelectorAll('.chip').forEach(function(c) { c.classList.remove('selected'); });
+      chip.classList.add('selected');
+      var slider = group.closest('.phone') && group.closest('.phone').querySelector('input[type=range][data-bind]');
+      if (slider) { slider.value = chip.dataset.value; slider.dispatchEvent(new Event('input')); }
+    });
+  });
+
+  // ── Expose globally ──
+  window.invest = { fv: fv, requiredRate: requiredRate, fmtEur: fmtEur, fmtPct: fmtPct };
+})();
+</script>
+
+<!-- ── Navigation + recalc engine ── -->
+<script>
+  var cards   = Array.from(document.querySelectorAll('.card'));
+  var current = -1;
+  var TOTAL   = cards.length;
+
+  var TITLES = [
+    'Get Started', 'Step 1 — Investor type', 'Step 2 — Goal',
+    'Step 3 — Timeline', 'Step 4 — Fine-tune',
+    'Step 5 — Results', 'Step 6 — Actions'
+  ];
+
+  function updateLabels() {
+    var done  = current > 0 ? current : 0;
+    var ahead = current >= 0 ? Math.max(0, TOTAL - current - 1) : TOTAL;
+    var lblDone   = document.getElementById('lbl-done');
+    var lblActive = document.getElementById('lbl-active');
+    var lblQueue  = document.getElementById('lbl-queue');
+    if (lblDone)   lblDone.textContent   = done  > 0 ? '← ' + done + ' done'   : '← completed steps';
+    if (lblActive) lblActive.textContent = current >= 0 ? TITLES[current] : '';
+    if (lblQueue)  lblQueue.textContent  = ahead > 0 ? ahead + ' ahead →' : 'all done ✓';
+  }
+
+  function positionCards() {
+    var stage = document.getElementById('stage');
+    var W = stage.offsetWidth;
+    var cardW = 900;
+    var activeX = Math.round((W - cardW) / 2);
+    var doneCards = [], waitCards = [];
+    cards.forEach(function(c) {
+      if (c.classList.contains('active')) {
+        c.style.transform = 'translateX(' + activeX + 'px)';
+      } else if (c.classList.contains('done')) {
+        doneCards.push(c);
+      } else if (c.classList.contains('waiting')) {
+        waitCards.push(c);
+      }
+    });
+    // Most-recently-done card is rightmost, right edge at 10% of stage
+    doneCards.forEach(function(c, i) {
+      var reverseI = doneCards.length - 1 - i;
+      var x = Math.round(W * 0.1 - cardW - reverseI * 8);
+      c.style.transform = 'translateX(' + x + 'px)';
+    });
+    // Front waiting card left edge at 90% of stage
+    waitCards.forEach(function(c, i) {
+      var x = Math.round(W * 0.9 + i * 4);
+      c.style.transform = 'translateX(' + x + 'px)';
+    });
+  }
+
+  function go() {
+    if (current >= 0) {
+      cards[current].classList.remove('active');
+      cards[current].classList.add('done');
+    }
+    current++;
+    if (current < TOTAL) {
+      cards[current].classList.remove('waiting');
+      cards[current].classList.add('active');
+      document.getElementById('reset-overlay').style.display = 'none';
+    } else {
+      document.getElementById('reset-overlay').style.display = 'flex';
+    }
+    updateLabels();
+    positionCards();
+    if (window.recalc) window.recalc();
+  }
+
+  function back() {
+    if (current <= 0) return;
+    cards[current].classList.remove('active');
+    cards[current].classList.add('waiting');
+    current--;
+    cards[current].classList.remove('done');
+    cards[current].classList.add('active');
+    document.getElementById('reset-overlay').style.display = 'none';
+    updateLabels();
+    positionCards();
+  }
+
+  function reset() {
+    cards.forEach(function(c) {
+      c.classList.remove('active', 'done');
+      c.classList.add('waiting');
+    });
+    current = -1;
+    document.getElementById('reset-overlay').style.display = 'none';
+    go();
+  }
+
+  function goToCard(idx) {
+    cards.forEach(function(c, i) {
+      c.classList.remove('active', 'done', 'waiting');
+      if (i < idx) c.classList.add('done');
+      else if (i === idx) c.classList.add('active');
+      else c.classList.add('waiting');
+    });
+    current = idx;
+    document.getElementById('reset-overlay').style.display = 'none';
+    updateLabels();
+    positionCards();
+  }
+
+  // ── Slider stop definitions per investor type ──
+  var SLIDER_STOPS = {
+    short: [{v:0.25,l:'Q1'},{v:0.5,l:'Q2'},{v:0.75,l:'Q3'},{v:1,l:'Q4'}],
+    goal:  [{v:1,l:'1y'},{v:2,l:'2y'},{v:3,l:'3y'},{v:4,l:'4y'},{v:5,l:'5y'}],
+    long:  [{v:5,l:'5y'},{v:10,l:'10y'},{v:15,l:'15y'},{v:20,l:'20y'}]
+  };
+  var currentStops = SLIDER_STOPS.goal; // default matches slider default value=5
+
+  function applyStops(stops, initialValue) {
+    currentStops = stops;
+    var slider = document.getElementById('c3-slider');
+    if (!slider) return;
+    var vals = stops.map(function(s){return s.v;});
+    slider.min   = vals[0];
+    slider.max   = vals[vals.length - 1];
+    slider.step  = vals.length > 1 ? vals[1] - vals[0] : 1;
+    slider.value = initialValue !== undefined ? initialValue : vals[vals.length - 1];
+    slider.dispatchEvent(new Event('input'));
+  }
+
+  function renderMilestones(years) {
+    var container = document.getElementById('c3-milestones');
+    var ticks     = document.getElementById('c3-ticks');
+    var hDisp     = document.getElementById('c3-h-display');
+    var dotOn  = 'width:12px;height:12px;border-radius:50%;background:#4a9ed8;flex-shrink:0;';
+    var dotOff = 'width:12px;height:12px;border-radius:50%;background:var(--border);flex-shrink:0;';
+    var lblOn  = 'font-size:10px;font-family:var(--fm);color:#4a9ed8;text-align:center;';
+    var lblOff = 'font-size:10px;font-family:var(--fm);color:var(--t3);text-align:center;';
+
+    // Current stop label for big display
+    var activeStop = currentStops.filter(function(s){return s.v <= years;}).pop() || currentStops[0];
+    if (hDisp) hDisp.textContent = activeStop.l;
+
+    if (container) {
+      container.innerHTML = '';
+      currentStops.forEach(function(s) {
+        var on = s.v <= years;
+        var w = document.createElement('div');
+        w.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;';
+        w.innerHTML = '<div style="' + (on ? dotOn : dotOff) + '"></div><span style="' + (on ? lblOn : lblOff) + '">' + s.l + '</span>';
+        container.appendChild(w);
+      });
+    }
+
+    if (ticks) {
+      ticks.innerHTML = currentStops.map(function(s){return '<span>' + s.l + '</span>';}).join('');
+    }
+  }
+
+  // ── Target = monthly × 12 × years × 1.12 ──
+  function autoTarget(years) {
+    var monthlyInp = document.querySelector('#card-3 input[type=number]');
+    var monthly = parseFloat(monthlyInp && monthlyInp.value) || 250;
+    return Math.round(monthly * 12 * years * 1.12 / 100) * 100;
+  }
+
+  // ── Wire Card-3 slider ──
+  (function() {
+    var slider    = document.getElementById('c3-slider');
+    var targetInp = document.getElementById('c3-target');
+    if (!slider) return;
+    function onSlide() {
+      var years = parseFloat(slider.value);
+      renderMilestones(years);
+      if (targetInp && !targetInp.dataset.userEdited) {
+        targetInp.value = autoTarget(years);
+      }
+      if (window.recalc) window.recalc();
+    }
+    slider.addEventListener('input', onSlide);
+    var monthlyInp = document.querySelector('#card-3 input[type=number]');
+    if (monthlyInp) {
+      monthlyInp.addEventListener('input', function() {
+        if (targetInp && !targetInp.dataset.userEdited) {
+          targetInp.value = autoTarget(parseFloat(slider.value));
+          if (window.recalc) window.recalc();
+        }
+      });
+    }
+    if (targetInp) targetInp.addEventListener('input', function() { targetInp.dataset.userEdited = '1'; });
+    onSlide();
+  })();
+
+  // ── Pre-fill Card-3 slider range + value from Card-2 goal ──
+  // Goal tiles on Card 2 are informational only — they do not modify the Card 3 slider.
+
+  // ── Card 1 investor type → pre-fills Card 3 horizon ──
+  var INVESTOR_HORIZONS = { short: 1, goal: 5, long: 12 };
+  (function() {
+    var investorGroup = document.querySelector('#card-1 [data-choice-group="investor"]');
+    if (!investorGroup) return;
+    investorGroup.addEventListener('click', function(e) {
+      var btn = e.target.closest('[data-choice]');
+      if (!btn) return;
+      var years = INVESTOR_HORIZONS[btn.dataset.choice];
+      if (!years) return;
+      var slider = document.getElementById('c3-slider');
+      if (slider) {
+        slider.value = years;
+        slider.dispatchEvent(new Event('input'));
+      }
+      var targetInp = document.getElementById('c3-target');
+      if (targetInp) delete targetInp.dataset.userEdited;
+    });
+  })();
+
+  // ── Recalc engine (reads card-3 inputs, card-5 steppers → updates card-6 results) ──
+  window.recalc = function() {
+    var inv = window.invest;
+    if (!inv) return;
+
+    var c3nums   = document.querySelectorAll('#card-3 input[type=number]');
+    var monthly  = parseFloat(c3nums[0] && c3nums[0].value) || 250;
+    var target   = parseFloat(c3nums[1] && c3nums[1].value) || 75000;
+    var c3range  = document.querySelector('#card-3 input[type=range]');
+    var horizon  = parseFloat(c3range ? c3range.value : 12);
+
+    var st        = document.querySelectorAll('#card-5 [data-stepper]');
+    var inflation = parseFloat(st[0] && st[0].dataset.value) || 2.5;
+    var tax       = parseFloat(st[1] && st[1].dataset.value) || 25;
+    var costs     = parseFloat(st[2] && st[2].dataset.value) || 1.2;
+    var grossRate = parseFloat(st[3] && st[3].dataset.value) || 8;
+
+    var months     = horizon * 12;
+    var g          = grossRate  / 100;
+    var c          = costs      / 100;
+    var t          = tax        / 100;
+    var inf        = inflation  / 100;
+    var afterCosts = g - c;
+    var taxDrag    = afterCosts * t;
+    var netNominal = afterCosts - taxDrag;
+    var netReal    = netNominal - inf;
+    var grossFV    = inv.fv(monthly, months, g);
+    var netFV      = inv.fv(monthly, months, Math.max(netReal, 0.001));
+    var reqNominal = inv.requiredRate(monthly, months, target);
+
+    function pct(r) { return (r * 100).toFixed(1).replace(/\.0$/, '') + '%'; }
+    function upd(id, text) { var el = document.getElementById(id); if (el) el.textContent = text; }
+    function barW(id, frac) { var el = document.getElementById(id); if (el) el.style.width = Math.min(100, Math.max(0, frac * 100)).toFixed(1) + '%'; }
+    function fmtFull(n) { return '€' + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
+    var reqReal = reqNominal != null ? reqNominal - inf - c : null;
+    upd('r-req-rate', reqReal != null ? pct(reqReal) : '—');
+
+    var rb = document.getElementById('r-risk-badge');
+    if (rb && reqNominal != null) {
+      rb.className = 'badge';
+      if      (reqNominal > 0.12) { rb.classList.add('bad');  rb.textContent = '⚠ High risk'; }
+      else if (reqNominal > 0.07) { rb.classList.add('warn'); rb.textContent = '⚠ Moderate risk'; }
+      else                        { rb.classList.add('good'); rb.textContent = '✓ Achievable'; }
+    }
+
+    upd('r-gross-fv',   fmtFull(grossFV));
+    upd('r-gross-rate', 'at ' + pct(g) + ' /yr');
+    upd('r-net-fv',     fmtFull(netFV));
+    upd('r-net-rate',   'at ' + pct(netReal) + ' real');
+
+    var costsF = c / g, taxF = taxDrag / g, inflF = inf / g, netF = Math.max(netReal, 0) / g;
+    barW('r-stack-costs', costsF); barW('r-leg-costs', costsF);
+    barW('r-stack-tax',   taxF);   barW('r-leg-tax',   taxF);
+    barW('r-stack-infl',  inflF);  barW('r-leg-infl',  inflF);
+    barW('r-stack-net',   netF);   barW('r-leg-net',   netF);
+    upd('r-bv-costs', '−' + pct(c));
+    upd('r-bv-tax',   '−' + pct(taxDrag));
+    upd('r-bv-infl',  '−' + pct(inf));
+    upd('r-bv-net',   pct(Math.max(netReal, 0)));
+
+    var msg;
+    if      (c > inf)           msg = '"Costs matter more than most investors expect."';
+    else if (reqNominal > 0.12) msg = '"Consider raising monthly savings or extending your horizon."';
+    else if (inf > c * 1.5)     msg = '"Inflation silently erodes your real return."';
+    else                        msg = '"Tax compounds the wrong way — every % saved matters."';
+    upd('r-insight', msg);
+
+    var hDisp = document.getElementById('c3-h-display');
+    var hLabel = hDisp ? hDisp.textContent : (horizon + 'y');
+    upd('r-summary-plan', '€' + monthly + '/mo · ' + hLabel);
+    upd('r-summary-net',  fmtFull(netFV));
+
+  };
+
+  // (Card-4 removed — sync code no longer needed)
+  (function() {
+    var c4inp = null;
+    if (!c4inp) return;
+    c4inp.addEventListener('input', function() {
+      var c3inp = document.querySelector('#card-3 input[type=number]');
+      if (c3inp) c3inp.value = this.value;
+    });
+  })();
+
+  window.addEventListener('resize', positionCards);
+
+  // Wire invest-game links using server URL
+  (function() {
+    var gameUrl = window.location.origin + '/dashboard/investgame.html';
+    var topbarLink = document.getElementById('topbar-game-link');
+    var card7Link  = document.getElementById('card7-game-link');
+    if (topbarLink) topbarLink.href = gameUrl;
+    if (card7Link)  card7Link.href  = gameUrl;
+  })();
+
+  // Boot: activate card-0
+  go();
+</script>
+
+</body>
+</html>

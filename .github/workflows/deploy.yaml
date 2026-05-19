@@ -1,0 +1,92 @@
+name: Build and Deploy to EC2
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set image reference
+        id: meta
+        run: |
+          IMAGE="ghcr.io/${{ github.repository }}/rita:${{ github.sha }}"
+          echo "image=${IMAGE}" >> $GITHUB_OUTPUT
+
+      - name: Build and Push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.image }}
+            ghcr.io/${{ github.repository }}/rita:latest
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    env:
+      IMAGE: ${{ needs.build-and-push.outputs.image }}
+    steps:
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy container on EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} \
+            RITA_JWT_SECRET='${{ secrets.RITA_JWT_SECRET }}' \
+            GOOGLE_CLIENT_ID='${{ secrets.GOOGLE_CLIENT_ID }}' \
+            GOOGLE_CLIENT_SECRET='${{ secrets.GOOGLE_CLIENT_SECRET }}' \
+            IMAGE='${{ env.IMAGE }}' \
+            bash << 'ENDSSH'
+              set -e
+
+              # Pull the new image first (fail fast if GHCR is unreachable)
+              docker pull "$IMAGE"
+
+              # Stop and remove the old container if running
+              docker stop rita 2>/dev/null || true
+              docker rm   rita 2>/dev/null || true
+
+              # Start the new container
+              docker run -d \
+                --name rita \
+                --restart unless-stopped \
+                -p 80:8000 \
+                -e RITA_ENV=production \
+                -e RITA_JWT_SECRET="$RITA_JWT_SECRET" \
+                -e RITA_GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
+                -e RITA_GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET" \
+                -v /opt/rita_input:/app/rita_input:ro \
+                -v /opt/rita_output:/app/rita_output \
+                --memory 900m \
+                "$IMAGE"
+
+              # Wait for the health endpoint to respond
+              echo "Waiting for /health..."
+              for i in $(seq 1 20); do
+                if curl -sf http://localhost/health > /dev/null; then
+                  echo "RITA is up."
+                  exit 0
+                fi
+                sleep 3
+              done
+              echo "Health check timed out." && exit 1
+          ENDSSH

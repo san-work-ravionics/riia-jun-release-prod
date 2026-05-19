@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Step 2 — Goal (B)</title><link rel="stylesheet" href="styles.css"></head>
+<body style="margin:0;display:grid;place-items:center;min-height:100vh;background:#f0eee9">
+<div class="phone">
+  <div class="status-bar"><span>9:41</span><div class="icons">
+    <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+    <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+  </div></div>
+
+  <div class="app-bar">
+    <a class="back" href="sel-01-investor.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></a>
+    <div class="title">Goal</div>
+    <div class="step-pill">Step 2/6</div>
+  </div>
+  <div class="step-strip"><div class="seg done"></div><div class="seg active"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div></div>
+
+  <div class="body">
+    <div class="label" style="margin-top:14px">Pick one</div>
+    <div class="h1" style="margin-top:6px">What's the money for?</div>
+
+    <div class="grid-2" style="margin-top:20px;gap:12px" data-choice-group="goal">
+      <button class="tile" data-choice="edu"><div class="tile-icon"><svg width="28" height="28" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 8l9-4 9 4-9 4-9-4z"/><path d="M6 10v4c0 1.5 2.5 3 5 3s5-1.5 5-3v-4M19 9v5"/></svg></div><div class="tile-label">Education</div></button>
+      <button class="tile selected" data-choice="retire"><div class="tile-icon"><svg width="28" height="28" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 18h16M5 18V8l6-4 6 4v10M9 18v-5h4v5"/></svg></div><div class="tile-label">Retirement</div></button>
+      <button class="tile" data-choice="buy"><div class="tile-icon"><svg width="28" height="28" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 18h16M5 18V9h4M9 18v-5h4v5M13 18V9h4"/><path d="M3 9l8-6 8 6"/></svg></div><div class="tile-label">Major purchase</div></button>
+      <button class="tile" data-choice="travel"><div class="tile-icon"><svg width="28" height="28" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 14l18-7-3 12-5-5-3 5-3-3z"/></svg></div><div class="tile-label">Travel</div></button>
+      <button class="tile" data-choice="wealth"><div class="tile-icon"><svg width="28" height="28" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 18l5-6 4 3 7-9"/><path d="M14 6h5v5"/></svg></div><div class="tile-label">Wealth creation</div></button>
+      <div class="tile" style="background:transparent;border-style:dashed;cursor:default"><div style="font-size:22px;color:var(--ink-3)">+</div><div class="tile-label" style="color:var(--ink-3)">Custom</div></div>
+    </div>
+
+    <div class="sketch" style="margin-top:18px;padding:12px;display:flex;gap:10px;align-items:center">
+      <div style="flex:1">
+        <div class="label">Typical horizon</div>
+        <div class="h2" style="margin-top:2px">20–35 years</div>
+      </div>
+      <div class="hand" style="font-size:12px;color:var(--accent)">we'll<br>pre-fill →</div>
+    </div>
+  </div>
+
+  <div class="nav-bottom">
+    <a class="btn ghost icon-only" href="01-investor-a.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></a>
+    <a class="btn" href="sel-03-plan.html" style="text-decoration:none">Continue <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></a>
+  </div>
+  <div class="gesture-bar"></div>
+</div>
+<script src="app.js"></script>
+</body></html>

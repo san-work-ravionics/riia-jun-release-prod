@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Step 1 — Investor type (B)</title><link rel="stylesheet" href="styles.css"></head>
+<body style="margin:0;display:grid;place-items:center;min-height:100vh;background:#f0eee9">
+<div class="phone">
+  <div class="status-bar"><span>9:41</span><div class="icons">
+    <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+    <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+  </div></div>
+
+  <div class="app-bar">
+    <a class="back" href="00-onboarding.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></a>
+    <div class="title">Plan setup</div>
+    <div class="step-pill">Step 1/6</div>
+  </div>
+  <div class="step-strip"><div class="seg active"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div></div>
+
+  <div class="body">
+    <div class="label" style="margin-top:14px">About you</div>
+    <div class="h1" style="margin-top:6px">How far out are you<br>thinking?</div>
+
+    <div style="margin-top:28px;position:relative">
+      <div style="height:2px;background:var(--ink);position:absolute;left:28px;right:28px;top:28px"></div>
+      <div class="grid-3" style="gap:0" data-choice-group="investor-spec">
+        <button data-choice="short" style="display:flex;flex-direction:column;align-items:center;gap:6px;border:none;background:transparent;cursor:pointer;padding:0 4px;font-family:inherit;text-align:center">
+          <div style="width:56px;height:56px;border-radius:50%;border:2px solid var(--ink);background:#fff;display:grid;place-items:center;font-size:11px;font-weight:700;position:relative;z-index:1">1y</div>
+          <div style="font-size:11px;font-weight:600;margin-top:4px;line-height:1.25">I can take risk</div>
+          <div class="tiny" style="line-height:1.3">For a vacation or event</div>
+        </button>
+        <button data-choice="goal" class="selected" style="display:flex;flex-direction:column;align-items:center;gap:6px;border:none;background:transparent;cursor:pointer;padding:0 4px;font-family:inherit;text-align:center">
+          <div style="width:56px;height:56px;border-radius:50%;border:2px solid var(--ink);background:var(--ink);color:var(--paper);display:grid;place-items:center;font-size:11px;font-weight:700;position:relative;z-index:1">5y</div>
+          <div style="font-size:11px;font-weight:600;margin-top:4px;line-height:1.25">Steady growth</div>
+          <div class="tiny" style="line-height:1.3">Around 5 years</div>
+        </button>
+        <button data-choice="long" style="display:flex;flex-direction:column;align-items:center;gap:6px;border:none;background:transparent;cursor:pointer;padding:0 4px;font-family:inherit;text-align:center">
+          <div style="width:56px;height:56px;border-radius:50%;border:2px solid var(--ink);background:#fff;display:grid;place-items:center;font-size:11px;font-weight:700;position:relative;z-index:1">10–15y</div>
+          <div style="font-size:11px;font-weight:600;margin-top:4px;line-height:1.25">Protect capital</div>
+          <div class="tiny" style="line-height:1.3">With decent returns</div>
+        </button>
+      </div>
+    </div>
+
+    <div class="sketch fill" style="margin-top:28px;padding:14px">
+      <div class="label">Your selection</div>
+      <div class="h2" style="margin-top:4px">Steady growth · ~5 years</div>
+      <div class="hand" style="font-size:13px;color:var(--accent);margin-top:8px">✓ we'll tune the calculator for this</div>
+    </div>
+  </div>
+
+  <div class="nav-bottom">
+    <a class="btn ghost icon-only" href="00-onboarding.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></a>
+    <a class="btn" href="02-goal-a.html" style="text-decoration:none">Continue <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></a>
+  </div>
+  <div class="gesture-bar"></div>
+</div>
+<script src="app.js"></script>
+</body></html>

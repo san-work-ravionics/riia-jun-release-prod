@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RIIA — Trial Invest Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500&family=Epilogue:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+:root{
+  --bg:#F5F3EE;--surface:#FFFFFF;--surface2:#F9F8F5;--border:#E4E0D8;--border2:#D0CBBC;
+  --text:#1A1814;--t2:#4A4640;--t3:#8C877A;--t4:#B8B2A6;
+  --ok:#1A6B3C;--ok-bg:#EDF7F2;--ok-bd:#B6DEC9;
+  --danger:#9B1C1C;--danger-bg:#FEF2F2;--danger-bd:#FCA5A5;
+  --info:#0056B8;
+  --game:#B45309;--game-bg:#FEF3C7;--game-bd:#FCD34D;--game-light:#FFFBEB;
+  --fd:'Epilogue',sans-serif;--fm:'IBM Plex Mono',monospace;--fs:'Instrument Serif',serif;
+  --r:6px;
+  --sh:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+}
+body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px;line-height:1.5;min-height:100vh;}
+
+/* ── Topbar ── */
+.topbar{background:var(--surface);border-bottom:1.5px solid var(--border);display:flex;align-items:center;padding:0 20px;height:52px;position:sticky;top:0;z-index:200;box-shadow:var(--sh);}
+.logo{display:flex;align-items:center;gap:9px;text-decoration:none;color:inherit;}
+.logo-icon{width:26px;height:26px;background:var(--text);border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.logo-icon svg{fill:var(--surface);}
+.logo-name{font-family:var(--fs);font-size:16px;letter-spacing:-.01em;}
+.logo-sub{color:var(--t3);font-size:10px;font-family:var(--fm);}
+.t-sep{width:1px;height:24px;background:var(--border);margin:0 14px;}
+.t-crumb{font-family:var(--fm);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;}
+.game-phase-badge{display:inline-flex;align-items:center;background:var(--game-bg);border:1px solid var(--game-bd);border-radius:100px;padding:2px 10px;font-family:var(--fm);font-size:10px;color:var(--game);margin-left:10px;font-weight:500;}
+.t-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.t-nav-link{font-family:var(--fm);font-size:11px;color:var(--t3);text-decoration:none;padding:4px 10px;border:1px solid var(--border);border-radius:var(--r);transition:color .12s,border-color .12s;}
+.t-nav-link:hover{color:var(--text);border-color:var(--border2);}
+
+/* ── Layout ── */
+.game-main{max-width:100%;padding:20px 28px 60px;}
+.game-row{background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:16px;box-shadow:var(--sh);}
+.top-row-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.top-row-grid .game-row{margin-bottom:0;}
+.row-hdr{display:flex;align-items:center;gap:10px;margin-bottom:18px;}
+.row-hdr h2{font-family:var(--fs);font-size:18px;font-weight:400;}
+.row-badge{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.1em;padding:2px 9px;border-radius:100px;background:var(--game-bg);border:1px solid var(--game-bd);color:var(--game);}
+
+/* ── Controls ── */
+.controls-body{display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap;}
+.ctrl-group{display:flex;flex-direction:column;gap:6px;}
+.ctrl-group label{font-family:var(--fm);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;}
+.pill-group{display:flex;border:1.5px solid var(--border);border-radius:100px;overflow:hidden;}
+.pill{padding:7px 18px;border:none;background:transparent;font-family:var(--fd);font-size:12px;font-weight:500;color:var(--t3);cursor:pointer;transition:all .12s;display:flex;align-items:center;gap:6px;}
+.pill:first-child{border-right:1.5px solid var(--border);}
+.pill.active{background:var(--game-bg);color:var(--game);}
+.pill-ccy{font-family:var(--fm);font-size:10px;color:var(--t4);}
+.pill.active .pill-ccy{color:var(--game);opacity:.7;}
+input[type="date"]{font-family:var(--fm);font-size:12px;color:var(--text);background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:6px 10px;outline:none;transition:border-color .12s;}
+input[type="date"]:focus{border-color:var(--game);}
+.ctrl-actions{flex-direction:row;gap:8px;align-items:flex-end;}
+.btn{padding:7px 18px;border-radius:var(--r);border:1.5px solid transparent;font-family:var(--fd);font-size:12px;font-weight:600;cursor:pointer;transition:all .14s;}
+.btn-primary{background:var(--game);color:#fff;border-color:var(--game);}
+.btn-primary:hover:not(:disabled){background:#92400E;}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed;}
+.btn-ghost{background:var(--surface2);color:var(--t2);border-color:var(--border);}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text);}
+.selected-range-info{display:flex;align-items:center;gap:8px;margin-top:12px;font-family:var(--fm);font-size:11px;color:var(--ok);background:var(--ok-bg);border:1px solid var(--ok-bd);border-radius:var(--r);padding:6px 14px;}
+.selected-range-info .range-label{color:var(--t3);font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin-right:4px;}
+
+/* ── P&L ── */
+.progress-wrap{display:flex;align-items:center;gap:12px;}
+.progress-bar{flex:1;height:8px;background:var(--border);border-radius:100px;overflow:hidden;}
+#progress-fill{height:100%;background:linear-gradient(90deg,var(--game),#F59E0B);border-radius:100px;transition:width .4s ease;}
+#progress-label-text{font-family:var(--fm);font-size:10px;color:var(--t3);white-space:nowrap;}
+.pnl-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px;}
+.pnl-table th{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.1em;padding:6px 12px;text-align:left;border-bottom:1.5px solid var(--border);background:var(--surface2);}
+.pnl-table td{padding:6px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.pnl-metric-col{width:110px;}
+.pnl-you-hdr{color:var(--info);}
+.pnl-ai-hdr{color:var(--game);}
+.pnl-row-label{font-family:var(--fm);font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;}
+.pnl-sep{color:var(--t4);margin:0 5px;font-family:var(--fm);font-size:10px;}
+.pnl-value{font-family:var(--fm);font-size:12px;color:var(--text);font-weight:500;}
+.pnl-value.pos{color:var(--ok);}
+.pnl-value.neg{color:var(--danger);}
+.pnl-value.cost{color:var(--t3);}
+.pnl-net-row td{background:var(--surface2);border-top:1.5px solid var(--border);border-bottom:none;}
+.pnl-net-row .pnl-value{font-size:14px;font-weight:700;}
+
+/* ── Winner banner ── */
+.winner-banner{position:sticky;top:52px;z-index:150;display:flex;align-items:center;justify-content:center;gap:14px;padding:10px 28px;border-bottom:2px solid var(--game-bd);background:var(--game-bg);}
+.winner-banner-label{font-family:var(--fs);font-size:16px;color:var(--game);}
+#winner-badge{display:inline-block;padding:5px 22px;border-radius:100px;font-family:var(--fd);font-size:13px;font-weight:700;}
+#winner-badge.you-win{background:var(--ok);color:#fff;}
+#winner-badge.ai-wins{background:var(--danger);color:#fff;}
+#winner-badge.tie{background:var(--game);color:#fff;}
+
+/* ── Transposed Journal table ── */
+.table-wrap{overflow-x:auto;}
+#game-table{border-collapse:collapse;font-size:11px;white-space:nowrap;width:100%;}
+#game-table th,#game-table td{padding:0;border:1px solid var(--border);}
+.row-label{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);padding:6px 10px;background:var(--surface2);white-space:nowrap;min-width:60px;vertical-align:middle;}
+.day-col{font-family:var(--fm);font-size:10px;font-weight:500;color:var(--text);padding:6px 8px;text-align:center;background:var(--surface2);min-width:90px;}
+.greyed-out{opacity:.25;pointer-events:none;}
+.day-col.warmup{color:var(--t3);}
+.day-col.active-col{background:var(--game-bg);color:var(--game);}
+.day-tag{display:block;font-size:8px;font-weight:400;color:var(--t4);text-transform:uppercase;letter-spacing:.05em;margin-top:1px;}
+.day-data{padding:6px 8px;text-align:center;vertical-align:middle;font-family:var(--fm);font-size:11px;color:var(--t2);min-width:90px;}
+.day-data.warmup{background:var(--surface2);color:var(--t3);}
+.day-data.active-col{background:var(--game-light);}
+.col-actions{display:flex;flex-direction:column;gap:3px;}
+.btn-buy,.btn-sell,.btn-hold{width:100%;padding:3px 6px;border-radius:4px;border:1.5px solid;font-family:var(--fd);font-size:10px;font-weight:600;cursor:pointer;transition:all .12s;}
+.btn-buy{background:var(--ok-bg);color:var(--ok);border-color:var(--ok-bd);}
+.btn-buy:hover:not(:disabled){background:var(--ok);color:#fff;}
+.btn-sell{background:var(--danger-bg);color:var(--danger);border-color:var(--danger-bd);}
+.btn-sell:hover:not(:disabled){background:var(--danger);color:#fff;}
+.btn-hold{background:var(--surface2);color:var(--t2);border-color:var(--border2);}
+.btn-hold:hover:not(:disabled){background:var(--border);color:var(--text);}
+.btn-buy:disabled,.btn-sell:disabled,.btn-hold:disabled{opacity:.35;cursor:not-allowed;}
+.btn-buy.selected{background:var(--ok);color:#fff;}
+.btn-sell.selected{background:var(--danger);color:#fff;}
+.btn-hold.selected{background:var(--game-bg);color:var(--game);border-color:var(--game-bd);}
+.ai-cell{font-family:var(--fm);font-size:11px;font-weight:500;}
+.ai-cell.ai-buy{color:var(--ok);}
+.ai-cell.ai-sell{color:var(--danger);}
+.ai-cell.ai-hold{color:var(--t2);}
+.pnl-cell{font-family:var(--fm);font-size:11px;}
+.pnl-cell.pos{color:var(--ok);}
+.pnl-cell.neg{color:var(--danger);}
+.gate-cell{display:flex;flex-direction:column;gap:2px;align-items:center;}
+.gate-rule{font-family:var(--fm);font-size:9px;color:var(--t3);white-space:normal;text-align:center;max-width:110px;}
+.comp-insight{font-size:10px;color:var(--t3);font-style:italic;white-space:normal;text-align:center;max-width:110px;}
+.status-badge{display:inline-flex;align-items:center;font-family:var(--fm);font-size:9px;padding:1px 7px;border-radius:100px;border:1px solid;}
+.status-badge.ok{background:var(--ok-bg);color:var(--ok);border-color:var(--ok-bd);}
+.status-badge.flag{background:var(--danger-bg);color:var(--danger);border-color:var(--danger-bd);}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="logo" href="index.html">
+    <div class="logo-icon">
+      <svg width="15" height="15" viewBox="0 0 16 16"><path d="M8 1L1 5v6l7 4 7-4V5L8 1zm0 1.8L13.5 6 8 9.2 2.5 6 8 2.8zM2 7.1l5.5 3.2v3.9L2 11V7.1zm7.5 7.1v-3.9L15 7.1V11l-5.5 3.2z"/></svg>
+    </div>
+    <span class="logo-name">RIIA</span>
+    <span class="logo-sub">v1.0.0</span>
+  </a>
+  <div class="t-sep"></div>
+  <span class="t-crumb">Trial Invest Game</span>
+  <span class="game-phase-badge">Mock Mode</span>
+  <div class="t-right">
+    <a href="index.html" class="t-nav-link">← Home</a>
+    <a href="rita.html" class="t-nav-link">RITA</a>
+    <a href="ops.html" class="t-nav-link">Ops</a>
+  </div>
+</header>
+
+<div id="winner-banner" class="winner-banner" style="display:none">
+  <span class="winner-banner-label">Game Over</span>
+  <div id="winner-badge">—</div>
+</div>
+
+<main class="game-main">
+
+  <div class="top-row-grid">
+    <section id="row-controls" class="game-row">
+      <div class="row-hdr">
+        <h2>Configure Your Game</h2>
+        <span class="row-badge">Setup</span>
+      </div>
+      <div class="controls-body">
+        <div class="ctrl-group">
+          <label>Instrument</label>
+          <div class="pill-group">
+            <button id="pill-asml" class="pill active">ASML <span class="pill-ccy">EUR</span></button>
+            <button id="pill-nvidia" class="pill">NVIDIA <span class="pill-ccy">USD</span></button>
+          </div>
+        </div>
+        <div class="ctrl-group">
+          <label>Start Date</label>
+          <input type="date" id="start-date" min="2025-01-01" value="2025-01-01">
+        </div>
+        <div class="ctrl-group">
+          <label>End Date</label>
+          <input type="date" id="end-date">
+        </div>
+        <div class="ctrl-group ctrl-actions">
+          <button id="btn-select-days" class="btn btn-primary" disabled>Select Days</button>
+          <button id="btn-new-game" class="btn btn-ghost" style="display:none">&#8635; New Game</button>
+        </div>
+      </div>
+      <div id="selection-label" class="selected-range-info" style="display:none">
+        <span class="range-label">Selected</span>
+        <span id="selected-instrument">—</span> &mdash;
+        <span id="selected-range-text">—</span> &nbsp;·&nbsp;
+        <span id="selected-days-count">8 trading days</span>
+      </div>
+    </section>
+
+    <section id="row-performance" class="game-row" style="display:none">
+      <table class="pnl-table">
+        <thead>
+          <tr>
+            <th class="pnl-metric-col"></th>
+            <th class="pnl-you-hdr">You</th>
+            <th class="pnl-ai-hdr">AI Agent</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="pnl-row-label">Cash / Portfolio</td>
+            <td><span id="user-cash" class="pnl-value">€5,000.00</span><span class="pnl-sep">/</span><span id="user-portfolio" class="pnl-value">€0.00</span></td>
+            <td><span id="ai-cash" class="pnl-value">€5,000.00</span><span class="pnl-sep">/</span><span id="ai-portfolio" class="pnl-value">€0.00</span></td>
+          </tr>
+          <tr>
+            <td class="pnl-row-label">Costs / Tax</td>
+            <td><span id="user-costs" class="pnl-value cost">−€0.00</span><span class="pnl-sep">/</span><span id="user-tax" class="pnl-value cost">−€0.00</span></td>
+            <td><span id="ai-costs" class="pnl-value cost">−€0.00</span><span class="pnl-sep">/</span><span id="ai-tax" class="pnl-value cost">−€0.00</span></td>
+          </tr>
+          <tr class="pnl-net-row">
+            <td class="pnl-row-label">Net Value</td>
+            <td><span id="user-net" class="pnl-value">€5,000.00</span></td>
+            <td><span id="ai-net" class="pnl-value">€5,000.00</span></td>
+          </tr>
+          <tr id="budget-row" style="display:none">
+            <td class="pnl-row-label">Budget</td>
+            <td><div id="budget-display" style="font-family:var(--fm);font-size:11px;display:flex;gap:10px;align-items:center"></div></td>
+            <td><div id="ai-budget-display" style="font-family:var(--fm);font-size:11px;display:flex;gap:10px;align-items:center"></div></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="progress-wrap">
+        <div class="progress-bar"><div id="progress-fill" style="width:0%"></div></div>
+        <span id="progress-label-text">Day 0 of 8</span>
+      </div>
+    </section>
+  </div>
+
+  <!-- Investing Journal — days = columns (3–10 active, 1–2 warmup) -->
+  <section id="row-game-table" class="game-row">
+    <div class="row-hdr">
+      <h2>Investing Journal</h2>
+    </div>
+    <div class="table-wrap">
+      <table id="game-table">
+        <thead>
+          <tr>
+            <th class="row-label"></th>
+            <th id="game-row-1" class="day-col warmup">1<span class="day-tag">Warm-up</span></th>
+            <th id="game-row-2" class="day-col warmup">2<span class="day-tag">Warm-up</span></th>
+            <th id="game-row-3"  class="day-col" data-day="3"  style="display:none">3</th>
+            <th id="game-row-4"  class="day-col" data-day="4"  style="display:none">4</th>
+            <th id="game-row-5"  class="day-col" data-day="5"  style="display:none">5</th>
+            <th id="game-row-6"  class="day-col" data-day="6"  style="display:none">6</th>
+            <th id="game-row-7"  class="day-col" data-day="7"  style="display:none">7</th>
+            <th id="game-row-8"  class="day-col" data-day="8"  style="display:none">8</th>
+            <th id="game-row-9"  class="day-col" data-day="9"  style="display:none">9</th>
+            <th id="game-row-10" class="day-col" data-day="10" style="display:none">10</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Date -->
+          <tr>
+            <td class="row-label">Date</td>
+            <td id="row1-date" class="day-data warmup">—</td>
+            <td id="row2-date" class="day-data warmup">—</td>
+            <td id="row3-date"  class="day-data" data-day="3"  style="display:none">—</td>
+            <td id="row4-date"  class="day-data" data-day="4"  style="display:none">—</td>
+            <td id="row5-date"  class="day-data" data-day="5"  style="display:none">—</td>
+            <td id="row6-date"  class="day-data" data-day="6"  style="display:none">—</td>
+            <td id="row7-date"  class="day-data" data-day="7"  style="display:none">—</td>
+            <td id="row8-date"  class="day-data" data-day="8"  style="display:none">—</td>
+            <td id="row9-date"  class="day-data" data-day="9"  style="display:none">—</td>
+            <td id="row10-date" class="day-data" data-day="10" style="display:none">—</td>
+          </tr>
+          <!-- Price -->
+          <tr>
+            <td class="row-label">Price</td>
+            <td id="row1-price" class="day-data warmup">—</td>
+            <td id="row2-price" class="day-data warmup">—</td>
+            <td id="row3-price"  class="day-data" data-day="3"  style="display:none">—</td>
+            <td id="row4-price"  class="day-data" data-day="4"  style="display:none">—</td>
+            <td id="row5-price"  class="day-data" data-day="5"  style="display:none">—</td>
+            <td id="row6-price"  class="day-data" data-day="6"  style="display:none">—</td>
+            <td id="row7-price"  class="day-data" data-day="7"  style="display:none">—</td>
+            <td id="row8-price"  class="day-data" data-day="8"  style="display:none">—</td>
+            <td id="row9-price"  class="day-data" data-day="9"  style="display:none">—</td>
+            <td id="row10-price" class="day-data" data-day="10" style="display:none">—</td>
+          </tr>
+          <!-- Action -->
+          <tr>
+            <td class="row-label">Action</td>
+            <td class="day-data warmup">—</td>
+            <td class="day-data warmup">—</td>
+            <td class="day-data" data-day="3"  style="display:none"><div class="col-actions"><button id="buy-3"  class="btn-buy"  disabled>Buy</button><button id="sell-3"  class="btn-sell" disabled>Sell</button><button id="hold-3"  class="btn-hold" disabled>Hold</button></div></td>
+            <td class="day-data" data-day="4"  style="display:none"><div class="col-actions"><button id="buy-4"  class="btn-buy"  disabled>Buy</button><button id="sell-4"  class="btn-sell" disabled>Sell</button><button id="hold-4"  class="btn-hold" disabled>Hold</button></div></td>
+            <td class="day-data" data-day="5"  style="display:none"><div class="col-actions"><button id="buy-5"  class="btn-buy"  disabled>Buy</button><button id="sell-5"  class="btn-sell" disabled>Sell</button><button id="hold-5"  class="btn-hold" disabled>Hold</button></div></td>
+            <td class="day-data" data-day="6"  style="display:none"><div class="col-actions"><button id="buy-6"  class="btn-buy"  disabled>Buy</button><button id="sell-6"  class="btn-sell" disabled>Sell</button><button id="hold-6"  class="btn-hold" disabled>Hold</button></div></td>
+            <td class="day-data" data-day="7"  style="display:none"><div class="col-actions"><button id="buy-7"  class="btn-buy"  disabled>Buy</button><button id="sell-7"  class="btn-sell" disabled>Sell</button><button id="hold-7"  class="btn-hold" disabled>Hold</button></div></td>
+            <td class="day-data" data-day="8"  style="display:none"><div class="col-actions"><button id="buy-8"  class="btn-buy"  disabled>Buy</button><button id="sell-8"  class="btn-sell" disabled>Sell</button><button id="hold-8"  class="btn-hold" disabled>Hold</button></div></td>
+            <td class="day-data" data-day="9"  style="display:none"><div class="col-actions"><button id="buy-9"  class="btn-buy"  disabled>Buy</button><button id="sell-9"  class="btn-sell" disabled>Sell</button><button id="hold-9"  class="btn-hold" disabled>Hold</button></div></td>
+            <td class="day-data" data-day="10" style="display:none"><div class="col-actions"><button id="buy-10" class="btn-buy"  disabled>Buy</button><button id="sell-10" class="btn-sell" disabled>Sell</button><button id="hold-10" class="btn-hold" disabled>Hold</button></div></td>
+          </tr>
+          <!-- AI Action -->
+          <tr>
+            <td class="row-label">AI Action</td>
+            <td class="day-data warmup">—</td>
+            <td class="day-data warmup">—</td>
+            <td id="ai-cell-3"  class="day-data ai-cell" data-day="3"  style="display:none">—</td>
+            <td id="ai-cell-4"  class="day-data ai-cell" data-day="4"  style="display:none">—</td>
+            <td id="ai-cell-5"  class="day-data ai-cell" data-day="5"  style="display:none">—</td>
+            <td id="ai-cell-6"  class="day-data ai-cell" data-day="6"  style="display:none">—</td>
+            <td id="ai-cell-7"  class="day-data ai-cell" data-day="7"  style="display:none">—</td>
+            <td id="ai-cell-8"  class="day-data ai-cell" data-day="8"  style="display:none">—</td>
+            <td id="ai-cell-9"  class="day-data ai-cell" data-day="9"  style="display:none">—</td>
+            <td id="ai-cell-10" class="day-data ai-cell" data-day="10" style="display:none">—</td>
+          </tr>
+          <!-- Gate -->
+          <tr>
+            <td class="row-label">Gate</td>
+            <td class="day-data warmup">—</td>
+            <td class="day-data warmup">—</td>
+            <td class="day-data" data-day="3"  style="display:none"><div class="gate-cell"><span id="comp-status-3">—</span><span id="comp-rule-3"   class="gate-rule">—</span></div></td>
+            <td class="day-data" data-day="4"  style="display:none"><div class="gate-cell"><span id="comp-status-4">—</span><span id="comp-rule-4"   class="gate-rule">—</span></div></td>
+            <td class="day-data" data-day="5"  style="display:none"><div class="gate-cell"><span id="comp-status-5">—</span><span id="comp-rule-5"   class="gate-rule">—</span></div></td>
+            <td class="day-data" data-day="6"  style="display:none"><div class="gate-cell"><span id="comp-status-6">—</span><span id="comp-rule-6"   class="gate-rule">—</span></div></td>
+            <td class="day-data" data-day="7"  style="display:none"><div class="gate-cell"><span id="comp-status-7">—</span><span id="comp-rule-7"   class="gate-rule">—</span></div></td>
+            <td class="day-data" data-day="8"  style="display:none"><div class="gate-cell"><span id="comp-status-8">—</span><span id="comp-rule-8"   class="gate-rule">—</span></div></td>
+            <td class="day-data" data-day="9"  style="display:none"><div class="gate-cell"><span id="comp-status-9">—</span><span id="comp-rule-9"   class="gate-rule">—</span></div></td>
+            <td class="day-data" data-day="10" style="display:none"><div class="gate-cell"><span id="comp-status-10">—</span><span id="comp-rule-10" class="gate-rule">—</span></div></td>
+          </tr>
+          <!-- Insight -->
+          <tr>
+            <td class="row-label">Insight</td>
+            <td class="day-data warmup">—</td>
+            <td class="day-data warmup">—</td>
+            <td id="comp-insight-3"  class="day-data comp-insight" data-day="3"  style="display:none">—</td>
+            <td id="comp-insight-4"  class="day-data comp-insight" data-day="4"  style="display:none">—</td>
+            <td id="comp-insight-5"  class="day-data comp-insight" data-day="5"  style="display:none">—</td>
+            <td id="comp-insight-6"  class="day-data comp-insight" data-day="6"  style="display:none">—</td>
+            <td id="comp-insight-7"  class="day-data comp-insight" data-day="7"  style="display:none">—</td>
+            <td id="comp-insight-8"  class="day-data comp-insight" data-day="8"  style="display:none">—</td>
+            <td id="comp-insight-9"  class="day-data comp-insight" data-day="9"  style="display:none">—</td>
+            <td id="comp-insight-10" class="day-data comp-insight" data-day="10" style="display:none">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<script type="module" src="js/invest-game/main.js"></script>
+</body>
+</html>

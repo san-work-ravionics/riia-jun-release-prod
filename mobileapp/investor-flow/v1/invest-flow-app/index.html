@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1440, initial-scale=1">
+<title>Invest-Flow · Wireframes</title>
+<link rel="stylesheet" href="styles.css">
+<template id="__bundler_thumbnail" data-bg-color="#f0eee9">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#f0eee9"/>
+    <g transform="translate(380,180)" stroke="#1a1a1a" stroke-width="3" fill="#fafaf7">
+      <rect x="0" y="0" width="130" height="240" rx="14"/>
+      <rect x="160" y="0" width="130" height="240" rx="14"/>
+      <rect x="320" y="0" width="130" height="240" rx="14"/>
+    </g>
+    <g transform="translate(380,440)" fill="#00b46e">
+      <rect x="20" y="20" width="80" height="6" rx="3"/>
+      <rect x="180" y="20" width="80" height="6" rx="3"/>
+      <rect x="340" y="20" width="80" height="6" rx="3"/>
+    </g>
+    <text x="600" y="540" text-anchor="middle" font-family="Inter,sans-serif" font-size="28" font-weight="700" fill="#1a1a1a">Invest-Flow Wireframes</text>
+  </svg>
+</template>
+<style>
+  html, body { margin: 0; padding: 0; background: #f0eee9; min-height: 100vh; font-family: 'Inter', system-ui, sans-serif; color: #1a1a1a; }
+  .canvas { padding: 40px 48px 80px; }
+  .canvas-header { margin-bottom: 32px; max-width: 720px; }
+  .canvas-header h1 { font-size: 28px; margin: 0 0 6px; font-weight: 700; letter-spacing: -0.01em; }
+  .canvas-header p { font-size: 14px; color: rgba(0,0,0,.6); margin: 0; line-height: 1.5; }
+  .section { margin-bottom: 56px; }
+  .section-title { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+  .section-sub { font-size: 13px; color: rgba(0,0,0,.55); margin: 0 0 18px; }
+  .row { display: flex; gap: 32px; flex-wrap: wrap; align-items: flex-start; }
+  .frame { display: flex; flex-direction: column; gap: 8px; }
+  .frame-label { font-size: 12px; color: rgba(0,0,0,.55); padding-left: 4px; font-weight: 500; }
+  .frame iframe {
+    width: 360px; height: 780px;
+    border: none;
+    background: #fafaf7;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+    border-radius: 2px;
+    display: block;
+  }
+  .frame a {
+    color: rgba(0,0,0,.4);
+    font-size: 11px;
+    text-decoration: none;
+    padding-left: 4px;
+  }
+  .frame a:hover { color: #00b46e; text-decoration: underline; }
+  .helper-pill {
+    display: inline-block;
+    background: #fff;
+    border: 1.5px solid #1a1a1a;
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 12px;
+    margin-bottom: 24px;
+  }
+</style>
+</head>
+<body>
+<div class="canvas">
+  <div class="canvas-header">
+    <h1>Invest-Flow · Android wireframes</h1>
+    <p>Lo-fi clean wireframes for the investor portal. Two variations on Steps 1, 2 & 6 — the rest are single takes. Open any frame in a new tab to interact directly — Continue/Back links walk the full flow.</p>
+    <div class="helper-pill" style="margin-top:14px">Start the tap-through: <a href="00-onboarding.html" target="_blank" style="color:#00b46e;font-weight:600;">open onboarding ↗</a></div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">0 · Onboarding intro</h2>
+    <p class="section-sub">Front door before Step 1 — sets the value prop.</p>
+    <div class="row">
+      <div class="frame">
+        <span class="frame-label">A · Welcome</span>
+        <iframe src="00-onboarding.html" loading="lazy"></iframe>
+        <a href="00-onboarding.html" target="_blank">open ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">1 · Investor type</h2>
+    <p class="section-sub">Set context. Pre-selects a risk profile.</p>
+    <div class="row">
+      <div class="frame">
+        <span class="frame-label">A · List with risk meta</span>
+        <iframe src="01-investor-a.html" loading="lazy"></iframe>
+        <a href="01-investor-a.html" target="_blank">open ↗</a>
+      </div>
+      <div class="frame">
+        <span class="frame-label">B · Horizon spectrum</span>
+        <iframe src="01-investor-b.html" loading="lazy"></iframe>
+        <a href="01-investor-b.html" target="_blank">open ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">2 · Goal</h2>
+    <p class="section-sub">What is the money for?</p>
+    <div class="row">
+      <div class="frame">
+        <span class="frame-label">A · List with dynamic hint</span>
+        <iframe src="02-goal-a.html" loading="lazy"></iframe>
+        <a href="02-goal-a.html" target="_blank">open ↗</a>
+      </div>
+      <div class="frame">
+        <span class="frame-label">B · Tile grid</span>
+        <iframe src="02-goal-b.html" loading="lazy"></iframe>
+        <a href="02-goal-b.html" target="_blank">open ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">3 + 4 · Timeline & numbers</h2>
+    <p class="section-sub">Grouped — slider + amounts on one screen.</p>
+    <div class="row">
+      <div class="frame">
+        <span class="frame-label">A · Stacked</span>
+        <iframe src="03-plan-a.html" loading="lazy"></iframe>
+        <a href="03-plan-a.html" target="_blank">open ↗</a>
+      </div>
+      <div class="frame">
+        <span class="frame-label">B · Solve-for toggle</span>
+        <iframe src="03-plan-b.html" loading="lazy"></iframe>
+        <a href="03-plan-b.html" target="_blank">open ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">5 · Advanced settings</h2>
+    <p class="section-sub">Collapsed by default · pre-filled defaults.</p>
+    <div class="row">
+      <div class="frame">
+        <span class="frame-label">A · Accordion + steppers</span>
+        <iframe src="05-advanced.html" loading="lazy"></iframe>
+        <a href="05-advanced.html" target="_blank">open ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">6 · Results — the core experience</h2>
+    <p class="section-sub">Side-by-side gross vs. net. Your differentiator.</p>
+    <div class="row">
+      <div class="frame">
+        <span class="frame-label">A · Compare card + waterfall + chart</span>
+        <iframe src="06-results-a.html" loading="lazy"></iframe>
+        <a href="06-results-a.html" target="_blank">open ↗</a>
+      </div>
+      <div class="frame">
+        <span class="frame-label">B · Storytelling stack</span>
+        <iframe src="06-results-b.html" loading="lazy"></iframe>
+        <a href="06-results-b.html" target="_blank">open ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">7 · Actions · Rita handoff</h2>
+    <p class="section-sub">Adjust · recalc · start in Rita.</p>
+    <div class="row">
+      <div class="frame">
+        <span class="frame-label">A · Action stack</span>
+        <iframe src="07-actions.html" loading="lazy"></iframe>
+        <a href="07-actions.html" target="_blank">open ↗</a>
+      </div>
+      <div class="frame">
+        <span class="frame-label">→ Rita app handoff</span>
+        <iframe src="08-rita.html" loading="lazy"></iframe>
+        <a href="08-rita.html" target="_blank">open ↗</a>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

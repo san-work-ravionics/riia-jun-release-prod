@@ -1,0 +1,31 @@
+{
+  "run_id": "20260518-0720",
+  "app": "ops",
+  "request": "/agent-performance-improvements — recalibrate alert thresholds in aggregate_metrics.py: FC-001 uses recent_fires>0, engineer uses recent_first_pass_rate, CSAT requires csat_count>=3, API error split into 15% combined + 2% 5xx; skill_version_history after_first_pass_rate set to 1.0 for all 3 skill files",
+  "skill_file": "n/a",
+  "agents": [
+    {
+      "role": "engineer",
+      "status": "pass",
+      "steps_required": 3,
+      "steps_completed": 3,
+      "adherence_score": 1.0,
+      "token_estimate": 1200,
+      "grounding_checks": {
+        "branch_created": false,
+        "code_changed": true,
+        "spec_updated": false,
+        "ruff_passed": true,
+        "contract_matches_architect": true
+      },
+      "failure_modes": [],
+      "notes": "aggregate_metrics.py: 5 targeted edits. metrics.json: after_first_pass_rate=1.0 for all 3 skill files. Commit: da99cb9. Alerts after fix: CSAT 3.0 (legitimate, 7 data points)."
+    }
+  ],
+  "overall_status": "pass",
+  "total_tokens_estimated": 1200,
+  "duration_minutes": 8,
+  "branch": "master",
+  "merge_status": "merged",
+  "merge_commit": "da99cb9"
+}

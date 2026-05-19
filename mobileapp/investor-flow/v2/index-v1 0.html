@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Invest — Onboarding Flow</title>
+  <link rel="stylesheet" href="../v1/invest-flow-app/styles.css">
+  <style>
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: #f0eee9;
+      overflow-x: hidden;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       STAGE — wide canvas. Cards animate between three zones:
+         left pile  (waiting — all cards start here, staggered)
+         center     (active  — current screen, full size)
+         far-left   (done    — completed, grey slivers)
+    ═══════════════════════════════════════════════════════════════ */
+    .stage {
+      position: relative;
+      width: 900px;
+      height: 650px;
+      overflow: hidden;
+    }
+
+    /* ── Card shell ─────────────────────────────────────────────── */
+    .card {
+      position: absolute;
+      top: 20px;
+      width: 280px;
+      height: 610px;
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.07);
+      transition: all 0.65s cubic-bezier(0.25, 1, 0.5, 1);
+      cursor: default;
+    }
+
+    /* Phone shell (360×780) scaled to fit the 280×560 card */
+    .card .phone {
+      width: 360px  !important;
+      height: 780px !important;
+      transform: scale(0.778);
+      transform-origin: top left;
+      border-radius: 0 !important;
+    }
+
+    /* ── WAITING — left pile, all cards start here ──────────────── */
+    .card.waiting {
+      opacity: 0.35;
+      filter: grayscale(0.8);
+      z-index: 1;
+    }
+
+    /* Per-card initial stagger: front card fully visible,
+       each successive card 16 px further right and more faded */
+    /* Only the front card of the queue peeks as a sliver — others stack behind it */
+    #card-0.waiting { transform: translateX(862px); z-index: 8; opacity: 1.00; filter: none; }
+    #card-1.waiting { transform: translateX(870px); z-index: 7; opacity: 0.72; filter: grayscale(0.2); }
+    #card-2.waiting { transform: translateX(876px); z-index: 6; opacity: 0.60; filter: grayscale(0.4); }
+    #card-3.waiting { transform: translateX(881px); z-index: 5; opacity: 0.50; filter: grayscale(0.6); }
+    #card-4.waiting { transform: translateX(885px); z-index: 4; opacity: 0.42; filter: grayscale(0.7); }
+    #card-5.waiting { transform: translateX(888px); z-index: 3; opacity: 0.36; filter: grayscale(0.8); }
+    #card-6.waiting { transform: translateX(891px); z-index: 2; opacity: 0.30; filter: grayscale(1); }
+    #card-7.waiting { transform: translateX(893px); z-index: 1; opacity: 0.25; filter: grayscale(1); }
+
+    /* ── ACTIVE — centre of stage ───────────────────────────────── */
+    .card.active {
+      transform: translateX(310px) !important;
+      opacity: 1;
+      filter: none;
+      z-index: 10;
+      box-shadow: 0 24px 56px rgba(0,0,0,0.18);
+      border: 2px solid #1a1a1a;
+    }
+
+    /* ── DONE — tiny sliver peeking from far left ───────────────── */
+    .card.done {
+      opacity: 0.38;
+      filter: grayscale(1);
+      z-index: 1;
+    }
+    /* Stack done cards so each sliver is slightly offset */
+    .card.done:nth-child(1)  { transform: translateX(-232px); z-index: 8; }
+    .card.done:nth-child(2)  { transform: translateX(-240px); z-index: 7; }
+    .card.done:nth-child(3)  { transform: translateX(-248px); z-index: 6; }
+    .card.done:nth-child(4)  { transform: translateX(-256px); z-index: 5; }
+    .card.done:nth-child(5)  { transform: translateX(-262px); z-index: 4; }
+    .card.done:nth-child(6)  { transform: translateX(-268px); z-index: 3; }
+    .card.done:nth-child(7)  { transform: translateX(-272px); z-index: 2; }
+    .card.done:nth-child(8)  { transform: translateX(-276px); z-index: 1; }
+
+    /* ── Nav-bottom: show only on active card + front waiting ────── */
+    .card .nav-bottom           { display: none !important; }
+    .card.active .nav-bottom    { display: flex   !important; }
+    #card-0.waiting .nav-bottom { display: flex   !important; }
+
+    /* Hide gesture bar (decorative only) */
+    .card .gesture-bar { display: none !important; }
+
+    /* ── Labels under the stage ─────────────────────────────────── */
+    .stage-labels {
+      width: 900px;
+      display: flex;
+      justify-content: space-between;
+      font-family: 'Architects Daughter', cursive;
+      font-size: 12px;
+      color: #8a8a8a;
+      margin-top: 10px;
+      padding: 0 6px;
+    }
+
+  </style>
+</head>
+
+<body>
+<div class="stage" id="stage">
+
+  <!-- ══════════════════════════════════════
+       CARD 0 — Get Started
+  ══════════════════════════════════════ -->
+  <div class="card waiting" id="card-0">
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><div class="icons">
+        <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+        <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+      </div></div>
+      <div class="body" style="padding-top:24px;display:flex;flex-direction:column;gap:18px">
+        <div class="hand" style="font-size:14px;color:var(--ink-2)">welcome to</div>
+        <div>
+          <div class="h1" style="font-size:28px;line-height:1.1">Know what you<br><span style="border-bottom:3px solid var(--accent)">actually keep.</span></div>
+          <div class="body-text" style="margin-top:10px">Plan an investment in 7 quick steps. We'll show you the real return — after inflation, tax, and costs.</div>
+        </div>
+        <div class="scribble" style="height:140px">
+          <div style="display:flex;gap:8px;align-items:flex-end;height:90px">
+            <div style="width:18px;height:25px;background:var(--ink-4);border-radius:2px"></div>
+            <div style="width:18px;height:42px;background:var(--ink-4);border-radius:2px"></div>
+            <div style="width:18px;height:62px;background:var(--ink-4);border-radius:2px"></div>
+            <div style="width:18px;height:80px;background:var(--ink-3);border-radius:2px"></div>
+            <span class="hand" style="font-size:11px;margin-left:4px;margin-bottom:2px">= gross</span>
+          </div>
+          <div class="hand" style="position:absolute;bottom:12px;right:14px;color:var(--accent);font-size:12px">↓ what you keep</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;gap:10px;align-items:baseline"><span class="hand" style="font-size:16px;color:var(--accent);min-width:16px">1.</span><span style="font-size:13px;font-weight:500">Tell us your goal</span></div>
+          <div style="display:flex;gap:10px;align-items:baseline"><span class="hand" style="font-size:16px;color:var(--accent);min-width:16px">2.</span><span style="font-size:13px;font-weight:500">Tell us your timeline</span></div>
+          <div style="display:flex;gap:10px;align-items:baseline"><span class="hand" style="font-size:16px;color:var(--accent);min-width:16px">3.</span><span style="font-size:13px;font-weight:500">Tell us your numbers</span></div>
+          <div style="display:flex;gap:10px;align-items:baseline"><span class="hand" style="font-size:16px;color:var(--accent);min-width:16px">4.</span><span style="font-size:13px;font-weight:500">See reality</span></div>
+        </div>
+      </div>
+      <div class="nav-bottom">
+        <button class="btn" onclick="go()">Get started <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       CARD 1 — Step 1: Investor Type
+  ══════════════════════════════════════ -->
+  <div class="card waiting" id="card-1">
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><div class="icons">
+        <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+        <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+      </div></div>
+      <div class="app-bar"><div class="title">Set up your plan</div><div class="step-pill">Step 1 / 7</div></div>
+      <div class="step-strip"><div class="seg active"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div></div>
+      <div class="body">
+        <div class="label" style="margin-top:12px">Step 1 of 7</div>
+        <div class="h1" style="margin-top:6px">What type of investor are you?</div>
+        <div class="body-text" style="margin-top:6px">This sets your default risk level. You can change it later.</div>
+        <div data-choice-group="investor" style="display:flex;flex-direction:column;gap:10px;margin-top:18px">
+          <button class="choice" data-choice="short"><div class="glyph">1y</div><div style="flex:1"><div class="choice-title">I can take risk</div><div class="choice-meta">Short horizon.</div></div></button>
+          <button class="choice selected" data-choice="goal"><div class="glyph">5y</div><div style="flex:1"><div class="choice-title">I want steady growth</div><div class="choice-meta">Around 5 years.</div></div><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7l3 3 5-6"/></svg></button>
+          <button class="choice" data-choice="long"><div class="glyph">10y+</div><div style="flex:1"><div class="choice-title">Protect capital, decent returns</div><div class="choice-meta">10 to 15 years.</div></div></button>
+        </div>
+        <div class="hint" style="margin-top:16px"><div class="hint-icon">i</div><div>Your timeline shapes the rest of your plan.</div></div>
+      </div>
+      <div class="nav-bottom">
+        <button class="btn ghost icon-only" onclick="back()"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></button>
+        <button class="btn" onclick="go()">Continue <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       CARD 2 — Step 2: Goal
+  ══════════════════════════════════════ -->
+  <div class="card waiting" id="card-2">
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><div class="icons">
+        <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+        <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+      </div></div>
+      <div class="app-bar"><div class="title">Goal</div><div class="step-pill">Step 2 / 7</div></div>
+      <div class="step-strip"><div class="seg done"></div><div class="seg active"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div></div>
+      <div class="body">
+        <div class="label" style="margin-top:12px">Pick one</div>
+        <div class="h1" style="margin-top:6px">What's the money for?</div>
+        <div class="grid-2" style="margin-top:18px;gap:10px" data-choice-group="goal">
+          <button class="tile" data-choice="edu"><div class="tile-icon"><svg width="28" height="28" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 8l9-4 9 4-9 4-9-4z"/><path d="M6 10v4c0 1.5 2.5 3 5 3s5-1.5 5-3v-4M19 9v5"/></svg></div><div class="tile-label">Education</div></button>
+          <button class="tile selected" data-choice="retire"><div class="tile-icon"><svg width="28" height="28" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 18h16M5 18V8l6-4 6 4v10M9 18v-5h4v5"/></svg></div><div class="tile-label">Retirement</div></button>
+          <button class="tile" data-choice="buy"><div class="tile-icon"><svg width="28" height="28" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 18h16M5 18V9h4M9 18v-5h4v5M13 18V9h4"/><path d="M3 9l8-6 8 6"/></svg></div><div class="tile-label">Major purchase</div></button>
+          <button class="tile" data-choice="wealth"><div class="tile-icon"><svg width="28" height="28" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 18l5-6 4 3 7-9"/><path d="M14 6h5v5"/></svg></div><div class="tile-label">Wealth creation</div></button>
+        </div>
+        <div class="sketch" style="margin-top:16px;padding:12px;display:flex;gap:10px;align-items:center">
+          <div style="flex:1"><div class="label">Typical horizon</div><div class="h2" style="margin-top:2px">20–35 years</div></div>
+          <div class="hand" style="font-size:12px;color:var(--accent)">we'll<br>pre-fill →</div>
+        </div>
+      </div>
+      <div class="nav-bottom">
+        <button class="btn ghost icon-only" onclick="back()"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></button>
+        <button class="btn" onclick="go()">Continue <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       CARD 3 — Step 3: Timeline & Numbers
+  ══════════════════════════════════════ -->
+  <div class="card waiting" id="card-3">
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><div class="icons">
+        <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+        <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+      </div></div>
+      <div class="app-bar"><div class="title">Timeline & plan</div><div class="step-pill">Step 3 / 7</div></div>
+      <div class="step-strip"><div class="seg done"></div><div class="seg done"></div><div class="seg active"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div></div>
+      <div class="body">
+        <div class="label" style="margin-top:12px">Steps 3 & 4 of 7</div>
+        <div class="h1" style="margin-top:6px">Your timeline & numbers</div>
+        <div class="sketch" style="margin-top:16px;padding:14px">
+          <div class="label">When do you need it?</div>
+          <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px"><span class="big-number" style="font-size:34px"><span data-h-out>12</span></span><span style="font-size:14px;color:var(--ink-3);font-weight:600">years</span></div>
+          <input type="range" min="1" max="40" value="12" class="slider" data-bind="[data-h-out]">
+          <div class="slider-ticks"><span>1</span><span>10</span><span>20</span><span>30</span><span>40</span></div>
+          <div style="display:flex;gap:8px;margin-top:10px;align-items:center"><span class="badge warn" data-risk-badge>Balanced</span><span class="tiny">· Medium tolerance</span></div>
+        </div>
+        <div class="sketch" style="margin-top:12px;padding:14px">
+          <div class="label">Monthly investment</div>
+          <div class="input-row" style="margin-top:4px"><span class="currency">€</span><input type="number" value="250" data-recalc><span class="tiny">/mo</span></div>
+          <div class="label" style="margin-top:14px">Target goal</div>
+          <div class="input-row" style="margin-top:4px"><span class="currency">€</span><input type="number" value="75000" data-recalc></div>
+        </div>
+      </div>
+      <div class="nav-bottom">
+        <button class="btn ghost icon-only" onclick="back()"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></button>
+        <button class="btn" onclick="go()">Continue <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       CARD 4 — Step 4: Plan (tabs)
+  ══════════════════════════════════════ -->
+  <div class="card waiting" id="card-4">
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><div class="icons">
+        <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+        <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+      </div></div>
+      <div class="app-bar"><div class="title">Plan</div><div class="step-pill">Step 4 / 7</div></div>
+      <div class="step-strip"><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg active"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div></div>
+      <div class="body">
+        <div class="label" style="margin-top:12px">Tell us your numbers</div>
+        <div class="h1" style="margin-top:6px">Two numbers, that's it.</div>
+        <div class="tabs" style="margin-top:16px" data-tabs>
+          <button class="tab active" data-tab="amount">I'll invest €X</button>
+          <button class="tab" data-tab="reach">Reach this goal</button>
+        </div>
+        <div class="sketch fill" style="margin-top:14px;padding:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span class="label">Time horizon</span><span class="hand" style="font-size:13px"><span data-h-out id="c4-h-out">12</span> years</span></div>
+          <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap" data-chip-group>
+            <button class="chip" data-value="5" style="padding:5px 10px;border:1.5px solid var(--ink);border-radius:999px;background:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">5y</button>
+            <button class="chip" data-value="10" style="padding:5px 10px;border:1.5px solid var(--ink);border-radius:999px;background:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">10y</button>
+            <button class="chip selected" data-value="12" style="padding:5px 10px;border:1.5px solid var(--ink);border-radius:999px;background:var(--ink);color:var(--paper);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">12y</button>
+            <button class="chip" data-value="20" style="padding:5px 10px;border:1.5px solid var(--ink);border-radius:999px;background:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">20y</button>
+            <button class="chip" data-value="30" style="padding:5px 10px;border:1.5px solid var(--ink);border-radius:999px;background:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">30y</button>
+          </div>
+          <input type="range" min="1" max="40" value="12" class="slider" data-bind="[data-h-out]" style="margin-top:10px">
+        </div>
+        <div class="sketch" data-tab-pane="amount" style="margin-top:12px;padding:12px">
+          <div class="label">Monthly amount</div>
+          <div class="input-row"><span class="currency">€</span><input type="number" value="250" data-recalc><span class="tiny">/mo</span></div>
+        </div>
+        <div class="sketch" data-tab-pane="reach" style="margin-top:12px;padding:12px;display:none">
+          <div class="label">Goal amount</div>
+          <div class="input-row"><span class="currency">€</span><input type="number" value="75000" data-recalc></div>
+        </div>
+      </div>
+      <div class="nav-bottom">
+        <button class="btn ghost icon-only" onclick="back()"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></button>
+        <button class="btn" onclick="go()">Continue <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       CARD 5 — Step 5: Advanced assumptions
+  ══════════════════════════════════════ -->
+  <div class="card waiting" id="card-5">
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><div class="icons">
+        <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+        <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+      </div></div>
+      <div class="app-bar"><div class="title">Fine-tune</div><div class="step-pill">Step 5 / 7</div></div>
+      <div class="step-strip"><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg active"></div><div class="seg"></div><div class="seg"></div></div>
+      <div class="body">
+        <div class="label" style="margin-top:12px">Step 5 of 7 — optional</div>
+        <div class="h1" style="margin-top:6px">Fine-tune assumptions</div>
+        <div class="body-text" style="margin-top:6px">We pre-filled sensible defaults. Adjust if you have specific numbers.</div>
+        <div data-accordion style="margin-top:18px">
+          <div class="accordion-head open">
+            <div style="display:flex;align-items:center;gap:8px"><span class="h3">Reality factors</span><span class="badge good" style="padding:2px 8px;font-size:10px">4 set</span></div>
+            <span class="chev"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 5l3 3 3-3"/></svg></span>
+          </div>
+          <div class="accordion-body" style="padding:4px 2px">
+            <div class="row-input"><div><div class="row-label">Inflation rate</div><div class="tiny">EU avg ≈ 2–3%</div></div><div class="stepper" data-stepper data-value="2.5" data-step-by="0.1"><button data-step="minus">−</button><div class="num">2.5%</div><button data-step="plus">+</button></div></div>
+            <div class="row-input"><div><div class="row-label">Tax on gains</div><div class="tiny">NL box-3 ≈ 25–36%</div></div><div class="stepper" data-stepper data-value="25" data-step-by="1"><button data-step="minus">−</button><div class="num">25%</div><button data-step="plus">+</button></div></div>
+            <div class="row-input"><div><div class="row-label">Investment costs</div><div class="tiny">ETF: 0.2–1.5% TER</div></div><div class="stepper" data-stepper data-value="1.2" data-step-by="0.1"><button data-step="minus">−</button><div class="num">1.2%</div><button data-step="plus">+</button></div></div>
+            <div class="row-input"><div><div class="row-label">Expected gross return</div><div class="tiny">Stocks long-run ≈ 7–9%</div></div><div class="stepper" data-stepper data-value="8" data-step-by="0.5"><button data-step="minus">−</button><div class="num">8%</div><button data-step="plus">+</button></div></div>
+          </div>
+        </div>
+        <div class="hint" style="margin-top:16px"><div class="hint-icon">!</div><div>Costs &amp; tax compound the wrong way. A 1% fee can eat 20%+ of your final pot.</div></div>
+      </div>
+      <div class="nav-bottom">
+        <button class="btn ghost icon-only" onclick="back()"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></button>
+        <button class="btn" onclick="go()">See results <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       CARD 6 — Step 6: Results
+  ══════════════════════════════════════ -->
+  <div class="card waiting" id="card-6">
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><div class="icons">
+        <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+        <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+      </div></div>
+      <div class="app-bar"><div class="title">Reality check</div><div class="step-pill">Step 6 / 7</div></div>
+      <div class="step-strip"><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg active"></div><div class="seg"></div></div>
+      <div class="body" style="padding-bottom:90px">
+        <div style="margin-top:10px">
+          <div class="label">You need to earn</div>
+          <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px"><span class="big-number" style="font-size:34px" id="r-req-rate">7.2%</span><span style="font-size:18px;color:var(--ink-3);font-weight:600">/yr real</span></div>
+          <div style="margin-top:6px"><span class="badge warn" id="r-risk-badge">⚠ Moderate risk</span></div>
+        </div>
+        <div class="compare" style="margin-top:18px">
+          <div><div class="compare-label">Gross return</div><div class="compare-num" id="r-gross-fv">€61k</div><div class="compare-foot" id="r-gross-rate">at 8% /yr</div></div>
+          <div class="net"><div class="compare-label">What you keep</div><div class="compare-num" id="r-net-fv">€38k</div><div class="compare-foot" id="r-net-rate">at 3.4% real</div></div>
+        </div>
+        <div class="hand" style="font-size:12px;color:var(--ink-2);text-align:center;margin-top:6px">↑ this is the gap most investors miss</div>
+        <div class="sketch" style="margin-top:16px;padding:12px">
+          <div class="label">Where it goes</div>
+          <div style="margin-top:10px">
+            <div class="bar-row"><span class="bar-label">Market</span><div class="bar-track"><div class="bar-fill" id="r-bar-market" style="width:100%"></div></div><span class="bar-val" id="r-bv-market">+8%</span></div>
+            <div class="bar-row"><span class="bar-label">− Costs</span><div class="bar-track"><div class="bar-fill bad" id="r-bar-costs" style="width:15%"></div></div><span class="bar-val" id="r-bv-costs">−1.2%</span></div>
+            <div class="bar-row"><span class="bar-label">− Tax</span><div class="bar-track"><div class="bar-fill warn" id="r-bar-tax" style="width:22%"></div></div><span class="bar-val" id="r-bv-tax">−1.7%</span></div>
+            <div class="bar-row"><span class="bar-label">− Inflation</span><div class="bar-track"><div class="bar-fill warn" id="r-bar-infl" style="width:31%"></div></div><span class="bar-val" id="r-bv-infl">−2.5%</span></div>
+            <div class="bar-row" style="margin-top:6px;padding-top:6px;border-top:1.5px solid var(--ink)"><span class="bar-label" style="font-weight:700">= You keep</span><div class="bar-track"><div class="bar-fill good" id="r-bar-net" style="width:32%"></div></div><span class="bar-val" id="r-bv-net" style="color:var(--accent)">3.4%</span></div>
+          </div>
+        </div>
+        <div class="sketch fill" style="margin-top:12px;padding:12px;border-style:dashed">
+          <div class="label">Insight</div>
+          <div class="hand" id="r-insight" style="font-size:14px;margin-top:4px;line-height:1.3">"Costs matter more than most investors expect."</div>
+        </div>
+      </div>
+      <div class="nav-bottom">
+        <button class="btn ghost icon-only" onclick="back()"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></button>
+        <button class="btn" onclick="go()">Next steps <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       CARD 7 — Step 7: Actions
+  ══════════════════════════════════════ -->
+  <div class="card waiting" id="card-7">
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><div class="icons">
+        <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+        <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+      </div></div>
+      <div class="app-bar"><div class="title">Your plan is ready</div></div>
+      <div class="step-strip"><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg active"></div></div>
+      <div class="body">
+        <div class="hand" style="font-size:14px;margin-top:8px">nice work ✓</div>
+        <div class="h1" style="margin-top:4px">What now?</div>
+        <div class="sketch fill" style="margin-top:14px;padding:12px">
+          <div style="display:flex;justify-content:space-between">
+            <div><div class="tiny">Plan</div><div id="r-summary-plan" style="font-size:13px;font-weight:600;margin-top:2px">€250/mo · 12y</div></div>
+            <div style="text-align:right"><div class="tiny">You keep</div><div id="r-summary-net" style="font-size:15px;font-weight:800;color:var(--accent)">€38k</div></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
+          <div class="choice"><div class="glyph"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 2l3 3-7 7H2v-3z"/></svg></div><div style="flex:1"><div class="choice-title">Adjust plan</div><div class="choice-meta">Change amount, timeline, or assumptions</div></div></div>
+          <div class="choice"><div class="glyph"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M7 2v3M7 9v3M2 7h3M9 7h3"/></svg></div><div style="flex:1"><div class="choice-title">Recalculate scenarios</div><div class="choice-meta">Try best/worst-case projections</div></div></div>
+          <div class="choice" style="background:var(--accent);border-color:var(--accent);color:#fff"><div class="glyph" style="border-color:#fff">→</div><div style="flex:1"><div class="choice-title">Start investing in Rita</div><div style="font-size:11px;opacity:0.9;margin-top:2px">Hand off to the existing Rita app</div></div></div>
+        </div>
+        <div class="hint" style="margin-top:14px"><div class="hint-icon">↗</div><div>Your plan settings carry over to Rita so the portfolio matches.</div></div>
+      </div>
+      <div class="nav-bottom">
+        <button class="btn ghost icon-only" onclick="back()"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></button>
+        <button class="btn" style="background:var(--accent);border-color:var(--accent)" onclick="go()">Start investing <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reset overlay — shown when all 8 cards are done -->
+  <div id="reset-overlay" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:20;background:#fafaf7;border:2px solid #1a1a1a;border-radius:14px;padding:28px 36px;text-align:center;box-shadow:0 24px 56px rgba(0,0,0,0.18);font-family:'Inter',sans-serif;">
+    <div style="font-family:'Architects Daughter',cursive;font-size:20px;margin-bottom:6px">all done ✓</div>
+    <div style="font-size:12px;color:#8a8a8a;margin-bottom:18px">Your plan is set. Run it again?</div>
+    <button onclick="reset()" style="height:46px;padding:0 28px;border:2px solid #1a1a1a;border-radius:8px;background:#1a1a1a;color:#fafaf7;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;">
+      ↺ Start over
+    </button>
+  </div>
+
+</div><!-- /stage -->
+
+<!-- Labels -->
+<div class="stage-labels">
+  <span id="lbl-done">← completed steps</span>
+  <span id="lbl-active" style="color:#1a1a1a;font-weight:600"></span>
+  <span id="lbl-queue">steps ahead →</span>
+</div>
+
+<script src="../v1/invest-flow-app/app.js"></script>
+<script>
+  /* ── Navigation ── */
+  var cards   = Array.from(document.querySelectorAll('.card'));
+  var current = -1;
+  var TOTAL   = cards.length;
+
+  var TITLES = [
+    'Get Started', 'Step 1 — Investor type', 'Step 2 — Goal',
+    'Step 3 — Timeline', 'Step 4 — Numbers',
+    'Step 5 — Fine-tune', 'Step 6 — Results', 'Step 7 — Actions'
+  ];
+
+  function updateLabels() {
+    var done  = current > 0 ? current : 0;
+    var ahead = current >= 0 ? Math.max(0, TOTAL - current - 1) : TOTAL;
+    var lblDone   = document.getElementById('lbl-done');
+    var lblActive = document.getElementById('lbl-active');
+    var lblQueue  = document.getElementById('lbl-queue');
+    if (lblDone)   lblDone.textContent   = done  > 0 ? '← ' + done + ' done'   : '← completed steps';
+    if (lblActive) lblActive.textContent = current >= 0 ? TITLES[current] : '';
+    if (lblQueue)  lblQueue.textContent  = ahead > 0 ? ahead + ' ahead →' : 'all done ✓';
+  }
+
+  function go() {
+    if (current >= 0) {
+      cards[current].classList.remove('active');
+      cards[current].classList.add('done');
+    }
+    current++;
+    if (current < TOTAL) {
+      cards[current].classList.remove('waiting');
+      cards[current].classList.add('active');
+      document.getElementById('reset-overlay').style.display = 'none';
+    } else {
+      document.getElementById('reset-overlay').style.display = 'flex';
+    }
+    updateLabels();
+    if (window.recalc) window.recalc();
+  }
+
+  function back() {
+    if (current <= 0) return;
+    cards[current].classList.remove('active');
+    cards[current].classList.add('waiting');
+    current--;
+    cards[current].classList.remove('done');
+    cards[current].classList.add('active');
+    document.getElementById('reset-overlay').style.display = 'none';
+    updateLabels();
+  }
+
+  function reset() {
+    cards.forEach(function (c) {
+      c.classList.remove('active', 'done');
+      c.classList.add('waiting');
+    });
+    current = -1;
+    document.getElementById('reset-overlay').style.display = 'none';
+    go();
+  }
+
+  /* ── Recalc engine ── */
+  window.recalc = function () {
+    var inv = window.invest;
+    if (!inv) return;
+
+    /* Read inputs from DOM */
+    var c3nums   = document.querySelectorAll('#card-3 input[type=number]');
+    var monthly  = parseFloat(c3nums[0] && c3nums[0].value) || 250;
+    var target   = parseFloat(c3nums[1] && c3nums[1].value) || 75000;
+    var c3range  = document.querySelector('#card-3 input[type=range]');
+    var horizon  = parseInt(c3range ? c3range.value : 12, 10);
+
+    var st       = document.querySelectorAll('#card-5 [data-stepper]');
+    var inflation = parseFloat(st[0] && st[0].dataset.value) || 2.5;
+    var tax       = parseFloat(st[1] && st[1].dataset.value) || 25;
+    var costs     = parseFloat(st[2] && st[2].dataset.value) || 1.2;
+    var grossRate = parseFloat(st[3] && st[3].dataset.value) || 8;
+
+    /* Compute */
+    var months     = horizon * 12;
+    var g          = grossRate  / 100;
+    var c          = costs      / 100;
+    var t          = tax        / 100;
+    var inf        = inflation  / 100;
+    var afterCosts = g - c;
+    var taxDrag    = afterCosts * t;
+    var netNominal = afterCosts - taxDrag;
+    var netReal    = netNominal - inf;
+    var grossFV    = inv.fv(monthly, months, g);
+    var netFV      = inv.fv(monthly, months, Math.max(netReal, 0.001));
+    var reqNominal = inv.requiredRate(monthly, months, target);
+
+    /* Helpers */
+    function pct(r) {
+      var s = (r * 100).toFixed(1);
+      return s.replace(/\.0$/, '') + '%';
+    }
+    function upd(id, text) {
+      var el = document.getElementById(id);
+      if (el) el.textContent = text;
+    }
+    function barW(id, frac) {
+      var el = document.getElementById(id);
+      if (el) el.style.width = Math.min(100, Math.max(0, frac * 100)).toFixed(1) + '%';
+    }
+
+    /* Required real rate */
+    var reqReal = reqNominal != null ? reqNominal - inf - c : null;
+    upd('r-req-rate', reqReal != null ? pct(reqReal) : '—');
+
+    /* Risk badge */
+    var rb = document.getElementById('r-risk-badge');
+    if (rb && reqNominal != null) {
+      rb.className = 'badge';
+      if      (reqNominal > 0.12) { rb.classList.add('bad');  rb.textContent = '⚠ High risk';     }
+      else if (reqNominal > 0.07) { rb.classList.add('warn'); rb.textContent = '⚠ Moderate risk'; }
+      else                        { rb.classList.add('good'); rb.textContent = '✓ Achievable';    }
+    }
+
+    /* FV compare */
+    upd('r-gross-fv',   inv.fmtEur(grossFV));
+    upd('r-gross-rate', 'at ' + pct(g) + ' /yr');
+    upd('r-net-fv',     inv.fmtEur(netFV));
+    upd('r-net-rate',   'at ' + pct(netReal) + ' real');
+
+    /* Bars — normalised to grossRate */
+    barW('r-bar-market', 1);
+    barW('r-bar-costs',  c  / g);
+    barW('r-bar-tax',    taxDrag / g);
+    barW('r-bar-infl',   inf / g);
+    barW('r-bar-net',    Math.max(netReal, 0) / g);
+    upd('r-bv-market', '+' + pct(g));
+    upd('r-bv-costs',  '−' + pct(c));
+    upd('r-bv-tax',    '−' + pct(taxDrag));
+    upd('r-bv-infl',   '−' + pct(inf));
+    upd('r-bv-net',    pct(netReal));
+
+    /* Dynamic insight */
+    var msg;
+    if      (c > inf)               msg = '"Costs matter more than most investors expect."';
+    else if (reqNominal > 0.12)     msg = '"Consider raising monthly savings or extending your horizon."';
+    else if (inf > c * 1.5)         msg = '"Inflation silently erodes your real return."';
+    else                            msg = '"Tax compounds the wrong way — every % saved matters."';
+    upd('r-insight', msg);
+
+    /* Card-7 summary */
+    upd('r-summary-plan', '€' + monthly + '/mo · ' + horizon + 'y');
+    upd('r-summary-net',  inv.fmtEur(netFV));
+
+    /* Fix card-4 h-out span (app.js binds to first [data-h-out] in DOM, not scoped) */
+    var c4h = document.getElementById('c4-h-out');
+    if (c4h) c4h.textContent = horizon;
+  };
+
+  /* ── Card-4 slider: sync horizon back to card-3 so recalc reads it ── */
+  (function () {
+    var c4sl = document.querySelector('#card-4 input[type=range]');
+    if (!c4sl) return;
+    c4sl.addEventListener('input', function () {
+      var c3sl = document.querySelector('#card-3 input[type=range]');
+      if (c3sl) c3sl.value = this.value;
+    });
+  })();
+
+  /* ── Card-4 monthly input: sync back to card-3 so recalc reads it ── */
+  (function () {
+    var c4inp = document.querySelector('#card-4 [data-tab-pane="amount"] input[type=number]');
+    if (!c4inp) return;
+    c4inp.addEventListener('input', function () {
+      var c3inp = document.querySelector('#card-3 input[type=number]');
+      if (c3inp) c3inp.value = this.value;
+    });
+  })();
+
+  /* ── Boot: activate card-0 immediately so the stage isn't empty ── */
+  go();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,27 @@
+services:
+  rita-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rita:local
+    ports:
+      - "8000:8000"
+    environment:
+      - RITA_ENV=development
+      - RITA_JWT_SECRET=${RITA_JWT_SECRET:-change-me-to-something-32-chars-long}
+      - RITA_SERVER__PORT=8000
+      # Provide dummy placeholders for local dev if real ones aren't set in your environment
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-local_dev_placeholder_client_id}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-local_dev_placeholder_client_secret}
+    volumes:
+      # Maps local test data directly into the container in read-only mode
+      - ./data/input:/app/rita_input:ro
+      # Maps local output directly into the container so your local sqlite DB persists between restarts
+      - ./data/output:/app/rita_output
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped

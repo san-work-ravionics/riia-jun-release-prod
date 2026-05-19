@@ -1,0 +1,132 @@
+{
+  "run_id": "20260517-1430",
+  "app": "ops",
+  "request": "R4 + R5 — session cache for top 5 redundant endpoints (shared dashboard/js/shared/api-cache.js module) + API monitoring middleware writing to api_call_log DB table (Alembic migration) + GET /api/v1/experience/ops/api-metrics endpoint reading from api_call_log + Ops dashboard API Metrics panel (table: path, method, calls, p50, p95, errors) + aggregate_metrics.py api_metrics block for automatic Agent Builds feed",
+  "skill_file": "project-office/skills/skill-add-ops-feature.md",
+  "agents": [
+    {
+      "role": "pm",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 2100,
+      "grounding_checks": {
+        "plan_status_read": true,
+        "sprint_fit_confirmed": true,
+        "risk_flags_assessed": true,
+        "approved": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "architect",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 3400,
+      "grounding_checks": {
+        "api_contract_present": true,
+        "files_listed": true,
+        "dod_checklist_filled": true,
+        "spec_reference_valid": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "engineer",
+      "status": "pass",
+      "steps_required": 5,
+      "steps_completed": 5,
+      "adherence_score": 1.0,
+      "token_estimate": 5200,
+      "grounding_checks": {
+        "branch_created": true,
+        "code_changed": true,
+        "spec_updated": true,
+        "ruff_passed": true,
+        "contract_matches_architect": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "qa",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 2800,
+      "grounding_checks": {
+        "tests_written": true,
+        "tests_passed": true,
+        "coverage_delta_recorded": true,
+        "contract_check_done": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "techwriter",
+      "status": "pass",
+      "steps_required": 3,
+      "steps_completed": 3,
+      "adherence_score": 1.0,
+      "token_estimate": 1900,
+      "grounding_checks": {
+        "confluence_updated": true,
+        "spec_file_confirmed": true,
+        "branch_noted": true
+      },
+      "failure_modes": []
+    }
+  ],
+  "overall_status": "pass",
+  "total_tokens_estimated": 15400,
+  "duration_minutes": 240,
+  "branch": "worktree-agent-a0b598acfe0979d86",
+  "merge_status": "merged",
+  "merge_commit": "a2d57a6",
+  "post_merge_hotfixes": [
+    {
+      "commit": "2c94033",
+      "description": "fix(rita): correct api-cache.js import path (../../ -> ../) in 8 rita JS files — wrong path caused SyntaxError killing entire RITA module tree"
+    },
+    {
+      "commit": "5810cd8",
+      "description": "fix(ops): add setEl to ops/utils.js — missing named export caused SyntaxError killing entire Ops module tree; root cause: skill template listed setEl as importable but ops/utils.js never had it"
+    },
+    {
+      "commit": "30a5c47",
+      "description": "fix(rita): resolve leftover <<<<<<< conflict marker in scenarios.js — SyntaxError killing RITA main.js module tree; conflict survived the Run B merge resolution"
+    },
+    {
+      "commit": "68ae873",
+      "description": "chore(skills): add FC-IMP gate (named-import resolution check) to all 3 dashboard skill DoDs"
+    },
+    {
+      "commit": "9f306e4",
+      "description": "chore(skills): add FC-MERGE gate (conflict-marker scan) to all 3 dashboard skill DoDs"
+    }
+  ],
+  "qa_results": {
+    "test_file": "tests/unit/test_api_metrics.py",
+    "tests_written": 32,
+    "tests_passed": 32,
+    "contract_check": "full match — all 7 schema fields match JS r.field reads; last_called_at intentionally not rendered in table (within spec)",
+    "fc_imp_check": "pass — setEl confirmed in ops/utils.js; api confirmed in ops/api.js"
+  },
+  "human_score": {
+    "accuracy": 3,
+    "relevance": 4,
+    "csat": 3,
+    "planning_ok": false,
+    "time_saved_hours": 5,
+    "notes": "Accuracy 3 — post-merge hotfixes required (wrong import path, missing setEl export, conflict marker). Planning partially correct but FC-IMP/FC-MERGE issues not caught before merge."
+  },
+  "lessons_learned": [
+    "Merge before QA completed — Run B was merged at a2d57a6 before Steps 5-7 ran. QA deferred across sessions introduced a user-visible crash window.",
+    "Skill template drift — ops/utils.js never had setEl despite skill-add-ops-feature.md listing it in the import boilerplate. Skill templates must match the actual exports of the target utility files.",
+    "Conflict marker scan missing — no post-merge scan was run on dashboard/js/ after conflict resolution. A <<<<<<< survived in scenarios.js undetected until user testing.",
+    "FC-IMP and FC-MERGE gates added to all 3 skill DoDs to prevent recurrence."
+  ]
+}

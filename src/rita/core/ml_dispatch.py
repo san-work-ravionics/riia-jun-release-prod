@@ -1,0 +1,231 @@
+"""RITA Core — ML Dispatch
+
+Entry point for Double-DQN training.  Called by WorkflowService in a
+background thread; must be fully self-contained (opens its own DB session
+if needed, manages its own file I/O).
+
+Pipeline:
+    1. Load instrument OHLCV CSV
+    2. Compute technical indicators (ta library)
+    3. Train/validation split (80 / 20 by date)
+    4. Train Double-DQN via stable-baselines3
+    5. Run deterministic validation episode → real performance metrics
+    6. Save model to output_dir
+    7. Return TrainingOutcome with real Sharpe, MDD, return, episode_metrics
+"""
+
+from __future__ import annotations
+
+import math
+from dataclasses import dataclass, field
+from pathlib import Path
+
+import structlog
+import yaml
+
+log = structlog.get_logger()
+
+# ---------------------------------------------------------------------------
+# Per-instrument fine-tuning defaults
+# ---------------------------------------------------------------------------
+
+_INSTRUMENTS_CONFIG_DIR = Path(__file__).parents[4] / "config" / "instruments"
+
+_INSTRUMENT_DEFAULTS_CACHE: dict[str, dict] = {}
+
+
+def load_instrument_defaults(instrument: str) -> dict:
+    """Return the training sub-section from config/instruments/{instrument}.yaml.
+
+    Keys: timesteps, learning_rate, buffer_size, exploration_pct, n_seeds,
+          episode_length.
+
+    Falls back to an empty dict if no file exists for the instrument, so
+    callers can always do ``defaults.get("n_seeds", 1)`` safely.
+    """
+    key = instrument.upper()
+    if key in _INSTRUMENT_DEFAULTS_CACHE:
+        return _INSTRUMENT_DEFAULTS_CACHE[key]
+
+    config_file = _INSTRUMENTS_CONFIG_DIR / f"{key.lower()}.yaml"
+    if not config_file.exists():
+        log.warning("instrument_defaults.not_found", instrument=key)
+        _INSTRUMENT_DEFAULTS_CACHE[key] = {}
+        return {}
+
+    with config_file.open() as fh:
+        raw = yaml.safe_load(fh)
+
+    defaults = raw.get("training", {})
+    _INSTRUMENT_DEFAULTS_CACHE[key] = defaults
+    log.debug("instrument_defaults.loaded", instrument=key, keys=list(defaults.keys()))
+    return defaults
+
+
+# ---------------------------------------------------------------------------
+# Configuration & result dataclasses (imported by WorkflowService)
+# ---------------------------------------------------------------------------
+
+@dataclass
+class TrainingConfig:
+    run_id:           str
+    instrument:       str
+    model_version:    str
+    algorithm:        str
+    timesteps:        int
+    learning_rate:    float
+    buffer_size:      int
+    net_arch:         str
+    exploration_pct:  float
+    output_dir:       str
+    n_seeds:          int = 1
+
+
+@dataclass
+class TrainingOutcome:
+    model_path:      str
+    sharpe:          float       # validation-phase Sharpe
+    max_drawdown:    float       # validation-phase MDD (fraction)
+    total_return:    float       # validation-phase total return (fraction)
+    val_trades:      int = 0
+    train_sharpe:    float = 0.0
+    train_mdd:       float = 0.0
+    train_return:    float = 0.0
+    train_trades:    int = 0
+    episode_metrics: list[dict] = field(default_factory=list)
+    """Each dict: timestep, loss, ep_rew_mean."""
+    seed_results:    dict = field(default_factory=dict)
+    """Populated when n_seeds > 1: best_seed, n_seeds_tried, seed_results list."""
+
+
+# ---------------------------------------------------------------------------
+# Training entry point
+# ---------------------------------------------------------------------------
+
+def train(config: TrainingConfig, progress_fn=None) -> TrainingOutcome:
+    """Load data, train Double-DQN, validate, save model, return real metrics.
+
+    Args:
+        progress_fn: optional callable(record) forwarded to TrainingProgressCallback.
+                     Called every 1000 timesteps with {timestep, loss, ep_rew_mean}.
+    """  # noqa: D401
+    """Load data, train Double-DQN, validate, save model, return real metrics."""
+    from rita.core.data_loader import load_ohlcv_csv
+    from rita.core.data_understanding import find_instrument_csv
+    from rita.core.technical_analyzer import calculate_indicators
+    from rita.core.trading_env import train_agent, train_best_of_n, run_episode
+
+    # ── 1. Load OHLCV data ────────────────────────────────────────────────────
+    log.info("ml_dispatch.load_data", instrument=config.instrument)
+    csv_path = find_instrument_csv(config.instrument)
+    df = load_ohlcv_csv(str(csv_path))
+    log.info("ml_dispatch.data_loaded", rows=len(df))
+
+    # ── 2. Technical indicators ───────────────────────────────────────────────
+    df = calculate_indicators(df)
+    log.info("ml_dispatch.indicators_computed", rows=len(df))
+
+    # ── 3. Train / validation split (80 / 20 by date) ─────────────────────────
+    split_idx = int(len(df) * 0.8)
+    train_df = df.iloc[:split_idx]
+    val_df   = df.iloc[split_idx:]
+
+    # ── 4. Train ──────────────────────────────────────────────────────────────
+    model_name = f"{config.model_version}_{config.run_id[:8]}"
+    log.info("ml_dispatch.training_start", run_id=config.run_id, timesteps=config.timesteps, n_seeds=config.n_seeds)
+    seed_results_dict: dict = {}
+
+    if config.n_seeds > 1:
+        # Multi-seed: pick best model by validation Sharpe
+        model, progress_cb, seed_results_dict = train_best_of_n(
+            train_df=train_df,
+            val_df=val_df,
+            output_dir=config.output_dir,
+            timesteps=config.timesteps,
+            n_seeds=config.n_seeds,
+            learning_rate=config.learning_rate,
+            buffer_size=config.buffer_size,
+            exploration_fraction=config.exploration_pct,
+            model_name=model_name,
+            progress_fn=progress_fn,
+        )
+    else:
+        # Single-seed: standard training path
+        model, progress_cb = train_agent(
+            train_df=train_df,
+            output_dir=config.output_dir,
+            timesteps=config.timesteps,
+            learning_rate=config.learning_rate,
+            buffer_size=config.buffer_size,
+            exploration_fraction=config.exploration_pct,
+            seed=42,
+            model_name=model_name,
+            progress_fn=progress_fn,
+        )
+
+    model_path = str(Path(config.output_dir) / (model_name + ".zip"))
+    log.info("ml_dispatch.training_complete", run_id=config.run_id, model_path=model_path)
+
+    # ── 5. Validation episode → real performance metrics ──────────────────────
+    sharpe = 0.0
+    mdd = 0.0
+    total_return = 0.0
+    val_trades = 0
+    try:
+        val_result = run_episode(model, val_df)
+        perf = val_result["performance"]
+        sharpe       = perf["sharpe_ratio"]
+        mdd          = perf["max_drawdown_pct"] / 100.0
+        total_return = perf["portfolio_total_return_pct"] / 100.0
+        val_trades   = int(perf.get("total_trades", 0))
+    except Exception:
+        pass
+    log.info("ml_dispatch.validation_complete", run_id=config.run_id, sharpe=round(sharpe, 3), mdd=round(mdd, 4))
+
+    # ── 5b. Training episode → train-phase metrics ────────────────────────────
+    train_sharpe = 0.0
+    train_mdd = 0.0
+    train_return = 0.0
+    train_trades = 0
+    try:
+        train_result = run_episode(model, train_df)
+        tp = train_result["performance"]
+        train_sharpe = tp["sharpe_ratio"]
+        train_mdd    = tp["max_drawdown_pct"] / 100.0
+        train_return = tp["portfolio_total_return_pct"] / 100.0
+        train_trades = int(tp.get("total_trades", 0))
+    except Exception:
+        pass
+    log.info("ml_dispatch.train_episode_complete", run_id=config.run_id, train_sharpe=round(train_sharpe, 3))
+
+    # ── 6. Episode metrics from callback ─────────────────────────────────────
+    episode_metrics = [
+        {
+            "episode":      i + 1,
+            "timestep":     r["timestep"],
+            "reward":       float(r["ep_rew_mean"]) if not math.isnan(r["ep_rew_mean"]) else 0.0,
+            "loss":         float(r["loss"])        if not math.isnan(r["loss"])        else 0.0,
+            "epsilon":      0.0,
+            "portfolio_value": 1.0,
+        }
+        for i, r in enumerate(progress_cb.records)
+    ]
+
+    # Merge seed_results into episode_metrics metadata if multi-seed run
+    training_metadata: dict = {}
+    if seed_results_dict:
+        training_metadata.update(seed_results_dict)
+
+    return TrainingOutcome(
+        model_path=model_path,
+        sharpe=round(sharpe, 4),
+        max_drawdown=round(mdd, 4),
+        total_return=round(total_return, 4),
+        val_trades=val_trades,
+        train_sharpe=round(train_sharpe, 4),
+        train_mdd=round(train_mdd, 4),
+        train_return=round(train_return, 4),
+        train_trades=train_trades,
+        episode_metrics=episode_metrics,
+        seed_results=training_metadata,
+    )

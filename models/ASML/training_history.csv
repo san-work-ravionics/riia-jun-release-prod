@@ -1,0 +1,6 @@
+round,timestamp,timesteps,source,val_sharpe,val_mdd_pct,val_cagr_pct,val_constraints_met,backtest_sharpe,backtest_mdd_pct,backtest_return_pct,backtest_cagr_pct,backtest_trade_count,backtest_constraints_met,notes
+1,2026-04-15 16:00:24,50000,trained,0.936,-50.76,0.0,False,0.936,-50.76,446.48,446.48,0,False,run_id=b66e9dd9
+2,2026-04-18 18:34:51,100000,trained,0.94,-41.85,0.0,False,0.94,-41.85,342.53,342.53,0,False,run_id=167b7619
+3,2026-04-21 13:37:22,100000,trained,-0.284,-49.25,-9.32,False,-0.284,-49.25,-9.32,-9.32,0,False,run_id=8cde37f7
+4,2026-04-23 12:39:08,300000,trained,-0.115,-45.72,6.74,False,-0.115,-45.72,6.74,6.74,0,False,run_id=faf61e72
+5,2026-05-05 15:38:08,50000,trained,0.236,-29.04,65.04,False,0.236,-29.04,65.04,65.04,673,False,run_id=14705f79

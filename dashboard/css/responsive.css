@@ -1,0 +1,240 @@
+/* ============================================================
+   RITA Dashboard — Responsive CSS
+   Breakpoints: ≤1100px (narrow desktop) | ≤768px (tablet) | ≤480px (mobile)
+   Shared across: rita.html, fno.html, ops.html
+   ============================================================ */
+
+/* ── Nav toggle — always visible, collapses sidebar on desktop ── */
+.nav-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r, 6px);
+  background: var(--surface);
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-right: 10px;
+  transition: background .12s, border-color .12s;
+}
+.nav-toggle:hover { background: var(--surface2); border-color: var(--border2); }
+.nav-toggle svg { display: block; }
+
+/* ── Sidebar overlay backdrop ────────────────────────────── */
+body.nav-open::before {
+  content: '';
+  position: fixed;
+  inset: 52px 0 0 0;
+  background: rgba(0, 0, 0, .35);
+  z-index: 299;
+}
+
+/* ============================================================
+   1100px — Narrow desktop / laptop
+   ============================================================ */
+@media (max-width: 1100px) {
+
+  /* Shell: keep sidebar, slim slightly */
+  .shell { grid-template-columns: 200px 1fr; }
+
+  /* KPI rows: 5-col → 3-col, 4-col → 3-col */
+  .kpi-row         { grid-template-columns: repeat(3, 1fr); }
+  .kpi-row-4       { grid-template-columns: repeat(3, 1fr); }
+  .kpi-row.c5      { grid-template-columns: repeat(3, 1fr); }
+  .kpi-row.c4      { grid-template-columns: repeat(3, 1fr); }
+
+  /* Card rows: 3-col → 2-col */
+  .card-row, .card-row-3 { grid-template-columns: repeat(2, 1fr); }
+
+  /* HMC row: 4-col → 2-col */
+  .hmc-row { grid-template-columns: repeat(2, 1fr); }
+
+  /* Greeks: 4-col → 2-col */
+  .greeks-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Form grid: 3-col → 2-col */
+  .form-grid { grid-template-columns: 1fr 1fr; }
+
+  /* Market 3-panel → 2-col, third panel full-width */
+  .market-3col {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    height: auto;
+    min-height: unset;
+  }
+  .market-3col > *:last-child { grid-column: 1 / -1; }
+  .mpanel { min-height: 300px; }
+
+  /* Ops grids */
+  .g4 { grid-template-columns: repeat(2, 1fr); }
+  .s3 { grid-column: span 2; }
+
+  /* Main padding */
+  .main { padding: 20px 22px; }
+}
+
+/* ============================================================
+   768px — Tablet
+   ============================================================ */
+@media (max-width: 768px) {
+
+  /* Sidebar: off-canvas, slides in when .open */
+  .shell { grid-template-columns: 0 1fr; }
+
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 52px;
+    height: calc(100vh - 52px);
+    width: 224px;
+    overflow: hidden;
+    z-index: 300;
+    transform: translateX(-100%);
+    transition: transform .22s cubic-bezier(.4, 0, .2, 1);
+    box-shadow: none;
+  }
+  .sidebar.open {
+    transform: translateX(0);
+    overflow-y: auto;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, .15);
+  }
+
+  /* Ops shell uses nav-collapsed too; keep it consistent */
+  .shell.nav-collapsed { grid-template-columns: 0 1fr; }
+
+  /* KPI rows: → 2-col */
+  .kpi-row, .kpi-row-3 { grid-template-columns: repeat(2, 1fr); }
+  .kpi-row-4            { grid-template-columns: repeat(2, 1fr); }
+  .kpi-row.c3, .kpi-row.c4, .kpi-row.c5 { grid-template-columns: repeat(2, 1fr); }
+
+  /* Card rows: → 1-col */
+  .card-row, .card-row-2, .card-row-3 { grid-template-columns: 1fr; }
+
+  /* HMC: → 2-col */
+  .hmc-row { grid-template-columns: repeat(2, 1fr); }
+
+  /* Greeks: → 2-col */
+  .greeks-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Form grid: → 1-col */
+  .form-grid { grid-template-columns: 1fr; }
+
+  /* Two-col: → 1-col */
+  .two-col { grid-template-columns: 1fr; }
+
+  /* Market 3-panel: → 1-col */
+  .market-3col {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: unset;
+  }
+  .market-3col > *:last-child { grid-column: auto; }
+  .mpanel { min-height: 260px; }
+
+  /* Ops grids */
+  .g2 { grid-template-columns: 1fr 1fr; }
+  .g3 { grid-template-columns: 1fr 1fr; }
+  .g4 { grid-template-columns: 1fr 1fr; }
+  .s2 { grid-column: span 1; }
+  .s3 { grid-column: span 2; }
+
+  /* Main padding */
+  .main { padding: 16px; }
+
+  /* Page headers: stack on tablet */
+  .page-hdr { flex-direction: column; gap: 10px; }
+  .hdr-actions { align-self: flex-start; }
+
+  /* Tables: allow horizontal scroll */
+  .tbl-wrap { overflow-x: auto; }
+
+  /* Logo: hide version on tablet */
+  .logo-ver { display: none; }
+}
+
+/* ============================================================
+   480px — Mobile
+   ============================================================ */
+@media (max-width: 480px) {
+
+  /* KPI: → 1-col */
+  .kpi-row, .kpi-row-3, .kpi-row-4 { grid-template-columns: 1fr; }
+  .kpi-row.c3, .kpi-row.c4, .kpi-row.c5 { grid-template-columns: 1fr; }
+
+  /* KPI value: reduce font */
+  .kpi-value { font-size: 18px; }
+
+  /* HMC: → 1-col */
+  .hmc-row { grid-template-columns: 1fr; }
+
+  /* Greeks: 2-col (cards are compact enough) */
+  .greeks-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Ops grids → 1-col */
+  .g2, .g3, .g4 { grid-template-columns: 1fr; }
+  .s2, .s3 { grid-column: span 1; }
+
+  /* Market OHLC: 4-col → 2-col */
+  .mkt-ohlc { grid-template-columns: repeat(2, 1fr); }
+
+  /* Scen stats: 4-col → 2-col */
+  .scen-stats { grid-template-columns: repeat(2, 1fr); }
+
+  /* Step bar: wrap into pairs */
+  .step-bar { flex-wrap: wrap; }
+  .step-seg { flex-basis: 50%; }
+
+  /* Market 3-panel */
+  .market-3col { grid-template-columns: 1fr; }
+
+  /* Main padding */
+  .main { padding: 12px; }
+
+  /* Topbar */
+  .topbar { padding: 0 10px; }
+  .topbar-mid { display: none; }
+  .t-sep, .t-crumb { display: none; }
+
+  /* Hide form hints to save space */
+  .form-hint { display: none; }
+
+  /* Sidebar full width on mobile */
+  .sidebar { width: 100%; }
+
+  /* Tables */
+  .tbl-wrap { overflow-x: auto; }
+  th, td { white-space: nowrap; }
+}
+
+/* ── Language Capsule ────────────────────────────────── */
+.lang-capsule {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  overflow: hidden;
+  background: var(--surface2, rgba(255,255,255,0.05));
+}
+.lang-btn {
+  padding: 3px 10px;
+  font-family: var(--fm, monospace);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  background: transparent;
+  color: var(--t2, #666);
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  line-height: 1.4;
+}
+.lang-btn:hover {
+  color: var(--text, #fff);
+}
+.lang-btn.active {
+  background: var(--build);
+  color: #fff;
+  border-radius: 100px;
+}

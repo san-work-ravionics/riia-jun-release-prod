@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Step 3+4 — Plan (B)</title><link rel="stylesheet" href="styles.css"></head>
+<body style="margin:0;display:grid;place-items:center;min-height:100vh;background:#f0eee9">
+<div class="phone">
+  <div class="status-bar"><span>9:41</span><div class="icons">
+    <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+    <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+  </div></div>
+
+  <div class="app-bar">
+    <a class="back" href="02-goal-a.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></a>
+    <div class="title">Plan</div>
+    <div class="step-pill">Step 3/6</div>
+  </div>
+  <div class="step-strip"><div class="seg done"></div><div class="seg done"></div><div class="seg active"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div></div>
+
+  <div class="body">
+    <div class="label" style="margin-top:12px">Tell us your numbers</div>
+    <div class="h1" style="margin-top:6px">Two numbers, that's it.</div>
+
+    <div class="tabs" style="margin-top:18px" data-tabs>
+      <button class="tab active" data-tab="amount">I'll invest €X</button>
+      <button class="tab" data-tab="reach">Reach this goal</button>
+    </div>
+
+    <div class="sketch fill" style="margin-top:16px;padding:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span class="label">Time horizon</span>
+        <span class="hand" style="font-size:14px"><span data-h-out>12</span> years</span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap" data-chip-group>
+        <button class="chip" data-value="1" style="padding:6px 12px;border:1.5px solid var(--ink);border-radius:999px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">1y</button>
+        <button class="chip" data-value="3" style="padding:6px 12px;border:1.5px solid var(--ink);border-radius:999px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">3y</button>
+        <button class="chip" data-value="5" style="padding:6px 12px;border:1.5px solid var(--ink);border-radius:999px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">5y</button>
+        <button class="chip" data-value="10" style="padding:6px 12px;border:1.5px solid var(--ink);border-radius:999px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">10y</button>
+        <button class="chip selected" data-value="12" style="padding:6px 12px;border:1.5px solid var(--ink);border-radius:999px;background:var(--ink);color:var(--paper);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">12y</button>
+        <button class="chip" data-value="20" style="padding:6px 12px;border:1.5px solid var(--ink);border-radius:999px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">20y</button>
+        <button class="chip" data-value="30" style="padding:6px 12px;border:1.5px solid var(--ink);border-radius:999px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">30y</button>
+      </div>
+      <input type="range" min="1" max="40" value="12" class="slider" data-bind="[data-h-out]" style="margin-top:12px">
+    </div>
+
+    <div class="sketch" data-tab-pane="amount" style="margin-top:14px;padding:14px">
+      <div class="label">Monthly amount</div>
+      <div class="input-row"><span class="currency">€</span><input type="number" value="250" data-recalc><span class="tiny">/mo</span></div>
+      <div class="hand" style="font-size:13px;margin-top:10px;color:var(--accent)">↓ we'll show what this grows into</div>
+    </div>
+    <div class="sketch" data-tab-pane="reach" style="margin-top:14px;padding:14px;display:none">
+      <div class="label">Goal amount</div>
+      <div class="input-row"><span class="currency">€</span><input type="number" value="75000" data-recalc></div>
+      <div class="hand" style="font-size:13px;margin-top:10px;color:var(--accent)">↓ we'll calculate monthly needed</div>
+    </div>
+  </div>
+
+  <div class="nav-bottom">
+    <a class="btn ghost icon-only" href="02-goal-a.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></a>
+    <a class="btn" href="05-advanced.html" style="text-decoration:none">Continue <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></a>
+  </div>
+  <div class="gesture-bar"></div>
+</div>
+<script src="app.js"></script>
+</body></html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1440, initial-scale=1">
+<title>Invest-Flow · Selected version</title>
+<link rel="stylesheet" href="styles.css">
+<template id="__bundler_thumbnail" data-bg-color="#f0eee9">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#f0eee9"/>
+    <g transform="translate(380,180)" stroke="#1a1a1a" stroke-width="3" fill="#fafaf7">
+      <rect x="0" y="0" width="130" height="240" rx="14"/>
+      <rect x="160" y="0" width="130" height="240" rx="14"/>
+      <rect x="320" y="0" width="130" height="240" rx="14"/>
+    </g>
+    <text x="600" y="540" text-anchor="middle" font-family="Inter,sans-serif" font-size="28" font-weight="700" fill="#1a1a1a">Invest-Flow · Selected</text>
+  </svg>
+</template>
+<style>
+  html, body { margin: 0; padding: 0; background: #f0eee9; min-height: 100vh; font-family: 'Inter', system-ui, sans-serif; color: #1a1a1a; }
+  .canvas { padding: 40px 48px 80px; }
+  .canvas-header { margin-bottom: 32px; max-width: 760px; }
+  .canvas-header h1 { font-size: 28px; margin: 0 0 6px; font-weight: 700; letter-spacing: -0.01em; }
+  .canvas-header p { font-size: 14px; color: rgba(0,0,0,.6); margin: 0; line-height: 1.5; }
+  .helper-pill { display:inline-block; background:#fff; border:1.5px solid #1a1a1a; border-radius:999px; padding:6px 14px; font-size:12px; margin-top:14px; }
+  .row { display: flex; gap: 28px; flex-wrap: wrap; align-items: flex-start; }
+  .frame { display: flex; flex-direction: column; gap: 8px; }
+  .frame-label { font-size: 12px; color: rgba(0,0,0,.55); padding-left: 4px; font-weight: 500; }
+  .frame .step-num { font-weight: 700; color: #00b46e; margin-right: 6px; }
+  .frame iframe {
+    width: 360px; height: 780px;
+    border: none;
+    background: #fafaf7;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+    border-radius: 2px;
+    display: block;
+  }
+  .frame a { color: rgba(0,0,0,.4); font-size: 11px; text-decoration: none; padding-left: 4px; }
+  .frame a:hover { color: #00b46e; text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="canvas">
+  <div class="canvas-header">
+    <h1>Invest-Flow · Selected version</h1>
+    <p>Final picks per your direction. Step 1 (Option A · new heading), Step 2 (Option B tile grid), Step 3+4 (Option A stacked + Option B chip horizon), Step 5, Step 6 (Option A + Option B's gross/net hero), Step 7 (with RIIA handoff renamed). Continue/Back walks the full flow.</p>
+    <div class="helper-pill">Start: <a href="00-onboarding.html" target="_blank" style="color:#00b46e;font-weight:600;">open onboarding ↗</a></div>
+  </div>
+
+  <div class="row">
+    <div class="frame">
+      <span class="frame-label"><span class="step-num">0</span>Onboarding</span>
+      <iframe src="00-onboarding.html" loading="lazy"></iframe>
+      <a href="00-onboarding.html" target="_blank">open ↗</a>
+    </div>
+    <div class="frame">
+      <span class="frame-label"><span class="step-num">1</span>How far are you thinking?</span>
+      <iframe src="sel-01-investor.html" loading="lazy"></iframe>
+      <a href="sel-01-investor.html" target="_blank">open ↗</a>
+    </div>
+    <div class="frame">
+      <span class="frame-label"><span class="step-num">2</span>Goal · tile grid</span>
+      <iframe src="sel-02-goal.html" loading="lazy"></iframe>
+      <a href="sel-02-goal.html" target="_blank">open ↗</a>
+    </div>
+    <div class="frame">
+      <span class="frame-label"><span class="step-num">3+4</span>Timeline & numbers</span>
+      <iframe src="sel-03-plan.html" loading="lazy"></iframe>
+      <a href="sel-03-plan.html" target="_blank">open ↗</a>
+    </div>
+    <div class="frame">
+      <span class="frame-label"><span class="step-num">5</span>Advanced settings</span>
+      <iframe src="sel-05-advanced.html" loading="lazy"></iframe>
+      <a href="sel-05-advanced.html" target="_blank">open ↗</a>
+    </div>
+    <div class="frame">
+      <span class="frame-label"><span class="step-num">6</span>Reality check · results</span>
+      <iframe src="sel-06-results.html" loading="lazy"></iframe>
+      <a href="sel-06-results.html" target="_blank">open ↗</a>
+    </div>
+    <div class="frame">
+      <span class="frame-label"><span class="step-num">7</span>Actions</span>
+      <iframe src="sel-07-actions.html" loading="lazy"></iframe>
+      <a href="sel-07-actions.html" target="_blank">open ↗</a>
+    </div>
+    <div class="frame">
+      <span class="frame-label"><span class="step-num">→</span>RIIA handoff</span>
+      <iframe src="sel-08-riia.html" loading="lazy"></iframe>
+      <a href="sel-08-riia.html" target="_blank">open ↗</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

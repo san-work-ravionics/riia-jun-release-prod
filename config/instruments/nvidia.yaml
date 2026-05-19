@@ -1,0 +1,16 @@
+# NVIDIA — Fine-tuning defaults
+# US tech stock; high volatility, momentum-driven, fewer years of data.
+instrument: NVIDIA
+
+training:
+  timesteps: 200000
+  learning_rate: 0.0003     # higher LR for faster adaptation to momentum shifts
+  buffer_size: 50000        # smaller dataset → smaller replay buffer
+  exploration_pct: 0.60     # more exploration in volatile regime
+  n_seeds: 3
+  episode_length: 126       # ~6 months; shorter window suits high-vol stock
+
+notes: >
+  Momentum and earnings-event driven. Shorter episode window avoids the agent
+  over-fitting to a single bull or bear cycle. Higher LR suits the fast-moving
+  price action. Consider re-tuning after each major product cycle.

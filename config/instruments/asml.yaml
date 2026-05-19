@@ -1,0 +1,17 @@
+# ASML — Fine-tuning defaults
+# European semiconductor equipment stock; lower volatility than NVIDIA,
+# driven by EUV order cycles and macro rates.
+instrument: ASML
+
+training:
+  timesteps: 300000
+  learning_rate: 0.0002     # moderate LR; steadier price behaviour than NVIDIA
+  buffer_size: 50000
+  exploration_pct: 0.55
+  n_seeds: 3
+  episode_length: 189       # ~9 months; aligns with semiconductor order cycles
+
+notes: >
+  Order-cycle driven. Macro-rate sensitivity means trend_score and EMA-ratio
+  features carry more signal than RSI. Consider adding macro overlay features
+  in a future sprint. Re-tune when a new EUV generation ships.

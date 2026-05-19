@@ -1,0 +1,51 @@
+{
+  "generated_at": "2026-05-08T16:09:59.535749+00:00",
+  "period": {
+    "from": "2026-05-07T16:09:59.535749+00:00",
+    "to": "2026-05-08T16:09:59.535749+00:00"
+  },
+  "sources": {
+    "backtest_runs": {
+      "ok": 1,
+      "empty": 0,
+      "error": 0,
+      "total": 1,
+      "ok_pct": 100.0
+    },
+    "backtest_results": {
+      "ok": 1,
+      "empty": 0,
+      "error": 0,
+      "total": 1,
+      "ok_pct": 100.0
+    },
+    "active_instrument": {
+      "ok": 3,
+      "empty": 0,
+      "error": 0,
+      "total": 3,
+      "ok_pct": 100.0
+    },
+    "prometheus_metrics": {
+      "ok": 2,
+      "empty": 0,
+      "error": 0,
+      "total": 2,
+      "ok_pct": 100.0
+    },
+    "training_kpis": {
+      "ok": 2,
+      "empty": 0,
+      "error": 0,
+      "total": 2,
+      "ok_pct": 100.0
+    },
+    "pipeline_runs": {
+      "ok": 2,
+      "empty": 0,
+      "error": 0,
+      "total": 2,
+      "ok_pct": 100.0
+    }
+  }
+}

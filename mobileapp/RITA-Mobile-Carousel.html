@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RITA Mobile — Six-Screen Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500;600&family=Epilogue:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+
+/* ── Reset ─────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+button { cursor: pointer; border: none; background: none; font: inherit; }
+
+/* ── RITA design tokens ─────────────────────────────────────────── */
+:root {
+  --bg:     #F5F3EE;
+  --surf:   #FFFFFF;
+  --surf2:  #F9F8F5;
+  --brd:    #E4E0D8;
+  --brd2:   #D0CBBC;
+  --txt:    #1A1814;
+  --t2:     #4A4640;
+  --t3:     #8C877A;
+  --t4:     #B8B2A6;
+  --build:  #1A6B3C;
+  --bldBg:  #EDF7F2;
+  --bldBd:  #B6DEC9;
+  --run:    #0056B8;
+  --runBg:  #EDF4FF;
+  --runBd:  #AECBF5;
+  --mon:    #6B2FA0;
+  --monBg:  #F5EFFE;
+  --monBd:  #CFADF0;
+  --warn:   #92480A;
+  --warnBg: #FEF4EB;
+  --warnBd: #F5C99A;
+  --dng:    #9B1C1C;
+  --dngBg:  #FEF2F2;
+  --dngBd:  #FCA5A5;
+  --chat:   #BE185D;
+  --chatBg: #FFF0F5;
+  --chatBd: #FBCFE8;
+  --fd: 'Epilogue', system-ui, sans-serif;
+  --fm: 'IBM Plex Mono', 'SF Mono', monospace;
+  --fs: 'Instrument Serif', Georgia, serif;
+}
+
+/* ── Page canvas ────────────────────────────────────────────────── */
+html, body {
+  height: 100%;
+  font-family: var(--fd);
+  background: #EDEAE3;
+  overflow: hidden;
+}
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Stage ──────────────────────────────────────────────────────── */
+.stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+.stage-row {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+/* ── Phone shell ────────────────────────────────────────────────── */
+.phone-shell {
+  width: 393px;
+  height: 852px;
+  background: linear-gradient(162deg, #2E2E30 0%, #18181A 100%);
+  border-radius: 54px;
+  padding: 9px;
+  position: relative;
+  flex-shrink: 0;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.16),
+    inset 0 1px 0 rgba(255,255,255,0.1),
+    0 60px 120px rgba(0,0,0,0.55),
+    0 24px 48px rgba(0,0,0,0.28);
+}
+/* Left side buttons */
+.phone-shell::before {
+  content: '';
+  position: absolute;
+  left: -3px; top: 128px;
+  width: 3px; height: 30px;
+  background: #3A3A3C;
+  border-radius: 2px 0 0 2px;
+  box-shadow: 0 44px 0 #3A3A3C, 0 88px 0 #3A3A3C;
+}
+/* Right side button */
+.phone-shell::after {
+  content: '';
+  position: absolute;
+  right: -3px; top: 178px;
+  width: 3px; height: 64px;
+  background: #3A3A3C;
+  border-radius: 0 2px 2px 0;
+}
+
+/* ── Inner screen ───────────────────────────────────────────────── */
+.phone-screen {
+  width: 375px;
+  height: 834px;
+  border-radius: 47px;
+  background: var(--bg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* ── Status bar ─────────────────────────────────────────────────── */
+.status-bar {
+  height: 54px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 28px 10px;
+  position: relative;
+  z-index: 20;
+}
+.s-time {
+  font-family: var(--fm);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--txt);
+  letter-spacing: -0.01em;
+}
+.dynamic-island {
+  position: absolute;
+  top: 12px; left: 50%;
+  transform: translateX(-50%);
+  width: 126px; height: 37px;
+  background: #0A0A0C;
+  border-radius: 20px;
+}
+.s-icons {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.s-icons svg { display: block; }
+
+/* ── Carousel ───────────────────────────────────────────────────── */
+.carousel-viewport {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+.carousel-track {
+  display: flex;
+  width: calc(375px * 8);
+  height: 100%;
+  transition: transform 0.42s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+.screen {
+  width: 375px;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  flex-shrink: 0;
+  position: relative;
+}
+.screen::-webkit-scrollbar { display: none; }
+.screen-inner { padding-bottom: 24px; }
+
+/* ── Tab bar ────────────────────────────────────────────────────── */
+.tab-bar {
+  height: 88px;
+  flex-shrink: 0;
+  background: var(--bg);
+  display: flex;
+  align-items: flex-start;
+  padding: 8px 12px 0;
+  position: relative;
+  z-index: 20;
+}
+.tab-bar::after {
+  content: '';
+  position: absolute;
+  bottom: 8px; left: 50%;
+  transform: translateX(-50%);
+  width: 130px; height: 5px;
+  background: var(--txt);
+  border-radius: 3px;
+  opacity: 0.18;
+}
+.tab-pill {
+  flex: 1;
+  display: flex;
+  background: var(--surf);
+  border-radius: 28px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12), 0 0 0 1px rgba(0,0,0,.04);
+  padding: 8px 6px 10px;
+}
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 6px 0;
+  border-radius: 20px;
+  transition: background 0.18s;
+}
+.tab-item:active { opacity: 0.6; }
+.tab-lbl {
+  font-family: var(--fm);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--t3);
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.tab-item[data-active="true"] { background: var(--bldBg); }
+.tab-item[data-active="true"] .tab-lbl { color: var(--build); font-weight: 700; }
+.tab-item[data-active="true"] svg { stroke: var(--build); }
+.tab-item svg { display: block; stroke: var(--t3); transition: stroke 0.2s; }
+
+/* ── Navigation arrows ──────────────────────────────────────────── */
+.nav-btn {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0,0,0,0.1);
+  background: rgba(255,255,255,0.82);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--txt);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.nav-btn:hover:not(:disabled) {
+  background: #fff;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.15);
+  transform: scale(1.06);
+}
+.nav-btn:active:not(:disabled) { transform: scale(0.93); }
+.nav-btn:disabled { opacity: 0.25; pointer-events: none; }
+
+/* ── Dot indicators ─────────────────────────────────────────────── */
+.dots-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.dots-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dot {
+  width: 8px; height: 8px;
+  border-radius: 4px;
+  background: rgba(0,0,0,0.15);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+.dot.active {
+  width: 28px;
+  background: var(--txt);
+}
+.screen-lbl {
+  font-family: var(--fm);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--t3);
+}
+.hint-txt {
+  font-family: var(--fm);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--t4);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SHARED SCREEN COMPONENTS
+   ═══════════════════════════════════════════════════════════════ */
+.hair { height: 1px; background: var(--brd); border: none; margin: 0; }
+.sc { font-family: var(--fm); font-size: 9px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--t3); }
+.pad { padding: 0 24px; }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: var(--fm);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.badge-build { background: var(--bldBg); color: var(--build); }
+.badge-run   { background: var(--runBg); color: var(--run); }
+.badge-mon   { background: var(--monBg); color: var(--mon); }
+.badge-warn  { background: var(--warnBg); color: var(--warn); }
+.badge-dng   { background: var(--dngBg); color: var(--dng); }
+.badge-chat  { background: var(--chatBg); color: var(--chat); }
+.badge-muted { background: var(--surf2); color: var(--t2); border: 1px solid var(--brd); }
+
+/* Chat FAB */
+.chat-fab {
+  position: absolute;
+  right: 18px; bottom: 16px;
+  width: 52px; height: 52px;
+  border-radius: 26px;
+  background: linear-gradient(135deg, var(--chat), #E94BA3);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 28px rgba(190,24,93,.45);
+  cursor: pointer;
+  z-index: 30;
+  user-select: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCREEN 1 — OVERVIEW
+   ═══════════════════════════════════════════════════════════════ */
+.ov-masthead { padding: 22px 24px 16px; }
+.ov-dateline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.ov-state { font-family: var(--fm); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--build); }
+.ov-headline {
+  font-family: var(--fs);
+  font-size: 38px;
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  color: var(--txt);
+}
+.ov-headline em { font-style: italic; color: var(--t2); }
+.ov-sub { font-size: 13px; color: var(--t2); margin-top: 12px; line-height: 1.55; }
+
+.ov-price-row {
+  padding: 16px 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.ov-instrument { font-family: var(--fm); font-size: 9px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--t3); margin-bottom: 6px; }
+.ov-price { font-family: var(--fm); font-size: 30px; font-weight: 500; letter-spacing: -0.02em; color: var(--txt); }
+.ov-change { font-family: var(--fm); font-size: 11px; color: var(--build); margin-top: 4px; }
+
+.ov-goal { padding: 14px 24px 20px; }
+.ov-goal-kpi {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 8px 0 10px;
+}
+.ov-goal-val { font-family: var(--fs); font-size: 26px; color: var(--txt); letter-spacing: -0.01em; }
+.ov-goal-val span { color: var(--t3); font-size: 16px; }
+.ov-goal-pct { font-family: var(--fm); font-size: 11px; color: var(--t3); }
+.progress-dots { display: flex; gap: 3px; }
+.progress-dot { flex: 1; height: 3px; border-radius: 2px; }
+.ov-goal-note { font-size: 11px; font-style: italic; font-family: var(--fs); color: var(--t3); margin-top: 8px; }
+
+.ov-signals { padding: 0 24px 24px; }
+.ov-signals-hdr {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 14px 0 12px;
+}
+.ov-signals-title { font-family: var(--fs); font-size: 20px; color: var(--txt); letter-spacing: -0.01em; }
+.ov-signals-more { font-family: var(--fm); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--t3); }
+.sig-row { padding: 12px 0; }
+.sig-tag-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.sig-title { font-size: 14px; font-weight: 600; color: var(--txt); line-height: 1.3; }
+.sig-body { font-size: 12px; color: var(--t2); line-height: 1.5; margin-top: 3px; }
+.sig-when { font-family: var(--fm); font-size: 9px; color: var(--t4); letter-spacing: 0.06em; }
+
+/* ═══════════════════════════════════════════════════════════════
+   SCREEN 2 — GOAL
+   ═══════════════════════════════════════════════════════════════ */
+.goal-hdr { padding: 24px 24px 0; }
+.goal-title { font-family: var(--fs); font-size: 34px; letter-spacing: -0.02em; color: var(--txt); margin-bottom: 4px; }
+.goal-subtitle { font-family: var(--fm); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--t3); }
+
+.goal-arc-wrap { display: flex; flex-direction: column; align-items: center; padding: 20px 24px 12px; }
+
+.goal-kpi-strip {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  padding: 0 24px 20px;
+}
+.goal-kpi-card {
+  background: var(--surf);
+  border: 1px solid var(--brd);
+  border-radius: 14px;
+  padding: 14px 12px;
+}
+.goal-kpi-lbl { font-family: var(--fm); font-size: 8px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--t3); margin-bottom: 8px; }
+.goal-kpi-val { font-family: var(--fm); font-size: 18px; font-weight: 500; color: var(--txt); letter-spacing: -0.02em; }
+.goal-kpi-sub { font-family: var(--fm); font-size: 9px; color: var(--t3); margin-top: 3px; }
+
+.goal-feasibility {
+  margin: 0 24px 20px;
+  background: var(--bldBg);
+  border: 1px solid var(--bldBd);
+  border-radius: 16px;
+  padding: 16px 18px;
+}
+.goal-feas-row { display: flex; align-items: center; justify-content: space-between; }
+.goal-feas-label { font-family: var(--fs); font-size: 18px; color: var(--build); letter-spacing: -0.01em; }
+.goal-feas-note { font-size: 12px; color: var(--build); margin-top: 6px; opacity: 0.8; line-height: 1.5; }
+
+.goal-milestones { padding: 0 24px 20px; }
+.milestone-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; position: relative; }
+.milestone-row + .milestone-row::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 15px;
+  width: 1px; height: 10px;
+  background: var(--brd);
+}
+.ms-node {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--fm);
+  font-size: 10px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.ms-done { background: var(--bldBg); color: var(--build); border: 1.5px solid var(--bldBd); }
+.ms-todo { background: var(--surf2); color: var(--t4); border: 1.5px solid var(--brd); }
+.ms-label { font-size: 13px; color: var(--txt); }
+.ms-val { font-family: var(--fm); font-size: 11px; color: var(--t3); }
+
+/* ═══════════════════════════════════════════════════════════════
+   SCREEN 3 — MARKET SIGNALS
+   ═══════════════════════════════════════════════════════════════ */
+.mkt-hdr { padding: 24px 24px 16px; }
+.mkt-title { font-family: var(--fs); font-size: 34px; color: var(--txt); letter-spacing: -0.02em; margin-bottom: 12px; }
+.mkt-instr-row { display: flex; align-items: center; justify-content: space-between; }
+.mkt-price { font-family: var(--fm); font-size: 22px; font-weight: 500; color: var(--txt); }
+.mkt-chg { font-family: var(--fm); font-size: 11px; color: var(--build); margin-top: 3px; }
+
+.mkt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px 24px 0; }
+.mkt-card {
+  background: var(--surf);
+  border: 1px solid var(--brd);
+  border-radius: 16px;
+  padding: 14px 14px 12px;
+}
+.mkt-card-lbl { font-family: var(--fm); font-size: 8px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--t3); margin-bottom: 8px; }
+.mkt-card-val { font-family: var(--fm); font-size: 22px; font-weight: 500; color: var(--txt); letter-spacing: -0.02em; }
+.mkt-card-sub { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+
+.mkt-trend { margin: 14px 24px 0; background: var(--surf); border: 1px solid var(--brd); border-radius: 16px; padding: 16px; }
+.mkt-trend-lbl { font-family: var(--fm); font-size: 8px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--t3); margin-bottom: 12px; }
+.trend-bar-track { height: 8px; background: var(--surf2); border-radius: 4px; overflow: hidden; }
+.trend-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--warn), var(--build)); }
+.trend-bar-labels { display: flex; justify-content: space-between; margin-top: 6px; }
+.trend-bar-labels span { font-family: var(--fm); font-size: 9px; color: var(--t4); }
+
+.mkt-regime { margin: 12px 24px 20px; padding: 14px 16px; background: var(--bldBg); border: 1px solid var(--bldBd); border-radius: 14px; display: flex; align-items: center; justify-content: space-between; }
+.mkt-regime-lbl { font-size: 13px; font-weight: 600; color: var(--build); }
+.mkt-regime-val { font-family: var(--fm); font-size: 11px; color: var(--build); opacity: 0.8; }
+
+/* ═══════════════════════════════════════════════════════════════
+   SCREEN 4 — SIGNALS
+   ═══════════════════════════════════════════════════════════════ */
+.sig-hdr { padding: 24px 24px 0; }
+.sig-pg-title { font-family: var(--fs); font-size: 34px; color: var(--txt); letter-spacing: -0.02em; }
+.sig-pg-count { font-family: var(--fm); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--t3); margin-top: 4px; }
+
+.sig-chips { display: flex; gap: 8px; padding: 14px 24px 16px; overflow-x: auto; scrollbar-width: none; }
+.sig-chips::-webkit-scrollbar { display: none; }
+.chip {
+  display: flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--brd);
+  background: var(--surf);
+  font-family: var(--fm);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--t2);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.chip.active { background: var(--txt); color: #fff; border-color: var(--txt); }
+
+.sig-cards { padding: 0 24px; display: flex; flex-direction: column; gap: 10px; }
+.sig-card {
+  background: var(--surf);
+  border: 1px solid var(--brd);
+  border-radius: 18px;
+  padding: 16px 16px 14px;
+}
+.sig-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
+.sig-card-title { font-size: 14px; font-weight: 600; color: var(--txt); line-height: 1.3; flex: 1; margin-right: 8px; }
+.sig-card-body { font-size: 12px; color: var(--t2); line-height: 1.55; }
+.sig-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+.sig-card-when { font-family: var(--fm); font-size: 9px; color: var(--t4); letter-spacing: 0.06em; }
+
+/* ═══════════════════════════════════════════════════════════════
+   SCREEN 5 — STRATEGY
+   ═══════════════════════════════════════════════════════════════ */
+.strat-hdr { padding: 24px 24px 0; }
+.strat-pg-title { font-family: var(--fs); font-size: 34px; color: var(--txt); letter-spacing: -0.02em; }
+
+.strat-hero {
+  margin: 16px 24px 0;
+  background: var(--txt);
+  border-radius: 24px;
+  padding: 22px 20px;
+  color: #F5F3EE;
+}
+.strat-hero-lbl { font-family: var(--fm); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(245,243,238,.5); margin-bottom: 10px; }
+.strat-hero-name { font-family: var(--fs); font-size: 26px; letter-spacing: -0.01em; line-height: 1.1; margin-bottom: 14px; }
+.strat-status-row { display: flex; align-items: center; gap: 10px; }
+.strat-status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--build); }
+.strat-status-txt { font-family: var(--fm); font-size: 10px; letter-spacing: 0.08em; color: rgba(245,243,238,.7); }
+
+.strat-kpi-strip { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 14px 24px 0; }
+.strat-kpi {
+  background: var(--surf);
+  border: 1px solid var(--brd);
+  border-radius: 14px;
+  padding: 14px 12px;
+  text-align: center;
+}
+.strat-kpi-lbl { font-family: var(--fm); font-size: 8px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--t3); margin-bottom: 8px; }
+.strat-kpi-val { font-family: var(--fm); font-size: 20px; font-weight: 500; letter-spacing: -0.02em; }
+
+.strat-alloc { margin: 14px 24px 0; background: var(--surf); border: 1px solid var(--brd); border-radius: 18px; padding: 18px 16px; }
+.strat-alloc-hdr { font-family: var(--fm); font-size: 9px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--t3); margin-bottom: 14px; }
+.strat-alloc-pct { font-family: var(--fm); font-size: 40px; font-weight: 500; letter-spacing: -0.04em; color: var(--txt); line-height: 1; }
+.strat-alloc-sub { font-size: 12px; color: var(--t2); margin-top: 6px; }
+.alloc-bar { height: 8px; background: var(--surf2); border-radius: 4px; overflow: hidden; margin-top: 16px; }
+.alloc-bar-fill { height: 100%; border-radius: 4px; background: var(--build); }
+
+.strat-rec {
+  margin: 12px 24px 20px;
+  padding: 14px 16px;
+  background: var(--bldBg);
+  border: 1px solid var(--bldBd);
+  border-radius: 14px;
+}
+.strat-rec-row { display: flex; align-items: center; justify-content: space-between; }
+.strat-rec-lbl { font-size: 14px; font-weight: 600; color: var(--build); }
+.strat-rec-note { font-size: 12px; color: var(--build); opacity: 0.75; margin-top: 5px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   SCREEN 6 — CHAT
+   ═══════════════════════════════════════════════════════════════ */
+.chat-hdr {
+  padding: 20px 24px 14px;
+  background: var(--surf);
+  border-bottom: 1px solid var(--brd);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.chat-avatar {
+  width: 38px; height: 38px;
+  border-radius: 19px;
+  background: var(--chat);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--fs);
+  font-size: 18px;
+  font-style: italic;
+  color: #fff;
+  flex-shrink: 0;
+}
+.chat-hdr-name { font-weight: 600; font-size: 16px; color: var(--txt); }
+.chat-hdr-status { font-family: var(--fm); font-size: 9px; color: var(--build); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+
+.chat-msgs { padding: 16px 16px 12px; display: flex; flex-direction: column; gap: 12px; }
+.msg-wrap { display: flex; flex-direction: column; }
+.msg-wrap.user { align-items: flex-end; }
+.msg-wrap.rita { align-items: flex-start; }
+.bubble {
+  max-width: 80%;
+  padding: 11px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.bubble-user { background: var(--txt); color: #F5F3EE; border-radius: 20px 20px 4px 20px; }
+.bubble-rita { background: var(--surf); border: 1px solid var(--brd); color: var(--txt); border-radius: 20px 20px 20px 4px; }
+.bubble-rita strong { color: var(--build); }
+.msg-time { font-family: var(--fm); font-size: 9px; color: var(--t4); margin-top: 4px; letter-spacing: 0.06em; }
+
+.chat-chips-area { padding: 4px 16px 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+.chat-chip {
+  display: flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--chatBd);
+  background: var(--chatBg);
+  font-family: var(--fm);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--chat);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.chat-chip:hover { background: var(--chat); color: #fff; }
+
+.chat-input-bar {
+  margin: 0 16px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surf);
+  border: 1px solid var(--brd);
+  border-radius: 24px;
+  padding: 10px 10px 10px 18px;
+}
+.chat-input-field {
+  flex: 1;
+  font-family: var(--fd);
+  font-size: 14px;
+  color: var(--t3);
+  border: none;
+  outline: none;
+  background: transparent;
+}
+.chat-send-btn {
+  width: 36px; height: 36px;
+  border-radius: 18px;
+  background: var(--chat);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <!-- title strip -->
+  <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#8C877A;">
+    RITA Mobile &nbsp;·&nbsp; Six-Screen Prototype
+  </div>
+
+  <div class="stage-row">
+
+    <!-- ← Previous -->
+    <button class="nav-btn" id="btnPrev" title="Previous screen (←)">
+      <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
+        <path d="M8 2L2 8l6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+
+    <!-- ══════════════ PHONE ══════════════ -->
+    <div class="phone-shell">
+      <div class="phone-screen">
+
+        <!-- Status bar -->
+        <div class="status-bar">
+          <span class="s-time">9:41</span>
+          <div class="dynamic-island"></div>
+          <div class="s-icons">
+            <!-- Signal -->
+            <svg width="17" height="12" viewBox="0 0 17 12" fill="#1A1814">
+              <rect x="0"  y="8"  width="3" height="4" rx="0.8"/>
+              <rect x="4.5" y="5.5" width="3" height="6.5" rx="0.8"/>
+              <rect x="9"  y="3"  width="3" height="9" rx="0.8"/>
+              <rect x="13.5" y="0" width="3" height="12" rx="0.8" opacity="0.3"/>
+            </svg>
+            <!-- WiFi -->
+            <svg width="16" height="12" viewBox="0 0 16 12" fill="#1A1814">
+              <path d="M8 9.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z"/>
+              <path d="M4.3 6.8a5.2 5.2 0 017.4 0" stroke="#1A1814" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+              <path d="M1.2 3.7a9.5 9.5 0 0113.6 0" stroke="#1A1814" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+            </svg>
+            <!-- Battery -->
+            <svg width="25" height="12" viewBox="0 0 25 12" fill="none">
+              <rect x="0.5" y="0.5" width="21" height="11" rx="3.3" stroke="#1A1814" stroke-opacity="0.35"/>
+              <rect x="2"   y="2"   width="16" height="8"  rx="2"   fill="#1A1814"/>
+              <path d="M23 4.5v3a1.5 1.5 0 000-3z" fill="#1A1814" opacity="0.4"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Carousel viewport -->
+        <div class="carousel-viewport" id="viewport">
+          <div class="carousel-track" id="track">
+
+            <!-- ══ SCREEN 1: OVERVIEW ═══════════════════════════════ -->
+            <div class="screen" id="s0">
+              <div class="screen-inner">
+
+                <!-- Greeting row -->
+                <div style="padding:22px 22px 14px;display:flex;justify-content:space-between;align-items:center;">
+                  <div>
+                    <div style="font-size:12px;color:var(--t3);margin-bottom:2px;">Tuesday morning</div>
+                    <div style="font-size:22px;font-weight:700;letter-spacing:-0.01em;color:var(--txt);">Hi, RIIA 👋</div>
+                  </div>
+                  <div style="width:40px;height:40px;border-radius:20px;background:var(--surf);border:1px solid var(--brd);display:flex;align-items:center;justify-content:center;font-family:var(--fs);font-size:16px;color:var(--t2);">R</div>
+                </div>
+
+                <!-- Hero card — Bull market -->
+                <div style="margin:0 16px 14px;padding:20px;border-radius:22px;background:var(--bldBg);position:relative;overflow:hidden;">
+                  <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
+                    <span style="width:6px;height:6px;border-radius:50%;background:var(--build);display:inline-block;"></span>
+                    <span style="font-size:11px;font-weight:600;color:var(--build);letter-spacing:0.04em;font-family:var(--fm);">BULL MARKET</span>
+                  </div>
+                  <div style="font-size:13px;color:var(--t2);margin-bottom:4px;font-family:var(--fm);">NIFTY 50</div>
+                  <div style="font-family:var(--fm);font-size:32px;font-weight:500;letter-spacing:-0.02em;color:var(--txt);">24,758.90</div>
+                  <div style="font-family:var(--fm);font-size:13px;color:var(--build);margin-top:3px;">+287.45 · +1.17%</div>
+                  <svg width="100%" height="48" viewBox="0 0 280 48" style="margin-top:10px;display:block;">
+                    <defs>
+                      <linearGradient id="grad-bull" x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0" stop-color="#1A6B3C" stop-opacity="0.25"/>
+                        <stop offset="1" stop-color="#1A6B3C" stop-opacity="0"/>
+                      </linearGradient>
+                    </defs>
+                    <polygon fill="url(#grad-bull)" points="0,48 0,40 14.7,38 29.5,39 44.2,36 59,32 73.7,33 88.5,29 103.2,27 118,28 132.7,25 147.5,22 162.2,23 177,18 191.7,19 206.5,16 221.2,13 236,14 250.7,11 265.5,12 280,9 280,48"/>
+                    <polyline fill="none" stroke="#1A6B3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                      points="0,40 14.7,38 29.5,39 44.2,36 59,32 73.7,33 88.5,29 103.2,27 118,28 132.7,25 147.5,22 162.2,23 177,18 191.7,19 206.5,16 221.2,13 236,14 250.7,11 265.5,12 280,9"/>
+                  </svg>
+                </div>
+
+                <!-- Goal card -->
+                <div style="margin:0 16px 14px;padding:18px;border-radius:18px;background:var(--surf);border:1px solid var(--brd);box-shadow:0 2px 10px rgba(0,0,0,.04);">
+                  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+                    <div>
+                      <div style="font-size:11px;color:var(--t3);letter-spacing:0.04em;text-transform:uppercase;font-family:var(--fm);">Your yearly goal</div>
+                      <div style="font-size:18px;font-weight:700;margin-top:2px;color:var(--txt);">8.9% of 12%</div>
+                    </div>
+                    <div style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px;background:var(--bldBg);color:var(--build);font-family:var(--fm);">74%</div>
+                  </div>
+                  <div style="height:8px;border-radius:4px;background:var(--surf2);overflow:hidden;">
+                    <div style="height:100%;width:74%;border-radius:4px;background:linear-gradient(90deg,var(--build),#2D9456);"></div>
+                  </div>
+                  <div style="font-size:12px;color:var(--t3);margin-top:8px;">Pace suggests 14 months to reach target.</div>
+                </div>
+
+                <!-- Signals today -->
+                <div style="padding:0 22px 8px;display:flex;justify-content:space-between;align-items:baseline;">
+                  <div style="font-size:15px;font-weight:700;color:var(--txt);">Signals today</div>
+                  <div style="font-size:12px;color:var(--run);font-weight:600;font-family:var(--fm);">See all</div>
+                </div>
+
+                <div style="padding:0 16px 24px;display:flex;flex-direction:column;gap:10px;">
+                  <div style="padding:16px;border-radius:16px;background:var(--surf);border:1px solid var(--brd);">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                      <div style="width:36px;height:36px;border-radius:12px;background:var(--bldBg);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--build);flex-shrink:0;">↑</div>
+                      <div style="flex:1;">
+                        <div style="font-size:10px;font-weight:700;color:var(--build);letter-spacing:0.06em;font-family:var(--fm);">MOMENTUM</div>
+                        <div style="font-size:14px;font-weight:600;color:var(--txt);line-height:1.3;">Momentum score at 75</div>
+                      </div>
+                      <div style="font-size:10px;color:var(--t4);font-family:var(--fm);">12m</div>
+                    </div>
+                    <div style="font-size:12px;color:var(--t2);line-height:1.5;">RSI above 70 on 3 of 4 tracked instruments for the last 2 sessions.</div>
+                  </div>
+
+                  <div style="padding:16px;border-radius:16px;background:var(--surf);border:1px solid var(--brd);">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                      <div style="width:36px;height:36px;border-radius:12px;background:var(--runBg);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--run);flex-shrink:0;">↗</div>
+                      <div style="flex:1;">
+                        <div style="font-size:10px;font-weight:700;color:var(--run);letter-spacing:0.06em;font-family:var(--fm);">ROTATION</div>
+                        <div style="font-size:14px;font-weight:600;color:var(--txt);line-height:1.3;">IT leading broad market</div>
+                      </div>
+                      <div style="font-size:10px;color:var(--t4);font-family:var(--fm);">1h</div>
+                    </div>
+                    <div style="font-size:12px;color:var(--t2);line-height:1.5;">IT index outperformed by 2.1 standard deviations over the last 5 sessions.</div>
+                  </div>
+                </div>
+
+                <!-- Chat FAB -->
+                <div class="chat-fab" onclick="goTo(5)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></div>
+              </div>
+            </div>
+
+            <!-- ══ SCREEN 2: GOAL ═══════════════════════════════════ -->
+            <div class="screen" id="s1">
+              <div class="screen-inner">
+                <div style="padding:22px 22px 10px;">
+                  <div style="font-size:12px;color:var(--t3);">Financial Goal</div>
+                  <div style="font-size:28px;font-weight:700;letter-spacing:-0.02em;margin-top:4px;color:var(--txt);">Target 12% this year</div>
+                </div>
+
+                <!-- Radial + stats card -->
+                <div style="margin:14px 16px;padding:20px;border-radius:22px;background:var(--surf);border:1px solid var(--brd);display:flex;gap:16px;align-items:center;">
+                  <svg width="110" height="110" viewBox="0 0 110 110">
+                    <circle cx="55" cy="55" r="46" fill="none" stroke="#F9F8F5" stroke-width="12"/>
+                    <circle cx="55" cy="55" r="46" fill="none" stroke="#1A6B3C" stroke-width="12"
+                      stroke-dasharray="214 289" stroke-linecap="round" transform="rotate(-90 55 55)"/>
+                    <text x="55" y="58" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="22" font-weight="500" fill="#1A1814">74%</text>
+                  </svg>
+                  <div style="flex:1;">
+                    <div style="font-size:12px;color:var(--t3);">YTD return</div>
+                    <div style="font-family:var(--fm);font-size:24px;font-weight:500;color:var(--build);margin-top:2px;">8.9%</div>
+                    <div style="font-size:12px;color:var(--t2);margin-top:6px;line-height:1.4;">14 months to target at current pace.</div>
+                  </div>
+                </div>
+
+                <!-- Milestones -->
+                <div style="padding:6px 22px 8px;font-size:14px;font-weight:700;color:var(--txt);">Milestones</div>
+                <div style="padding:0 16px 24px;display:flex;flex-direction:column;gap:8px;">
+                  <div style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;background:var(--surf);border:1px solid var(--brd);">
+                    <div style="width:24px;height:24px;border-radius:12px;background:var(--build);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;flex-shrink:0;">✓</div>
+                    <div style="font-size:14px;color:var(--t2);text-decoration:line-through;">First signal viewed</div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;background:var(--surf);border:1px solid var(--brd);">
+                    <div style="width:24px;height:24px;border-radius:12px;background:var(--build);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;flex-shrink:0;">✓</div>
+                    <div style="font-size:14px;color:var(--t2);text-decoration:line-through;">10 trades logged</div>
+                    <span style="font-family:var(--fm);font-size:11px;color:var(--t3);margin-left:auto;">8 of 10</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;background:var(--surf);border:1px solid var(--brd);">
+                    <div style="width:24px;height:24px;border-radius:12px;background:var(--build);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;flex-shrink:0;">✓</div>
+                    <div style="font-size:14px;color:var(--t2);text-decoration:line-through;">6% YTD reached</div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;background:var(--surf);border:1px solid var(--brd);">
+                    <div style="width:24px;height:24px;border-radius:12px;background:var(--surf2);border:1.5px solid var(--brd2);flex-shrink:0;"></div>
+                    <div style="font-size:14px;color:var(--txt);">12% YTD reached</div>
+                  </div>
+                </div>
+
+                <div class="chat-fab" onclick="goTo(5)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></div>
+              </div>
+            </div>
+
+            <!-- ══ SCREEN 3: MARKET ═════════════════════════════════ -->
+            <div class="screen" id="s2">
+              <div class="screen-inner">
+                <div style="padding:22px 22px 10px;">
+                  <div style="font-size:12px;color:var(--t3);">Market Analysis</div>
+                  <div style="font-size:26px;font-weight:700;letter-spacing:-0.02em;margin-top:4px;color:var(--txt);">Today's regime</div>
+                </div>
+
+                <!-- Regime pill -->
+                <div style="margin:10px 16px 14px;padding:20px;border-radius:22px;background:var(--bldBg);border:1px solid var(--bldBd);">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                    <span style="width:8px;height:8px;border-radius:4px;background:var(--build);display:inline-block;"></span>
+                    <span style="font-size:11px;font-weight:700;color:var(--build);letter-spacing:0.08em;font-family:var(--fm);">BULL</span>
+                  </div>
+                  <div style="font-size:22px;font-weight:700;color:var(--build);letter-spacing:-0.01em;">NIFTY 50 · 24,758.90</div>
+                  <div style="font-family:var(--fm);font-size:13px;color:var(--build);opacity:0.85;margin-top:2px;">+287.45 · +1.17%</div>
+                  <svg width="100%" height="44" viewBox="0 0 280 44" style="margin-top:12px;display:block;">
+                    <polyline fill="none" stroke="#1A6B3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                      points="0,40 14.7,38 29.5,39 44.2,36 59,32 73.7,33 88.5,29 103.2,27 118,28 132.7,25 147.5,22 162.2,23 177,18 191.7,19 206.5,16 221.2,13 236,14 250.7,11 265.5,12 280,9"/>
+                  </svg>
+                </div>
+
+                <!-- Factor scores -->
+                <div style="padding:0 22px 8px;font-size:14px;font-weight:700;color:var(--txt);">Factor scores</div>
+                <div style="padding:0 16px 12px;display:flex;flex-direction:column;gap:8px;">
+                  <div style="padding:14px;border-radius:14px;background:var(--surf);border:1px solid var(--brd);">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+                      <span style="font-size:13px;font-weight:600;color:var(--txt);">Momentum</span>
+                      <span><span style="font-family:var(--fm);font-size:14px;font-weight:500;color:var(--txt);">0.72</span><span style="font-family:var(--fm);font-size:11px;margin-left:8px;color:var(--build);">+0.14</span></span>
+                    </div>
+                    <div style="height:6px;border-radius:3px;background:var(--surf2);overflow:hidden;"><div style="height:100%;width:72%;background:var(--build);border-radius:3px;"></div></div>
+                  </div>
+                  <div style="padding:14px;border-radius:14px;background:var(--surf);border:1px solid var(--brd);">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+                      <span style="font-size:13px;font-weight:600;color:var(--txt);">Value</span>
+                      <span><span style="font-family:var(--fm);font-size:14px;font-weight:500;color:var(--txt);">0.41</span><span style="font-family:var(--fm);font-size:11px;margin-left:8px;color:var(--dng);">−0.05</span></span>
+                    </div>
+                    <div style="height:6px;border-radius:3px;background:var(--surf2);overflow:hidden;"><div style="height:100%;width:41%;background:var(--run);border-radius:3px;"></div></div>
+                  </div>
+                  <div style="padding:14px;border-radius:14px;background:var(--surf);border:1px solid var(--brd);">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+                      <span style="font-size:13px;font-weight:600;color:var(--txt);">Quality</span>
+                      <span><span style="font-family:var(--fm);font-size:14px;font-weight:500;color:var(--txt);">0.58</span><span style="font-family:var(--fm);font-size:11px;margin-left:8px;color:var(--build);">+0.08</span></span>
+                    </div>
+                    <div style="height:6px;border-radius:3px;background:var(--surf2);overflow:hidden;"><div style="height:100%;width:58%;background:var(--mon);border-radius:3px;"></div></div>
+                  </div>
+                  <div style="padding:14px;border-radius:14px;background:var(--surf);border:1px solid var(--brd);">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+                      <span style="font-size:13px;font-weight:600;color:var(--txt);">Volatility</span>
+                      <span><span style="font-family:var(--fm);font-size:14px;font-weight:500;color:var(--txt);">0.33</span><span style="font-family:var(--fm);font-size:11px;margin-left:8px;color:var(--dng);">−0.02</span></span>
+                    </div>
+                    <div style="height:6px;border-radius:3px;background:var(--surf2);overflow:hidden;"><div style="height:100%;width:33%;background:var(--warn);border-radius:3px;"></div></div>
+                  </div>
+                </div>
+
+                <!-- Rita Explains -->
+                <div style="margin:0 16px 24px;padding:16px;border-radius:16px;background:var(--chatBg);border:1px solid var(--chatBd);">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                    <div style="width:24px;height:24px;border-radius:12px;background:var(--chat);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--fs);font-size:13px;flex-shrink:0;">R</div>
+                    <div style="font-size:10px;font-weight:700;color:var(--chat);letter-spacing:0.06em;font-family:var(--fm);">RITA EXPLAINS</div>
+                  </div>
+                  <div style="font-size:12px;color:var(--t2);line-height:1.55;font-family:var(--fs);font-style:italic;">"Momentum and Quality are the leading factors. Volatility is below its 1-year median — that combination is what I classify as a bull regime."</div>
+                </div>
+
+                <div class="chat-fab" onclick="goTo(5)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></div>
+              </div>
+            </div>
+
+            <!-- ══ SCREEN 4: SIGNALS ════════════════════════════════ -->
+            <div class="screen" id="s3">
+              <div class="screen-inner">
+                <div class="sig-hdr">
+                  <div class="sig-pg-title">Signals</div>
+                  <div class="sig-pg-count">4 active · Updated 12 min ago</div>
+                </div>
+
+                <div class="sig-chips">
+                  <div class="chip active">All</div>
+                  <div class="chip">Momentum</div>
+                  <div class="chip">Volatility</div>
+                  <div class="chip">Reversal</div>
+                  <div class="chip">Breadth</div>
+                </div>
+
+                <div class="sig-cards">
+                  <div class="sig-card" style="border-left:3px solid var(--build);">
+                    <div class="sig-card-header">
+                      <div class="sig-card-title">Momentum score at 75</div>
+                      <span class="badge badge-build">Momentum</span>
+                    </div>
+                    <div class="sig-card-body">RSI is above 70 on 3 of 4 tracked instruments for the last 2 consecutive sessions. Momentum is accelerating.</div>
+                    <div class="sig-card-footer">
+                      <span class="sig-card-when">12 min ago</span>
+                      <span class="badge badge-build" style="font-size:8px;">High</span>
+                    </div>
+                  </div>
+
+                  <div class="sig-card" style="border-left:3px solid var(--run);">
+                    <div class="sig-card-header">
+                      <div class="sig-card-title">IT sector leading broad market</div>
+                      <span class="badge badge-run">Rotation</span>
+                    </div>
+                    <div class="sig-card-body">IT index outperformed by 2.1 standard deviations over the last 5 sessions. Sector rotation into technology is underway.</div>
+                    <div class="sig-card-footer">
+                      <span class="sig-card-when">1 hr ago</span>
+                      <span class="badge badge-run" style="font-size:8px;">Medium</span>
+                    </div>
+                  </div>
+
+                  <div class="sig-card">
+                    <div class="sig-card-header">
+                      <div class="sig-card-title">VIX at 11.8 — lowest quartile</div>
+                      <span class="badge badge-muted">Volatility</span>
+                    </div>
+                    <div class="sig-card-body">Implied volatility is in the lowest quartile of its 1-year range. Complacency risk elevated. Options pricing cheap.</div>
+                    <div class="sig-card-footer">
+                      <span class="sig-card-when">3 hr ago</span>
+                      <span class="badge badge-muted" style="font-size:8px;">Low</span>
+                    </div>
+                  </div>
+
+                  <div class="sig-card" style="border-left:3px solid var(--build);">
+                    <div class="sig-card-header">
+                      <div class="sig-card-title">68% of stocks above 200-DMA</div>
+                      <span class="badge badge-build">Breadth</span>
+                    </div>
+                    <div class="sig-card-body">Advance-decline ratio is 1,428 / 592 on NSE today. Broad participation confirms the current uptrend.</div>
+                    <div class="sig-card-footer">
+                      <span class="sig-card-when">4 hr ago</span>
+                      <span class="badge badge-build" style="font-size:8px;">High</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="chat-fab" onclick="goTo(5)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></div>
+              </div>
+            </div>
+
+            <!-- ══ SCREEN 5: STRATEGY ═══════════════════════════════ -->
+            <div class="screen" id="s4">
+              <div class="screen-inner">
+                <div style="padding:22px 22px 10px;">
+                  <div style="font-size:12px;color:var(--t3);">Strategy</div>
+                  <div style="font-size:26px;font-weight:700;letter-spacing:-0.02em;margin-top:4px;color:var(--txt);">Swing-Momentum v3</div>
+                </div>
+
+                <!-- Status + KPI grid -->
+                <div style="margin:8px 16px 14px;padding:18px;border-radius:20px;background:var(--surf);border:1px solid var(--brd);">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+                    <span style="width:8px;height:8px;border-radius:4px;background:var(--build);display:inline-block;"></span>
+                    <span style="font-size:11px;font-weight:700;color:var(--build);letter-spacing:0.08em;font-family:var(--fm);">ACTIVE</span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                    <div>
+                      <div style="font-size:10px;color:var(--t3);letter-spacing:0.06em;text-transform:uppercase;font-family:var(--fm);">P&amp;L</div>
+                      <div style="font-family:var(--fm);font-size:22px;font-weight:500;color:var(--build);margin-top:2px;letter-spacing:-0.01em;">+₹82,400</div>
+                    </div>
+                    <div>
+                      <div style="font-size:10px;color:var(--t3);letter-spacing:0.06em;text-transform:uppercase;font-family:var(--fm);">Win Rate</div>
+                      <div style="font-family:var(--fm);font-size:22px;font-weight:500;color:var(--txt);margin-top:2px;letter-spacing:-0.01em;">64%</div>
+                    </div>
+                    <div>
+                      <div style="font-size:10px;color:var(--t3);letter-spacing:0.06em;text-transform:uppercase;font-family:var(--fm);">Sharpe</div>
+                      <div style="font-family:var(--fm);font-size:22px;font-weight:500;color:var(--txt);margin-top:2px;letter-spacing:-0.01em;">1.82</div>
+                    </div>
+                    <div>
+                      <div style="font-size:10px;color:var(--t3);letter-spacing:0.06em;text-transform:uppercase;font-family:var(--fm);">Universe</div>
+                      <div style="font-family:var(--fm);font-size:22px;font-weight:500;color:var(--txt);margin-top:2px;letter-spacing:-0.01em;">12 syms</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Recent decisions -->
+                <div style="padding:0 22px 8px;font-size:14px;font-weight:700;color:var(--txt);">Recent decisions</div>
+                <div style="padding:0 16px 24px;display:flex;flex-direction:column;gap:8px;">
+                  <div style="padding:12px;border-radius:12px;background:var(--surf);border:1px solid var(--brd);display:flex;align-items:center;gap:10px;">
+                    <span style="font-family:var(--fm);font-size:11px;color:var(--t3);width:40px;">10:42</span>
+                    <span style="font-family:var(--fm);font-size:10px;font-weight:700;color:var(--build);padding:2px 7px;border-radius:4px;background:var(--surf2);letter-spacing:0.04em;">ENTER</span>
+                    <span style="font-size:13px;font-weight:600;flex:1;color:var(--txt);">RELIANCE</span>
+                    <span style="font-family:var(--fm);font-size:12px;color:var(--t2);">+12 sh</span>
+                  </div>
+                  <div style="padding:12px;border-radius:12px;background:var(--surf);border:1px solid var(--brd);display:flex;align-items:center;gap:10px;">
+                    <span style="font-family:var(--fm);font-size:11px;color:var(--t3);width:40px;">09:58</span>
+                    <span style="font-family:var(--fm);font-size:10px;font-weight:700;color:var(--run);padding:2px 7px;border-radius:4px;background:var(--surf2);letter-spacing:0.04em;">EXIT</span>
+                    <span style="font-size:13px;font-weight:600;flex:1;color:var(--txt);">TCS</span>
+                    <span style="font-family:var(--fm);font-size:12px;color:var(--t2);">−20 sh</span>
+                  </div>
+                  <div style="padding:12px;border-radius:12px;background:var(--surf);border:1px solid var(--brd);display:flex;align-items:center;gap:10px;">
+                    <span style="font-family:var(--fm);font-size:11px;color:var(--t3);width:40px;">09:31</span>
+                    <span style="font-family:var(--fm);font-size:10px;font-weight:700;color:var(--build);padding:2px 7px;border-radius:4px;background:var(--surf2);letter-spacing:0.04em;">SCALE</span>
+                    <span style="font-size:13px;font-weight:600;flex:1;color:var(--txt);">HDFCBANK</span>
+                    <span style="font-family:var(--fm);font-size:12px;color:var(--t2);">+8 sh</span>
+                  </div>
+                  <div style="padding:12px;border-radius:12px;background:var(--surf);border:1px solid var(--brd);display:flex;align-items:center;gap:10px;">
+                    <span style="font-family:var(--fm);font-size:11px;color:var(--t3);width:40px;">09:16</span>
+                    <span style="font-family:var(--fm);font-size:10px;font-weight:700;color:var(--t3);padding:2px 7px;border-radius:4px;background:var(--surf2);letter-spacing:0.04em;">SKIP</span>
+                    <span style="font-size:13px;font-weight:600;flex:1;color:var(--txt);">INFY</span>
+                    <span style="font-family:var(--fm);font-size:12px;color:var(--t2);">no-go</span>
+                  </div>
+                </div>
+
+                <div class="chat-fab" onclick="goTo(5)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></div>
+              </div>
+            </div>
+
+            <!-- ══ SCREEN 6: CHAT ════════════════════════════════════ -->
+            <div class="screen" id="s5" style="display:flex;flex-direction:column;background:var(--bg);">
+              <!-- Header -->
+              <div class="chat-hdr">
+                <div class="chat-avatar">R</div>
+                <div>
+                  <div class="chat-hdr-name">Ask Rita</div>
+                  <div class="chat-hdr-status">● Online · Bull regime active</div>
+                </div>
+              </div>
+
+              <!-- Messages (scrollable area) -->
+              <div style="flex:1;overflow-y:auto;scrollbar-width:none;">
+                <div class="chat-msgs">
+
+                  <div class="msg-wrap rita">
+                    <div class="bubble bubble-rita">
+                      Hello! I'm Rita. I'm watching the market for you. <strong>NIFTY is in a Bull regime today</strong> — ask me anything about your portfolio.
+                    </div>
+                    <div class="msg-time">9:30 AM</div>
+                  </div>
+
+                  <div class="msg-wrap user">
+                    <div class="bubble bubble-user">What is the current market sentiment?</div>
+                    <div class="msg-time">9:38 AM</div>
+                  </div>
+
+                  <div class="msg-wrap rita">
+                    <div class="bubble bubble-rita">
+                      <strong>Sentiment score: +4.2 / +6 (Bullish)</strong><br><br>
+                      RSI-14 at 72.4 is entering overbought territory. MACD is positive at +48.2. EMA-5 has crossed above EMA-26. Three of four indicators are aligned bullish.
+                    </div>
+                    <div class="msg-time">9:38 AM</div>
+                  </div>
+
+                  <div class="msg-wrap user">
+                    <div class="bubble bubble-user">What allocation should I have in Nifty now?</div>
+                    <div class="msg-time">9:40 AM</div>
+                  </div>
+
+                  <div class="msg-wrap rita">
+                    <div class="bubble bubble-rita">
+                      Based on current signals and your 12% annual goal:<br><br>
+                      <strong>Recommended: 72% allocation</strong><br>
+                      That's ₹1,44,000 at current NAV. Bull regime + momentum score 75 = all entry conditions met. MDD threshold at 10% — hedge if portfolio drops below ₹1,26,000.
+                    </div>
+                    <div class="msg-time">9:41 AM</div>
+                  </div>
+
+                </div>
+
+                <!-- Suggestion chips -->
+                <div class="chat-chips-area">
+                  <div class="chat-chip">Market Sentiment</div>
+                  <div class="chat-chip">Allocate Now</div>
+                  <div class="chat-chip">Goal Check</div>
+                  <div class="chat-chip">Stress Test</div>
+                </div>
+              </div>
+
+              <!-- Input bar (sticky bottom) -->
+              <div style="padding:8px 16px 14px;background:var(--bg);">
+                <div class="chat-input-bar">
+                  <div class="chat-input-field">Ask anything about your portfolio…</div>
+                  <button class="chat-send-btn">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M7 12V2M7 2L2 7M7 2l5 5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- ══ SCREEN 7: HOME · TODAY (Signal-feed) ═══════════ -->
+            <div class="screen" id="s6">
+              <div class="screen-inner">
+
+                <!-- Header -->
+                <div style="padding:22px 22px 8px;">
+                  <div style="font-family:var(--fm);font-size:11px;color:var(--t3);font-weight:600;letter-spacing:0.08em;">TUE · 22 APR</div>
+                  <div style="font-family:var(--fs);font-size:32px;letter-spacing:-0.02em;margin-top:6px;line-height:1.1;color:var(--txt);">Today at a <em style="color:var(--t2);">glance</em></div>
+                </div>
+
+                <!-- Regime hero — green gradient -->
+                <div style="margin:14px 16px 12px;padding:20px;border-radius:20px;background:linear-gradient(135deg,#1A6B3C 0%,#155A32 100%);color:#fff;">
+                  <div style="font-family:var(--fm);font-size:10px;font-weight:700;letter-spacing:0.12em;opacity:0.85;">REGIME</div>
+                  <div style="font-family:var(--fs);font-size:30px;letter-spacing:-0.01em;margin-top:2px;">Bull market</div>
+                  <div style="display:flex;align-items:baseline;gap:10px;margin-top:14px;">
+                    <span style="font-size:12px;opacity:0.85;">NIFTY 50</span>
+                    <span style="font-family:var(--fm);font-size:22px;font-weight:500;letter-spacing:-0.01em;">24,758.90</span>
+                    <span style="font-family:var(--fm);font-size:12px;opacity:0.9;">+1.17%</span>
+                  </div>
+                  <svg width="100%" height="40" viewBox="0 0 280 40" style="margin-top:10px;display:block;">
+                    <polyline fill="none" stroke="#fff" stroke-opacity="0.9" stroke-width="1.8" stroke-linecap="round"
+                      points="0,36 14.7,34 29.5,35 44.2,32 59,28 73.7,29 88.5,25 103.2,23 118,24 132.7,21 147.5,18 162.2,19 177,14 191.7,15 206.5,12 221.2,9 236,10 250.7,7 265.5,8 280,5"/>
+                  </svg>
+                </div>
+
+                <!-- Goal ring row -->
+                <div style="margin:0 16px 12px;padding:16px;border-radius:16px;background:var(--surf);border:1px solid var(--brd);display:flex;align-items:center;gap:14px;">
+                  <div style="position:relative;width:52px;height:52px;flex-shrink:0;">
+                    <svg width="52" height="52" viewBox="0 0 52 52">
+                      <circle cx="26" cy="26" r="22" fill="none" stroke="#F9F8F5" stroke-width="5"/>
+                      <circle cx="26" cy="26" r="22" fill="none" stroke="#1A6B3C" stroke-width="5"
+                        stroke-dasharray="103 138" stroke-linecap="round" transform="rotate(-90 26 26)"/>
+                    </svg>
+                    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--fm);font-size:11px;font-weight:600;color:var(--txt);">74%</div>
+                  </div>
+                  <div style="flex:1;">
+                    <div style="font-size:10px;color:var(--t3);letter-spacing:0.06em;text-transform:uppercase;font-family:var(--fm);">Yearly goal · 12%</div>
+                    <div style="font-size:16px;font-weight:700;margin-top:2px;color:var(--txt);">8.9% YTD</div>
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#B8B2A6" stroke-width="2" stroke-linecap="round"><path d="M5 3l4 4-4 4"/></svg>
+                </div>
+
+                <!-- Signal list -->
+                <div style="padding:0 22px 6px;display:flex;justify-content:space-between;align-items:baseline;">
+                  <div style="font-size:14px;font-weight:700;color:var(--txt);">Signals · 4</div>
+                  <div style="font-size:11px;color:var(--t3);font-family:var(--fm);">last 4 hrs</div>
+                </div>
+                <div style="padding:0 16px 24px;">
+                  <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--brd);align-items:flex-start;">
+                    <div style="width:4px;align-self:stretch;background:var(--build);border-radius:2px;margin-top:2px;flex-shrink:0;"></div>
+                    <div style="flex:1;">
+                      <div style="display:flex;gap:8px;align-items:center;margin-bottom:3px;">
+                        <span style="font-family:var(--fm);font-size:9px;font-weight:600;color:var(--build);letter-spacing:0.08em;">MOMENTUM</span>
+                        <span style="font-family:var(--fm);font-size:9px;color:var(--t4);">12 min ago</span>
+                      </div>
+                      <div style="font-size:13px;font-weight:600;color:var(--txt);line-height:1.3;">Momentum score at 75</div>
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--brd);align-items:flex-start;">
+                    <div style="width:4px;align-self:stretch;background:var(--run);border-radius:2px;margin-top:2px;flex-shrink:0;"></div>
+                    <div style="flex:1;">
+                      <div style="display:flex;gap:8px;align-items:center;margin-bottom:3px;">
+                        <span style="font-family:var(--fm);font-size:9px;font-weight:600;color:var(--run);letter-spacing:0.08em;">ROTATION</span>
+                        <span style="font-family:var(--fm);font-size:9px;color:var(--t4);">1 hr ago</span>
+                      </div>
+                      <div style="font-size:13px;font-weight:600;color:var(--txt);line-height:1.3;">IT leading broad market</div>
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:12px;padding:12px 0;align-items:flex-start;">
+                    <div style="width:4px;align-self:stretch;background:var(--t4);border-radius:2px;margin-top:2px;flex-shrink:0;"></div>
+                    <div style="flex:1;">
+                      <div style="display:flex;gap:8px;align-items:center;margin-bottom:3px;">
+                        <span style="font-family:var(--fm);font-size:9px;font-weight:600;color:var(--t3);letter-spacing:0.08em;">VOLATILITY</span>
+                        <span style="font-family:var(--fm);font-size:9px;color:var(--t4);">3 hr ago</span>
+                      </div>
+                      <div style="font-size:13px;font-weight:600;color:var(--txt);line-height:1.3;">VIX at 11.8 — low range</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="chat-fab" onclick="goTo(5)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></div>
+              </div>
+            </div>
+
+            <!-- ══ SCREEN 8: SIGNAL HERO (full-bleed green) ══════════ -->
+            <div class="screen" id="s7" style="background:linear-gradient(180deg,#1A6B3C 0%,#1A6B3C 42%,#F5F3EE 100%);">
+              <div class="screen-inner" style="padding-bottom:32px;">
+
+                <!-- Status row -->
+                <div style="padding:22px 22px 0;display:flex;justify-content:space-between;align-items:center;color:rgba(255,255,255,.85);">
+                  <div style="font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:0.12em;">SIGNAL 1 / 4</div>
+                  <div style="display:flex;gap:4px;align-items:center;">
+                    <div style="width:20px;height:3px;border-radius:2px;background:#fff;"></div>
+                    <div style="width:6px;height:3px;border-radius:2px;background:rgba(255,255,255,.35);"></div>
+                    <div style="width:6px;height:3px;border-radius:2px;background:rgba(255,255,255,.35);"></div>
+                    <div style="width:6px;height:3px;border-radius:2px;background:rgba(255,255,255,.35);"></div>
+                  </div>
+                </div>
+
+                <!-- Tag pill -->
+                <div style="padding:28px 22px 0;">
+                  <div style="display:inline-block;padding:4px 10px;border-radius:100px;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.3);font-family:var(--fm);font-size:10px;font-weight:700;letter-spacing:0.12em;color:#fff;">MOMENTUM</div>
+                </div>
+
+                <!-- Hero headline -->
+                <div style="padding:20px 22px 0;">
+                  <div style="font-family:var(--fs);font-size:44px;line-height:1.05;letter-spacing:-0.02em;color:#fff;">Momentum score at 75</div>
+                  <div style="font-size:13px;color:rgba(255,255,255,.85);margin-top:16px;line-height:1.6;">RSI is above 70 on 3 of 4 tracked instruments for the last 2 consecutive sessions. Momentum is accelerating.</div>
+                </div>
+
+                <!-- Evidence grid (frosted glass) -->
+                <div style="margin:28px 22px 0;padding:16px 18px;border-radius:18px;background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(18px);display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+                  <div>
+                    <div style="font-family:var(--fm);font-size:10px;color:rgba(255,255,255,.7);letter-spacing:0.06em;text-transform:uppercase;">Instrument</div>
+                    <div style="font-family:var(--fm);font-size:16px;font-weight:500;margin-top:2px;color:#fff;">NIFTY</div>
+                  </div>
+                  <div>
+                    <div style="font-family:var(--fm);font-size:10px;color:rgba(255,255,255,.7);letter-spacing:0.06em;text-transform:uppercase;">Confidence</div>
+                    <div style="font-family:var(--fm);font-size:16px;font-weight:500;margin-top:2px;color:#fff;">0.78</div>
+                  </div>
+                  <div>
+                    <div style="font-family:var(--fm);font-size:10px;color:rgba(255,255,255,.7);letter-spacing:0.06em;text-transform:uppercase;">Regime</div>
+                    <div style="font-family:var(--fm);font-size:16px;font-weight:500;margin-top:2px;color:#fff;">Bull</div>
+                  </div>
+                </div>
+
+                <!-- Sparkline (frosted glass) -->
+                <div style="margin:12px 22px 0;padding:14px 18px;border-radius:18px;background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,.2);">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <span style="font-size:11px;color:rgba(255,255,255,.75);">NIFTY 50 · today</span>
+                    <span style="font-family:var(--fm);font-size:13px;font-weight:500;color:#fff;">24,758.90</span>
+                  </div>
+                  <svg width="100%" height="40" viewBox="0 0 280 40">
+                    <polyline fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"
+                      points="0,36 14.7,34 29.5,35 44.2,32 59,28 73.7,29 88.5,25 103.2,23 118,24 132.7,21 147.5,18 162.2,19 177,14 191.7,15 206.5,12 221.2,9 236,10 250.7,7 265.5,8 280,5"/>
+                  </svg>
+                </div>
+
+                <!-- Swipe hint -->
+                <div style="text-align:center;padding:18px 0 0;font-family:var(--fm);font-size:11px;color:rgba(255,255,255,.65);letter-spacing:0.08em;">← swipe to navigate signals</div>
+
+                <!-- Ask Rita pill -->
+                <div onclick="goTo(5)" style="position:absolute;right:18px;bottom:16px;padding:10px 14px 10px 12px;border-radius:22px;background:rgba(255,255,255,0.22);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.35);color:#fff;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;box-shadow:0 6px 18px rgba(0,0,0,.18);cursor:pointer;z-index:30;font-family:var(--fd);">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+                  Ask Rita
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /carousel-track -->
+        </div><!-- /carousel-viewport -->
+
+        <!-- Tab bar -->
+        <div class="tab-bar" id="tabBar">
+          <div class="tab-pill">
+            <div class="tab-item" data-tab="0" data-active="true">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l7-7 7 7v9a1 1 0 01-1 1h-4v-6h-4v6H4a1 1 0 01-1-1v-9z"/></svg>
+              <div class="tab-lbl">Home</div>
+            </div>
+            <div class="tab-item" data-tab="1" data-active="false">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v14M3 10h14"/></svg>
+              <div class="tab-lbl">Goal</div>
+            </div>
+            <div class="tab-item" data-tab="2" data-active="false">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14l4-4 3 3 7-7"/></svg>
+              <div class="tab-lbl">Market</div>
+            </div>
+            <div class="tab-item" data-tab="3" data-active="false">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2l2 6h6l-5 4 2 6-5-4-5 4 2-6-5-4h6z"/></svg>
+              <div class="tab-lbl">Signals</div>
+            </div>
+            <div class="tab-item" data-tab="4" data-active="false">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h12v12H4zM4 10h12M10 4v12"/></svg>
+              <div class="tab-lbl">Strategy</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /phone-screen -->
+    </div><!-- /phone-shell -->
+
+    <!-- → Next -->
+    <button class="nav-btn" id="btnNext" title="Next screen (→)">
+      <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
+        <path d="M2 2l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+
+  </div><!-- /stage-row -->
+
+  <!-- Dot indicators + label -->
+  <div class="dots-wrap">
+    <div class="dots-row" id="dotsRow">
+      <div class="dot active" data-i="0"></div>
+      <div class="dot" data-i="1"></div>
+      <div class="dot" data-i="2"></div>
+      <div class="dot" data-i="3"></div>
+      <div class="dot" data-i="4"></div>
+      <div class="dot" data-i="5"></div>
+      <div class="dot" data-i="6"></div>
+      <div class="dot" data-i="7"></div>
+    </div>
+    <div class="screen-lbl" id="screenLbl">1 / 8 — Overview</div>
+    <div class="hint-txt">← → arrow keys &nbsp;·&nbsp; swipe &nbsp;·&nbsp; tap dots or tabs</div>
+  </div>
+
+</div><!-- /stage -->
+
+
+<script>
+const SCREENS = ['Overview','Goal','Market','Signals','Strategy','Chat','Home · Today','Signal Hero'];
+const TABS = 5; // tabs 0–4; screen 5 (Chat) has no matching tab
+
+let current = 0;
+const track    = document.getElementById('track');
+const btnPrev  = document.getElementById('btnPrev');
+const btnNext  = document.getElementById('btnNext');
+const dotsRow  = document.getElementById('dotsRow');
+const screenLbl= document.getElementById('screenLbl');
+const tabBar   = document.getElementById('tabBar');
+const viewport = document.getElementById('viewport');
+
+function goTo(n) {
+  if (n < 0 || n >= SCREENS.length) return;
+  current = n;
+  // Slide track
+  track.style.transform = `translateX(-${current * 375}px)`;
+  // Scroll each screen back to top on navigate
+  document.querySelectorAll('.screen').forEach((s,i) => {
+    if (i !== current) s.scrollTop = 0;
+  });
+  // Dots
+  document.querySelectorAll('.dot').forEach((d,i) => {
+    d.classList.toggle('active', i === current);
+  });
+  // Screen label
+  screenLbl.textContent = `${current + 1} / ${SCREENS.length} — ${SCREENS[current]}`;
+  // Arrows
+  btnPrev.disabled = current === 0;
+  btnNext.disabled = current === SCREENS.length - 1;
+  // Tab bar
+  document.querySelectorAll('.tab-item').forEach(tab => {
+    const t = parseInt(tab.dataset.tab);
+    tab.dataset.active = (t === current && current < TABS) ? 'true' : 'false';
+  });
+}
+
+// Arrow buttons
+btnPrev.addEventListener('click', () => goTo(current - 1));
+btnNext.addEventListener('click', () => goTo(current + 1));
+
+// Dot clicks
+dotsRow.querySelectorAll('.dot').forEach(d => {
+  d.addEventListener('click', () => goTo(parseInt(d.dataset.i)));
+});
+
+// Tab bar clicks
+tabBar.querySelectorAll('.tab-item').forEach(tab => {
+  tab.addEventListener('click', () => goTo(parseInt(tab.dataset.tab)));
+});
+
+// Keyboard navigation
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); goTo(current - 1); }
+  if (e.key === 'ArrowRight') { e.preventDefault(); goTo(current + 1); }
+});
+
+// Touch / swipe support
+let touchStartX = 0, touchStartY = 0, swiping = false;
+viewport.addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+  swiping = true;
+}, { passive: true });
+viewport.addEventListener('touchmove', e => {
+  if (!swiping) return;
+  const dx = Math.abs(e.touches[0].clientX - touchStartX);
+  const dy = Math.abs(e.touches[0].clientY - touchStartY);
+  // If more horizontal than vertical — prevent vertical scroll
+  if (dx > dy && dx > 10) e.preventDefault();
+}, { passive: false });
+viewport.addEventListener('touchend', e => {
+  if (!swiping) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 44) {
+    goTo(current + (dx < 0 ? 1 : -1));
+  }
+  swiping = false;
+}, { passive: true });
+
+// Init
+goTo(0);
+</script>
+
+</body>
+</html>

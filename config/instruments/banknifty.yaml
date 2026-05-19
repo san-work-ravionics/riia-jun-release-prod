@@ -1,0 +1,15 @@
+# BANKNIFTY — Fine-tuning defaults
+# Banking sector index; more volatile than Nifty 50, shorter history.
+instrument: BANKNIFTY
+
+training:
+  timesteps: 250000
+  learning_rate: 0.0001
+  buffer_size: 100000
+  exploration_pct: 0.55
+  n_seeds: 3
+  episode_length: 252       # 1 trading year
+
+notes: >
+  Higher intra-day volatility than NIFTY. Slightly higher exploration_pct
+  to avoid the agent locking into a single allocation too early.

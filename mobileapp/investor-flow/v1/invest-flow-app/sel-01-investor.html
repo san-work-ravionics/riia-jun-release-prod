@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Step 1 — How far are you thinking?</title><link rel="stylesheet" href="styles.css"></head>
+<body style="margin:0;display:grid;place-items:center;min-height:100vh;background:#f0eee9">
+<div class="phone">
+  <div class="status-bar"><span>9:41</span><div class="icons">
+    <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+    <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+  </div></div>
+
+  <div class="app-bar">
+    <a class="back" href="00-onboarding.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></a>
+    <div class="title">Set up your plan</div>
+    <div class="step-pill">Step 1/6</div>
+  </div>
+  <div class="step-strip"><div class="seg active"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div></div>
+
+  <div class="body">
+    <div class="label" style="margin-top:14px">Step 1 of 6</div>
+    <div class="h1" style="margin-top:6px">How far are you thinking?</div>
+    <div class="body-text" style="margin-top:8px">Your timeline shapes the rest of your plan. You can change it later.</div>
+
+    <div data-choice-group="investor" style="display:flex;flex-direction:column;gap:10px;margin-top:22px">
+      <button class="choice" data-choice="short">
+        <div class="glyph">1y</div>
+        <div style="flex:1"><div class="choice-title">I can take risk</div><div class="choice-meta">If it works out, I'll use it for my next vacation or event.</div></div>
+      </button>
+      <button class="choice selected" data-choice="goal">
+        <div class="glyph">5y</div>
+        <div style="flex:1"><div class="choice-title">I want my investment to grow at a steady pace</div><div class="choice-meta">Around 5 years.</div></div>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7l3 3 5-6"/></svg>
+      </button>
+      <button class="choice" data-choice="long">
+        <div class="glyph">10-15y</div>
+        <div style="flex:1"><div class="choice-title">Ensure my capital is protected with decent returns</div><div class="choice-meta">10 to 15 years.</div></div>
+      </button>
+    </div>
+
+    <div class="hint" style="margin-top:22px">
+      <div class="hint-icon">i</div>
+      <div>Your timeline shapes the rest of your plan. You can change it later.</div>
+    </div>
+  </div>
+
+  <div class="nav-bottom">
+    <a class="btn ghost icon-only" href="00-onboarding.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></a>
+    <a class="btn" href="sel-02-goal.html" style="text-decoration:none">Continue <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></a>
+  </div>
+  <div class="gesture-bar"></div>
+</div>
+<script src="app.js"></script>
+</body></html>

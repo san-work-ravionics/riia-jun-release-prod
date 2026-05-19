@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invest-Flow · Wireframes</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  html, body { margin: 0; padding: 0; background: #f0eee9; overflow: hidden; }
+  body { font-family: 'Inter', system-ui, sans-serif; }
+  /* Canvas-level title */
+  .canvas-banner {
+    position: fixed;
+    top: 16px; left: 20px;
+    z-index: 50;
+    pointer-events: none;
+    font-family: 'Architects Daughter', cursive;
+  }
+  .canvas-banner h1 { font-size: 18px; margin: 0 0 2px; font-weight: 700; color: #2a2a2a; font-family: 'Inter', sans-serif; letter-spacing: -0.01em; }
+  .canvas-banner .sub { font-size: 13px; color: rgba(0,0,0,.55); }
+  .help-pill {
+    position: fixed;
+    top: 16px; right: 16px;
+    z-index: 50;
+    background: #fff;
+    border: 1.5px solid #2a2a2a;
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    color: #2a2a2a;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<div class="canvas-banner">
+  <h1>Invest-Flow · Android wireframes</h1>
+  <div class="sub">Lo-fi · 2 variations on Step 1, 2 & 6 · drag to pan, scroll to zoom</div>
+</div>
+<div class="help-pill">Click any frame to focus · ←/→ to navigate · Esc to exit</div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+
+<script type="text/babel" src="math.jsx"></script>
+<script type="text/babel" src="shell.jsx"></script>
+<script type="text/babel" src="screens-1.jsx"></script>
+<script type="text/babel" src="screens-2.jsx"></script>
+<script type="text/babel" src="screens-3.jsx"></script>
+
+<script type="text/babel">
+const TWEAKS_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "showAnnotations": true,
+  "accentColor": "#00b46e",
+  "sketchiness": 1,
+  "showRita": true
+}/*EDITMODE-END*/;
+
+const SCREEN_LABEL = (lbl) => ({ 'data-screen-label': lbl });
+
+// Each artboard takes its own usePlan() so tweaks in one don't leak
+// across the canvas. The whole-flow demo (last section) uses a single
+// shared plan to allow tap-through.
+function Artboard({ render }) {
+  const { plan, set, proj } = usePlan();
+  return render({ plan, set, proj, onNext: () => {}, onBack: () => {} });
+}
+
+// Tap-through demo — the full flow stitched together
+function FlowDemo() {
+  const { plan, set, setPlan } = usePlan();
+  const [step, setStep] = useState(0);
+  // 0 onboarding, 1 step1, 2 step2, 3 step3-4, 4 step5, 5 step6, 6 step7, 7 rita
+  const screens = [
+    () => <OnboardingA onNext={() => setStep(1)} />,
+    () => <Step1A plan={plan} set={set} onBack={() => setStep(0)} onNext={() => setStep(2)} />,
+    () => <Step2A plan={plan} set={set} onBack={() => setStep(1)} onNext={() => setStep(3)} />,
+    () => <Step34A plan={plan} set={set} onBack={() => setStep(2)} onNext={() => setStep(4)} />,
+    () => <Step5  plan={plan} set={set} onBack={() => setStep(3)} onNext={() => setStep(5)} />,
+    () => <Step6A plan={plan} onBack={() => setStep(4)} onNext={() => setStep(6)} />,
+    () => <Step7  plan={plan} onBack={() => setStep(5)} onAdjust={() => setStep(3)} onRecalc={() => setStep(5)} onStart={() => setStep(7)} />,
+    () => <RitaPlaceholder onBack={() => setStep(6)} />,
+  ];
+  return screens[step]();
+}
+
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAKS_DEFAULTS);
+
+  // Apply accent color tweak globally
+  useEffect(() => {
+    document.documentElement.style.setProperty('--accent', tweaks.accentColor);
+  }, [tweaks.accentColor]);
+
+  // Sketchiness — toggle the imperfect borders
+  useEffect(() => {
+    if (tweaks.sketchiness === 0) {
+      document.body.classList.add('clean');
+    } else {
+      document.body.classList.remove('clean');
+    }
+  }, [tweaks.sketchiness]);
+
+  return (
+    <>
+      <DesignCanvas>
+        <DCSection id="onboarding" title="0 · Onboarding intro" subtitle="Front door before Step 1">
+          <DCArtboard id="ob-a" label="A · Welcome" width={360} height={780}>
+            <div {...SCREEN_LABEL('00 Onboarding')}><Artboard render={({ onNext }) => <OnboardingA onNext={onNext} />} /></div>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="step1" title="1 · Investor type" subtitle="Set context — pre-sets risk level">
+          <DCArtboard id="s1-a" label="A · List with risk meta" width={360} height={780}>
+            <div {...SCREEN_LABEL('01 Investor A')}><Artboard render={(p) => <Step1A {...p} />} /></div>
+          </DCArtboard>
+          <DCArtboard id="s1-b" label="B · Horizon spectrum" width={360} height={780}>
+            <div {...SCREEN_LABEL('01 Investor B')}><Artboard render={(p) => <Step1B {...p} />} /></div>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="step2" title="2 · Goal" subtitle="What is the money for?">
+          <DCArtboard id="s2-a" label="A · List + dynamic hint" width={360} height={780}>
+            <div {...SCREEN_LABEL('02 Goal A')}><Artboard render={(p) => <Step2A {...p} />} /></div>
+          </DCArtboard>
+          <DCArtboard id="s2-b" label="B · Tile grid" width={360} height={780}>
+            <div {...SCREEN_LABEL('02 Goal B')}><Artboard render={(p) => <Step2B {...p} />} /></div>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="step34" title="3+4 · Timeline & numbers" subtitle="Grouped — slider + amounts">
+          <DCArtboard id="s34-a" label="A · Stacked" width={360} height={780}>
+            <div {...SCREEN_LABEL('03 Plan A')}><Artboard render={(p) => <Step34A {...p} />} /></div>
+          </DCArtboard>
+          <DCArtboard id="s34-b" label="B · Solve-for toggle" width={360} height={780}>
+            <div {...SCREEN_LABEL('03 Plan B')}><Artboard render={(p) => <Step34B {...p} />} /></div>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="step5" title="5 · Advanced settings" subtitle="Collapsed by default · pre-filled defaults">
+          <DCArtboard id="s5-a" label="A · Accordion + steppers" width={360} height={780}>
+            <div {...SCREEN_LABEL('05 Advanced')}><Artboard render={(p) => <Step5 {...p} />} /></div>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="step6" title="6 · Results — the core experience" subtitle="Side-by-side gross vs net (your differentiator)">
+          <DCArtboard id="s6-a" label="A · Compare card + waterfall + chart" width={360} height={780}>
+            <div {...SCREEN_LABEL('06 Results A')}><Artboard render={(p) => <Step6A {...p} />} /></div>
+          </DCArtboard>
+          <DCArtboard id="s6-b" label="B · Storytelling stack" width={360} height={780}>
+            <div {...SCREEN_LABEL('06 Results B')}><Artboard render={(p) => <Step6B {...p} />} /></div>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="step7" title="7 · Actions" subtitle="Adjust · recalc · start in Rita">
+          <DCArtboard id="s7-a" label="A · Action stack" width={360} height={780}>
+            <div {...SCREEN_LABEL('07 Actions')}><Artboard render={(p) => <Step7 {...p} />} /></div>
+          </DCArtboard>
+          {tweaks.showRita && (
+            <DCArtboard id="s7-rita" label="→ Rita app handoff" width={360} height={780}>
+              <div {...SCREEN_LABEL('08 Rita app')}><RitaPlaceholder onBack={() => {}} /></div>
+            </DCArtboard>
+          )}
+        </DCSection>
+
+        <DCSection id="flow" title="▶ Tap-through demo" subtitle="Click Continue / Back to walk the full flow with shared state">
+          <DCArtboard id="flow-a" label="Live flow" width={360} height={780}>
+            <div {...SCREEN_LABEL('Flow demo')}><FlowDemo /></div>
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+
+      <TweaksPanel title="Tweaks">
+        <TweakSection title="Visual">
+          <TweakColor label="Accent color" value={tweaks.accentColor}
+            onChange={(v) => setTweak('accentColor', v)} />
+          <TweakRadio label="Sketchiness" value={tweaks.sketchiness}
+            options={[{ value: 0, label: 'Clean' }, { value: 1, label: 'Lo-fi' }]}
+            onChange={(v) => setTweak('sketchiness', v)} />
+        </TweakSection>
+        <TweakSection title="Canvas">
+          <TweakToggle label="Show Rita handoff" checked={tweaks.showRita}
+            onChange={(v) => setTweak('showRita', v)} />
+          <TweakToggle label="Designer annotations" checked={tweaks.showAnnotations}
+            onChange={(v) => setTweak('showAnnotations', v)} />
+        </TweakSection>
+        <TweakSection title="Notes">
+          <div style={{ fontSize: 12, lineHeight: 1.45, color: 'rgba(0,0,0,.6)', padding: '4px 0' }}>
+            The "Live flow" artboard at the bottom is fully interactive — sliders move, results recalc, taps advance the flow.
+          </div>
+        </TweakSection>
+      </TweaksPanel>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

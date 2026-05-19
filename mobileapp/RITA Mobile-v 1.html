@@ -1,0 +1,2760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RITA Mobile — Design Exploration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500;600&family=Epilogue:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<style>
+  body { margin: 0; overflow: hidden; font-family: 'Epilogue', system-ui, sans-serif; }
+
+  /* Tweaks panel */
+  .tweaks-panel {
+    position: fixed; bottom: 20px; right: 20px; z-index: 200;
+    background: #FFFFFF; border: 1.5px solid #E4E0D8;
+    border-radius: 10px; padding: 16px 18px; width: 260px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.15), 0 2px 6px rgba(0,0,0,.05);
+    font-family: 'Epilogue', system-ui, sans-serif; font-size: 13px;
+  }
+  .tweaks-panel.hidden { display: none; }
+  .tweaks-panel h3 {
+    margin: 0 0 12px; font-family: 'Instrument Serif', serif;
+    font-size: 18px; font-weight: 400; letter-spacing: -0.01em;
+  }
+  .tweak-row { margin-bottom: 12px; }
+  .tweak-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.08em; color: #8C877A;
+    margin-bottom: 6px;
+  }
+  .tweak-btns { display: flex; gap: 4px; flex-wrap: wrap; }
+  .tweak-btn {
+    flex: 1; min-width: 50px; padding: 6px 8px; font-size: 11px;
+    background: #F9F8F5; border: 1px solid #E4E0D8; border-radius: 6px;
+    cursor: pointer; font-family: inherit; color: #4A4640;
+    transition: all .12s;
+  }
+  .tweak-btn:hover { border-color: #0056B8; }
+  .tweak-btn.active { background: #1A1814; color: #fff; border-color: #1A1814; }
+</style>
+</head>
+<body>
+
+<div id="tweaks" class="tweaks-panel hidden">
+  <h3>Tweaks</h3>
+
+  <div class="tweak-row">
+    <div class="tweak-label">Theme</div>
+    <div class="tweak-btns" id="tw-theme">
+      <button class="tweak-btn" data-v="light">Light</button>
+      <button class="tweak-btn" data-v="dark">Dark</button>
+    </div>
+  </div>
+
+  <div class="tweak-row">
+    <div class="tweak-label">Market state</div>
+    <div class="tweak-btns" id="tw-market">
+      <button class="tweak-btn" data-v="bull">Bull</button>
+      <button class="tweak-btn" data-v="volatile">Volatile</button>
+      <button class="tweak-btn" data-v="bear">Bear</button>
+    </div>
+  </div>
+
+  <div class="tweak-row">
+    <div class="tweak-label">Signal severity</div>
+    <div class="tweak-btns" id="tw-severity">
+      <button class="tweak-btn" data-v="calm">Calm</button>
+      <button class="tweak-btn" data-v="event">Event day</button>
+    </div>
+  </div>
+
+  <div style="font-size:11px; color:#8C877A; line-height:1.5; margin-top:8px; padding-top:10px; border-top:1px solid #E4E0D8;">
+    Tip: drag cards to reorder · click any card's &#8598; to focus · use ←/→ to navigate focus mode · ↑/↓ to switch treatments.
+  </div>
+</div>
+
+<div id="root"></div>
+
+<script>
+/*EDITMODE-BEGIN*/window.RITA_TWEAKS = {
+  "theme": "light",
+  "market": "bull",
+  "severity": "event"
+}/*EDITMODE-END*/;
+</script>
+
+<script type="text/babel">
+
+// ═════════ tokens.jsx ═════════
+// Shared RITA design tokens, copied verbatim from desktop rita.html.
+// These are the authentic brand colors & fonts — do not invent new ones.
+
+const RITA = {
+  // palette (light)
+  light: {
+    bg: '#F5F3EE',
+    surface: '#FFFFFF',
+    surface2: '#F9F8F5',
+    border: '#E4E0D8',
+    border2: '#D0CBBC',
+    text: '#1A1814',
+    t2: '#4A4640',
+    t3: '#8C877A',
+    t4: '#B8B2A6',
+  },
+  dark: {
+    bg: '#16140F',
+    surface: '#1F1C16',
+    surface2: '#26221B',
+    border: '#2F2B22',
+    border2: '#3D3828',
+    text: '#F5F3EE',
+    t2: '#C9C4B7',
+    t3: '#8C877A',
+    t4: '#5C584E',
+  },
+  // semantic (shared)
+  build: '#1A6B3C',  buildBg: '#EDF7F2',  buildBd: '#B6DEC9',
+  run:   '#0056B8',  runBg:   '#EDF4FF',  runBd:   '#AECBF5',
+  mon:   '#6B2FA0',  monBg:   '#F5EFFE',  monBd:   '#CFADF0',
+  warn:  '#92480A',  warnBg:  '#FEF4EB',  warnBd:  '#F5C99A',
+  danger:'#9B1C1C',  dangerBg:'#FEF2F2',  dangerBd:'#FCA5A5',
+  chat:  '#BE185D',  chatBg:  '#FFF0F5',  chatBd:  '#FBCFE8',
+
+  // dark-mode semantic surfaces
+  buildBgDark:  'rgba(26,107,60,.18)',
+  runBgDark:    'rgba(0,86,184,.22)',
+  monBgDark:    'rgba(107,47,160,.22)',
+  warnBgDark:   'rgba(146,72,10,.22)',
+  dangerBgDark: 'rgba(155,28,28,.22)',
+  chatBgDark:   'rgba(190,24,93,.22)',
+
+  // fonts
+  fd: "'Epilogue', -apple-system, system-ui, sans-serif",
+  fm: "'IBM Plex Mono', 'SF Mono', Menlo, monospace",
+  fs: "'Instrument Serif', Georgia, serif",
+};
+
+// Demo data per market state
+const RITA_DATA = {
+  bull: {
+    state: 'Bull',
+    stateColor: RITA.build,
+    instrument: 'NIFTY 50',
+    price: '24,758.90',
+    change: '+287.45',
+    changePct: '+1.17%',
+    changeDir: 'up',
+    goal: { target: '12%', progress: 74, current: '8.9%', runway: '14 months' },
+    sparkline: [10,12,11,14,16,15,18,19,17,20,22,21,24,23,26,28,27,30,29,32],
+    signals: [
+      { tag: 'MOMENTUM',   sev: 'build', title: 'Momentum score at 75',     body: 'RSI is above 70 on 3 of 4 tracked instruments for the last 2 sessions.', when: '12 min ago' },
+      { tag: 'ROTATION',   sev: 'run',   title: 'IT leading broad market',   body: 'IT index outperformed by 2.1 standard deviations over the last 5 sessions.', when: '1 hr ago' },
+      { tag: 'VOLATILITY', sev: 'neu',   title: 'VIX at 11.8',                body: 'Implied volatility is in the lowest quartile of its 1-year range.', when: '3 hr ago' },
+      { tag: 'BREADTH',    sev: 'build', title: '68% of stocks above 200-DMA', body: 'Advance-decline ratio is 1,428 / 592 on the NSE today.', when: '4 hr ago' },
+    ],
+    strategy: { name: 'Swing-Momentum v3', status: 'Active', winRate: '64%', sharpe: '1.82', pnl: '+₹82,400' },
+  },
+  bear: {
+    state: 'Bear',
+    stateColor: RITA.danger,
+    instrument: 'NIFTY 50',
+    price: '22,104.15',
+    change: '-412.80',
+    changePct: '-1.83%',
+    changeDir: 'down',
+    goal: { target: '12%', progress: 31, current: '3.7%', runway: '22 months' },
+    sparkline: [32,30,28,29,26,24,25,22,20,21,18,19,16,15,17,14,12,13,11,10],
+    signals: [
+      { tag: 'DRAWDOWN', sev: 'danger', title: 'Portfolio down -4.2% this week', body: 'Current drawdown is outside the 1-week historical band for this strategy.', when: '4 min ago' },
+      { tag: 'REVERSAL', sev: 'warn',   title: 'Three-session lower highs',      body: 'NIFTY has printed lower intraday highs for three consecutive sessions.', when: '27 min ago' },
+      { tag: 'FACTOR',   sev: 'mon',    title: 'Quality factor +3.8% vs market', body: 'Low-volatility basket has outperformed the broad market over 2 weeks.', when: '2 hr ago' },
+      { tag: 'FLOW',     sev: 'warn',   title: 'FII net sellers 4 sessions',     body: 'Foreign institutional outflows totalling ₹8,200 cr over the last 4 sessions.', when: '5 hr ago' },
+    ],
+    strategy: { name: 'Mean-Revert v2', status: 'Paused', winRate: '52%', sharpe: '0.74', pnl: '-₹31,200' },
+  },
+  volatile: {
+    state: 'Volatile',
+    stateColor: RITA.warn,
+    instrument: 'NIFTY 50',
+    price: '23,441.60',
+    change: '+18.20',
+    changePct: '+0.08%',
+    changeDir: 'flat',
+    goal: { target: '12%', progress: 52, current: '6.2%', runway: '18 months' },
+    sparkline: [18,22,16,24,14,26,12,28,20,14,24,18,26,16,22,20,24,18,22,19],
+    signals: [
+      { tag: 'VOLATILITY', sev: 'warn', title: 'VIX up +38% intraday',          body: 'Regime classifier moved from "Quiet" to "Stressed" at 11:24.', when: '2 min ago' },
+      { tag: 'EVENT',      sev: 'mon',  title: 'Fed minutes at 19:30 IST',       body: 'Historical whipsaw on Fed-minutes days averages a 1.4% range.', when: '38 min ago' },
+      { tag: 'RANGE',      sev: 'run',  title: 'NIFTY pinned at 23,400',         body: 'Gamma wall from monthly expiry concentrated at the 23,400 strike.', when: '1 hr ago' },
+      { tag: 'INTERNAL',   sev: 'neu',  title: 'Dispersion at 3-month high',     body: 'Single-stock variance is elevated relative to index variance.', when: '2 hr ago' },
+    ],
+    strategy: { name: 'Range-Fade v1', status: 'Active · Low size', winRate: '58%', sharpe: '1.12', pnl: '+₹9,800' },
+  },
+};
+
+Object.assign(window, { RITA, RITA_DATA });
+
+
+// ═════════ design-canvas.jsx ═════════
+
+// DesignCanvas.jsx — Figma-ish design canvas wrapper
+// Warm gray grid bg + Sections + Artboards + PostIt notes.
+// Artboards are reorderable (grip-drag), labels/titles are inline-editable,
+// and any artboard can be opened in a fullscreen focus overlay (←/→/Esc).
+// State persists to a .design-canvas.state.json sidecar via the host
+// bridge. No assets, no deps.
+//
+// Usage:
+//   <DesignCanvas>
+//     <DCSection id="onboarding" title="Onboarding" subtitle="First-run variants">
+//       <DCArtboard id="a" label="A · Dusk" width={260} height={480}>…</DCArtboard>
+//       <DCArtboard id="b" label="B · Minimal" width={260} height={480}>…</DCArtboard>
+//     </DCSection>
+//   </DesignCanvas>
+
+const DC = {
+  bg: '#f0eee9',
+  grid: 'rgba(0,0,0,0.06)',
+  label: 'rgba(60,50,40,0.7)',
+  title: 'rgba(40,30,20,0.85)',
+  subtitle: 'rgba(60,50,40,0.6)',
+  postitBg: '#fef4a8',
+  postitText: '#5a4a2a',
+  font: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+};
+
+// One-time CSS injection (classes are dc-prefixed so they don't collide with
+// the hosted design's own styles).
+if (typeof document !== 'undefined' && !document.getElementById('dc-styles')) {
+  const s = document.createElement('style');
+  s.id = 'dc-styles';
+  s.textContent = [
+    '.dc-editable{cursor:text;outline:none;white-space:nowrap;border-radius:3px;padding:0 2px;margin:0 -2px}',
+    '.dc-editable:focus{background:#fff;box-shadow:0 0 0 1.5px #c96442}',
+    '[data-dc-slot]{transition:transform .18s cubic-bezier(.2,.7,.3,1)}',
+    '[data-dc-slot].dc-dragging{transition:none;z-index:10;pointer-events:none}',
+    '[data-dc-slot].dc-dragging .dc-card{box-shadow:0 12px 40px rgba(0,0,0,.25),0 0 0 2px #c96442;transform:scale(1.02)}',
+    '.dc-card{transition:box-shadow .15s,transform .15s}',
+    '.dc-card *{scrollbar-width:none}',
+    '.dc-card *::-webkit-scrollbar{display:none}',
+    '.dc-labelrow{display:flex;align-items:center;gap:4px;height:24px}',
+    '.dc-grip{cursor:grab;display:flex;align-items:center;padding:5px 4px;border-radius:4px;transition:background .12s}',
+    '.dc-grip:hover{background:rgba(0,0,0,.08)}',
+    '.dc-grip:active{cursor:grabbing}',
+    '.dc-labeltext{cursor:pointer;border-radius:4px;padding:3px 6px;display:flex;align-items:center;transition:background .12s}',
+    '.dc-labeltext:hover{background:rgba(0,0,0,.05)}',
+    '.dc-expand{position:absolute;bottom:100%;right:0;margin-bottom:5px;z-index:2;opacity:0;transition:opacity .12s,background .12s;',
+    '  width:22px;height:22px;border-radius:5px;border:none;cursor:pointer;padding:0;',
+    '  background:transparent;color:rgba(60,50,40,.7);display:flex;align-items:center;justify-content:center}',
+    '.dc-expand:hover{background:rgba(0,0,0,.06);color:#2a251f}',
+    '[data-dc-slot]:hover .dc-expand{opacity:1}',
+  ].join('\n');
+  document.head.appendChild(s);
+}
+
+const DCCtx = React.createContext(null);
+
+// ─────────────────────────────────────────────────────────────
+// DesignCanvas — stateful wrapper around the pan/zoom viewport.
+// Owns runtime state (per-section order, renamed titles/labels, focused
+// artboard). Order/titles/labels persist to a .design-canvas.state.json
+// sidecar next to the HTML. Reads go via plain fetch() so the saved
+// arrangement is visible anywhere the HTML + sidecar are served together
+// (omelette preview, direct link, downloaded zip). Writes go through the
+// host's window.omelette bridge — editing requires the omelette runtime.
+// Focus is ephemeral.
+// ─────────────────────────────────────────────────────────────
+const DC_STATE_FILE = '.design-canvas.state.json';
+
+function DesignCanvas({ children, minScale, maxScale, style }) {
+  const [state, setState] = React.useState({ sections: {}, focus: null });
+  // Hold rendering until the sidecar read settles so the saved order/titles
+  // appear on first paint (no source-order flash). didRead gates writes until
+  // the read settles so the empty initial state can't clobber a slow read;
+  // skipNextWrite suppresses the one echo-write that would otherwise follow
+  // hydration.
+  const [ready, setReady] = React.useState(false);
+  const didRead = React.useRef(false);
+  const skipNextWrite = React.useRef(false);
+
+  React.useEffect(() => {
+    let off = false;
+    fetch('./' + DC_STATE_FILE)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((saved) => {
+        if (off || !saved || !saved.sections) return;
+        skipNextWrite.current = true;
+        setState((s) => ({ ...s, sections: saved.sections }));
+      })
+      .catch(() => {})
+      .finally(() => { didRead.current = true; if (!off) setReady(true); });
+    const t = setTimeout(() => { if (!off) setReady(true); }, 150);
+    return () => { off = true; clearTimeout(t); };
+  }, []);
+
+  React.useEffect(() => {
+    if (!didRead.current) return;
+    if (skipNextWrite.current) { skipNextWrite.current = false; return; }
+    const t = setTimeout(() => {
+      window.omelette?.writeFile(DC_STATE_FILE, JSON.stringify({ sections: state.sections })).catch(() => {});
+    }, 250);
+    return () => clearTimeout(t);
+  }, [state.sections]);
+
+  // Build registries synchronously from children so FocusOverlay can read
+  // them in the same render. Only direct DCSection > DCArtboard children are
+  // walked — wrapping them in other elements opts out of focus/reorder.
+  const registry = {};     // slotId -> { sectionId, artboard }
+  const sectionMeta = {};  // sectionId -> { title, subtitle, slotIds[] }
+  const sectionOrder = [];
+  React.Children.forEach(children, (sec) => {
+    if (!sec || sec.type !== DCSection) return;
+    const sid = sec.props.id ?? sec.props.title;
+    if (!sid) return;
+    sectionOrder.push(sid);
+    const persisted = state.sections[sid] || {};
+    const srcIds = [];
+    React.Children.forEach(sec.props.children, (ab) => {
+      if (!ab || ab.type !== DCArtboard) return;
+      const aid = ab.props.id ?? ab.props.label;
+      if (!aid) return;
+      registry[`${sid}/${aid}`] = { sectionId: sid, artboard: ab };
+      srcIds.push(aid);
+    });
+    const kept = (persisted.order || []).filter((k) => srcIds.includes(k));
+    sectionMeta[sid] = {
+      title: persisted.title ?? sec.props.title,
+      subtitle: sec.props.subtitle,
+      slotIds: [...kept, ...srcIds.filter((k) => !kept.includes(k))],
+    };
+  });
+
+  const api = React.useMemo(() => ({
+    state,
+    section: (id) => state.sections[id] || {},
+    patchSection: (id, p) => setState((s) => ({
+      ...s,
+      sections: { ...s.sections, [id]: { ...s.sections[id], ...(typeof p === 'function' ? p(s.sections[id] || {}) : p) } },
+    })),
+    setFocus: (slotId) => setState((s) => ({ ...s, focus: slotId })),
+  }), [state]);
+
+  // Esc exits focus; any outside pointerdown commits an in-progress rename.
+  React.useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') api.setFocus(null); };
+    const onPd = (e) => {
+      const ae = document.activeElement;
+      if (ae && ae.isContentEditable && !ae.contains(e.target)) ae.blur();
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onPd, true);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onPd, true);
+    };
+  }, [api]);
+
+  return (
+    <DCCtx.Provider value={api}>
+      <DCViewport minScale={minScale} maxScale={maxScale} style={style}>{ready && children}</DCViewport>
+      {state.focus && registry[state.focus] && (
+        <DCFocusOverlay entry={registry[state.focus]} sectionMeta={sectionMeta} sectionOrder={sectionOrder} />
+      )}
+    </DCCtx.Provider>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// DCViewport — transform-based pan/zoom (internal)
+//
+// Input mapping (Figma-style):
+//   • trackpad pinch  → zoom   (ctrlKey wheel; Safari gesture* events)
+//   • trackpad scroll → pan    (two-finger)
+//   • mouse wheel     → zoom   (notched; distinguished from trackpad scroll)
+//   • middle-drag / primary-drag-on-bg → pan
+//
+// Transform state lives in a ref and is written straight to the DOM
+// (translate3d + will-change) so wheel ticks don't go through React —
+// keeps pans at 60fps on dense canvases.
+// ─────────────────────────────────────────────────────────────
+function DCViewport({ children, minScale = 0.1, maxScale = 8, style = {} }) {
+  const vpRef = React.useRef(null);
+  const worldRef = React.useRef(null);
+  const tf = React.useRef({ x: 0, y: 0, scale: 1 });
+
+  const apply = React.useCallback(() => {
+    const { x, y, scale } = tf.current;
+    const el = worldRef.current;
+    if (el) el.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+  }, []);
+
+  React.useEffect(() => {
+    const vp = vpRef.current;
+    if (!vp) return;
+
+    const zoomAt = (cx, cy, factor) => {
+      const r = vp.getBoundingClientRect();
+      const px = cx - r.left, py = cy - r.top;
+      const t = tf.current;
+      const next = Math.min(maxScale, Math.max(minScale, t.scale * factor));
+      const k = next / t.scale;
+      // keep the world point under the cursor fixed
+      t.x = px - (px - t.x) * k;
+      t.y = py - (py - t.y) * k;
+      t.scale = next;
+      apply();
+    };
+
+    // Mouse-wheel vs trackpad-scroll heuristic. A physical wheel sends
+    // line-mode deltas (Firefox) or large integer pixel deltas with no X
+    // component (Chrome/Safari, typically multiples of 100/120). Trackpad
+    // two-finger scroll sends small/fractional pixel deltas, often with
+    // non-zero deltaX. ctrlKey is set by the browser for trackpad pinch.
+    const isMouseWheel = (e) =>
+      e.deltaMode !== 0 ||
+      (e.deltaX === 0 && Number.isInteger(e.deltaY) && Math.abs(e.deltaY) >= 40);
+
+    const onWheel = (e) => {
+      e.preventDefault();
+      if (isGesturing) return; // Safari: gesture* owns the pinch — discard concurrent wheels
+      if (e.ctrlKey) {
+        // trackpad pinch (or explicit ctrl+wheel)
+        zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.01));
+      } else if (isMouseWheel(e)) {
+        // notched mouse wheel — fixed-ratio step per click
+        zoomAt(e.clientX, e.clientY, Math.exp(-Math.sign(e.deltaY) * 0.18));
+      } else {
+        // trackpad two-finger scroll — pan
+        tf.current.x -= e.deltaX;
+        tf.current.y -= e.deltaY;
+        apply();
+      }
+    };
+
+    // Safari sends native gesture* events for trackpad pinch with a smooth
+    // e.scale; preferring these over the ctrl+wheel fallback gives a much
+    // better feel there. No-ops on other browsers. Safari also fires
+    // ctrlKey wheel events during the same pinch — isGesturing makes
+    // onWheel drop those entirely so they neither zoom nor pan.
+    let gsBase = 1;
+    let isGesturing = false;
+    const onGestureStart = (e) => { e.preventDefault(); isGesturing = true; gsBase = tf.current.scale; };
+    const onGestureChange = (e) => {
+      e.preventDefault();
+      zoomAt(e.clientX, e.clientY, (gsBase * e.scale) / tf.current.scale);
+    };
+    const onGestureEnd = (e) => { e.preventDefault(); isGesturing = false; };
+
+    // Drag-pan: middle button anywhere, or primary button on canvas
+    // background (anything that isn't an artboard or an inline editor).
+    let drag = null;
+    const onPointerDown = (e) => {
+      const onBg = !e.target.closest('[data-dc-slot], .dc-editable');
+      if (!(e.button === 1 || (e.button === 0 && onBg))) return;
+      e.preventDefault();
+      vp.setPointerCapture(e.pointerId);
+      drag = { id: e.pointerId, lx: e.clientX, ly: e.clientY };
+      vp.style.cursor = 'grabbing';
+    };
+    const onPointerMove = (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      tf.current.x += e.clientX - drag.lx;
+      tf.current.y += e.clientY - drag.ly;
+      drag.lx = e.clientX; drag.ly = e.clientY;
+      apply();
+    };
+    const onPointerUp = (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      vp.releasePointerCapture(e.pointerId);
+      drag = null;
+      vp.style.cursor = '';
+    };
+
+    vp.addEventListener('wheel', onWheel, { passive: false });
+    vp.addEventListener('gesturestart', onGestureStart, { passive: false });
+    vp.addEventListener('gesturechange', onGestureChange, { passive: false });
+    vp.addEventListener('gestureend', onGestureEnd, { passive: false });
+    vp.addEventListener('pointerdown', onPointerDown);
+    vp.addEventListener('pointermove', onPointerMove);
+    vp.addEventListener('pointerup', onPointerUp);
+    vp.addEventListener('pointercancel', onPointerUp);
+    return () => {
+      vp.removeEventListener('wheel', onWheel);
+      vp.removeEventListener('gesturestart', onGestureStart);
+      vp.removeEventListener('gesturechange', onGestureChange);
+      vp.removeEventListener('gestureend', onGestureEnd);
+      vp.removeEventListener('pointerdown', onPointerDown);
+      vp.removeEventListener('pointermove', onPointerMove);
+      vp.removeEventListener('pointerup', onPointerUp);
+      vp.removeEventListener('pointercancel', onPointerUp);
+    };
+  }, [apply, minScale, maxScale]);
+
+  const gridSvg = `url("data:image/svg+xml,%3Csvg width='120' height='120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M120 0H0v120' fill='none' stroke='${encodeURIComponent(DC.grid)}' stroke-width='1'/%3E%3C/svg%3E")`;
+  return (
+    <div
+      ref={vpRef}
+      className="design-canvas"
+      style={{
+        height: '100vh', width: '100vw',
+        background: DC.bg,
+        overflow: 'hidden',
+        overscrollBehavior: 'none',
+        touchAction: 'none',
+        position: 'relative',
+        fontFamily: DC.font,
+        boxSizing: 'border-box',
+        ...style,
+      }}
+    >
+      <div
+        ref={worldRef}
+        style={{
+          position: 'absolute', top: 0, left: 0,
+          transformOrigin: '0 0',
+          willChange: 'transform',
+          width: 'max-content', minWidth: '100%',
+          minHeight: '100%',
+          padding: '60px 0 80px',
+        }}
+      >
+        <div style={{ position: 'absolute', inset: -6000, backgroundImage: gridSvg, backgroundSize: '120px 120px', pointerEvents: 'none', zIndex: -1 }} />
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// DCSection — editable title + h-row of artboards in persisted order
+// ─────────────────────────────────────────────────────────────
+function DCSection({ id, title, subtitle, children, gap = 48 }) {
+  const ctx = React.useContext(DCCtx);
+  const sid = id ?? title;
+  const all = React.Children.toArray(children);
+  const artboards = all.filter((c) => c && c.type === DCArtboard);
+  const rest = all.filter((c) => !(c && c.type === DCArtboard));
+  const srcOrder = artboards.map((a) => a.props.id ?? a.props.label);
+  const sec = (ctx && sid && ctx.section(sid)) || {};
+
+  const order = React.useMemo(() => {
+    const kept = (sec.order || []).filter((k) => srcOrder.includes(k));
+    return [...kept, ...srcOrder.filter((k) => !kept.includes(k))];
+  }, [sec.order, srcOrder.join('|')]);
+
+  const byId = Object.fromEntries(artboards.map((a) => [a.props.id ?? a.props.label, a]));
+
+  return (
+    <div data-dc-section={sid} style={{ marginBottom: 80, position: 'relative' }}>
+      <div style={{ padding: '0 60px 56px' }}>
+        <DCEditable tag="div" value={sec.title ?? title}
+          onChange={(v) => ctx && sid && ctx.patchSection(sid, { title: v })}
+          style={{ fontSize: 28, fontWeight: 600, color: DC.title, letterSpacing: -0.4, marginBottom: 6, display: 'inline-block' }} />
+        {subtitle && <div style={{ fontSize: 16, color: DC.subtitle }}>{subtitle}</div>}
+      </div>
+      <div style={{ display: 'flex', gap, padding: '0 60px', alignItems: 'flex-start', width: 'max-content' }}>
+        {order.map((k) => (
+          <DCArtboardFrame key={k} sectionId={sid} artboard={byId[k]} order={order}
+            label={(sec.labels || {})[k] ?? byId[k].props.label}
+            onRename={(v) => ctx && ctx.patchSection(sid, (x) => ({ labels: { ...x.labels, [k]: v } }))}
+            onReorder={(next) => ctx && ctx.patchSection(sid, { order: next })}
+            onFocus={() => ctx && ctx.setFocus(`${sid}/${k}`)} />
+        ))}
+      </div>
+      {rest}
+    </div>
+  );
+}
+
+// DCArtboard — marker; rendered by DCArtboardFrame via DCSection.
+function DCArtboard() { return null; }
+
+function DCArtboardFrame({ sectionId, artboard, label, order, onRename, onReorder, onFocus }) {
+  const { id: rawId, label: rawLabel, width = 260, height = 480, children, style = {} } = artboard.props;
+  const id = rawId ?? rawLabel;
+  const ref = React.useRef(null);
+
+  // Live drag-reorder: dragged card sticks to cursor; siblings slide into
+  // their would-be slots in real time via transforms. DOM order only
+  // changes on drop.
+  const onGripDown = (e) => {
+    e.preventDefault(); e.stopPropagation();
+    const me = ref.current;
+    // translateX is applied in local (pre-scale) space but pointer deltas and
+    // getBoundingClientRect().left are screen-space — divide by the viewport's
+    // current scale so the dragged card tracks the cursor at any zoom level.
+    const scale = me.getBoundingClientRect().width / me.offsetWidth || 1;
+    const peers = Array.from(document.querySelectorAll(`[data-dc-section="${sectionId}"] [data-dc-slot]`));
+    const homes = peers.map((el) => ({ el, id: el.dataset.dcSlot, x: el.getBoundingClientRect().left }));
+    const slotXs = homes.map((h) => h.x);
+    const startIdx = order.indexOf(id);
+    const startX = e.clientX;
+    let liveOrder = order.slice();
+    me.classList.add('dc-dragging');
+
+    const layout = () => {
+      for (const h of homes) {
+        if (h.id === id) continue;
+        const slot = liveOrder.indexOf(h.id);
+        h.el.style.transform = `translateX(${(slotXs[slot] - h.x) / scale}px)`;
+      }
+    };
+
+    const move = (ev) => {
+      const dx = ev.clientX - startX;
+      me.style.transform = `translateX(${dx / scale}px)`;
+      const cur = homes[startIdx].x + dx;
+      let nearest = 0, best = Infinity;
+      for (let i = 0; i < slotXs.length; i++) {
+        const d = Math.abs(slotXs[i] - cur);
+        if (d < best) { best = d; nearest = i; }
+      }
+      if (liveOrder.indexOf(id) !== nearest) {
+        liveOrder = order.filter((k) => k !== id);
+        liveOrder.splice(nearest, 0, id);
+        layout();
+      }
+    };
+
+    const up = () => {
+      document.removeEventListener('pointermove', move);
+      document.removeEventListener('pointerup', up);
+      const finalSlot = liveOrder.indexOf(id);
+      me.classList.remove('dc-dragging');
+      me.style.transform = `translateX(${(slotXs[finalSlot] - homes[startIdx].x) / scale}px)`;
+      // After the settle transition, kill transitions + clear transforms +
+      // commit the reorder in the same frame so there's no visual snap-back.
+      setTimeout(() => {
+        for (const h of homes) { h.el.style.transition = 'none'; h.el.style.transform = ''; }
+        if (liveOrder.join('|') !== order.join('|')) onReorder(liveOrder);
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          for (const h of homes) h.el.style.transition = '';
+        }));
+      }, 180);
+    };
+    document.addEventListener('pointermove', move);
+    document.addEventListener('pointerup', up);
+  };
+
+  return (
+    <div ref={ref} data-dc-slot={id} style={{ position: 'relative', flexShrink: 0 }}>
+      <div className="dc-labelrow" style={{ position: 'absolute', bottom: '100%', left: -4, marginBottom: 4, color: DC.label }}>
+        <div className="dc-grip" onPointerDown={onGripDown} title="Drag to reorder">
+          <svg width="9" height="13" viewBox="0 0 9 13" fill="currentColor"><circle cx="2" cy="2" r="1.1"/><circle cx="7" cy="2" r="1.1"/><circle cx="2" cy="6.5" r="1.1"/><circle cx="7" cy="6.5" r="1.1"/><circle cx="2" cy="11" r="1.1"/><circle cx="7" cy="11" r="1.1"/></svg>
+        </div>
+        <div className="dc-labeltext" onClick={onFocus} title="Click to focus">
+          <DCEditable value={label} onChange={onRename} onClick={(e) => e.stopPropagation()}
+            style={{ fontSize: 15, fontWeight: 500, color: DC.label, lineHeight: 1 }} />
+        </div>
+      </div>
+      <button className="dc-expand" onClick={onFocus} onPointerDown={(e) => e.stopPropagation()} title="Focus">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M7 1h4v4M5 11H1V7M11 1L7.5 4.5M1 11l3.5-3.5"/></svg>
+      </button>
+      <div className="dc-card"
+        style={{ borderRadius: 2, boxShadow: '0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06)', overflow: 'hidden', width, height, background: '#fff', ...style }}>
+        {children || <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb', fontSize: 13, fontFamily: DC.font }}>{id}</div>}
+      </div>
+    </div>
+  );
+}
+
+// Inline rename — commits on blur or Enter.
+function DCEditable({ value, onChange, style, tag = 'span', onClick }) {
+  const T = tag;
+  return (
+    <T className="dc-editable" contentEditable suppressContentEditableWarning
+      onClick={onClick}
+      onPointerDown={(e) => e.stopPropagation()}
+      onBlur={(e) => onChange && onChange(e.currentTarget.textContent)}
+      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
+      style={style}>{value}</T>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Focus mode — overlay one artboard; ←/→ within section, ↑/↓ across
+// sections, Esc or backdrop click to exit.
+// ─────────────────────────────────────────────────────────────
+function DCFocusOverlay({ entry, sectionMeta, sectionOrder }) {
+  const ctx = React.useContext(DCCtx);
+  const { sectionId, artboard } = entry;
+  const sec = ctx.section(sectionId);
+  const meta = sectionMeta[sectionId];
+  const peers = meta.slotIds;
+  const aid = artboard.props.id ?? artboard.props.label;
+  const idx = peers.indexOf(aid);
+  const secIdx = sectionOrder.indexOf(sectionId);
+
+  const go = (d) => { const n = peers[(idx + d + peers.length) % peers.length]; if (n) ctx.setFocus(`${sectionId}/${n}`); };
+  const goSection = (d) => {
+    const ns = sectionOrder[(secIdx + d + sectionOrder.length) % sectionOrder.length];
+    const first = sectionMeta[ns] && sectionMeta[ns].slotIds[0];
+    if (first) ctx.setFocus(`${ns}/${first}`);
+  };
+
+  React.useEffect(() => {
+    const k = (e) => {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); go(1); }
+      if (e.key === 'ArrowUp') { e.preventDefault(); goSection(-1); }
+      if (e.key === 'ArrowDown') { e.preventDefault(); goSection(1); }
+    };
+    document.addEventListener('keydown', k);
+    return () => document.removeEventListener('keydown', k);
+  });
+
+  const { width = 260, height = 480, children } = artboard.props;
+  const [vp, setVp] = React.useState({ w: window.innerWidth, h: window.innerHeight });
+  React.useEffect(() => { const r = () => setVp({ w: window.innerWidth, h: window.innerHeight }); window.addEventListener('resize', r); return () => window.removeEventListener('resize', r); }, []);
+  const scale = Math.max(0.1, Math.min((vp.w - 200) / width, (vp.h - 260) / height, 2));
+
+  const [ddOpen, setDd] = React.useState(false);
+  const Arrow = ({ dir, onClick }) => (
+    <button onClick={(e) => { e.stopPropagation(); onClick(); }}
+      style={{ position: 'absolute', top: '50%', [dir]: 28, transform: 'translateY(-50%)',
+        border: 'none', background: 'rgba(255,255,255,.08)', color: 'rgba(255,255,255,.9)',
+        width: 44, height: 44, borderRadius: 22, fontSize: 18, cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background .15s' }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,.18)')}
+      onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,.08)')}>
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <path d={dir === 'left' ? 'M11 3L5 9l6 6' : 'M7 3l6 6-6 6'} /></svg>
+    </button>
+  );
+
+  // Portal to body so position:fixed is the real viewport regardless of any
+  // transform on DesignCanvas's ancestors (including the canvas zoom itself).
+  return ReactDOM.createPortal(
+    <div onClick={() => ctx.setFocus(null)}
+      onWheel={(e) => e.preventDefault()}
+      style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(24,20,16,.6)', backdropFilter: 'blur(14px)',
+        fontFamily: DC.font, color: '#fff' }}>
+
+      {/* top bar: section dropdown (left) · close (right) */}
+      <div onClick={(e) => e.stopPropagation()}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 72, display: 'flex', alignItems: 'flex-start', padding: '16px 20px 0', gap: 16 }}>
+        <div style={{ position: 'relative' }}>
+          <button onClick={() => setDd((o) => !o)}
+            style={{ border: 'none', background: 'transparent', color: '#fff', cursor: 'pointer', padding: '6px 8px',
+              borderRadius: 6, textAlign: 'left', fontFamily: 'inherit' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 18, fontWeight: 600, letterSpacing: -0.3 }}>{meta.title}</span>
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" style={{ opacity: .7 }}><path d="M2 4l3.5 3.5L9 4"/></svg>
+            </span>
+            {meta.subtitle && <span style={{ display: 'block', fontSize: 13, opacity: .6, fontWeight: 400, marginTop: 2 }}>{meta.subtitle}</span>}
+          </button>
+          {ddOpen && (
+            <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 4, background: '#2a251f', borderRadius: 8,
+              boxShadow: '0 8px 32px rgba(0,0,0,.4)', padding: 4, minWidth: 200, zIndex: 10 }}>
+              {sectionOrder.map((sid) => (
+                <button key={sid} onClick={() => { setDd(false); const f = sectionMeta[sid].slotIds[0]; if (f) ctx.setFocus(`${sid}/${f}`); }}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer',
+                    background: sid === sectionId ? 'rgba(255,255,255,.1)' : 'transparent', color: '#fff',
+                    padding: '8px 12px', borderRadius: 5, fontSize: 14, fontWeight: sid === sectionId ? 600 : 400, fontFamily: 'inherit' }}>
+                  {sectionMeta[sid].title}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <div style={{ flex: 1 }} />
+        <button onClick={() => ctx.setFocus(null)}
+          onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,.12)')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+          style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,.7)', width: 32, height: 32,
+            borderRadius: 16, fontSize: 20, cursor: 'pointer', lineHeight: 1, transition: 'background .12s' }}>×</button>
+      </div>
+
+      {/* card centered, label + index below — only the card itself stops
+          propagation so any backdrop click (including the margins around
+          the card) exits focus */}
+      <div
+        style={{ position: 'absolute', top: 64, bottom: 56, left: 100, right: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+        <div onClick={(e) => e.stopPropagation()} style={{ width: width * scale, height: height * scale, position: 'relative' }}>
+          <div style={{ width, height, transform: `scale(${scale})`, transformOrigin: 'top left', background: '#fff', borderRadius: 2, overflow: 'hidden',
+            boxShadow: '0 20px 80px rgba(0,0,0,.4)' }}>
+            {children || <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb' }}>{aid}</div>}
+          </div>
+        </div>
+        <div onClick={(e) => e.stopPropagation()} style={{ fontSize: 14, fontWeight: 500, opacity: .85, textAlign: 'center' }}>
+          {(sec.labels || {})[aid] ?? artboard.props.label}
+          <span style={{ opacity: .5, marginLeft: 10, fontVariantNumeric: 'tabular-nums' }}>{idx + 1} / {peers.length}</span>
+        </div>
+      </div>
+
+      <Arrow dir="left" onClick={() => go(-1)} />
+      <Arrow dir="right" onClick={() => go(1)} />
+
+      {/* dots */}
+      <div onClick={(e) => e.stopPropagation()}
+        style={{ position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 8 }}>
+        {peers.map((p, i) => (
+          <button key={p} onClick={() => ctx.setFocus(`${sectionId}/${p}`)}
+            style={{ border: 'none', padding: 0, cursor: 'pointer', width: 6, height: 6, borderRadius: 3,
+              background: i === idx ? '#fff' : 'rgba(255,255,255,.3)' }} />
+        ))}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Post-it — absolute-positioned sticky note
+// ─────────────────────────────────────────────────────────────
+function DCPostIt({ children, top, left, right, bottom, rotate = -2, width = 180 }) {
+  return (
+    <div style={{
+      position: 'absolute', top, left, right, bottom, width,
+      background: DC.postitBg, padding: '14px 16px',
+      fontFamily: '"Comic Sans MS", "Marker Felt", "Segoe Print", cursive',
+      fontSize: 14, lineHeight: 1.4, color: DC.postitText,
+      boxShadow: '0 2px 8px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)',
+      transform: `rotate(${rotate}deg)`,
+      zIndex: 5,
+    }}>{children}</div>
+  );
+}
+
+Object.assign(window, { DesignCanvas, DCSection, DCArtboard, DCPostIt });
+
+
+
+// ═════════ ios-frame.jsx ═════════
+
+// iOS.jsx — Simplified iOS 26 (Liquid Glass) device frame
+// Based on the iOS 26 UI Kit + Figma status bar spec. No assets, no deps.
+// Exports: IOSDevice, IOSStatusBar, IOSNavBar, IOSGlassPill, IOSList, IOSListRow, IOSKeyboard
+
+// ─────────────────────────────────────────────────────────────
+// Status bar
+// ─────────────────────────────────────────────────────────────
+function IOSStatusBar({ dark = false, time = '9:41' }) {
+  const c = dark ? '#fff' : '#000';
+  return (
+    <div style={{
+      display: 'flex', gap: 154, alignItems: 'center', justifyContent: 'center',
+      padding: '21px 24px 19px', boxSizing: 'border-box',
+      position: 'relative', zIndex: 20, width: '100%',
+    }}>
+      <div style={{ flex: 1, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 1.5 }}>
+        <span style={{
+          fontFamily: '-apple-system, "SF Pro", system-ui', fontWeight: 590,
+          fontSize: 17, lineHeight: '22px', color: c,
+        }}>{time}</span>
+      </div>
+      <div style={{ flex: 1, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, paddingTop: 1, paddingRight: 1 }}>
+        <svg width="19" height="12" viewBox="0 0 19 12">
+          <rect x="0" y="7.5" width="3.2" height="4.5" rx="0.7" fill={c}/>
+          <rect x="4.8" y="5" width="3.2" height="7" rx="0.7" fill={c}/>
+          <rect x="9.6" y="2.5" width="3.2" height="9.5" rx="0.7" fill={c}/>
+          <rect x="14.4" y="0" width="3.2" height="12" rx="0.7" fill={c}/>
+        </svg>
+        <svg width="17" height="12" viewBox="0 0 17 12">
+          <path d="M8.5 3.2C10.8 3.2 12.9 4.1 14.4 5.6L15.5 4.5C13.7 2.7 11.2 1.5 8.5 1.5C5.8 1.5 3.3 2.7 1.5 4.5L2.6 5.6C4.1 4.1 6.2 3.2 8.5 3.2Z" fill={c}/>
+          <path d="M8.5 6.8C9.9 6.8 11.1 7.3 12 8.2L13.1 7.1C11.8 5.9 10.2 5.1 8.5 5.1C6.8 5.1 5.2 5.9 3.9 7.1L5 8.2C5.9 7.3 7.1 6.8 8.5 6.8Z" fill={c}/>
+          <circle cx="8.5" cy="10.5" r="1.5" fill={c}/>
+        </svg>
+        <svg width="27" height="13" viewBox="0 0 27 13">
+          <rect x="0.5" y="0.5" width="23" height="12" rx="3.5" stroke={c} strokeOpacity="0.35" fill="none"/>
+          <rect x="2" y="2" width="20" height="9" rx="2" fill={c}/>
+          <path d="M25 4.5V8.5C25.8 8.2 26.5 7.2 26.5 6.5C26.5 5.8 25.8 4.8 25 4.5Z" fill={c} fillOpacity="0.4"/>
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Liquid glass pill — blur + tint + shine
+// ─────────────────────────────────────────────────────────────
+function IOSGlassPill({ children, dark = false, style = {} }) {
+  return (
+    <div style={{
+      height: 44, minWidth: 44, borderRadius: 9999,
+      position: 'relative', overflow: 'hidden',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      boxShadow: dark
+        ? '0 2px 6px rgba(0,0,0,0.35), 0 6px 16px rgba(0,0,0,0.2)'
+        : '0 1px 3px rgba(0,0,0,0.07), 0 3px 10px rgba(0,0,0,0.06)',
+      ...style,
+    }}>
+      {/* blur + tint */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 9999,
+        backdropFilter: 'blur(12px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+        background: dark ? 'rgba(120,120,128,0.28)' : 'rgba(255,255,255,0.5)',
+      }} />
+      {/* shine */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 9999,
+        boxShadow: dark
+          ? 'inset 1.5px 1.5px 1px rgba(255,255,255,0.15), inset -1px -1px 1px rgba(255,255,255,0.08)'
+          : 'inset 1.5px 1.5px 1px rgba(255,255,255,0.7), inset -1px -1px 1px rgba(255,255,255,0.4)',
+        border: dark ? '0.5px solid rgba(255,255,255,0.15)' : '0.5px solid rgba(0,0,0,0.06)',
+      }} />
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', padding: '0 4px' }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Navigation bar — glass pills + large title
+// ─────────────────────────────────────────────────────────────
+function IOSNavBar({ title = 'Title', dark = false, trailingIcon = true }) {
+  const muted = dark ? 'rgba(255,255,255,0.6)' : '#404040';
+  const text = dark ? '#fff' : '#000';
+  const pillIcon = (content) => (
+    <IOSGlassPill dark={dark}>
+      <div style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {content}
+      </div>
+    </IOSGlassPill>
+  );
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: 10,
+      paddingTop: 62, paddingBottom: 10, position: 'relative', zIndex: 5,
+    }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 16px',
+      }}>
+        {/* back chevron */}
+        {pillIcon(
+          <svg width="12" height="20" viewBox="0 0 12 20" fill="none" style={{ marginLeft: -1 }}>
+            <path d="M10 2L2 10l8 8" stroke={muted} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+        {/* trailing ellipsis */}
+        {trailingIcon && pillIcon(
+          <svg width="22" height="6" viewBox="0 0 22 6">
+            <circle cx="3" cy="3" r="2.5" fill={muted}/>
+            <circle cx="11" cy="3" r="2.5" fill={muted}/>
+            <circle cx="19" cy="3" r="2.5" fill={muted}/>
+          </svg>
+        )}
+      </div>
+      {/* large title */}
+      <div style={{
+        padding: '0 16px',
+        fontFamily: '-apple-system, system-ui',
+        fontSize: 34, fontWeight: 700, lineHeight: '41px',
+        color: text, letterSpacing: 0.4,
+      }}>{title}</div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Grouped list (inset card, r:26) + row (52px)
+// ─────────────────────────────────────────────────────────────
+function IOSListRow({ title, detail, icon, chevron = true, isLast = false, dark = false }) {
+  const text = dark ? '#fff' : '#000';
+  const sec = dark ? 'rgba(235,235,245,0.6)' : 'rgba(60,60,67,0.6)';
+  const ter = dark ? 'rgba(235,235,245,0.3)' : 'rgba(60,60,67,0.3)';
+  const sep = dark ? 'rgba(84,84,88,0.65)' : 'rgba(60,60,67,0.12)';
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', minHeight: 52,
+      padding: '0 16px', position: 'relative',
+      fontFamily: '-apple-system, system-ui', fontSize: 17,
+      letterSpacing: -0.43,
+    }}>
+      {icon && (
+        <div style={{
+          width: 30, height: 30, borderRadius: 7, background: icon,
+          marginRight: 12, flexShrink: 0,
+        }} />
+      )}
+      <div style={{ flex: 1, color: text }}>{title}</div>
+      {detail && <span style={{ color: sec, marginRight: 6 }}>{detail}</span>}
+      {chevron && (
+        <svg width="8" height="14" viewBox="0 0 8 14" style={{ flexShrink: 0 }}>
+          <path d="M1 1l6 6-6 6" stroke={ter} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      )}
+      {!isLast && (
+        <div style={{
+          position: 'absolute', bottom: 0, right: 0,
+          left: icon ? 58 : 16, height: 0.5, background: sep,
+        }} />
+      )}
+    </div>
+  );
+}
+
+function IOSList({ header, children, dark = false }) {
+  const hc = dark ? 'rgba(235,235,245,0.6)' : 'rgba(60,60,67,0.6)';
+  const bg = dark ? '#1C1C1E' : '#fff';
+  return (
+    <div>
+      {header && (
+        <div style={{
+          fontFamily: '-apple-system, system-ui', fontSize: 13,
+          color: hc, textTransform: 'uppercase',
+          padding: '8px 36px 6px', letterSpacing: -0.08,
+        }}>{header}</div>
+      )}
+      <div style={{
+        background: bg, borderRadius: 26,
+        margin: '0 16px', overflow: 'hidden',
+      }}>{children}</div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Device frame
+// ─────────────────────────────────────────────────────────────
+function IOSDevice({
+  children, width = 402, height = 874, dark = false,
+  title, keyboard = false,
+}) {
+  return (
+    <div style={{
+      width, height, borderRadius: 48, overflow: 'hidden',
+      position: 'relative', background: dark ? '#000' : '#F2F2F7',
+      boxShadow: '0 40px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.12)',
+      fontFamily: '-apple-system, system-ui, sans-serif',
+      WebkitFontSmoothing: 'antialiased',
+    }}>
+      {/* dynamic island */}
+      <div style={{
+        position: 'absolute', top: 11, left: '50%', transform: 'translateX(-50%)',
+        width: 126, height: 37, borderRadius: 24, background: '#000', zIndex: 50,
+      }} />
+      {/* status bar (absolute) */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
+        <IOSStatusBar dark={dark} />
+      </div>
+      {/* nav + content */}
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        {title !== undefined && <IOSNavBar title={title} dark={dark} />}
+        <div style={{ flex: 1, overflow: 'auto' }}>{children}</div>
+        {keyboard && <IOSKeyboard dark={dark} />}
+      </div>
+      {/* home indicator — always on top */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 60,
+        height: 34, display: 'flex', justifyContent: 'center', alignItems: 'flex-end',
+        paddingBottom: 8, pointerEvents: 'none',
+      }}>
+        <div style={{
+          width: 139, height: 5, borderRadius: 100,
+          background: dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.25)',
+        }} />
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Keyboard — iOS 26 liquid glass
+// ─────────────────────────────────────────────────────────────
+function IOSKeyboard({ dark = false }) {
+  const glyph = dark ? 'rgba(255,255,255,0.7)' : '#595959';
+  const sugg = dark ? 'rgba(255,255,255,0.6)' : '#333';
+  const keyBg = dark ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.85)';
+
+  // special-key icons
+  const icons = {
+    shift: <svg width="19" height="17" viewBox="0 0 19 17"><path d="M9.5 1L1 9.5h4.5V16h8V9.5H18L9.5 1z" fill={glyph}/></svg>,
+    del: <svg width="23" height="17" viewBox="0 0 23 17"><path d="M7 1h13a2 2 0 012 2v11a2 2 0 01-2 2H7l-6-7.5L7 1z" fill="none" stroke={glyph} strokeWidth="1.6" strokeLinejoin="round"/><path d="M10 5l7 7M17 5l-7 7" stroke={glyph} strokeWidth="1.6" strokeLinecap="round"/></svg>,
+    ret: <svg width="20" height="14" viewBox="0 0 20 14"><path d="M18 1v6H4m0 0l4-4M4 7l4 4" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  };
+
+  const key = (content, { w, flex, ret, fs = 25, k } = {}) => (
+    <div key={k} style={{
+      height: 42, borderRadius: 8.5,
+      flex: flex ? 1 : undefined, width: w, minWidth: 0,
+      background: ret ? '#08f' : keyBg,
+      boxShadow: '0 1px 0 rgba(0,0,0,0.075)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontFamily: '-apple-system, "SF Compact", system-ui',
+      fontSize: fs, fontWeight: 458, color: ret ? '#fff' : glyph,
+    }}>{content}</div>
+  );
+
+  const row = (keys, pad = 0) => (
+    <div style={{ display: 'flex', gap: 6.5, justifyContent: 'center', padding: `0 ${pad}px` }}>
+      {keys.map(l => key(l, { flex: true, k: l }))}
+    </div>
+  );
+
+  return (
+    <div style={{
+      position: 'relative', zIndex: 15, borderRadius: 27, overflow: 'hidden',
+      padding: '11px 0 2px',
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      boxShadow: dark
+        ? '0 -2px 20px rgba(0,0,0,0.09)'
+        : '0 -1px 6px rgba(0,0,0,0.018), 0 -3px 20px rgba(0,0,0,0.012)',
+    }}>
+      {/* liquid glass bg — same recipe as nav pills */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 27,
+        backdropFilter: 'blur(12px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+        background: dark ? 'rgba(120,120,128,0.14)' : 'rgba(255,255,255,0.25)',
+      }} />
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 27,
+        boxShadow: dark
+          ? 'inset 1.5px 1.5px 1px rgba(255,255,255,0.15)'
+          : 'inset 1.5px 1.5px 1px rgba(255,255,255,0.7), inset -1px -1px 1px rgba(255,255,255,0.4)',
+        border: dark ? '0.5px solid rgba(255,255,255,0.15)' : '0.5px solid rgba(0,0,0,0.06)',
+        pointerEvents: 'none',
+      }} />
+
+      {/* autocorrect bar */}
+      <div style={{
+        display: 'flex', gap: 20, alignItems: 'center',
+        padding: '8px 22px 13px', width: '100%', boxSizing: 'border-box',
+        position: 'relative',
+      }}>
+        {['"The"', 'the', 'to'].map((w, i) => (
+          <React.Fragment key={i}>
+            {i > 0 && <div style={{ width: 1, height: 25, background: '#ccc', opacity: 0.3 }} />}
+            <div style={{
+              flex: 1, textAlign: 'center',
+              fontFamily: '-apple-system, system-ui', fontSize: 17,
+              color: sugg, letterSpacing: -0.43, lineHeight: '22px',
+            }}>{w}</div>
+          </React.Fragment>
+        ))}
+      </div>
+
+      {/* key layout */}
+      <div style={{
+        display: 'flex', flexDirection: 'column', gap: 13,
+        padding: '0 6.5px', width: '100%', boxSizing: 'border-box',
+        position: 'relative',
+      }}>
+        {row(['q','w','e','r','t','y','u','i','o','p'])}
+        {row(['a','s','d','f','g','h','j','k','l'], 20)}
+        <div style={{ display: 'flex', gap: 14.25, alignItems: 'center' }}>
+          {key(icons.shift, { w: 45, k: 'shift' })}
+          <div style={{ display: 'flex', gap: 6.5, flex: 1 }}>
+            {['z','x','c','v','b','n','m'].map(l => key(l, { flex: true, k: l }))}
+          </div>
+          {key(icons.del, { w: 45, k: 'del' })}
+        </div>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          {key('ABC', { w: 92.25, fs: 18, k: 'abc' })}
+          {key('', { flex: true, k: 'space' })}
+          {key(icons.ret, { w: 92.25, ret: true, k: 'ret' })}
+        </div>
+      </div>
+
+      {/* bottom spacer (emoji+mic area, icons omitted) */}
+      <div style={{ height: 56, width: '100%', position: 'relative' }} />
+    </div>
+  );
+}
+
+Object.assign(window, {
+  IOSDevice, IOSStatusBar, IOSNavBar, IOSGlassPill, IOSList, IOSListRow, IOSKeyboard,
+});
+
+
+// ═════════ android-frame.jsx ═════════
+
+// Android.jsx — Simplified Android (Material 3) device frame
+// Status bar + top app bar + content + gesture nav + keyboard.
+// Based on Figma M3 spec. No dependencies, no image assets.
+
+const MD_C = {
+  surface: '#f4fbf8',
+  surfaceVariant: '#dae5e1',
+  inverseOnSurface: '#ecf2ef',
+  secondaryContainer: '#cde8e1',
+  primaryFixedDim: '#83d5c6',
+  onSurface: '#171d1b',
+  onSurfaceVar: '#49454f',
+  onPrimaryContainer: '#00201c',
+  primary: '#006a60',
+  frameBorder: 'rgba(116,119,117,0.5)',
+};
+
+// ─────────────────────────────────────────────────────────────
+// Status bar (time left, wifi/cell/battery right)
+// ─────────────────────────────────────────────────────────────
+function AndroidStatusBar({ dark = false }) {
+  const c = dark ? '#fff' : MD_C.onSurface;
+  return (
+    <div style={{
+      height: 40, display: 'flex', alignItems: 'center',
+      justifyContent: 'space-between', padding: '0 16px',
+      position: 'relative',
+      fontFamily: 'Roboto, system-ui, sans-serif',
+    }}>
+      {/* time left */}
+      <div style={{ width: 128, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontSize: 14, fontWeight: 400, letterSpacing: 0.25, lineHeight: '20px', color: c }}>9:30</span>
+      </div>
+      {/* camera punch-hole (center) */}
+      <div style={{
+        position: 'absolute', left: '50%', top: 8, transform: 'translateX(-50%)',
+        width: 24, height: 24, borderRadius: 100, background: '#2e2e2e',
+      }} />
+      {/* status icons right */}
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <div style={{ display: 'flex', paddingRight: 2 }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" style={{ marginRight: -2 }}>
+            <path d="M8 13.3L.67 5.97a10.37 10.37 0 0114.66 0L8 13.3z" fill={c}/>
+          </svg>
+          <svg width="16" height="16" viewBox="0 0 16 16" style={{ marginRight: -2 }}>
+            <path d="M14.67 14.67V1.33L1.33 14.67h13.34z" fill={c}/>
+          </svg>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 16 16">
+          <rect x="3.75" y="2" width="8.5" height="13" rx="1.5" fill={c}/>
+          <rect x="5.5" y="0.9" width="5" height="2" rx="0.5" fill={c}/>
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Top app bar (Material 3 small/medium)
+// ─────────────────────────────────────────────────────────────
+function AndroidAppBar({ title = 'Title', large = false }) {
+  const iconDot = (
+    <div style={{
+      width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <div style={{ width: 22, height: 22, borderRadius: '50%', background: MD_C.onSurfaceVar, opacity: 0.3 }} />
+    </div>
+  );
+  return (
+    <div style={{ background: MD_C.surface, padding: '4px 4px 0' }}>
+      <div style={{ height: 56, display: 'flex', alignItems: 'center', gap: 4 }}>
+        {iconDot}
+        {!large && (
+          <span style={{
+            flex: 1, fontSize: 22, fontWeight: 400, color: MD_C.onSurface,
+            fontFamily: 'Roboto, system-ui, sans-serif',
+          }}>{title}</span>
+        )}
+        {large && <div style={{ flex: 1 }} />}
+        {iconDot}
+      </div>
+      {large && (
+        <div style={{
+          padding: '16px 16px 20px',
+          fontSize: 28, fontWeight: 400, color: MD_C.onSurface,
+          fontFamily: 'Roboto, system-ui, sans-serif',
+        }}>{title}</div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// List item (Material 3)
+// ─────────────────────────────────────────────────────────────
+function AndroidListItem({ headline, supporting, leading }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 16,
+      padding: '12px 16px', minHeight: 56, boxSizing: 'border-box',
+      fontFamily: 'Roboto, system-ui, sans-serif',
+    }}>
+      {leading && (
+        <div style={{
+          width: 40, height: 40, borderRadius: '50%',
+          background: MD_C.primary, color: '#fff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 18, fontWeight: 500, flexShrink: 0,
+        }}>{leading}</div>
+      )}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 16, color: MD_C.onSurface, lineHeight: '24px' }}>{headline}</div>
+        {supporting && (
+          <div style={{ fontSize: 14, color: MD_C.onSurfaceVar, lineHeight: '20px' }}>{supporting}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Gesture nav bar (pill)
+// ─────────────────────────────────────────────────────────────
+function AndroidNavBar({ dark = false }) {
+  return (
+    <div style={{
+      height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <div style={{
+        width: 108, height: 4, borderRadius: 2,
+        background: dark ? '#fff' : MD_C.onSurface, opacity: 0.4,
+      }} />
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Device frame — wraps everything
+// ─────────────────────────────────────────────────────────────
+function AndroidDevice({
+  children, width = 412, height = 892, dark = false,
+  title, large = false, keyboard = false,
+}) {
+  return (
+    <div style={{
+      width, height, borderRadius: 18, overflow: 'hidden',
+      background: dark ? '#1d1b20' : MD_C.surface,
+      border: `8px solid ${MD_C.frameBorder}`,
+      boxShadow: '0 30px 80px rgba(0,0,0,0.25)',
+      display: 'flex', flexDirection: 'column', boxSizing: 'border-box',
+    }}>
+      <AndroidStatusBar dark={dark} />
+      {title !== undefined && <AndroidAppBar title={title} large={large} />}
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        {children}
+      </div>
+      {keyboard && <AndroidKeyboard />}
+      <AndroidNavBar dark={dark} />
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Keyboard — Gboard (Material 3)
+// ─────────────────────────────────────────────────────────────
+function AndroidKeyboard() {
+  let _k = 0;
+  const key = (l, { flex = 1, bg = MD_C.surface, r = 6, minW, fs = 21 } = {}) => (
+    <div key={_k++} style={{
+      height: 46, borderRadius: r, flex, minWidth: minW,
+      background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontFamily: 'Roboto, system-ui', fontSize: fs,
+      color: MD_C.onPrimaryContainer,
+    }}>{l}</div>
+  );
+  const row = (keys, style = {}) => (
+    <div style={{ display: 'flex', gap: 6, justifyContent: 'center', ...style }}>
+      {keys.map(l => key(l))}
+    </div>
+  );
+  return (
+    <div style={{
+      background: MD_C.inverseOnSurface, padding: '0 8px 8px',
+      display: 'flex', flexDirection: 'column', gap: 4,
+    }}>
+      {/* navbar spacer (icons omitted) */}
+      <div style={{ height: 44 }} />
+      {/* key rows */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {row(['q','w','e','r','t','y','u','i','o','p'])}
+        {row(['a','s','d','f','g','h','j','k','l'], { padding: '0 20px' })}
+        <div style={{ display: 'flex', gap: 6 }}>
+          {key('', { bg: MD_C.surfaceVariant })}
+          <div style={{ display: 'flex', gap: 6, flex: 7, minWidth: 274 }}>
+            {['z','x','c','v','b','n','m'].map(l => key(l))}
+          </div>
+          {key('', { bg: MD_C.surfaceVariant })}
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {key('?123', { bg: MD_C.secondaryContainer, r: 100, minW: 58, fs: 14 })}
+          {key(',', { bg: MD_C.surfaceVariant })}
+          {key('', { flex: 3, minW: 154 })}
+          {key('.', { bg: MD_C.surfaceVariant })}
+          {key('', { bg: MD_C.primaryFixedDim, r: 100, minW: 58 })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, {
+  AndroidDevice, AndroidStatusBar, AndroidAppBar, AndroidListItem, AndroidNavBar, AndroidKeyboard,
+});
+
+
+// ═════════ treatments/editorial.jsx ═════════
+// EDITORIAL treatment — serif-led, magazine-style, generous whitespace.
+// Lean into Instrument Serif for emotive headlines, IBM Plex Mono for numbers,
+// lots of hairlines, very little color. Feels like a financial-times app.
+
+const edStyles = (dark) => {
+  const t = dark ? window.RITA.dark : window.RITA.light;
+  return {
+    page: {
+      minHeight: '100%',
+      background: t.bg,
+      color: t.text,
+      fontFamily: window.RITA.fd,
+      padding: '0 0 90px',
+    },
+    hair: { height: 1, background: t.border, margin: 0 },
+    smallCap: {
+      fontFamily: window.RITA.fm,
+      fontSize: 9,
+      textTransform: 'uppercase',
+      letterSpacing: '0.12em',
+      color: t.t3,
+    },
+  };
+};
+
+// ── Bottom tab bar (shared across editorial screens) ─────────────
+function EdTabBar({ dark, active = 'home' }) {
+  const t = dark ? window.RITA.dark : window.RITA.light;
+  const tabs = [
+    { k: 'home',   label: 'Overview' },
+    { k: 'goal',   label: 'Goal'     },
+    { k: 'market', label: 'Market'   },
+    { k: 'sig',    label: 'Signals'  },
+    { k: 'strat',  label: 'Strategy' },
+  ];
+  return (
+    <div style={{
+      position: 'absolute', bottom: 0, left: 0, right: 0,
+      background: t.surface, borderTop: `1px solid ${t.border}`,
+      display: 'flex', padding: '10px 8px 28px', zIndex: 40,
+    }}>
+      {tabs.map(tab => (
+        <div key={tab.k} style={{
+          flex: 1, textAlign: 'center',
+          fontFamily: window.RITA.fm, fontSize: 9,
+          letterSpacing: '0.08em', textTransform: 'uppercase',
+          color: active === tab.k ? t.text : t.t4,
+          fontWeight: active === tab.k ? 600 : 400,
+          paddingTop: 4,
+        }}>
+          <div style={{
+            width: 5, height: 5, borderRadius: '50%', margin: '0 auto 6px',
+            background: active === tab.k ? window.RITA.build : 'transparent',
+          }} />
+          {tab.label}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Floating chat button ─────────────────────────────────────────
+function EdChatFab({ dark }) {
+  return (
+    <div style={{
+      position: 'absolute', right: 18, bottom: 96, zIndex: 50,
+      width: 52, height: 52, borderRadius: 26,
+      background: window.RITA.chat, color: '#fff',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      boxShadow: '0 8px 20px rgba(190,24,93,.35), 0 2px 6px rgba(0,0,0,.12)',
+      fontFamily: window.RITA.fs, fontSize: 22, fontStyle: 'italic',
+      letterSpacing: '-0.02em',
+    }}>R</div>
+  );
+}
+
+// ── Editorial OVERVIEW ──────────────────────────────────────────
+function EditorialOverview({ dark, data }) {
+  const t = dark ? window.RITA.dark : window.RITA.light;
+  const s = edStyles(dark);
+  const up = data.changeDir === 'up';
+  const flat = data.changeDir === 'flat';
+  const priceColor = flat ? t.text : up ? window.RITA.build : window.RITA.danger;
+
+  return (
+    <div style={s.page}>
+      {/* masthead */}
+      <div style={{ padding: '64px 24px 18px' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+          <div style={{ ...s.smallCap }}>Tue · 21 Apr</div>
+          <div style={{ ...s.smallCap, color: data.stateColor }}>
+            ● {data.state.toUpperCase()} REGIME
+          </div>
+        </div>
+        <hr style={{ ...s.hair, margin: '10px 0 22px' }} />
+        <div style={{
+          fontFamily: window.RITA.fs, fontSize: 42, lineHeight: 1.05,
+          letterSpacing: '-0.02em', textWrap: 'pretty',
+        }}>
+          Good morning,<br/>
+          <span style={{ fontStyle: 'italic', color: t.t2 }}>Rita</span> is watching.
+        </div>
+        <div style={{ fontSize: 13, color: t.t2, marginTop: 14, lineHeight: 1.5 }}>
+          Three signals since you last checked, one needs your attention.
+        </div>
+      </div>
+
+      {/* featured number */}
+      <div style={{ padding: '0 24px 18px' }}>
+        <hr style={s.hair} />
+        <div style={{ padding: '18px 0 16px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ ...s.smallCap, marginBottom: 6 }}>{data.instrument}</div>
+            <div style={{ fontFamily: window.RITA.fm, fontSize: 32, fontWeight: 500, letterSpacing: '-0.02em', color: t.text }}>
+              {data.price}
+            </div>
+            <div style={{ fontFamily: window.RITA.fm, fontSize: 12, color: priceColor, marginTop: 4 }}>
+              {data.change} &nbsp; {data.changePct}
+            </div>
+          </div>
+          {/* sparkline */}
+          <svg width="110" height="60" viewBox="0 0 110 60" style={{ marginTop: 12 }}>
+            <polyline
+              fill="none" stroke={priceColor} strokeWidth="1.5"
+              points={data.sparkline.map((v, i) => `${i * (110/19)},${60 - (v/34)*52 - 4}`).join(' ')}
+            />
+          </svg>
+        </div>
+        <hr style={s.hair} />
+      </div>
+
+      {/* goal mini */}
+      <div style={{ padding: '8px 24px 22px' }}>
+        <div style={{ ...s.smallCap, marginBottom: 10 }}>YOUR GOAL · {data.goal.target} / YR</div>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+          <div style={{ fontFamily: window.RITA.fs, fontSize: 28, color: t.text, letterSpacing: '-0.01em' }}>
+            {data.goal.current}<span style={{ color: t.t3, fontSize: 18 }}> ytd</span>
+          </div>
+          <div style={{ fontFamily: window.RITA.fm, fontSize: 11, color: t.t3 }}>{data.goal.progress}%</div>
+        </div>
+        {/* stepped progress */}
+        <div style={{ display: 'flex', gap: 3 }}>
+          {Array.from({ length: 20 }).map((_, i) => (
+            <div key={i} style={{
+              flex: 1, height: 3,
+              background: i < Math.round(data.goal.progress/5) ? window.RITA.build : t.border,
+            }} />
+          ))}
+        </div>
+        <div style={{ fontSize: 11, color: t.t3, marginTop: 8, fontStyle: 'italic', fontFamily: window.RITA.fs }}>
+          On pace. About {data.goal.runway} to target at current rate.
+        </div>
+      </div>
+
+      {/* signals teaser */}
+      <div style={{ padding: '0 24px 24px' }}>
+        <hr style={s.hair} />
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', padding: '16px 0 12px' }}>
+          <div style={{ fontFamily: window.RITA.fs, fontSize: 22, letterSpacing: '-0.01em' }}>Latest signals</div>
+          <div style={{ ...s.smallCap }}>SEE ALL →</div>
+        </div>
+        {data.signals.slice(0,2).map((sig, i) => {
+          const sevColor = window.RITA[sig.sev] || t.text;
+          return (
+            <div key={i} style={{
+              padding: '14px 0', borderTop: `1px solid ${t.border}`,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <span style={{
+                  fontFamily: window.RITA.fm, fontSize: 9, letterSpacing: '0.08em',
+                  color: sevColor, padding: '2px 6px', border: `1px solid ${sevColor}`, borderRadius: 2,
+                }}>{sig.tag}</span>
+                <span style={{ fontFamily: window.RITA.fm, fontSize: 10, color: t.t4 }}>{sig.when}</span>
+              </div>
+              <div style={{ fontFamily: window.RITA.fs, fontSize: 18, lineHeight: 1.25, letterSpacing: '-0.01em', color: t.text, textWrap: 'pretty' }}>
+                {sig.title}
+              </div>
+              <div style={{ fontSize: 12, color: t.t2, lineHeight: 1.5, marginTop: 4 }}>
+                {sig.body}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <EdChatFab dark={dark} />
+      <EdTabBar dark={dark} active="home" />
+    </div>
+  );
+}
+
+// ── Editorial SIGNALS (swipeable card stack) ─────────────────────
+function EditorialSignals({ dark, data }) {
+  const t = dark ? window.RITA.dark : window.RITA.light;
+  const s = edStyles(dark);
+  const sig = data.signals[0];
+  const sevColor = window.RITA[sig.sev] || t.text;
+
+  return (
+    <div style={s.page}>
+      <div style={{ padding: '60px 24px 14px', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+        <div style={{ fontFamily: window.RITA.fs, fontSize: 26, letterSpacing: '-0.01em' }}>Signals</div>
+        <div style={{ ...s.smallCap }}>1 / {data.signals.length}</div>
+      </div>
+
+      {/* hero card */}
+      <div style={{ margin: '0 18px 12px', position: 'relative' }}>
+        {/* stacked shadows of next cards */}
+        <div style={{ position: 'absolute', inset: '16px 12px -16px 12px', background: t.surface2, border: `1px solid ${t.border}`, zIndex: 0 }} />
+        <div style={{ position: 'absolute', inset: '8px 6px -8px 6px', background: t.surface, border: `1px solid ${t.border}`, zIndex: 1 }} />
+
+        <div style={{
+          position: 'relative', zIndex: 2,
+          background: t.surface, border: `1.5px solid ${t.border}`,
+          padding: '22px 22px 24px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+            <span style={{
+              fontFamily: window.RITA.fm, fontSize: 10, letterSpacing: '0.1em',
+              color: sevColor, padding: '3px 8px', border: `1px solid ${sevColor}`, borderRadius: 2,
+            }}>{sig.tag}</span>
+            <span style={{ fontFamily: window.RITA.fm, fontSize: 10, color: t.t4 }}>{sig.when}</span>
+          </div>
+
+          <div style={{
+            fontFamily: window.RITA.fs, fontSize: 30, lineHeight: 1.15,
+            letterSpacing: '-0.015em', color: t.text, textWrap: 'pretty', marginBottom: 16,
+          }}>{sig.title}</div>
+
+          <div style={{ fontSize: 13, color: t.t2, lineHeight: 1.65, marginBottom: 22 }}>
+            {sig.body}
+          </div>
+
+          {/* mini evidence */}
+          <hr style={s.hair} />
+          <div style={{ padding: '14px 0 0' }}>
+            <div style={{ ...s.smallCap, marginBottom: 10 }}>EVIDENCE</div>
+            {[
+              ['Instrument', data.instrument],
+              ['Confidence', '0.78'],
+              ['Regime', data.state],
+              ['Horizon', '3–5 sessions'],
+            ].map(([k, v]) => (
+              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px dashed ${t.border}`, fontSize: 12 }}>
+                <span style={{ color: t.t3 }}>{k}</span>
+                <span style={{ fontFamily: window.RITA.fm, color: t.text }}>{v}</span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ ...s.smallCap, marginTop: 18, color: t.t4, textAlign: 'center' }}>
+            ← swipe for next signal →
+          </div>
+        </div>
+      </div>
+
+      <EdChatFab dark={dark} />
+      <EdTabBar dark={dark} active="sig" />
+    </div>
+  );
+}
+
+Object.assign(window, { EditorialOverview, EditorialSignals, EdTabBar, EdChatFab });
+
+
+// ═════════ treatments/terminal.jsx ═════════
+// TERMINAL treatment — dense, mono-heavy, Bloomberg-terminal-on-phone vibe.
+// Everything in IBM Plex Mono, tight grid, thin dividers, almost no color,
+// ASCII-flavored dividers and bracket framing.
+
+const tmStyles = (dark) => {
+  const t = dark ? window.RITA.dark : window.RITA.light;
+  return {
+    page: {
+      minHeight: '100%', background: t.bg, color: t.text,
+      fontFamily: window.RITA.fm, fontSize: 12, lineHeight: 1.5,
+      padding: '0 0 90px',
+    },
+  };
+};
+
+function TmTabBar({ dark, active = 'HOME' }) {
+  const t = dark ? window.RITA.dark : window.RITA.light;
+  const tabs = ['HOME','GOAL','MKT','SIG','STRAT'];
+  return (
+    <div style={{
+      position: 'absolute', bottom: 0, left: 0, right: 0,
+      background: t.surface, borderTop: `1.5px solid ${t.border}`,
+      display: 'flex', padding: '8px 0 30px', fontFamily: window.RITA.fm,
+    }}>
+      {tabs.map(k => (
+        <div key={k} style={{
+          flex: 1, textAlign: 'center', fontSize: 10, padding: '6px 0',
+          color: active === k ? t.text : t.t3,
+          fontWeight: active === k ? 600 : 400,
+          borderTop: `2px solid ${active === k ? window.RITA.build : 'transparent'}`,
+          marginTop: -8, paddingTop: 12,
+        }}>{active === k ? `[${k}]` : k}</div>
+      ))}
+    </div>
+  );
+}
+
+function TmChat({ dark }) {
+  return (
+    <div style={{
+      position: 'absolute', right: 14, bottom: 94, zIndex: 50,
+      padding: '10px 14px', background: window.RITA.chat, color: '#fff',
+      fontFamily: window.RITA.fm, fontSize: 11, fontWeight: 600,
+      letterSpacing: '0.04em', borderRadius: 0,
+      boxShadow: '0 4px 12px rgba(0,0,0,.25)',
+    }}>[ ASK RITA_ ]</div>
+  );
+}
+
+function TerminalOverview({ dark, data }) {
+  const t = dark ? window.RITA.dark : window.RITA.light;
+  const up = data.changeDir === 'up', flat = data.changeDir === 'flat';
+  const pc = flat ? t.text : up ? window.RITA.build : window.RITA.danger;
+  return (
+    <div style={tmStyles(dark).page}>
+      {/* terminal header bar */}
+      <div style={{
+        padding: '58px 16px 10px', borderBottom: `1.5px solid ${t.border}`,
+        background: t.surface, display: 'flex', justifyContent: 'space-between',
+      }}>
+        <span style={{ fontSize: 11, fontWeight: 600 }}>RITA:~/overview</span>
+        <span style={{ fontSize: 10, color: t.t3 }}>09:41 · LIVE ●</span>
+      </div>
+
+      {/* ascii header */}
+      <div style={{ padding: '16px 16px 0', color: t.t3, fontSize: 10, whiteSpace: 'pre' }}>
+{`═══════════════════════════════
+  ${data.instrument.padEnd(12)}  REGIME: ${data.state.toUpperCase()}
+═══════════════════════════════`}
+      </div>
+
+      <div style={{ padding: '14px 16px 6px' }}>
+        <div style={{ fontSize: 34, fontWeight: 500, letterSpacing: '-0.02em', color: t.text }}>
+          {data.price}
+        </div>
+        <div style={{ fontSize: 12, color: pc, marginTop: 2 }}>
+          {data.change}  {data.changePct}
+        </div>
+      </div>
+
+      {/* KPI grid */}
+      <div style={{ padding: '8px 16px' }}>
+        <div style={{ borderTop: `1px solid ${t.border}`, borderBottom: `1px solid ${t.border}` }}>
+          {[
+            ['VIX', '11.8', t.text],
+            ['ADV/DEC', '1,428 / 592', window.RITA.build],
+            ['%>200DMA', '68%', window.RITA.build],
+            ['PUT/CALL', '0.84', t.text],
+          ].map(([k, v, c], i, arr) => (
+            <div key={k} style={{
+              display: 'flex', justifyContent: 'space-between',
+              padding: '10px 0',
+              borderBottom: i < arr.length-1 ? `1px dotted ${t.border}` : 'none',
+              fontSize: 12,
+            }}>
+              <span style={{ color: t.t3 }}>{k.padEnd(10, '.')}</span>
+              <span style={{ color: c, fontWeight: 500 }}>{v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* goal line */}
+      <div style={{ padding: '14px 16px' }}>
+        <div style={{ fontSize: 10, color: t.t3, marginBottom: 6 }}>
+          ┌─ GOAL / ANNUAL {data.goal.target} ─────────────┐
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+          <span style={{ color: t.text, fontWeight: 600 }}>{data.goal.current}</span>
+          <span style={{
+            flex: 1, height: 10, background: t.surface, border: `1px solid ${t.border}`,
+            position: 'relative', overflow: 'hidden',
+          }}>
+            <div style={{
+              position: 'absolute', inset: 0, width: `${data.goal.progress}%`,
+              background: `repeating-linear-gradient(45deg, ${window.RITA.build}, ${window.RITA.build} 2px, transparent 2px, transparent 4px)`,
+            }} />
+          </span>
+          <span style={{ color: t.t3 }}>{data.goal.progress}%</span>
+        </div>
+        <div style={{ fontSize: 10, color: t.t3, marginTop: 4 }}>
+          └───── RUNWAY: {data.goal.runway.padEnd(16)} ─┘
+        </div>
+      </div>
+
+      {/* signal feed */}
+      <div style={{ padding: '8px 16px' }}>
+        <div style={{ fontSize: 10, color: t.t3, marginBottom: 8, letterSpacing: '0.06em' }}>
+          ── RECENT SIGNALS ─────────────
+        </div>
+        {data.signals.map((sig, i) => {
+          const c = window.RITA[sig.sev] || t.text;
+          return (
+            <div key={i} style={{
+              padding: '9px 0',
+              borderBottom: i < data.signals.length-1 ? `1px dashed ${t.border}` : 'none',
+            }}>
+              <div style={{ display: 'flex', gap: 8, fontSize: 11 }}>
+                <span style={{ color: t.t4 }}>{String(i+1).padStart(2,'0')}</span>
+                <span style={{ color: c, fontWeight: 600 }}>[{sig.tag}]</span>
+                <span style={{ color: t.text, flex: 1 }}>{sig.title}</span>
+              </div>
+              <div style={{ fontSize: 10, color: t.t3, marginLeft: 24, marginTop: 2 }}>
+                › {sig.body.slice(0, 62)}…
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <TmChat dark={dark} />
+      <TmTabBar dark={dark} active="HOME" />
+    </div>
+  );
+}
+
+function TerminalStrategy({ dark, data }) {
+  const t = dark ? window.RITA.dark : window.RITA.light;
+  const strat = data.strategy;
+  return (
+    <div style={tmStyles(dark).page}>
+      <div style={{
+        padding: '58px 16px 10px', borderBottom: `1.5px solid ${t.border}`,
+        background: t.surface, display: 'flex', justifyContent: 'space-between',
+      }}>
+        <span style={{ fontSize: 11, fontWeight: 600 }}>RITA:~/strategy</span>
+        <span style={{ fontSize: 10, color: t.t3 }}>● ACTIVE</span>
+      </div>
+
+      <div style={{ padding: '18px 16px 8px' }}>
+        <div style={{ fontSize: 10, color: t.t3, marginBottom: 6 }}>ACTIVE_STRATEGY</div>
+        <div style={{ fontSize: 22, fontWeight: 500, color: t.text, letterSpacing: '-0.01em' }}>
+          {strat.name}
+        </div>
+        <div style={{
+          display: 'inline-block', marginTop: 8, padding: '2px 8px',
+          fontSize: 10, fontWeight: 600, letterSpacing: '0.08em',
+          background: window.RITA.buildBg, color: window.RITA.build,
+          border: `1px solid ${window.RITA.buildBd}`,
+        }}>{strat.status.toUpperCase()}</div>
+      </div>
+
+      <div style={{ padding: '12px 16px' }}>
+        <div style={{ borderTop: `1px solid ${t.border}`, borderBottom: `1px solid ${t.border}` }}>
+          {[
+            ['WIN RATE', strat.winRate],
+            ['SHARPE',   strat.sharpe],
+            ['MTD PnL',  strat.pnl],
+            ['DRAWDOWN', '-2.8%'],
+            ['TRADES',   '47'],
+            ['HOLD AVG', '3.2d'],
+          ].map(([k, v], i, arr) => (
+            <div key={k} style={{
+              display: 'flex', justifyContent: 'space-between',
+              padding: '11px 0',
+              borderBottom: i < arr.length-1 ? `1px dotted ${t.border}` : 'none',
+            }}>
+              <span style={{ fontSize: 11, color: t.t3 }}>{k}</span>
+              <span style={{ fontSize: 13, fontWeight: 500, color: t.text }}>{v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ padding: '10px 16px' }}>
+        <div style={{ fontSize: 10, color: t.t3, marginBottom: 8 }}>
+          ── EQUITY CURVE · 30D ─────────
+        </div>
+        <svg width="100%" height="100" viewBox="0 0 300 100">
+          {[...Array(30)].map((_, i) => (
+            <line key={i} x1={i*10} x2={i*10} y1={0} y2={100}
+              stroke={t.border} strokeDasharray="1 3" strokeWidth="0.5" />
+          ))}
+          <polyline fill="none" stroke={window.RITA.build} strokeWidth="1.5"
+            points="0,80 10,76 20,78 30,72 40,68 50,70 60,64 70,60 80,66 90,58 100,52 110,54 120,48 130,44 140,46 150,40 160,38 170,42 180,34 190,30 200,32 210,28 220,26 230,22 240,20 250,24 260,18 270,14 280,16 290,10"
+          />
+        </svg>
+      </div>
+
+      <TmChat dark={dark} />
+      <TmTabBar dark={dark} active="STRAT" />
+    </div>
+  );
+}
+
+Object.assign(window, { TerminalOverview, TerminalStrategy, TmTabBar, TmChat });
+
+
+// ═════════ treatments/cardapp.jsx ═════════
+// CARD-APP treatment — warm, friendly, rounded. iOS-Wallet / Robinhood vibe.
+// Soft shadows, big rounded corners, plenty of color, onboarding-friendly.
+
+const caStyles = (dark) => {
+  const t = dark ? window.RITA.dark : window.RITA.light;
+  return {
+    page: {
+      minHeight: '100%', background: t.bg, color: t.text,
+      fontFamily: window.RITA.fd, padding: '0 0 90px',
+    },
+  };
+};
+
+function CaTabBar({ dark, active = 'home' }) {
+  const t = dark ? window.RITA.dark : window.RITA.light;
+  const tabs = [
+    ['home',   'Home',     'M3 10l7-7 7 7v9a1 1 0 01-1 1h-4v-6h-4v6H4a1 1 0 01-1-1v-9z'],
+    ['goal',   'Goal',     'M10 3v14M3 10h14'],
+    ['market', 'Market',   'M3 14l4-4 3 3 7-7'],
+    ['sig',    'Signals',  'M10 2l2 6h6l-5 4 2 6-5-4-5 4 2-6-5-4h6z'],
+    ['strat',  'Strategy', 'M4 4h12v12H4zM4 10h12M10 4v12'],
+  ];
+  return (
+    <div style={{
+      position: 'absolute', bottom: 16, left: 12, right: 12,
+      background: t.surface, borderRadius: 28,
+      boxShadow: '0 8px 24px rgba(0,0,0,.12), 0 0 0 1px rgba(0,0,0,.04)',
+      display: 'flex', padding: '10px 6px 12px',
+    }}>
+      {tabs.map(([k, label, d]) => {
+        const isActive = active === k;
+        return (
+          <div key={k} style={{
+            flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+            padding: '6px 0', borderRadius: 20,
+            background: isActive ? window.RITA.buildBg : 'transparent',
+          }}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"
+              stroke={isActive ? window.RITA.build : t.t3} strokeWidth="1.6"
+              strokeLinecap="round" strokeLinejoin="round"><path d={d}/></svg>
+            <span style={{
+              fontSize: 10, fontWeight: isActive ? 700 : 500,
+              color: isActive ? window.RITA.build : t.t3,
+            }}>{label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function CaChat({ dark }) {
+  return (
+    <div style={{
+      position: 'absolute', right: 20, bottom: 112, zIndex: 60,
+      width: 56, height: 56, borderRadius: 28,
+      background: `linear-gradient(135deg, ${window.RITA.chat}, #E94BA3)`,
+      color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      boxShadow: '0 10px 28px rgba(190,24,93,.45)',
+    }}>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>
+      </svg>
+    </div>
+  );
+}
+
+function CardAppOverview({ dark, data }) {
+  const t = dark ? window.RITA.dark : window.RITA.light;
+  const up = data.changeDir === 'up', flat = data.changeDir === 'flat';
+  const pc = flat ? t.t2 : up ? window.RITA.build : window.RITA.danger;
+  const bgAccent = flat ? t.surface2 : up ? window.RITA.buildBg : window.RITA.dangerBg;
+
+  return (
+    <div style={caStyles(dark).page}>
+      {/* greeting */}
+      <div style={{ padding: '60px 22px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <div style={{ fontSize: 12, color: t.t3, marginBottom: 2 }}>Tuesday morning</div>
+          <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.01em' }}>Hi, Rita 👋</div>
+        </div>
+        <div style={{
+          width: 40, height: 40, borderRadius: 20, background: t.surface,
+          border: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: window.RITA.fs, fontSize: 16, color: t.t2,
+        }}>R</div>
+      </div>
+
+      {/* hero card */}
+      <div style={{
+        margin: '6px 16px 14px', padding: 22, borderRadius: 22,
+        background: bgAccent, position: 'relative', overflow: 'hidden',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: data.stateColor }} />
+          <span style={{ fontSize: 11, fontWeight: 600, color: data.stateColor, letterSpacing: '0.04em' }}>
+            {data.state.toUpperCase()} MARKET
+          </span>
+        </div>
+        <div style={{ fontSize: 13, color: t.t2, marginBottom: 4 }}>{data.instrument}</div>
+        <div style={{ fontFamily: window.RITA.fm, fontSize: 34, fontWeight: 500, letterSpacing: '-0.02em' }}>
+          {data.price}
+        </div>
+        <div style={{ fontFamily: window.RITA.fm, fontSize: 13, color: pc, marginTop: 3 }}>
+          {data.change} · {data.changePct}
+        </div>
+        {/* sparkline */}
+        <svg width="100%" height="50" viewBox="0 0 280 50" style={{ marginTop: 10, display: 'block' }}>
+          <defs>
+            <linearGradient id={`grad-${data.state}`} x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0" stopColor={pc} stopOpacity="0.25"/>
+              <stop offset="1" stopColor={pc} stopOpacity="0"/>
+            </linearGradient>
+          </defs>
+          <polygon fill={`url(#grad-${data.state})`}
+            points={`0,50 ${data.sparkline.map((v,i)=>`${i*(280/19)},${50-(v/34)*42-2}`).join(' ')} 280,50`} />
+          <polyline fill="none" stroke={pc} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+            points={data.sparkline.map((v,i)=>`${i*(280/19)},${50-(v/34)*42-2}`).join(' ')} />
+        </svg>
+      </div>
+
+      {/* goal card */}
+      <div style={{ margin: '0 16px 14px', padding: 18, borderRadius: 18, background: t.surface, boxShadow: '0 2px 10px rgba(0,0,0,.04)', border: `1px solid ${t.border}` }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+          <div>
+            <div style={{ fontSize: 11, color: t.t3, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Your yearly goal</div>
+            <div style={{ fontSize: 18, fontWeight: 700, marginTop: 2 }}>{data.goal.current} of {data.goal.target}</div>
+          </div>
+          <div style={{
+            fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 100,
+            background: window.RITA.buildBg, color: window.RITA.build,
+          }}>{data.goal.progress}%</div>
+        </div>
+        <div style={{ height: 8, borderRadius: 4, background: t.surface2, overflow: 'hidden' }}>
+          <div style={{
+            height: '100%', width: `${data.goal.progress}%`, borderRadius: 4,
+            background: `linear-gradient(90deg, ${window.RITA.build}, #2D9456)`,
+          }} />
+        </div>
+        <div style={{ fontSize: 12, color: t.t3, marginTop: 8 }}>
+          Pace suggests {data.goal.runway} to reach target.
+        </div>
+      </div>
+
+      {/* signals preview */}
+      <div style={{ padding: '0 22px 6px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+        <div style={{ fontSize: 15, fontWeight: 700 }}>Signals today</div>
+        <div style={{ fontSize: 12, color: window.RITA.run, fontWeight: 600 }}>See all</div>
+      </div>
+
+      <div style={{ padding: '8px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {data.signals.slice(0,2).map((sig, i) => {
+          const c = window.RITA[sig.sev] || t.text;
+          const bg = window.RITA[sig.sev + 'Bg'] || t.surface;
+          return (
+            <div key={i} style={{
+              padding: 16, borderRadius: 16, background: t.surface,
+              border: `1px solid ${t.border}`,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 12, background: bg,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 16, fontWeight: 700, color: c,
+                }}>↑</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: c, letterSpacing: '0.06em' }}>{sig.tag}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: t.text, lineHeight: 1.3 }}>{sig.title}</div>
+                </div>
+                <div style={{ fontSize: 10, color: t.t4 }}>{sig.when}</div>
+              </div>
+              <div style={{ fontSize: 12, color: t.t2, lineHeight: 1.5 }}>{sig.body}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      <CaChat dark={dark} />
+      <CaTabBar dark={dark} active="home" />
+    </div>
+  );
+}
+
+function CardAppGoal({ dark, data }) {
+  const t = dark ? window.RITA.dark : window.RITA.light;
+  return (
+    <div style={caStyles(dark).page}>
+      <div style={{ padding: '60px 22px 10px' }}>
+        <div style={{ fontSize: 12, color: t.t3 }}>Financial Goal</div>
+        <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', marginTop: 4 }}>
+          Target {data.goal.target} this year
+        </div>
+      </div>
+
+      {/* radial */}
+      <div style={{
+        margin: '14px 16px', padding: 22, borderRadius: 22, background: t.surface,
+        border: `1px solid ${t.border}`, display: 'flex', gap: 16, alignItems: 'center',
+      }}>
+        <svg width="110" height="110" viewBox="0 0 110 110">
+          <circle cx="55" cy="55" r="46" fill="none" stroke={t.surface2} strokeWidth="12"/>
+          <circle cx="55" cy="55" r="46" fill="none" stroke={window.RITA.build} strokeWidth="12"
+            strokeDasharray={`${(data.goal.progress/100) * 2 * Math.PI * 46} 999`}
+            strokeLinecap="round" transform="rotate(-90 55 55)" />
+          <text x="55" y="58" textAnchor="middle" fontFamily={window.RITA.fm} fontSize="22" fontWeight="500" fill={t.text}>
+            {data.goal.progress}%
+          </text>
+        </svg>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 12, color: t.t3 }}>YTD return</div>
+          <div style={{ fontFamily: window.RITA.fm, fontSize: 24, fontWeight: 500, color: window.RITA.build }}>
+            {data.goal.current}
+          </div>
+          <div style={{ fontSize: 12, color: t.t2, marginTop: 6, lineHeight: 1.4 }}>
+            {data.goal.runway} to target at current pace.
+          </div>
+        </div>
+      </div>
+
+      {/* milestones */}
+      <div style={{ padding: '6px 22px 8px', fontSize: 14, fontWeight: 700 }}>Milestones</div>
+      <div style={{ padding: '0 16px' }}>
+        {[
+          { label: 'First signal viewed', done: true },
+          { label: '5 scenarios explored', done: true },
+          { label: '10 trades logged', done: true, hint: '8 of 10' },
+          { label: '6% YTD reached', done: data.goal.progress >= 50 },
+          { label: '12% YTD reached', done: data.goal.progress >= 100 },
+        ].map((m, i) => (
+          <div key={i} style={{
+            display: 'flex', alignItems: 'center', gap: 12, padding: 14,
+            borderRadius: 14, background: t.surface, border: `1px solid ${t.border}`,
+            marginBottom: 8,
+          }}>
+            <div style={{
+              width: 24, height: 24, borderRadius: 12,
+              background: m.done ? window.RITA.build : t.surface2,
+              border: m.done ? 'none' : `1.5px solid ${t.border2}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#fff', fontSize: 13,
+            }}>{m.done ? '✓' : ''}</div>
+            <div style={{ flex: 1, fontSize: 14, color: m.done ? t.t2 : t.text, textDecoration: m.done ? 'line-through' : 'none' }}>
+              {m.label}
+            </div>
+            {m.hint && <span style={{ fontSize: 11, color: t.t3, fontFamily: window.RITA.fm }}>{m.hint}</span>}
+          </div>
+        ))}
+      </div>
+
+      <CaChat dark={dark} />
+      <CaTabBar dark={dark} active="goal" />
+    </div>
+  );
+}
+
+// Card-app · MARKET ANALYSIS — data-only view of regime + factors.
+function CardAppMarket({ dark, data }) {
+  const t = dark ? window.RITA.dark : window.RITA.light;
+  const bdKey = data.stateColor === window.RITA.build ? 'buildBd'
+              : data.stateColor === window.RITA.danger ? 'dangerBd' : 'warnBd';
+  const bgKey = data.stateColor === window.RITA.build ? 'buildBg'
+              : data.stateColor === window.RITA.danger ? 'dangerBg' : 'warnBg';
+  const factors = [
+    ['Momentum',   0.72, window.RITA.build,  data.state === 'Bull' ? '+0.14' : data.state === 'Bear' ? '-0.22' : '+0.03'],
+    ['Value',      0.41, window.RITA.run,   '-0.05'],
+    ['Quality',    0.58, window.RITA.mon,   '+0.08'],
+    ['Volatility', 0.33, window.RITA.warn,  data.state === 'Volatile' ? '+0.18' : '-0.02'],
+  ];
+  return (
+    <div style={caStyles(dark).page}>
+      <div style={{ padding: '60px 22px 10px' }}>
+        <div style={{ fontSize: 12, color: t.t3 }}>Market Analysis</div>
+        <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em', marginTop: 4 }}>
+          Today's regime
+        </div>
+      </div>
+
+      <div style={{
+        margin: '10px 16px 14px', padding: 20, borderRadius: 22,
+        background: window.RITA[bgKey], border: `1px solid ${window.RITA[bdKey]}`,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <span style={{ width: 8, height: 8, borderRadius: 4, background: data.stateColor }} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: data.stateColor, letterSpacing: '0.08em' }}>
+            {data.state.toUpperCase()}
+          </span>
+        </div>
+        <div style={{ fontSize: 22, fontWeight: 700, color: data.stateColor, letterSpacing: '-0.01em' }}>
+          {data.instrument} · {data.price}
+        </div>
+        <div style={{ fontFamily: window.RITA.fm, fontSize: 13, color: data.stateColor, opacity: 0.85, marginTop: 2 }}>
+          {data.change} · {data.changePct}
+        </div>
+        <svg width="100%" height="44" viewBox="0 0 280 44" style={{ marginTop: 12, display: 'block' }}>
+          <polyline fill="none" stroke={data.stateColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+            points={data.sparkline.map((v,i)=>`${i*(280/19)},${44-(v/34)*36-2}`).join(' ')} />
+        </svg>
+      </div>
+
+      <div style={{ padding: '0 22px 8px', fontSize: 14, fontWeight: 700 }}>Factor scores</div>
+      <div style={{ padding: '0 16px 8px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {factors.map(([k, v, c, chg]) => (
+          <div key={k} style={{
+            padding: 14, borderRadius: 14, background: t.surface, border: `1px solid ${t.border}`,
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 600 }}>{k}</span>
+              <span>
+                <span style={{ fontFamily: window.RITA.fm, fontSize: 14, fontWeight: 500, color: t.text }}>{v.toFixed(2)}</span>
+                <span style={{ fontFamily: window.RITA.fm, fontSize: 11, marginLeft: 8,
+                  color: chg.startsWith('+') ? window.RITA.build : window.RITA.danger }}>{chg}</span>
+              </span>
+            </div>
+            <div style={{ height: 6, borderRadius: 3, background: t.surface2, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${v*100}%`, background: c, borderRadius: 3 }} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{
+        margin: '6px 16px', padding: 16, borderRadius: 16,
+        background: window.RITA.chatBg, border: `1px solid ${window.RITA.chatBd}`,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+          <div style={{ width: 24, height: 24, borderRadius: 12, background: window.RITA.chat, color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: window.RITA.fs, fontSize: 13 }}>R</div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: window.RITA.chat, letterSpacing: '0.06em' }}>RITA EXPLAINS</div>
+        </div>
+        <div style={{ fontSize: 12, color: t.t2, lineHeight: 1.55, fontFamily: window.RITA.fs, fontStyle: 'italic' }}>
+          "Momentum and Quality are the leading factors in this regime. Volatility is {data.state === 'Volatile' ? 'elevated' : 'below its 1-year median'}."
+        </div>
+      </div>
+
+      <CaChat dark={dark} />
+      <CaTabBar dark={dark} active="market" />
+    </div>
+  );
+}
+
+// Card-app · STRATEGY — overview of the strategy Rita is running, data-only.
+function CardAppStrategy({ dark, data }) {
+  const t = dark ? window.RITA.dark : window.RITA.light;
+  const statusColor = data.strategy.status.startsWith('Paused') ? window.RITA.warn
+                    : data.strategy.status.startsWith('Active') ? window.RITA.build
+                    : t.t2;
+  return (
+    <div style={caStyles(dark).page}>
+      <div style={{ padding: '60px 22px 10px' }}>
+        <div style={{ fontSize: 12, color: t.t3 }}>Strategy</div>
+        <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em', marginTop: 4 }}>
+          {data.strategy.name}
+        </div>
+      </div>
+
+      <div style={{
+        margin: '8px 16px 14px', padding: 18, borderRadius: 20, background: t.surface,
+        border: `1px solid ${t.border}`,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+          <span style={{ width: 8, height: 8, borderRadius: 4, background: statusColor }} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: statusColor, letterSpacing: '0.08em' }}>
+            {data.strategy.status.toUpperCase()}
+          </span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          {[
+            ['P&L',      data.strategy.pnl,     data.strategy.pnl.startsWith('+') ? window.RITA.build : window.RITA.danger],
+            ['Win rate', data.strategy.winRate, t.text],
+            ['Sharpe',   data.strategy.sharpe,  t.text],
+            ['Universe', '12 symbols',          t.text],
+          ].map(([k, v, c]) => (
+            <div key={k}>
+              <div style={{ fontSize: 10, color: t.t3, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{k}</div>
+              <div style={{ fontFamily: window.RITA.fm, fontSize: 22, fontWeight: 500, color: c, marginTop: 2, letterSpacing: '-0.01em' }}>{v}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ padding: '0 22px 6px', fontSize: 14, fontWeight: 700 }}>Recent decisions</div>
+      <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {[
+          { time: '10:42', action: 'ENTER', sym: 'RELIANCE', size: '+12 sh', color: window.RITA.build },
+          { time: '09:58', action: 'EXIT',  sym: 'TCS',      size: '-20 sh', color: window.RITA.run },
+          { time: '09:31', action: 'SCALE', sym: 'HDFCBANK', size: '+8 sh',  color: window.RITA.build },
+          { time: '09:16', action: 'SKIP',  sym: 'INFY',     size: 'no-go',  color: t.t3 },
+        ].map((d, i) => (
+          <div key={i} style={{
+            padding: 12, borderRadius: 12, background: t.surface, border: `1px solid ${t.border}`,
+            display: 'flex', alignItems: 'center', gap: 10,
+          }}>
+            <span style={{ fontFamily: window.RITA.fm, fontSize: 11, color: t.t3, width: 40 }}>{d.time}</span>
+            <span style={{ fontFamily: window.RITA.fm, fontSize: 10, fontWeight: 700, color: d.color,
+              padding: '2px 7px', borderRadius: 4, background: t.surface2, letterSpacing: '0.04em' }}>{d.action}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{d.sym}</span>
+            <span style={{ fontFamily: window.RITA.fm, fontSize: 12, color: t.t2 }}>{d.size}</span>
+          </div>
+        ))}
+      </div>
+
+      <CaChat dark={dark} />
+      <CaTabBar dark={dark} active="strat" />
+    </div>
+  );
+}
+
+Object.assign(window, { CardAppOverview, CardAppGoal, CardAppMarket, CardAppStrategy, CaTabBar, CaChat });
+
+
+// ═════════ treatments/signalfeed.jsx ═════════
+// SIGNAL-FEED treatment — full-bleed swipeable signal cards, like a
+// trading Tinder or Apple Weather. One signal owns the whole screen;
+// rich gradient background tinted by severity; minimal chrome.
+
+const sfStyles = (dark) => {
+  const t = dark ? window.RITA.dark : window.RITA.light;
+  return {
+    page: { minHeight: '100%', background: t.bg, color: t.text, fontFamily: window.RITA.fd, padding: 0 },
+  };
+};
+
+function SfTabBar({ dark, active = 'sig' }) {
+  const t = dark ? window.RITA.dark : window.RITA.light;
+  const tabs = [
+    ['home',   'Home'],
+    ['goal',   'Goal'],
+    ['market', 'Market'],
+    ['sig',    'Signals'],
+    ['strat',  'Strategy'],
+  ];
+  return (
+    <div style={{
+      position: 'absolute', bottom: 0, left: 0, right: 0,
+      background: dark ? 'rgba(22,20,15,0.85)' : 'rgba(245,243,238,0.85)',
+      backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
+      borderTop: `1px solid ${t.border}`,
+      display: 'flex', padding: '10px 8px 28px',
+    }}>
+      {tabs.map(([k, label]) => (
+        <div key={k} style={{
+          flex: 1, textAlign: 'center', fontSize: 10,
+          fontWeight: active === k ? 700 : 500,
+          color: active === k ? t.text : t.t4,
+          letterSpacing: '0.04em',
+        }}>
+          <div style={{
+            width: 20, height: 3, margin: '0 auto 4px', borderRadius: 2,
+            background: active === k ? window.RITA.build : 'transparent',
+          }} />
+          {label}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SfChat({ dark }) {
+  return (
+    <div style={{
+      position: 'absolute', right: 16, bottom: 92, zIndex: 60,
+      padding: '10px 14px 10px 12px', borderRadius: 22,
+      background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(14px)',
+      border: '1px solid rgba(255,255,255,0.35)', color: '#fff',
+      display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600,
+      boxShadow: '0 6px 18px rgba(0,0,0,.18)',
+    }}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>
+      </svg>
+      Ask Rita
+    </div>
+  );
+}
+
+// Dark/solid chat pill — for screens that don't already have a gradient bg.
+function SfChatDark({ dark }) {
+  return (
+    <div style={{
+      position: 'absolute', right: 16, bottom: 92, zIndex: 60,
+      width: 52, height: 52, borderRadius: 26, background: window.RITA.chat, color: '#fff',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      boxShadow: '0 10px 24px rgba(190,24,93,.4)',
+    }}>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>
+      </svg>
+    </div>
+  );
+}
+
+// OVERVIEW — compact today-at-a-glance (Novel treatment).
+function SignalFeedOverview({ dark, data }) {
+  const t = dark ? window.RITA.dark : window.RITA.light;
+  return (
+    <div style={{ ...sfStyles(dark).page, position: 'relative', paddingBottom: 90 }}>
+      <div style={{ padding: '60px 22px 8px' }}>
+        <div style={{ fontSize: 11, color: t.t3, fontWeight: 600, letterSpacing: '0.08em' }}>TUE · 21 APR</div>
+        <div style={{ fontFamily: window.RITA.fs, fontSize: 32, letterSpacing: '-0.02em', marginTop: 6, lineHeight: 1.1 }}>
+          Today at a <span style={{ fontStyle: 'italic', color: t.t2 }}>glance</span>
+        </div>
+      </div>
+
+      <div style={{
+        margin: '14px 16px 12px', padding: 20, borderRadius: 20,
+        background: `linear-gradient(135deg, ${data.stateColor} 0%, ${data.stateColor}CC 100%)`,
+        color: '#fff',
+      }}>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', opacity: 0.85 }}>REGIME</div>
+        <div style={{ fontFamily: window.RITA.fs, fontSize: 30, letterSpacing: '-0.01em', marginTop: 2 }}>{data.state} market</div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 14 }}>
+          <span style={{ fontSize: 12, opacity: 0.85 }}>{data.instrument}</span>
+          <span style={{ fontFamily: window.RITA.fm, fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>{data.price}</span>
+          <span style={{ fontFamily: window.RITA.fm, fontSize: 12, opacity: 0.9 }}>{data.changePct}</span>
+        </div>
+        <svg width="100%" height="40" viewBox="0 0 280 40" style={{ marginTop: 10, display: 'block' }}>
+          <polyline fill="none" stroke="#fff" strokeOpacity="0.9" strokeWidth="1.8" strokeLinecap="round"
+            points={data.sparkline.map((v,i)=>`${i*(280/19)},${40-(v/34)*32-2}`).join(' ')} />
+        </svg>
+      </div>
+
+      <div style={{
+        margin: '0 16px 12px', padding: 16, borderRadius: 16, background: t.surface,
+        border: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', gap: 14,
+      }}>
+        <div style={{ position: 'relative', width: 52, height: 52 }}>
+          <svg width="52" height="52" viewBox="0 0 52 52">
+            <circle cx="26" cy="26" r="22" fill="none" stroke={t.surface2} strokeWidth="5"/>
+            <circle cx="26" cy="26" r="22" fill="none" stroke={window.RITA.build} strokeWidth="5"
+              strokeDasharray={`${(data.goal.progress/100)*2*Math.PI*22} 999`} strokeLinecap="round"
+              transform="rotate(-90 26 26)" />
+          </svg>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: window.RITA.fm, fontSize: 12, fontWeight: 600, color: t.text }}>{data.goal.progress}%</div>
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 10, color: t.t3, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Yearly goal {data.goal.target}</div>
+          <div style={{ fontSize: 16, fontWeight: 700, marginTop: 2 }}>{data.goal.current} YTD</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke={t.t4} strokeWidth="2" strokeLinecap="round">
+          <path d="M5 3l4 4-4 4"/></svg>
+      </div>
+
+      <div style={{ padding: '0 22px 6px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+        <div style={{ fontSize: 14, fontWeight: 700 }}>Signals · {data.signals.length}</div>
+        <div style={{ fontSize: 11, color: t.t3, fontFamily: window.RITA.fm }}>last 4 hrs</div>
+      </div>
+      <div style={{ padding: '8px 16px 0' }}>
+        {data.signals.slice(0, 3).map((sig, i) => {
+          const c = window.RITA[sig.sev] || t.text;
+          return (
+            <div key={i} style={{
+              display: 'flex', gap: 12, padding: '12px 0',
+              borderBottom: i < 2 ? `1px solid ${t.border}` : 'none', alignItems: 'flex-start',
+            }}>
+              <div style={{ width: 4, alignSelf: 'stretch', background: c, borderRadius: 2, marginTop: 2 }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 3 }}>
+                  <span style={{ fontFamily: window.RITA.fm, fontSize: 9, fontWeight: 600, color: c, letterSpacing: '0.08em' }}>{sig.tag}</span>
+                  <span style={{ fontFamily: window.RITA.fm, fontSize: 9, color: t.t4 }}>{sig.when}</span>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: t.text, lineHeight: 1.3 }}>{sig.title}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <SfChatDark dark={dark} />
+      <SfTabBar dark={dark} active="home" />
+    </div>
+  );
+}
+
+function SignalFeedHero({ dark, data, index = 0 }) {
+  const t = dark ? window.RITA.dark : window.RITA.light;
+  const sig = data.signals[index] || data.signals[0];
+  const c = window.RITA[sig.sev] || window.RITA.run;
+  // bg gradient from severity color
+  const bgTop = c;
+  const bgBot = dark ? t.bg : t.bg;
+
+  return (
+    <div style={{
+      ...sfStyles(dark).page, color: '#fff',
+      background: `linear-gradient(180deg, ${bgTop} 0%, ${bgTop} 40%, ${bgBot} 100%)`,
+      position: 'relative',
+    }}>
+      {/* top status */}
+      <div style={{
+        padding: '58px 22px 0', display: 'flex', justifyContent: 'space-between',
+        alignItems: 'center', color: 'rgba(255,255,255,.85)',
+      }}>
+        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.12em' }}>SIGNAL {index + 1} / {data.signals.length}</div>
+        <div style={{ display: 'flex', gap: 4 }}>
+          {data.signals.map((_, i) => (
+            <div key={i} style={{
+              width: i === index ? 20 : 6, height: 3, borderRadius: 2,
+              background: i === index ? '#fff' : 'rgba(255,255,255,.35)',
+            }} />
+          ))}
+        </div>
+      </div>
+
+      {/* severity label */}
+      <div style={{ padding: '28px 22px 0' }}>
+        <div style={{
+          display: 'inline-block', padding: '4px 10px', borderRadius: 100,
+          background: 'rgba(255,255,255,.22)', border: '1px solid rgba(255,255,255,.3)',
+          fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', color: '#fff',
+        }}>{sig.tag}</div>
+      </div>
+
+      {/* hero headline */}
+      <div style={{ padding: '20px 22px 0' }}>
+        <div style={{
+          fontFamily: window.RITA.fs, fontSize: 44, lineHeight: 1.05,
+          letterSpacing: '-0.02em', color: '#fff', textWrap: 'pretty', fontWeight: 400,
+        }}>{sig.title}</div>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,.85)', marginTop: 16, lineHeight: 1.6 }}>
+          {sig.body}
+        </div>
+      </div>
+
+      {/* mini evidence row */}
+      <div style={{
+        margin: '28px 22px 0', padding: '16px 18px', borderRadius: 18,
+        background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,.2)',
+        backdropFilter: 'blur(18px)',
+        display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10,
+      }}>
+        {[
+          ['Instrument', data.instrument.split(' ')[0]],
+          ['Confidence', '0.78'],
+          ['Regime', data.state],
+        ].map(([k, v]) => (
+          <div key={k}>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.7)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{k}</div>
+            <div style={{ fontFamily: window.RITA.fm, fontSize: 16, fontWeight: 500, marginTop: 2 }}>{v}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* context mini sparkline */}
+      <div style={{
+        margin: '12px 22px 0', padding: '14px 18px', borderRadius: 18,
+        background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,.2)',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,.75)' }}>{data.instrument} · today</span>
+          <span style={{ fontFamily: window.RITA.fm, fontSize: 13, fontWeight: 500 }}>{data.price}</span>
+        </div>
+        <svg width="100%" height="40" viewBox="0 0 280 40">
+          <polyline fill="none" stroke="#fff" strokeWidth="1.6" strokeLinecap="round"
+            points={data.sparkline.map((v,i)=>`${i*(280/19)},${40-(v/34)*32-2}`).join(' ')} />
+        </svg>
+      </div>
+
+      {/* swipe hint */}
+      <div style={{
+        position: 'absolute', bottom: 146, left: 0, right: 0, textAlign: 'center',
+        fontSize: 11, color: 'rgba(255,255,255,.7)', letterSpacing: '0.08em',
+      }}>swipe up for next signal ↑</div>
+
+      <SfChat dark={dark} />
+      <SfTabBar dark={dark} active="sig" />
+    </div>
+  );
+}
+
+function SignalFeedMarket({ dark, data }) {
+  const t = dark ? window.RITA.dark : window.RITA.light;
+  return (
+    <div style={{ ...sfStyles(dark).page, position: 'relative', paddingBottom: 90 }}>
+      <div style={{ padding: '60px 22px 8px' }}>
+        <div style={{ fontSize: 12, color: t.t3, fontWeight: 600, letterSpacing: '0.06em' }}>MARKET ANALYSIS</div>
+        <div style={{ fontFamily: window.RITA.fs, fontSize: 30, letterSpacing: '-0.01em', marginTop: 4 }}>
+          What Rita sees, <span style={{ fontStyle: 'italic', color: t.t2 }}>explained</span>.
+        </div>
+      </div>
+
+      {/* regime pill */}
+      <div style={{ padding: '8px 22px 14px' }}>
+        <div style={{
+          padding: '14px 16px', borderRadius: 18,
+          background: window.RITA[data.stateColor === window.RITA.build ? 'buildBg' : data.stateColor === window.RITA.danger ? 'dangerBg' : 'warnBg'],
+          border: `1px solid ${window.RITA[data.stateColor === window.RITA.build ? 'buildBd' : data.stateColor === window.RITA.danger ? 'dangerBd' : 'warnBd']}`,
+        }}>
+          <div style={{ fontSize: 10, color: data.stateColor, fontWeight: 700, letterSpacing: '0.08em', marginBottom: 4 }}>CURRENT REGIME</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: data.stateColor }}>{data.state} market</div>
+          <div style={{ fontSize: 12, color: t.t2, marginTop: 6, lineHeight: 1.5 }}>
+            Rita's classifier says momentum is dominant and volatility is
+            {data.state === 'Bull' ? ' compressed' : data.state === 'Bear' ? ' rising' : ' elevated'}.
+          </div>
+        </div>
+      </div>
+
+      {/* factor bars */}
+      <div style={{ padding: '4px 22px 14px' }}>
+        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>Factor breakdown</div>
+        {[
+          ['Momentum', 0.72, window.RITA.build],
+          ['Value', 0.41, window.RITA.run],
+          ['Quality', 0.58, window.RITA.mon],
+          ['Volatility', 0.33, window.RITA.warn],
+        ].map(([k, v, c]) => (
+          <div key={k} style={{ marginBottom: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+              <span style={{ color: t.t2 }}>{k}</span>
+              <span style={{ fontFamily: window.RITA.fm, color: t.text, fontWeight: 500 }}>{v.toFixed(2)}</span>
+            </div>
+            <div style={{ height: 6, borderRadius: 3, background: t.surface2, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${v*100}%`, background: c, borderRadius: 3 }} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* explain card */}
+      <div style={{ margin: '4px 16px 14px', padding: 18, borderRadius: 18, background: window.RITA.chatBg, border: `1px solid ${window.RITA.chatBd}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 14, background: window.RITA.chat, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: window.RITA.fs, fontSize: 14 }}>R</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: window.RITA.chat, letterSpacing: '0.04em' }}>RITA EXPLAINS</div>
+        </div>
+        <div style={{ fontSize: 13, color: t.t2, lineHeight: 1.55, fontStyle: 'italic', fontFamily: window.RITA.fs }}>
+          "Momentum is doing most of the work today. Volatility is compressed and breadth is positive — that combination is what Rita classifies as a {data.state.toLowerCase()} regime."
+        </div>
+      </div>
+
+      <SfChatDark dark={dark} />
+      <SfTabBar dark={dark} active="market" />
+    </div>
+  );
+}
+
+Object.assign(window, { SignalFeedOverview, SignalFeedHero, SignalFeedMarket, SfTabBar, SfChat, SfChatDark });
+
+
+</script>
+
+<script type="text/babel">
+// ──────────────────────────────────────────────────────────────────
+// Phone wrapper — renders an iOS or Android frame with a screen inside.
+// We skip the built-in NavBar (pass no `title` prop) since each design
+// brings its own custom top chrome.
+// ──────────────────────────────────────────────────────────────────
+function Phone({ platform, dark, children }) {
+  if (platform === 'ios') {
+    return (
+      <IOSDevice width={340} height={720} dark={dark}>
+        <div style={{ position: 'relative', minHeight: '100%' }}>
+          {children}
+        </div>
+      </IOSDevice>
+    );
+  }
+  return (
+    <AndroidDevice width={340} height={720} dark={dark}>
+      <div style={{ position: 'relative', minHeight: '100%' }}>
+        {children}
+      </div>
+    </AndroidDevice>
+  );
+}
+
+// Bridge tweak state through React via a simple store.
+function useTweaks() {
+  const [tweaks, setTweaks] = React.useState(window.RITA_TWEAKS);
+  React.useEffect(() => {
+    const handler = (e) => setTweaks({ ...window.RITA_TWEAKS });
+    window.addEventListener('rita-tweaks-changed', handler);
+    return () => window.removeEventListener('rita-tweaks-changed', handler);
+  }, []);
+  return tweaks;
+}
+
+function App() {
+  const tweaks = useTweaks();
+  const dark = tweaks.theme === 'dark';
+  const data = window.RITA_DATA[tweaks.market];
+
+  // If it's a calm day, filter signals to only neutral/run severity
+  const adjData = React.useMemo(() => {
+    if (tweaks.severity === 'calm') {
+      const calmSignals = [
+        { tag: 'INFO',    sev: 'neu', title: 'Quiet session expected',       body: 'Implied volatility is below the 20-day median.', when: '5 min ago' },
+        { tag: 'CONTEXT', sev: 'run', title: 'No macro events scheduled',    body: 'No scheduled events impacting tracked instruments through close.', when: '1 hr ago' },
+        { tag: 'HISTORY', sev: 'neu', title: 'Signal throughput at 0.4/hr',  body: 'Today is tracking at the 18th percentile of daily signal volume.', when: '2 hr ago' },
+      ];
+      return { ...data, signals: calmSignals };
+    }
+    return data;
+  }, [data, tweaks.severity]);
+
+  return (
+    <DesignCanvas>
+      <DCSection id="novel" title="Novel — Signal-feed" subtitle="Full-bleed, severity-tinted. Each signal owns the whole screen. Swipeable stack.">
+        <DCArtboard id="nv-home" label="1 · Home (Today)" width={340} height={720}>
+          <Phone platform="ios" dark={dark}><SignalFeedOverview dark={dark} data={adjData} /></Phone>
+        </DCArtboard>
+        <DCArtboard id="nv-sig1" label="2 · Signal hero" width={340} height={720}>
+          <Phone platform="ios" dark={dark}><SignalFeedHero dark={dark} data={adjData} index={0} /></Phone>
+        </DCArtboard>
+        <DCArtboard id="nv-sig2" label="3 · Signal hero (next)" width={340} height={720}>
+          <Phone platform="ios" dark={dark}><SignalFeedHero dark={dark} data={adjData} index={1} /></Phone>
+        </DCArtboard>
+        <DCArtboard id="nv-mkt" label="4 · Market Analysis" width={340} height={720}>
+          <Phone platform="ios" dark={dark}><SignalFeedMarket dark={dark} data={adjData} /></Phone>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="cardapp" title="Card-app — warm & rounded" subtitle="The consumer-tier companion: Financial Goal, Overview, Market, Strategy.">
+        <DCArtboard id="ca-home" label="5 · Overview" width={340} height={720}>
+          <Phone platform="ios" dark={dark}><CardAppOverview dark={dark} data={adjData} /></Phone>
+        </DCArtboard>
+        <DCArtboard id="ca-goal" label="6 · Financial Goal" width={340} height={720}>
+          <Phone platform="ios" dark={dark}><CardAppGoal dark={dark} data={adjData} /></Phone>
+        </DCArtboard>
+        <DCArtboard id="ca-mkt" label="7 · Market Analysis" width={340} height={720}>
+          <Phone platform="ios" dark={dark}><CardAppMarket dark={dark} data={adjData} /></Phone>
+        </DCArtboard>
+        <DCArtboard id="ca-strat" label="8 · Strategy" width={340} height={720}>
+          <Phone platform="ios" dark={dark}><CardAppStrategy dark={dark} data={adjData} /></Phone>
+        </DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+
+<script>
+// ──────────────────────────────────────────────────────────────────
+// Tweaks wiring (vanilla — independent of React)
+// ──────────────────────────────────────────────────────────────────
+(function() {
+  const panel = document.getElementById('tweaks');
+
+  function refresh() {
+    ['theme','market','severity'].forEach(key => {
+      const container = document.getElementById('tw-' + key);
+      if (!container) return;
+      container.querySelectorAll('.tweak-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.v === window.RITA_TWEAKS[key]);
+      });
+    });
+  }
+  function set(key, value) {
+    window.RITA_TWEAKS[key] = value;
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [key]: value } }, '*');
+    window.dispatchEvent(new CustomEvent('rita-tweaks-changed'));
+    refresh();
+  }
+
+  ['theme','market','severity'].forEach(key => {
+    const c = document.getElementById('tw-' + key);
+    if (!c) return;
+    c.querySelectorAll('.tweak-btn').forEach(btn => {
+      btn.addEventListener('click', () => set(key, btn.dataset.v));
+    });
+  });
+  refresh();
+
+  // Tweaks host protocol — register listener FIRST, then announce availability
+  window.addEventListener('message', (e) => {
+    if (!e.data || !e.data.type) return;
+    if (e.data.type === '__activate_edit_mode') panel.classList.remove('hidden');
+    if (e.data.type === '__deactivate_edit_mode') panel.classList.add('hidden');
+  });
+  window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+})();
+</script>
+
+</body>
+</html>

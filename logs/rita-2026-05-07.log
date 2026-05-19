@@ -1,0 +1,217 @@
+INFO:     Will watch for changes in these directories: ['C:\\Users\\Sandeep\\Documents\\Work\\code\\riia-cowork-jun\\riia-jun-release']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [7056] using WatchFiles
+C:\Users\Sandeep\pyenv-envs\poc\Lib\site-packages\pydantic\_internal\_config.py:383: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [15124]
+INFO:     Waiting for application startup.
+{"name": "rita", "version": "1.0.0", "event": "app.startup", "level": "info", "timestamp": "2026-05-07T05:15:31.425663Z"}
+{"instrument": "ASML26MAY1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-07T05:15:31.579946Z"}
+{"instrument": "ASML26JUN1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-07T05:15:31.579946Z"}
+INFO:     Application startup complete.
+{"method": "GET", "path": "/dashboard/", "status_code": 304, "event": "http.request", "trace_id": "4d2d1da4-df1d-49ab-88b3-a0f84fc49173", "level": "info", "timestamp": "2026-05-07T05:17:14.933614Z"}
+INFO:     127.0.0.1:61104 - "GET /dashboard/ HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/favicon.ico", "status_code": 404, "event": "http.request", "trace_id": "29b3375e-ad74-4b4c-96a6-c6fb16875a15", "level": "info", "timestamp": "2026-05-07T05:17:15.126205Z"}
+INFO:     127.0.0.1:61104 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+{"method": "GET", "path": "/onboarding", "status_code": 200, "event": "http.request", "trace_id": "f67cfd9e-63a6-42b8-8e2a-342b2e7ec3ba", "level": "info", "timestamp": "2026-05-07T05:29:54.879401Z"}
+INFO:     127.0.0.1:59962 - "GET /onboarding HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/investgame.html", "status_code": 304, "event": "http.request", "trace_id": "eafef348-7882-4341-a496-5a6a914c3728", "level": "info", "timestamp": "2026-05-07T05:29:56.979338Z"}
+INFO:     127.0.0.1:59962 - "GET /dashboard/investgame.html HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/invest-game/main.js", "status_code": 304, "event": "http.request", "trace_id": "c6da5008-5416-4a4e-9916-6da4bc94eb23", "level": "info", "timestamp": "2026-05-07T05:29:57.008366Z"}
+INFO:     127.0.0.1:59962 - "GET /dashboard/js/invest-game/main.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/invest-game/api.js", "status_code": 304, "event": "http.request", "trace_id": "dd6f0319-23f2-4fc1-8cd4-9319eae3308b", "level": "info", "timestamp": "2026-05-07T05:29:57.035679Z"}
+INFO:     127.0.0.1:59962 - "GET /dashboard/js/invest-game/api.js HTTP/1.1" 304 Not Modified
+{"game_id": "6e120bca-2fab-4f45-97d8-243b10a94802", "instrument": "ASML", "event": "invest_game.session_created", "trace_id": "f5923488-a429-4081-b508-a00beabb746c", "level": "info", "timestamp": "2026-05-07T05:29:59.224659Z"}
+{"method": "POST", "path": "/api/experience/invest-game/select-days", "status_code": 200, "event": "http.request", "trace_id": "f5923488-a429-4081-b508-a00beabb746c", "level": "info", "timestamp": "2026-05-07T05:29:59.224659Z"}
+INFO:     127.0.0.1:59962 - "POST /api/experience/invest-game/select-days HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/investgame.html", "status_code": 200, "event": "http.request", "trace_id": "e69b7e2c-8a31-45e1-8c53-d63125cf1d3e", "level": "info", "timestamp": "2026-05-07T05:37:24.520484Z"}
+INFO:     127.0.0.1:59743 - "GET /dashboard/investgame.html HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/invest-game/main.js", "status_code": 200, "event": "http.request", "trace_id": "a9f6b2f8-ddf8-4cdb-8b3b-ed2a29defe48", "level": "info", "timestamp": "2026-05-07T05:37:24.623688Z"}
+INFO:     127.0.0.1:59743 - "GET /dashboard/js/invest-game/main.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/invest-game/api.js", "status_code": 200, "event": "http.request", "trace_id": "66f82250-f4ed-40f1-bd65-9394dd21f841", "level": "info", "timestamp": "2026-05-07T05:37:24.642484Z"}
+INFO:     127.0.0.1:59743 - "GET /dashboard/js/invest-game/api.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/favicon.ico", "status_code": 404, "event": "http.request", "trace_id": "7ee8a057-e37b-40be-88b5-103395f7d30c", "level": "info", "timestamp": "2026-05-07T05:37:24.940712Z"}
+INFO:     127.0.0.1:59743 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+{"game_id": "7f4d3094-eb13-4c41-9522-15cef5e8db67", "instrument": "ASML", "event": "invest_game.session_created", "trace_id": "3b8af9a9-1cdd-42ae-92b5-9930725d9458", "level": "info", "timestamp": "2026-05-07T05:37:27.708123Z"}
+{"method": "POST", "path": "/api/experience/invest-game/select-days", "status_code": 200, "event": "http.request", "trace_id": "3b8af9a9-1cdd-42ae-92b5-9930725d9458", "level": "info", "timestamp": "2026-05-07T05:37:27.708123Z"}
+INFO:     127.0.0.1:59743 - "POST /api/experience/invest-game/select-days HTTP/1.1" 200 OK
+{"game_id": "7f4d3094-eb13-4c41-9522-15cef5e8db67", "day_index": 0, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "13a01974-37b1-4945-87c1-74e82505ab63", "level": "info", "timestamp": "2026-05-07T05:37:33.195637Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "13a01974-37b1-4945-87c1-74e82505ab63", "level": "info", "timestamp": "2026-05-07T05:37:33.195637Z"}
+INFO:     127.0.0.1:59045 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "7f4d3094-eb13-4c41-9522-15cef5e8db67", "day_index": 1, "ai_action": "BUY", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "cf9f836c-d013-4a50-9af3-aa4cdea4a132", "level": "info", "timestamp": "2026-05-07T05:37:35.058977Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "cf9f836c-d013-4a50-9af3-aa4cdea4a132", "level": "info", "timestamp": "2026-05-07T05:37:35.058977Z"}
+INFO:     127.0.0.1:59045 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "7f4d3094-eb13-4c41-9522-15cef5e8db67", "day_index": 2, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "fe95de7f-6f26-4b5a-8d33-538f7f94e7f5", "level": "info", "timestamp": "2026-05-07T05:37:36.738754Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "fe95de7f-6f26-4b5a-8d33-538f7f94e7f5", "level": "info", "timestamp": "2026-05-07T05:37:36.739604Z"}
+INFO:     127.0.0.1:59045 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "7f4d3094-eb13-4c41-9522-15cef5e8db67", "day_index": 3, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "18c572ec-72a5-434c-8cd2-59f7a5804c85", "level": "info", "timestamp": "2026-05-07T05:37:37.889670Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "18c572ec-72a5-434c-8cd2-59f7a5804c85", "level": "info", "timestamp": "2026-05-07T05:37:37.889670Z"}
+INFO:     127.0.0.1:59045 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "7f4d3094-eb13-4c41-9522-15cef5e8db67", "day_index": 4, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "d35d0220-dd48-45d3-8087-ad4808652f52", "level": "info", "timestamp": "2026-05-07T05:37:39.073029Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "d35d0220-dd48-45d3-8087-ad4808652f52", "level": "info", "timestamp": "2026-05-07T05:37:39.073029Z"}
+INFO:     127.0.0.1:59045 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "7f4d3094-eb13-4c41-9522-15cef5e8db67", "day_index": 5, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "f544f25f-e653-4c7a-b679-39b66cdee0fe", "level": "info", "timestamp": "2026-05-07T05:37:43.183715Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "f544f25f-e653-4c7a-b679-39b66cdee0fe", "level": "info", "timestamp": "2026-05-07T05:37:43.183715Z"}
+INFO:     127.0.0.1:59045 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "7f4d3094-eb13-4c41-9522-15cef5e8db67", "day_index": 6, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "8f4e2aa4-bdbe-4111-a9c4-e5a521002858", "level": "info", "timestamp": "2026-05-07T05:37:44.404491Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "8f4e2aa4-bdbe-4111-a9c4-e5a521002858", "level": "info", "timestamp": "2026-05-07T05:37:44.404491Z"}
+INFO:     127.0.0.1:59045 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "7f4d3094-eb13-4c41-9522-15cef5e8db67", "day_index": 7, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "4b96f97c-bb41-4aa3-a514-e830a17a3388", "level": "info", "timestamp": "2026-05-07T05:37:45.629616Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "4b96f97c-bb41-4aa3-a514-e830a17a3388", "level": "info", "timestamp": "2026-05-07T05:37:45.629616Z"}
+INFO:     127.0.0.1:59045 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "7f4d3094-eb13-4c41-9522-15cef5e8db67", "day_index": 8, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "79d576ff-b83c-4da7-8344-011007bcae84", "level": "info", "timestamp": "2026-05-07T05:37:46.968928Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "79d576ff-b83c-4da7-8344-011007bcae84", "level": "info", "timestamp": "2026-05-07T05:37:46.970018Z"}
+INFO:     127.0.0.1:59045 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/investgame.html", "status_code": 200, "event": "http.request", "trace_id": "03fffe28-cdb6-49ee-8d22-f259c6731776", "level": "info", "timestamp": "2026-05-07T05:44:34.300977Z"}
+INFO:     127.0.0.1:58216 - "GET /dashboard/investgame.html HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/invest-game/main.js", "status_code": 200, "event": "http.request", "trace_id": "02357aac-90d7-4e44-9f9c-e96a2c2e2737", "level": "info", "timestamp": "2026-05-07T05:44:34.356449Z"}
+INFO:     127.0.0.1:58216 - "GET /dashboard/js/invest-game/main.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/invest-game/api.js", "status_code": 200, "event": "http.request", "trace_id": "dedb0759-5b50-4a57-808d-d6ce784c2fd7", "level": "info", "timestamp": "2026-05-07T05:44:34.364613Z"}
+INFO:     127.0.0.1:58216 - "GET /dashboard/js/invest-game/api.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/favicon.ico", "status_code": 404, "event": "http.request", "trace_id": "b1a8a398-98b0-4582-b09f-6f03978043b1", "level": "info", "timestamp": "2026-05-07T05:44:34.448671Z"}
+INFO:     127.0.0.1:58216 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+{"game_id": "bcf4222a-54b8-404f-9733-7ee5ee0c804d", "instrument": "ASML", "event": "invest_game.session_created", "trace_id": "d9c409c2-11b3-46d0-94e2-86babc543253", "level": "info", "timestamp": "2026-05-07T05:44:36.827431Z"}
+{"method": "POST", "path": "/api/experience/invest-game/select-days", "status_code": 200, "event": "http.request", "trace_id": "d9c409c2-11b3-46d0-94e2-86babc543253", "level": "info", "timestamp": "2026-05-07T05:44:36.827431Z"}
+INFO:     127.0.0.1:58216 - "POST /api/experience/invest-game/select-days HTTP/1.1" 200 OK
+{"game_id": "bcf4222a-54b8-404f-9733-7ee5ee0c804d", "day_index": 0, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "7738bd23-c910-4509-b392-51e173826fb1", "level": "info", "timestamp": "2026-05-07T05:44:46.387210Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "7738bd23-c910-4509-b392-51e173826fb1", "level": "info", "timestamp": "2026-05-07T05:44:46.387210Z"}
+INFO:     127.0.0.1:50535 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "bcf4222a-54b8-404f-9733-7ee5ee0c804d", "day_index": 1, "ai_action": "BUY", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "fb991d76-8cfc-4979-a105-6cde7d4fc66c", "level": "info", "timestamp": "2026-05-07T05:44:58.511865Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "fb991d76-8cfc-4979-a105-6cde7d4fc66c", "level": "info", "timestamp": "2026-05-07T05:44:58.511865Z"}
+INFO:     127.0.0.1:63349 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "bcf4222a-54b8-404f-9733-7ee5ee0c804d", "day_index": 2, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "de636942-81a9-47c0-a7a2-8852df6049be", "level": "info", "timestamp": "2026-05-07T05:45:03.952361Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "de636942-81a9-47c0-a7a2-8852df6049be", "level": "info", "timestamp": "2026-05-07T05:45:03.952361Z"}
+INFO:     127.0.0.1:55842 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "bcf4222a-54b8-404f-9733-7ee5ee0c804d", "day_index": 3, "ai_action": "SELL", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "ce9e535d-b305-42c7-aa64-7c0e971a6200", "level": "info", "timestamp": "2026-05-07T05:45:10.374910Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "ce9e535d-b305-42c7-aa64-7c0e971a6200", "level": "info", "timestamp": "2026-05-07T05:45:10.374910Z"}
+INFO:     127.0.0.1:62093 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "bcf4222a-54b8-404f-9733-7ee5ee0c804d", "day_index": 4, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "0b0a5769-4a53-430d-b603-2b87073996ea", "level": "info", "timestamp": "2026-05-07T05:45:13.633310Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "0b0a5769-4a53-430d-b603-2b87073996ea", "level": "info", "timestamp": "2026-05-07T05:45:13.633310Z"}
+INFO:     127.0.0.1:62093 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "bcf4222a-54b8-404f-9733-7ee5ee0c804d", "day_index": 5, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "5488d44e-e288-4659-82a5-9e6bac8b30b0", "level": "info", "timestamp": "2026-05-07T05:45:16.665331Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "5488d44e-e288-4659-82a5-9e6bac8b30b0", "level": "info", "timestamp": "2026-05-07T05:45:16.665331Z"}
+INFO:     127.0.0.1:62093 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "bcf4222a-54b8-404f-9733-7ee5ee0c804d", "day_index": 6, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "d1835623-9dcd-47fd-ab3e-b28dc132fd0f", "level": "info", "timestamp": "2026-05-07T05:45:20.205285Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "d1835623-9dcd-47fd-ab3e-b28dc132fd0f", "level": "info", "timestamp": "2026-05-07T05:45:20.205285Z"}
+INFO:     127.0.0.1:62093 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "bcf4222a-54b8-404f-9733-7ee5ee0c804d", "day_index": 7, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "22fa478a-e073-4a2f-ab0a-7ecb6d2cc70e", "level": "info", "timestamp": "2026-05-07T05:45:23.573919Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "22fa478a-e073-4a2f-ab0a-7ecb6d2cc70e", "level": "info", "timestamp": "2026-05-07T05:45:23.573919Z"}
+INFO:     127.0.0.1:62093 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "bcf4222a-54b8-404f-9733-7ee5ee0c804d", "day_index": 8, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "53ec8623-bf8f-48c2-b31e-c0e7f1448da0", "level": "info", "timestamp": "2026-05-07T05:45:26.570289Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "53ec8623-bf8f-48c2-b31e-c0e7f1448da0", "level": "info", "timestamp": "2026-05-07T05:45:26.570849Z"}
+INFO:     127.0.0.1:62093 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "bcf4222a-54b8-404f-9733-7ee5ee0c804d", "day_index": 9, "ai_action": "BUY", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "184d0567-1d4e-481b-94bd-96da5c492c9d", "level": "info", "timestamp": "2026-05-07T05:45:29.588349Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "184d0567-1d4e-481b-94bd-96da5c492c9d", "level": "info", "timestamp": "2026-05-07T05:45:29.588653Z"}
+INFO:     127.0.0.1:62093 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"run_id": "20260507-0545", "path": "C:\\Users\\Sandeep\\Documents\\Work\\code\\riia-cowork-jun\\riia-ai-org\\agent-ops\\runs\\run-20260507-0545.json", "event": "invest_game.run_log_written", "trace_id": "24ac62ea-e3b1-46ec-9992-8017817a0077", "level": "info", "timestamp": "2026-05-07T05:45:29.594782Z"}
+{"game_id": "bcf4222a-54b8-404f-9733-7ee5ee0c804d", "days": 10, "event": "invest_game.result_fetched", "trace_id": "24ac62ea-e3b1-46ec-9992-8017817a0077", "level": "info", "timestamp": "2026-05-07T05:45:30.145786Z"}
+{"method": "GET", "path": "/api/experience/invest-game/bcf4222a-54b8-404f-9733-7ee5ee0c804d/result", "status_code": 200, "event": "http.request", "trace_id": "24ac62ea-e3b1-46ec-9992-8017817a0077", "level": "info", "timestamp": "2026-05-07T05:45:30.145786Z"}
+INFO:     127.0.0.1:62093 - "GET /api/experience/invest-game/bcf4222a-54b8-404f-9733-7ee5ee0c804d/result HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/investgame.html", "status_code": 200, "event": "http.request", "trace_id": "6bcb98c1-4c7e-45a3-a516-f94ed1fd3283", "level": "info", "timestamp": "2026-05-07T05:50:30.433742Z"}
+INFO:     127.0.0.1:58927 - "GET /dashboard/investgame.html HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/invest-game/main.js", "status_code": 200, "event": "http.request", "trace_id": "7bf2ba61-55f0-45b5-937d-4e8842691a43", "level": "info", "timestamp": "2026-05-07T05:50:30.466107Z"}
+INFO:     127.0.0.1:58927 - "GET /dashboard/js/invest-game/main.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/invest-game/api.js", "status_code": 200, "event": "http.request", "trace_id": "f64f430c-7bc6-4fa3-8123-a137cc3a64f2", "level": "info", "timestamp": "2026-05-07T05:50:30.474608Z"}
+INFO:     127.0.0.1:58927 - "GET /dashboard/js/invest-game/api.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/favicon.ico", "status_code": 404, "event": "http.request", "trace_id": "582a384b-468d-4bc9-86ef-68bb9cd0f1bb", "level": "info", "timestamp": "2026-05-07T05:50:30.546975Z"}
+INFO:     127.0.0.1:58927 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+{"game_id": "60e3c7c2-b2c8-4ace-ba87-c6e2de46c3c0", "instrument": "ASML", "event": "invest_game.session_created", "trace_id": "19e899ea-5a1e-4dac-9301-465ab9585385", "level": "info", "timestamp": "2026-05-07T05:50:32.330544Z"}
+{"method": "POST", "path": "/api/experience/invest-game/select-days", "status_code": 200, "event": "http.request", "trace_id": "19e899ea-5a1e-4dac-9301-465ab9585385", "level": "info", "timestamp": "2026-05-07T05:50:32.332966Z"}
+INFO:     127.0.0.1:58927 - "POST /api/experience/invest-game/select-days HTTP/1.1" 200 OK
+{"game_id": "60e3c7c2-b2c8-4ace-ba87-c6e2de46c3c0", "day_index": 0, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "356cb063-4390-4a82-bee7-414f90d30c27", "level": "info", "timestamp": "2026-05-07T05:50:38.190324Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "356cb063-4390-4a82-bee7-414f90d30c27", "level": "info", "timestamp": "2026-05-07T05:50:38.190324Z"}
+INFO:     127.0.0.1:60236 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "60e3c7c2-b2c8-4ace-ba87-c6e2de46c3c0", "day_index": 1, "ai_action": "BUY", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "ef5db703-4c77-43ac-9ea1-f31bb51dac8b", "level": "info", "timestamp": "2026-05-07T05:50:41.790483Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "ef5db703-4c77-43ac-9ea1-f31bb51dac8b", "level": "info", "timestamp": "2026-05-07T05:50:41.790483Z"}
+INFO:     127.0.0.1:60236 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "60e3c7c2-b2c8-4ace-ba87-c6e2de46c3c0", "day_index": 2, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "05b42c39-083c-4661-baca-b8ed7239e39d", "level": "info", "timestamp": "2026-05-07T05:50:44.677664Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "05b42c39-083c-4661-baca-b8ed7239e39d", "level": "info", "timestamp": "2026-05-07T05:50:44.678144Z"}
+INFO:     127.0.0.1:60236 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "60e3c7c2-b2c8-4ace-ba87-c6e2de46c3c0", "day_index": 3, "ai_action": "BUY", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "b96f300d-609c-40aa-9f19-6e5b7fa6bbbf", "level": "info", "timestamp": "2026-05-07T05:50:47.882573Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "b96f300d-609c-40aa-9f19-6e5b7fa6bbbf", "level": "info", "timestamp": "2026-05-07T05:50:47.882573Z"}
+INFO:     127.0.0.1:60236 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "60e3c7c2-b2c8-4ace-ba87-c6e2de46c3c0", "day_index": 4, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "c3898cf7-03d9-4508-8008-6c4f73f6b9c5", "level": "info", "timestamp": "2026-05-07T05:50:51.839675Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "c3898cf7-03d9-4508-8008-6c4f73f6b9c5", "level": "info", "timestamp": "2026-05-07T05:50:51.839675Z"}
+INFO:     127.0.0.1:60236 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "60e3c7c2-b2c8-4ace-ba87-c6e2de46c3c0", "day_index": 5, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "e1e749a8-3b23-4433-94bf-82d393de12ea", "level": "info", "timestamp": "2026-05-07T05:50:54.807405Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "e1e749a8-3b23-4433-94bf-82d393de12ea", "level": "info", "timestamp": "2026-05-07T05:50:54.807882Z"}
+INFO:     127.0.0.1:60236 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "60e3c7c2-b2c8-4ace-ba87-c6e2de46c3c0", "day_index": 6, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "64cb581d-50bf-4976-ab5d-f4a6a83b9270", "level": "info", "timestamp": "2026-05-07T05:50:58.943303Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "64cb581d-50bf-4976-ab5d-f4a6a83b9270", "level": "info", "timestamp": "2026-05-07T05:50:58.943303Z"}
+INFO:     127.0.0.1:60236 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "60e3c7c2-b2c8-4ace-ba87-c6e2de46c3c0", "day_index": 7, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "a52d1b9d-a002-42cd-b853-44b54e4732ea", "level": "info", "timestamp": "2026-05-07T05:51:01.672153Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "a52d1b9d-a002-42cd-b853-44b54e4732ea", "level": "info", "timestamp": "2026-05-07T05:51:01.672878Z"}
+INFO:     127.0.0.1:60236 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "60e3c7c2-b2c8-4ace-ba87-c6e2de46c3c0", "day_index": 8, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "35f628cc-c454-4c05-9ecd-e4eb83485739", "level": "info", "timestamp": "2026-05-07T05:51:05.362029Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "35f628cc-c454-4c05-9ecd-e4eb83485739", "level": "info", "timestamp": "2026-05-07T05:51:05.362029Z"}
+INFO:     127.0.0.1:60236 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "60e3c7c2-b2c8-4ace-ba87-c6e2de46c3c0", "day_index": 9, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "45547c50-1a9c-43bb-abd0-86335097fd86", "level": "info", "timestamp": "2026-05-07T05:51:09.118210Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "45547c50-1a9c-43bb-abd0-86335097fd86", "level": "info", "timestamp": "2026-05-07T05:51:09.118210Z"}
+INFO:     127.0.0.1:60236 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"run_id": "20260507-0551", "path": "C:\\Users\\Sandeep\\Documents\\Work\\code\\riia-cowork-jun\\riia-ai-org\\agent-ops\\runs\\run-20260507-0551.json", "event": "invest_game.run_log_written", "trace_id": "cd89c68b-cd77-4dd8-bd8b-728defcb973e", "level": "info", "timestamp": "2026-05-07T05:51:09.128500Z"}
+{"game_id": "60e3c7c2-b2c8-4ace-ba87-c6e2de46c3c0", "days": 10, "event": "invest_game.result_fetched", "trace_id": "cd89c68b-cd77-4dd8-bd8b-728defcb973e", "level": "info", "timestamp": "2026-05-07T05:51:09.620098Z"}
+{"method": "GET", "path": "/api/experience/invest-game/60e3c7c2-b2c8-4ace-ba87-c6e2de46c3c0/result", "status_code": 200, "event": "http.request", "trace_id": "cd89c68b-cd77-4dd8-bd8b-728defcb973e", "level": "info", "timestamp": "2026-05-07T05:51:09.620098Z"}
+INFO:     127.0.0.1:60236 - "GET /api/experience/invest-game/60e3c7c2-b2c8-4ace-ba87-c6e2de46c3c0/result HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/investgame.html", "status_code": 200, "event": "http.request", "trace_id": "d8135004-28dc-493b-b266-5a0ea398349e", "level": "info", "timestamp": "2026-05-07T05:56:48.199797Z"}
+INFO:     127.0.0.1:50621 - "GET /dashboard/investgame.html HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/invest-game/main.js", "status_code": 200, "event": "http.request", "trace_id": "72e16ded-b900-4ef1-a9d4-17ce6bc7c410", "level": "info", "timestamp": "2026-05-07T05:56:48.315982Z"}
+INFO:     127.0.0.1:50621 - "GET /dashboard/js/invest-game/main.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/invest-game/api.js", "status_code": 200, "event": "http.request", "trace_id": "11de1291-fe9f-4542-8e57-2ba9235d8510", "level": "info", "timestamp": "2026-05-07T05:56:48.330129Z"}
+INFO:     127.0.0.1:50621 - "GET /dashboard/js/invest-game/api.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/favicon.ico", "status_code": 404, "event": "http.request", "trace_id": "cdb35d9a-7e70-4d7b-98f6-ceef5a7a0e90", "level": "info", "timestamp": "2026-05-07T05:56:48.409639Z"}
+INFO:     127.0.0.1:50621 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+{"game_id": "8fd79111-274e-47fc-9540-bd2e4ee0a694", "instrument": "ASML", "event": "invest_game.session_created", "trace_id": "598c1c59-b9a8-41c6-98fd-c9f938a6cd50", "level": "info", "timestamp": "2026-05-07T05:56:50.369311Z"}
+{"method": "POST", "path": "/api/experience/invest-game/select-days", "status_code": 200, "event": "http.request", "trace_id": "598c1c59-b9a8-41c6-98fd-c9f938a6cd50", "level": "info", "timestamp": "2026-05-07T05:56:50.369311Z"}
+INFO:     127.0.0.1:50621 - "POST /api/experience/invest-game/select-days HTTP/1.1" 200 OK
+{"game_id": "8fd79111-274e-47fc-9540-bd2e4ee0a694", "day_index": 0, "ai_action": "SELL", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "75974392-c899-4603-9d28-fc1b002b83c5", "level": "info", "timestamp": "2026-05-07T05:56:55.845135Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "75974392-c899-4603-9d28-fc1b002b83c5", "level": "info", "timestamp": "2026-05-07T05:56:55.845135Z"}
+INFO:     127.0.0.1:49471 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "8fd79111-274e-47fc-9540-bd2e4ee0a694", "day_index": 1, "ai_action": "BUY", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "d8f6a38b-7064-4c3a-9918-5756fa872428", "level": "info", "timestamp": "2026-05-07T05:56:58.994371Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "d8f6a38b-7064-4c3a-9918-5756fa872428", "level": "info", "timestamp": "2026-05-07T05:56:58.994371Z"}
+INFO:     127.0.0.1:49471 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "8fd79111-274e-47fc-9540-bd2e4ee0a694", "day_index": 2, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "eb44cfd6-e48a-44d9-b692-4dcf80516a4a", "level": "info", "timestamp": "2026-05-07T05:57:02.043639Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "eb44cfd6-e48a-44d9-b692-4dcf80516a4a", "level": "info", "timestamp": "2026-05-07T05:57:02.043639Z"}
+INFO:     127.0.0.1:49471 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "8fd79111-274e-47fc-9540-bd2e4ee0a694", "day_index": 3, "ai_action": "BUY", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "cf2ec6dd-4ded-447a-b03e-ec3a5b23b928", "level": "info", "timestamp": "2026-05-07T05:57:04.930010Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "cf2ec6dd-4ded-447a-b03e-ec3a5b23b928", "level": "info", "timestamp": "2026-05-07T05:57:04.930556Z"}
+INFO:     127.0.0.1:49471 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "8fd79111-274e-47fc-9540-bd2e4ee0a694", "day_index": 4, "ai_action": "BUY", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "3b50d96d-10ce-4f0f-8e4f-8bdb29bbb031", "level": "info", "timestamp": "2026-05-07T05:57:08.172752Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "3b50d96d-10ce-4f0f-8e4f-8bdb29bbb031", "level": "info", "timestamp": "2026-05-07T05:57:08.172752Z"}
+INFO:     127.0.0.1:49471 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "8fd79111-274e-47fc-9540-bd2e4ee0a694", "day_index": 5, "ai_action": "SELL", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "2ee5dbb1-a7d6-418d-b039-d716af86a30e", "level": "info", "timestamp": "2026-05-07T05:57:11.154235Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "2ee5dbb1-a7d6-418d-b039-d716af86a30e", "level": "info", "timestamp": "2026-05-07T05:57:11.154235Z"}
+INFO:     127.0.0.1:49471 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "8fd79111-274e-47fc-9540-bd2e4ee0a694", "day_index": 6, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "5531a760-6b1b-4bfd-911a-b11105b4c4d6", "level": "info", "timestamp": "2026-05-07T05:57:16.325340Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "5531a760-6b1b-4bfd-911a-b11105b4c4d6", "level": "info", "timestamp": "2026-05-07T05:57:16.325340Z"}
+INFO:     127.0.0.1:49318 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "8fd79111-274e-47fc-9540-bd2e4ee0a694", "day_index": 7, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "58ca95dc-ff14-4f2a-859d-50a7a4f1a2f3", "level": "info", "timestamp": "2026-05-07T05:57:19.512177Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "58ca95dc-ff14-4f2a-859d-50a7a4f1a2f3", "level": "info", "timestamp": "2026-05-07T05:57:19.512177Z"}
+INFO:     127.0.0.1:49318 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "8fd79111-274e-47fc-9540-bd2e4ee0a694", "day_index": 8, "ai_action": "BUY", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "90a75606-a1e2-40da-b4d3-7f7f93a4c795", "level": "info", "timestamp": "2026-05-07T05:57:22.190795Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "90a75606-a1e2-40da-b4d3-7f7f93a4c795", "level": "info", "timestamp": "2026-05-07T05:57:22.191231Z"}
+INFO:     127.0.0.1:49318 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"game_id": "8fd79111-274e-47fc-9540-bd2e4ee0a694", "day_index": 9, "ai_action": "HOLD", "compliance": "pass", "event": "invest_game.day_complete", "trace_id": "83da5e85-ac52-4242-89c7-baa3ad3692f5", "level": "info", "timestamp": "2026-05-07T05:57:25.077101Z"}
+{"method": "POST", "path": "/api/experience/invest-game/run-day", "status_code": 200, "event": "http.request", "trace_id": "83da5e85-ac52-4242-89c7-baa3ad3692f5", "level": "info", "timestamp": "2026-05-07T05:57:25.077101Z"}
+INFO:     127.0.0.1:49318 - "POST /api/experience/invest-game/run-day HTTP/1.1" 200 OK
+{"run_id": "20260507-0557", "path": "C:\\Users\\Sandeep\\Documents\\Work\\code\\riia-cowork-jun\\riia-ai-org\\agent-ops\\runs\\run-20260507-0557.json", "event": "invest_game.run_log_written", "trace_id": "b11c0fae-4cbf-4e65-8e62-38efa8eccc66", "level": "info", "timestamp": "2026-05-07T05:57:25.086990Z"}
+{"game_id": "8fd79111-274e-47fc-9540-bd2e4ee0a694", "days": 10, "event": "invest_game.result_fetched", "trace_id": "b11c0fae-4cbf-4e65-8e62-38efa8eccc66", "level": "info", "timestamp": "2026-05-07T05:57:25.596979Z"}
+{"method": "GET", "path": "/api/experience/invest-game/8fd79111-274e-47fc-9540-bd2e4ee0a694/result", "status_code": 200, "event": "http.request", "trace_id": "b11c0fae-4cbf-4e65-8e62-38efa8eccc66", "level": "info", "timestamp": "2026-05-07T05:57:25.596979Z"}
+INFO:     127.0.0.1:49318 - "GET /api/experience/invest-game/8fd79111-274e-47fc-9540-bd2e4ee0a694/result HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/", "status_code": 200, "event": "http.request", "trace_id": "11b9b88e-663b-440f-8306-711a5102289b", "level": "info", "timestamp": "2026-05-07T09:07:54.386956Z"}
+INFO:     127.0.0.1:64674 - "GET /dashboard/ HTTP/1.1" 200 OK
+{"method": "GET", "path": "/favicon.ico", "status_code": 404, "event": "http.request", "trace_id": "10b7a7c2-33cd-40dd-ab1a-d4af06baa262", "level": "info", "timestamp": "2026-05-07T09:07:55.127048Z"}
+INFO:     127.0.0.1:64674 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+{"method": "GET", "path": "/onboarding", "status_code": 200, "event": "http.request", "trace_id": "064bb959-3223-44b3-ae85-e4cd8e416e26", "level": "info", "timestamp": "2026-05-07T09:07:58.310045Z"}
+INFO:     127.0.0.1:64674 - "GET /onboarding HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/investgame.html", "status_code": 304, "event": "http.request", "trace_id": "ff57eb71-c548-4a66-ab9b-fbb12f01bf86", "level": "info", "timestamp": "2026-05-07T09:08:58.918828Z"}
+INFO:     127.0.0.1:53258 - "GET /dashboard/investgame.html HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/invest-game/main.js", "status_code": 304, "event": "http.request", "trace_id": "fbc2a496-3510-4e8a-98c7-3219e5696ecf", "level": "info", "timestamp": "2026-05-07T09:08:58.949958Z"}
+INFO:     127.0.0.1:53258 - "GET /dashboard/js/invest-game/main.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/invest-game/api.js", "status_code": 304, "event": "http.request", "trace_id": "bf486a64-13af-49fe-a380-0c844a061b31", "level": "info", "timestamp": "2026-05-07T09:08:59.094846Z"}
+INFO:     127.0.0.1:53258 - "GET /dashboard/js/invest-game/api.js HTTP/1.1" 304 Not Modified
+{"game_id": "e54b29a0-6c85-4fad-b073-fbcab2b9721d", "instrument": "ASML", "event": "invest_game.session_created", "trace_id": "40ff822e-3bbb-4e53-91f6-b3923ef9b43d", "level": "info", "timestamp": "2026-05-07T09:09:01.267885Z"}
+{"method": "POST", "path": "/api/experience/invest-game/select-days", "status_code": 200, "event": "http.request", "trace_id": "40ff822e-3bbb-4e53-91f6-b3923ef9b43d", "level": "info", "timestamp": "2026-05-07T09:09:01.267885Z"}
+INFO:     127.0.0.1:53258 - "POST /api/experience/invest-game/select-days HTTP/1.1" 200 OK
+{"method": "GET", "path": "/riia-jun-release/dashboard/rita.html", "status_code": 404, "event": "http.request", "trace_id": "5e1c385c-1273-4a30-bfd8-ca27561d3c05", "level": "info", "timestamp": "2026-05-07T09:09:11.522969Z"}
+INFO:     127.0.0.1:60743 - "GET /riia-jun-release/dashboard/rita.html HTTP/1.1" 404 Not Found

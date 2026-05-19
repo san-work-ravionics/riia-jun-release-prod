@@ -1,0 +1,2 @@
+{"ts": "2026-05-08T15:23:07.087674+00:00", "event": "alert.fired", "alert_id": "ALT-20260508-001", "rule": "data_stale_critical", "severity": "critical", "message": "Data freshness 99.0 days \u2014 critically stale"}
+{"ts": "2026-05-08T16:08:49.065517+00:00", "event": "alert.resolved", "alert_id": "ALT-20260508-001", "rule": "data_stale_critical"}

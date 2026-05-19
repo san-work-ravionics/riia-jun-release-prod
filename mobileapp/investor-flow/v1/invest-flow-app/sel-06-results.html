@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Step 6 — Results (A)</title><link rel="stylesheet" href="styles.css"></head>
+<body style="margin:0;display:grid;place-items:center;min-height:100vh;background:#f0eee9">
+<div class="phone">
+  <div class="status-bar"><span>9:41</span><div class="icons">
+    <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+    <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+  </div></div>
+
+  <div class="app-bar">
+    <a class="back" href="sel-05-advanced.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></a>
+    <div class="title">Reality check</div>
+    <div class="step-pill">Step 6/6</div>
+  </div>
+  <div class="step-strip"><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg active"></div></div>
+
+  <div class="body" style="padding-bottom:100px">
+    <div class="sketch" style="margin-top:14px;padding:18px">
+      <div class="label">If you invest €250/mo for 12y…</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:14px;gap:8px">
+        <div style="flex:1">
+          <div class="tiny" style="text-transform:uppercase;letter-spacing:0.08em">On paper</div>
+          <div style="font-size:26px;font-weight:800;color:var(--ink-3);line-height:1;margin-top:4px">€61k</div>
+          <div class="tiny" style="margin-top:2px">8% gross</div>
+        </div>
+        <div style="font-size:22px;color:var(--ink-3)">→</div>
+        <div style="flex:1;text-align:right">
+          <div class="tiny" style="text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);font-weight:700">Actually</div>
+          <div style="font-size:32px;font-weight:800;color:var(--accent);line-height:1;margin-top:4px">€38k</div>
+          <div class="tiny" style="margin-top:2px">3.4% real</div>
+        </div>
+      </div>
+      <div style="height:10px;margin-top:14px;border-radius:5px;background:var(--ink-4);position:relative;overflow:hidden">
+        <div style="position:absolute;left:0;top:0;bottom:0;width:62%;background:var(--accent)"></div>
+      </div>
+      <div class="tiny" style="margin-top:6px;text-align:center">You keep <b>62%</b> of the headline number</div>
+    </div>
+    <div class="sketch fill" style="margin-top:12px;padding:14px;display:flex;align-items:center;gap:12px">
+      <div style="flex:1">
+        <div class="label">Required real return</div>
+        <div class="h1" style="margin-top:2px">7.2%/yr</div>
+      </div>
+      <span class="badge warn">Tight</span>
+    </div>
+
+    <div class="sketch" style="margin-top:22px;padding:14px">
+      <div class="label">Where it goes</div>
+      <div style="margin-top:12px">
+        <div class="bar-row"><span class="bar-label">Market</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="bar-val">+8%</span></div>
+        <div class="bar-row"><span class="bar-label">− Costs</span><div class="bar-track"><div class="bar-fill bad" style="width:15%"></div></div><span class="bar-val">−1.2%</span></div>
+        <div class="bar-row"><span class="bar-label">− Tax</span><div class="bar-track"><div class="bar-fill warn" style="width:22%"></div></div><span class="bar-val">−1.7%</span></div>
+        <div class="bar-row"><span class="bar-label">− Inflation</span><div class="bar-track"><div class="bar-fill warn" style="width:31%"></div></div><span class="bar-val">−2.5%</span></div>
+        <div class="bar-row" style="margin-top:8px;padding-top:8px;border-top:1.5px solid var(--ink)">
+          <span class="bar-label" style="font-weight:700">= You keep</span>
+          <div class="bar-track"><div class="bar-fill good" style="width:32%"></div></div>
+          <span class="bar-val" style="color:var(--accent)">3.4%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sketch" style="margin-top:14px;padding:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="label">Projection</div>
+        <div class="tabs" style="width:180px"><button class="tab">Worst</button><button class="tab active">Avg</button><button class="tab">Best</button></div>
+      </div>
+      <div class="chart">
+        <div class="axis-y"><span>€90k</span><span>0</span></div>
+        <div class="axis-x"><span>0y</span><span>12y</span></div>
+        <svg viewBox="0 0 280 130" preserveAspectRatio="none" style="width:100%;height:100%;overflow:visible">
+          <line x1="0" x2="280" y1="26" y2="26" stroke="var(--ink-3)" stroke-width="1" stroke-dasharray="3 3"/>
+          <text x="276" y="22" font-size="9" text-anchor="end" fill="var(--ink-3)" font-family="monospace">target</text>
+          <path d="M0,130 Q70,110 140,80 T280,15" fill="none" stroke="var(--ink-3)" stroke-width="2" stroke-dasharray="4 3"/>
+          <path d="M0,130 Q70,118 140,100 T280,55" fill="none" stroke="var(--accent)" stroke-width="2"/>
+        </svg>
+      </div>
+      <div style="display:flex;gap:14px;margin-top:22px;font-size:11px">
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:14px;border-top:2px dashed var(--ink-3)"></span>Gross</div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:2px;background:var(--accent)"></span>Real (€38k)</div>
+      </div>
+    </div>
+
+    <div class="sketch" style="margin-top:14px;padding:14px;background:var(--bad-soft);border-color:var(--bad)">
+      <div class="label" style="color:var(--bad)">Gap insight</div>
+      <div class="h2" style="margin-top:4px">You'll fall short by <span style="color:var(--bad)">€37k</span></div>
+      <div class="body-text" style="margin-top:4px">At gross 8% you'd hit €61k. After costs, tax & inflation: €38k.</div>
+    </div>
+
+    <div class="sketch fill" style="margin-top:14px;padding:14px;border-style:dashed">
+      <div class="label">Insight</div>
+      <div class="hand" style="font-size:16px;margin-top:4px;line-height:1.3">"Costs matter more than most investors expect."</div>
+    </div>
+  </div>
+
+  <div class="nav-bottom">
+    <a class="btn ghost icon-only" href="05-advanced.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></a>
+    <a class="btn" href="sel-07-actions.html" style="text-decoration:none">Next steps <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></a>
+  </div>
+  <div class="gesture-bar"></div>
+</div>
+<script src="app.js"></script>
+</body></html>

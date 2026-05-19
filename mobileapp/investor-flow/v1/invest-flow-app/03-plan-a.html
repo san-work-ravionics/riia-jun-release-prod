@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Step 3+4 — Plan (A)</title><link rel="stylesheet" href="styles.css"></head>
+<body style="margin:0;display:grid;place-items:center;min-height:100vh;background:#f0eee9">
+<div class="phone">
+  <div class="status-bar"><span>9:41</span><div class="icons">
+    <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+    <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+  </div></div>
+
+  <div class="app-bar">
+    <a class="back" href="02-goal-a.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></a>
+    <div class="title">Timeline & plan</div>
+    <div class="step-pill">Step 3/6</div>
+  </div>
+  <div class="step-strip"><div class="seg done"></div><div class="seg done"></div><div class="seg active"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div></div>
+
+  <div class="body">
+    <div class="label" style="margin-top:12px">Steps 3 & 4 of 6</div>
+    <div class="h1" style="margin-top:6px">Your timeline & numbers</div>
+
+    <div class="sketch" style="margin-top:18px;padding:14px">
+      <div class="label">When do you need it?</div>
+      <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px">
+        <span class="big-number" style="font-size:38px"><span data-h-out>12</span></span>
+        <span style="font-size:16px;color:var(--ink-3);font-weight:600">years</span>
+      </div>
+      <input type="range" min="1" max="40" value="12" class="slider" data-bind="[data-h-out]">
+      <div class="slider-ticks"><span>1</span><span>10</span><span>20</span><span>30</span><span>40</span></div>
+      <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+        <span class="badge warn" data-risk-badge>Balanced</span>
+        <span class="tiny">· Medium tolerance</span>
+      </div>
+    </div>
+
+    <div class="sketch" style="margin-top:14px;padding:14px">
+      <div class="label">Monthly investment</div>
+      <div class="input-row" style="margin-top:4px">
+        <span class="currency">€</span>
+        <input type="number" value="250" data-recalc>
+        <span class="tiny">/mo</span>
+      </div>
+
+      <div class="label" style="margin-top:16px">Target goal</div>
+      <div class="input-row" style="margin-top:4px">
+        <span class="currency">€</span>
+        <input type="number" value="75000" data-recalc>
+      </div>
+    </div>
+
+    <div class="hint" style="margin-top:14px">
+      <div class="hint-icon">∑</div>
+      <div>Over <span data-h-out>12</span>y you'll contribute <b>€36k</b> · target €75k</div>
+    </div>
+  </div>
+
+  <div class="nav-bottom">
+    <a class="btn ghost icon-only" href="02-goal-a.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></a>
+    <a class="btn" href="05-advanced.html" style="text-decoration:none">Continue <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></a>
+  </div>
+  <div class="gesture-bar"></div>
+</div>
+<script src="app.js"></script>
+</body></html>

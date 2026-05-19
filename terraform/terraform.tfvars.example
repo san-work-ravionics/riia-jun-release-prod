@@ -1,0 +1,19 @@
+# Copy this file to terraform.tfvars and fill in the values.
+# terraform.tfvars is gitignored — never commit it (contains the JWT secret).
+
+rita_env  = "development"
+
+# Generate a proper secret: python -c "import secrets; print(secrets.token_hex(32))"
+jwt_secret = "change-me-to-a-32-char-minimum-secret-xxxxxx"
+
+api_port = 8000
+
+# Absolute paths to your local data directories.
+# Use forward slashes even on Windows.
+rita_input_path  = "C:/Users/Sandeep/Documents/Work/code/riia-cowork-jun/riia-jun-release/rita_input"
+rita_output_path = "C:/Users/Sandeep/Documents/Work/code/riia-cowork-jun/riia-jun-release/rita_output"
+
+image_tag = "local"
+
+# Bump this to any new value to force a Docker image rebuild:
+# rebuild_image = "2026-03-31"

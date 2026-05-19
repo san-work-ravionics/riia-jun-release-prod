@@ -1,0 +1,27 @@
+app:
+  name: "rita"
+  version: "1.0.0"
+
+server:
+  host: "0.0.0.0"
+  port: 8000
+
+data:
+  raw_dir: "data/raw"        # Source CSVs as downloaded — read-only
+  input_dir: "data/input"    # Processed/merged CSVs ready for model
+  output_dir: "data/output"  # Backtest results, risk timeline, trade events
+
+model:
+  path: "models"             # Trained model ZIPs; instrument subfolder added at runtime
+
+chat:
+  # Local path to the sentence-transformers/all-MiniLM-L6-v2 snapshot.
+  # Override with RITA_CHAT__EMBED_MODEL_PATH env var if the snapshot moves.
+  embed_model_path: "C:\\Users\\Sandeep\\.cache\\huggingface\\hub\\models--sentence-transformers--all-MiniLM-L6-v2\\snapshots\\c9745ed1d9f207416be6d2e6f8de32d1f16199bf"
+
+# Financial constants — config-driven, never hardcoded in application code
+instruments:
+  nifty:
+    lot_size: 75        # changed from 50 in 2024
+  banknifty:
+    lot_size: 30

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head><title>Generate RITA Icons</title></head>
+<body style="font-family:monospace;padding:24px;background:#F5F3EE;">
+<h2>RITA Icon Generator</h2>
+<p>Click each button to download the PNG icon, then save it as the filename shown.</p>
+<div style="display:flex;gap:24px;margin-top:16px;flex-wrap:wrap;">
+  <div>
+    <canvas id="c192" width="192" height="192" style="border-radius:12px;display:block;"></canvas>
+    <button onclick="dl('c192','icon-192.png')" style="margin-top:8px;padding:8px 16px;background:#1A6B3C;color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:monospace;">
+      Download icon-192.png
+    </button>
+  </div>
+  <div>
+    <canvas id="c512" width="512" height="512" style="border-radius:32px;display:block;width:192px;height:192px;"></canvas>
+    <button onclick="dl('c512','icon-512.png')" style="margin-top:8px;padding:8px 16px;background:#1A6B3C;color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:monospace;">
+      Download icon-512.png
+    </button>
+  </div>
+</div>
+<p style="margin-top:24px;color:#8C877A;">Save both files into the <code>icons/</code> folder alongside this file.</p>
+<script>
+function draw(id, size) {
+  const c = document.getElementById(id);
+  const ctx = c.getContext('2d');
+  const r = size * 0.22;
+
+  // Rounded square background
+  ctx.beginPath();
+  ctx.moveTo(r, 0);
+  ctx.lineTo(size - r, 0);
+  ctx.quadraticCurveTo(size, 0, size, r);
+  ctx.lineTo(size, size - r);
+  ctx.quadraticCurveTo(size, size, size - r, size);
+  ctx.lineTo(r, size);
+  ctx.quadraticCurveTo(0, size, 0, size - r);
+  ctx.lineTo(0, r);
+  ctx.quadraticCurveTo(0, 0, r, 0);
+  ctx.closePath();
+  ctx.fillStyle = '#1A1814';
+  ctx.fill();
+
+  // Italic R
+  ctx.fillStyle = '#F5F3EE';
+  ctx.font = `italic ${Math.round(size * 0.62)}px Georgia, serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('R', size * 0.52, size * 0.52);
+
+  // Green dot accent
+  ctx.beginPath();
+  ctx.arc(size * 0.72, size * 0.28, size * 0.055, 0, Math.PI * 2);
+  ctx.fillStyle = '#1A6B3C';
+  ctx.fill();
+}
+
+function dl(id, name) {
+  const c = document.getElementById(id);
+  const a = document.createElement('a');
+  a.download = name;
+  a.href = c.toDataURL('image/png');
+  a.click();
+}
+
+draw('c192', 192);
+draw('c512', 512);
+</script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Step 5 — Advanced</title><link rel="stylesheet" href="styles.css"></head>
+<body style="margin:0;display:grid;place-items:center;min-height:100vh;background:#f0eee9">
+<div class="phone">
+  <div class="status-bar"><span>9:41</span><div class="icons">
+    <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+    <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+  </div></div>
+
+  <div class="app-bar">
+    <a class="back" href="sel-03-plan.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></a>
+    <div class="title">Plan</div>
+    <div class="step-pill">Step 5/6</div>
+  </div>
+  <div class="step-strip"><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg active"></div><div class="seg"></div></div>
+
+  <div class="body">
+    <div class="label" style="margin-top:12px">Step 5 of 6 — optional</div>
+    <div class="h1" style="margin-top:6px">Fine-tune assumptions</div>
+    <div class="body-text" style="margin-top:8px">We pre-filled sensible defaults. Adjust if you have specific numbers.</div>
+
+    <div data-accordion style="margin-top:22px">
+      <div class="accordion-head open">
+        <div style="display:flex;align-items:center;gap:8px"><span class="h3">Reality factors</span><span class="badge good" style="padding:2px 8px;font-size:10px">3 set</span></div>
+        <span class="chev"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 5l3 3 3-3"/></svg></span>
+      </div>
+      <div class="accordion-body" style="padding:4px 2px">
+        <div class="row-input">
+          <div><div class="row-label">Inflation rate</div><div class="tiny">EU avg ≈ 2–3%</div></div>
+          <div class="stepper" data-stepper data-value="2.5" data-step-by="0.1">
+            <button data-step="minus">−</button><div class="num">2.5%</div><button data-step="plus">+</button>
+          </div>
+        </div>
+        <div class="row-input">
+          <div><div class="row-label">Tax on gains</div><div class="tiny">NL box-3 ≈ 25–36%</div></div>
+          <div class="stepper" data-stepper data-value="25" data-step-by="1">
+            <button data-step="minus">−</button><div class="num">25%</div><button data-step="plus">+</button>
+          </div>
+        </div>
+        <div class="row-input">
+          <div><div class="row-label">Investment costs</div><div class="tiny">ETF: 0.2–1.5% TER</div></div>
+          <div class="stepper" data-stepper data-value="1.2" data-step-by="0.1">
+            <button data-step="minus">−</button><div class="num">1.2%</div><button data-step="plus">+</button>
+          </div>
+        </div>
+        <div class="row-input">
+          <div><div class="row-label">Expected gross return</div><div class="tiny">Stocks long-run ≈ 7–9%</div></div>
+          <div class="stepper" data-stepper data-value="8" data-step-by="0.5">
+            <button data-step="minus">−</button><div class="num">8%</div><button data-step="plus">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hint" style="margin-top:18px">
+      <div class="hint-icon">!</div>
+      <div>Costs &amp; tax compound the wrong way. A 1% fee can eat 20%+ of your final pot over 30 years.</div>
+    </div>
+  </div>
+
+  <div class="nav-bottom">
+    <a class="btn ghost icon-only" href="03-plan-a.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></a>
+    <a class="btn" href="sel-06-results.html" style="text-decoration:none">See results <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></a>
+  </div>
+  <div class="gesture-bar"></div>
+</div>
+<script src="app.js"></script>
+</body></html>

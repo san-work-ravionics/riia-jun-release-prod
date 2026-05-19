@@ -1,0 +1,628 @@
+INFO:     Will watch for changes in these directories: ['C:\\Users\\Sandeep\\Documents\\Work\\code\\riia-cowork-jun\\riia-jun-release']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [12972] using WatchFiles
+INFO:     Started server process [2332]
+INFO:     Waiting for application startup.
+{"name": "rita", "version": "1.0.0", "event": "app.startup", "level": "info", "timestamp": "2026-04-19T07:02:05.310852Z"}
+INFO:     Application startup complete.
+{"method": "GET", "path": "/dashboard/", "status_code": 304, "event": "http.request", "trace_id": "cb05b9e8-3374-4cbd-9dfc-ee7a6ed56aca", "level": "info", "timestamp": "2026-04-19T07:02:10.416573Z"}
+INFO:     127.0.0.1:52082 - "GET /dashboard/ HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/favicon.ico", "status_code": 404, "event": "http.request", "trace_id": "41d7e8b0-75a1-4891-80df-e7e42b24b7db", "level": "info", "timestamp": "2026-04-19T07:02:10.729870Z"}
+INFO:     127.0.0.1:52082 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+{"method": "GET", "path": "/dashboard/ds.html", "status_code": 304, "event": "http.request", "trace_id": "7337ba09-2f66-40a8-8fd8-9f035c4741d6", "level": "info", "timestamp": "2026-04-19T07:02:14.163662Z"}
+INFO:     127.0.0.1:52082 - "GET /dashboard/ds.html HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/api/v1/instruments", "status_code": 200, "event": "http.request", "trace_id": "fdf47004-a688-4ee1-8793-a33172beec41", "level": "info", "timestamp": "2026-04-19T07:02:14.251426Z"}
+INFO:     127.0.0.1:52082 - "GET /api/v1/instruments HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "66309f55-067b-4690-831f-40f9665eb8a2", "level": "info", "timestamp": "2026-04-19T07:02:14.446142Z"}
+INFO:     127.0.0.1:52082 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/instrument/active", "status_code": 200, "event": "http.request", "trace_id": "351830e7-4c62-4990-b5c3-cd885f16c882", "level": "info", "timestamp": "2026-04-19T07:02:14.461581Z"}
+INFO:     127.0.0.1:52082 - "GET /api/v1/instrument/active HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/instruments", "status_code": 200, "event": "http.request", "trace_id": "baa431ee-ad52-4a30-89b7-a76339c95e86", "level": "info", "timestamp": "2026-04-19T07:02:14.472234Z"}
+INFO:     127.0.0.1:52082 - "GET /api/v1/instruments HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/instrument/active", "status_code": 200, "event": "http.request", "trace_id": "a3310bee-3e67-41f8-976d-1325c6eade3c", "level": "info", "timestamp": "2026-04-19T07:02:14.476736Z"}
+INFO:     127.0.0.1:57542 - "GET /api/v1/instrument/active HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/fno.html", "status_code": 304, "event": "http.request", "trace_id": "3fd8de5f-1cdf-4dd3-a5cd-a9ed6cc76017", "level": "info", "timestamp": "2026-04-19T07:02:22.364881Z"}
+INFO:     127.0.0.1:58866 - "GET /dashboard/fno.html HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/css/responsive.css", "status_code": 304, "event": "http.request", "trace_id": "34d4fbe0-92f3-4995-a49c-6879cd79aaad", "level": "info", "timestamp": "2026-04-19T07:02:22.435523Z"}
+INFO:     127.0.0.1:58866 - "GET /dashboard/css/responsive.css HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/api/v1/portfolio/summary", "status_code": 200, "event": "http.request", "trace_id": "b14f514e-3c8c-4128-9487-b72334e75010", "level": "info", "timestamp": "2026-04-19T07:02:22.766948Z"}
+INFO:     127.0.0.1:58866 - "GET /api/v1/portfolio/summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/portfolio/price-history", "status_code": 200, "event": "http.request", "trace_id": "e6fbfb5c-a4ab-4f80-bd8f-f61f3e105ad6", "level": "info", "timestamp": "2026-04-19T07:02:22.787084Z"}
+INFO:     127.0.0.1:58866 - "GET /api/v1/portfolio/price-history HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "12863c06-3aa4-4e14-8649-8d4543c77ab4", "level": "info", "timestamp": "2026-04-19T07:02:22.819246Z"}
+INFO:     127.0.0.1:55699 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/rita.html", "status_code": 304, "event": "http.request", "trace_id": "9e98df2b-65a0-4fb2-8ce9-838193bfdfa7", "level": "info", "timestamp": "2026-04-19T07:02:28.235215Z"}
+INFO:     127.0.0.1:54020 - "GET /dashboard/rita.html HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/rita/main.js", "status_code": 304, "event": "http.request", "trace_id": "50733554-8e1b-4c3e-ad35-f2c087890a12", "level": "info", "timestamp": "2026-04-19T07:02:28.307690Z"}
+INFO:     127.0.0.1:54020 - "GET /dashboard/js/rita/main.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/rita/nav.js", "status_code": 304, "event": "http.request", "trace_id": "50275dc4-48b7-46b5-b2ac-a75a3ac5723a", "level": "info", "timestamp": "2026-04-19T07:02:28.378085Z"}
+INFO:     127.0.0.1:54020 - "GET /dashboard/js/rita/nav.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/rita/health.js", "status_code": 304, "event": "http.request", "trace_id": "ebb62587-82db-4433-9f0e-366c8971c9bb", "level": "info", "timestamp": "2026-04-19T07:02:28.396398Z"}
+INFO:     127.0.0.1:54020 - "GET /dashboard/js/rita/health.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/rita/market-signals.js", "status_code": 304, "event": "http.request", "trace_id": "d5d94556-ba54-460d-97a8-4313be368dee", "level": "info", "timestamp": "2026-04-19T07:02:28.409272Z"}
+INFO:     127.0.0.1:54020 - "GET /dashboard/js/rita/market-signals.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/rita/trades.js", "status_code": 304, "event": "http.request", "trace_id": "9250e49f-3e30-4df9-bdd4-33eff45e4287", "level": "info", "timestamp": "2026-04-19T07:02:28.419326Z"}
+INFO:     127.0.0.1:54020 - "GET /dashboard/js/rita/trades.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/rita/observability.js", "status_code": 304, "event": "http.request", "trace_id": "e3622df7-d649-4ecd-ba44-6cf66b62d9f3", "level": "info", "timestamp": "2026-04-19T07:02:28.425811Z"}
+INFO:     127.0.0.1:54020 - "GET /dashboard/js/rita/observability.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/rita/scenarios.js", "status_code": 304, "event": "http.request", "trace_id": "cddd0c8b-7159-4b5a-babf-621e5ef46d5d", "level": "info", "timestamp": "2026-04-19T07:02:28.443704Z"}
+INFO:     127.0.0.1:54020 - "GET /dashboard/js/rita/scenarios.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/rita/chat.js", "status_code": 304, "event": "http.request", "trace_id": "d011ad39-a522-4933-9409-5e9857deb3b2", "level": "info", "timestamp": "2026-04-19T07:02:28.453023Z"}
+INFO:     127.0.0.1:54020 - "GET /dashboard/js/rita/chat.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/api/v1/metrics/summary", "status_code": 200, "event": "http.request", "trace_id": "d9e0bb3f-6d21-4315-a27d-df23f0d8b2fb", "level": "info", "timestamp": "2026-04-19T07:02:28.555169Z"}
+INFO:     127.0.0.1:50161 - "GET /api/v1/metrics/summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "00d902b0-6007-4832-a4ac-c9d45fcc7fda", "level": "info", "timestamp": "2026-04-19T07:02:28.574927Z"}
+INFO:     127.0.0.1:50161 - "GET /progress HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "429c3f54-6f3e-42ef-b60f-1e2c1663437c", "level": "info", "timestamp": "2026-04-19T07:02:28.746238Z"}
+INFO:     127.0.0.1:54020 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/performance-summary", "status_code": 200, "event": "http.request", "trace_id": "591e4fb7-4e8c-4138-83f2-c48cf0818695", "level": "info", "timestamp": "2026-04-19T07:02:28.758568Z"}
+INFO:     127.0.0.1:50161 - "GET /api/v1/performance-summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/instrument/active", "status_code": 200, "event": "http.request", "trace_id": "cf48c63f-a72d-4298-ae86-d1c7291cae2c", "level": "info", "timestamp": "2026-04-19T07:02:28.769148Z"}
+INFO:     127.0.0.1:55773 - "GET /api/v1/instrument/active HTTP/1.1" 200 OK
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "caa7064c-c12c-4b4b-b592-ef22cdc9fd07", "level": "info", "timestamp": "2026-04-19T07:02:28.778730Z"}
+INFO:     127.0.0.1:52173 - "GET /progress HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/drift", "status_code": 200, "event": "http.request", "trace_id": "ca3b4c5b-ddf9-465e-9c5b-6bfe2c24db24", "level": "info", "timestamp": "2026-04-19T07:02:29.408722Z"}
+INFO:     127.0.0.1:64050 - "GET /api/v1/drift HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/training-history", "status_code": 200, "event": "http.request", "trace_id": "517608be-40a6-4645-84cf-5946855af3d9", "level": "info", "timestamp": "2026-04-19T07:02:30.515678Z"}
+INFO:     127.0.0.1:64050 - "GET /api/v1/training-history HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/market-signals", "status_code": 200, "event": "http.request", "trace_id": "a1de79cd-73ea-48e5-af0b-6fd931a66c2c", "level": "info", "timestamp": "2026-04-19T07:02:39.625179Z"}
+INFO:     127.0.0.1:55994 - "GET /api/v1/market-signals?timeframe=daily&periods=2000 HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/backtest-daily", "status_code": 200, "event": "http.request", "trace_id": "0f78ca68-64cd-44ca-b531-d533c2b9fbd9", "level": "info", "timestamp": "2026-04-19T07:02:39.746219Z"}
+INFO:     127.0.0.1:55994 - "GET /api/v1/backtest-daily HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/risk-timeline", "status_code": 200, "event": "http.request", "trace_id": "b60293a0-1cf9-48b6-aa44-a524d49e8830", "level": "info", "timestamp": "2026-04-19T07:02:45.052872Z"}
+INFO:     127.0.0.1:60411 - "GET /api/v1/risk-timeline?phase=all HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/training-history", "status_code": 200, "event": "http.request", "trace_id": "9d0fe4dd-144b-434a-9c01-376bc7853bd3", "level": "info", "timestamp": "2026-04-19T07:02:45.063818Z"}
+INFO:     127.0.0.1:60411 - "GET /api/v1/training-history HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "dff454af-1184-4b6e-a670-263f375cdcd6", "level": "info", "timestamp": "2026-04-19T07:02:45.103219Z"}
+INFO:     127.0.0.1:60411 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/performance-summary", "status_code": 200, "event": "http.request", "trace_id": "99282196-eb7a-4e17-882a-95571457ec57", "level": "info", "timestamp": "2026-04-19T07:02:57.613634Z"}
+INFO:     127.0.0.1:60959 - "GET /api/v1/performance-summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/backtest-daily", "status_code": 200, "event": "http.request", "trace_id": "fc7eb125-7611-4fb8-b377-3df401add69e", "level": "info", "timestamp": "2026-04-19T07:02:57.677515Z"}
+INFO:     127.0.0.1:60959 - "GET /api/v1/backtest-daily HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "5eefb900-7dec-4143-b50d-e27ce7cc5a17", "level": "info", "timestamp": "2026-04-19T07:03:14.815409Z"}
+INFO:     127.0.0.1:52526 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/shap", "status_code": 200, "event": "http.request", "trace_id": "5c2e1872-b9c4-48f2-8569-69932abc89d6", "level": "info", "timestamp": "2026-04-19T07:03:25.899042Z"}
+INFO:     127.0.0.1:49979 - "GET /api/v1/shap HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/market-signals", "status_code": 200, "event": "http.request", "trace_id": "d56dab2c-dea9-43b3-b7de-eeec6e7354e3", "level": "info", "timestamp": "2026-04-19T07:03:28.935085Z"}
+INFO:     127.0.0.1:63100 - "GET /api/v1/market-signals?timeframe=daily&periods=2000 HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/backtest-daily", "status_code": 200, "event": "http.request", "trace_id": "62e6cd0f-0a1f-41bf-97ba-d754fb493414", "level": "info", "timestamp": "2026-04-19T07:03:28.994588Z"}
+INFO:     127.0.0.1:49979 - "GET /api/v1/backtest-daily HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/performance-summary", "status_code": 200, "event": "http.request", "trace_id": "f4c31301-e6ef-4acf-9994-4341def5941c", "level": "info", "timestamp": "2026-04-19T07:03:39.657199Z"}
+INFO:     127.0.0.1:59094 - "GET /api/v1/performance-summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/backtest-daily", "status_code": 200, "event": "http.request", "trace_id": "681f1307-c8a9-4eac-916a-70a92fd910bd", "level": "info", "timestamp": "2026-04-19T07:03:39.812218Z"}
+INFO:     127.0.0.1:59094 - "GET /api/v1/backtest-daily HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "517a0b01-20cd-4fd8-bf39-fae753862413", "level": "info", "timestamp": "2026-04-19T07:03:44.837886Z"}
+INFO:     127.0.0.1:59094 - "GET /health HTTP/1.1" 200 OK
+{"run_id": "1b2c08da-6746-4a23-a54d-050be63cd310", "event": "backtest_quick.submitted", "trace_id": "112b7229-e463-489e-8931-aa649b58c43d", "level": "info", "timestamp": "2026-04-19T07:03:57.782769Z"}
+{"method": "POST", "path": "/api/v1/backtest", "status_code": 202, "event": "http.request", "trace_id": "112b7229-e463-489e-8931-aa649b58c43d", "level": "info", "timestamp": "2026-04-19T07:03:57.787413Z"}
+INFO:     127.0.0.1:60639 - "POST /api/v1/backtest HTTP/1.1" 202 Accepted
+{"run_id": "1b2c08da-6746-4a23-a54d-050be63cd310", "event": "backtest.running", "level": "info", "timestamp": "2026-04-19T07:03:57.802831Z"}
+{"method": "GET", "path": "/api/v1/performance-summary", "status_code": 200, "event": "http.request", "trace_id": "ff29c726-78e2-4db6-abe6-41a33e3b0eed", "level": "info", "timestamp": "2026-04-19T07:03:57.887333Z"}
+INFO:     127.0.0.1:60639 - "GET /api/v1/performance-summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/backtest-daily", "status_code": 200, "event": "http.request", "trace_id": "1ca5b452-c74f-4268-a237-dd8e6fc73ae4", "level": "info", "timestamp": "2026-04-19T07:03:57.974460Z"}
+INFO:     127.0.0.1:60639 - "GET /api/v1/backtest-daily HTTP/1.1" 200 OK
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "becc05e4-6a98-4c3e-937d-67ad21bb556b", "level": "info", "timestamp": "2026-04-19T07:03:58.007303Z"}
+INFO:     127.0.0.1:60639 - "GET /progress HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "04a7f90d-a710-421c-8d29-33a3b78ddb29", "level": "info", "timestamp": "2026-04-19T07:03:58.062620Z"}
+INFO:     127.0.0.1:60639 - "GET /health HTTP/1.1" 200 OK
+{"run_id": "1b2c08da-6746-4a23-a54d-050be63cd310", "event": "backtest.failed", "level": "error", "timestamp": "2026-04-19T07:04:06.968685Z", "exception": "Traceback (most recent call last):\n  File \"C:\\Users\\Sandeep\\Documents\\Work\\code\\riia-cowork-jun\\riia-jun-release\\src\\rita\\services\\backtest_service.py\", line 49, in _run_backtest_job\n    outcome = run_backtest(config)\n              ^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Sandeep\\Documents\\Work\\code\\riia-cowork-jun\\riia-jun-release\\src\\rita\\core\\backtest_dispatch.py\", line 91, in run_backtest\n    raise ValueError(\nValueError: No model file found for model_version='latest' in C:\\Users\\Sandeep\\Documents\\Work\\code\\riia-cowork-jun\\riia-jun-release\\models\\NIFTY. Train a model first."}
+{"run_id": "016ca5db-be04-4ae6-b2d4-bf9306201d87", "event": "backtest_quick.submitted", "trace_id": "0fb0efa7-3d09-4f5b-bec7-07650ab2d66b", "level": "info", "timestamp": "2026-04-19T07:04:13.915441Z"}
+{"method": "POST", "path": "/api/v1/backtest", "status_code": 202, "event": "http.request", "trace_id": "0fb0efa7-3d09-4f5b-bec7-07650ab2d66b", "level": "info", "timestamp": "2026-04-19T07:04:13.918649Z"}
+INFO:     127.0.0.1:64628 - "POST /api/v1/backtest HTTP/1.1" 202 Accepted
+{"run_id": "016ca5db-be04-4ae6-b2d4-bf9306201d87", "event": "backtest.running", "level": "info", "timestamp": "2026-04-19T07:04:13.932907Z"}
+{"run_id": "016ca5db-be04-4ae6-b2d4-bf9306201d87", "event": "backtest.failed", "level": "error", "timestamp": "2026-04-19T07:04:13.936072Z", "exception": "Traceback (most recent call last):\n  File \"C:\\Users\\Sandeep\\Documents\\Work\\code\\riia-cowork-jun\\riia-jun-release\\src\\rita\\services\\backtest_service.py\", line 49, in _run_backtest_job\n    outcome = run_backtest(config)\n              ^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Sandeep\\Documents\\Work\\code\\riia-cowork-jun\\riia-jun-release\\src\\rita\\core\\backtest_dispatch.py\", line 91, in run_backtest\n    raise ValueError(\nValueError: No model file found for model_version='latest' in C:\\Users\\Sandeep\\Documents\\Work\\code\\riia-cowork-jun\\riia-jun-release\\models\\NIFTY. Train a model first."}
+{"method": "GET", "path": "/api/v1/backtest-daily", "status_code": 200, "event": "http.request", "trace_id": "004923e7-24aa-431f-b35f-3ce7ac1c8904", "level": "info", "timestamp": "2026-04-19T07:04:14.037338Z"}
+INFO:     127.0.0.1:57599 - "GET /api/v1/backtest-daily HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/performance-summary", "status_code": 200, "event": "http.request", "trace_id": "f5ac07e3-3735-4cc5-828b-0e13beb6a300", "level": "info", "timestamp": "2026-04-19T07:04:14.100810Z"}
+INFO:     127.0.0.1:64628 - "GET /api/v1/performance-summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "05391e7e-27e6-4853-923f-6fec821dcc60", "level": "info", "timestamp": "2026-04-19T07:04:14.143795Z"}
+INFO:     127.0.0.1:64628 - "GET /progress HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "d1fce05c-2d45-4cfa-babd-0929bd7b289d", "level": "info", "timestamp": "2026-04-19T07:04:14.178159Z"}
+INFO:     127.0.0.1:57599 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "f087ac72-76e3-495c-823c-4b9fa2f7d975", "level": "info", "timestamp": "2026-04-19T07:04:14.837835Z"}
+INFO:     127.0.0.1:57599 - "GET /health HTTP/1.1" 200 OK
+{"run_id": "ba4febac-d760-4baf-83f8-b2e6950d4192", "event": "backtest_quick.submitted", "trace_id": "0ac45065-3f23-474e-86a1-fb64c4713e7d", "level": "info", "timestamp": "2026-04-19T07:04:18.284130Z"}
+{"method": "POST", "path": "/api/v1/backtest", "status_code": 202, "event": "http.request", "trace_id": "0ac45065-3f23-474e-86a1-fb64c4713e7d", "level": "info", "timestamp": "2026-04-19T07:04:18.284130Z"}
+INFO:     127.0.0.1:57599 - "POST /api/v1/backtest HTTP/1.1" 202 Accepted
+{"run_id": "ba4febac-d760-4baf-83f8-b2e6950d4192", "event": "backtest.running", "level": "info", "timestamp": "2026-04-19T07:04:18.304654Z"}
+{"run_id": "ba4febac-d760-4baf-83f8-b2e6950d4192", "event": "backtest.failed", "level": "error", "timestamp": "2026-04-19T07:04:18.316758Z", "exception": "Traceback (most recent call last):\n  File \"C:\\Users\\Sandeep\\Documents\\Work\\code\\riia-cowork-jun\\riia-jun-release\\src\\rita\\services\\backtest_service.py\", line 49, in _run_backtest_job\n    outcome = run_backtest(config)\n              ^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Sandeep\\Documents\\Work\\code\\riia-cowork-jun\\riia-jun-release\\src\\rita\\core\\backtest_dispatch.py\", line 91, in run_backtest\n    raise ValueError(\nValueError: No model file found for model_version='latest' in C:\\Users\\Sandeep\\Documents\\Work\\code\\riia-cowork-jun\\riia-jun-release\\models\\NIFTY. Train a model first."}
+{"method": "GET", "path": "/api/v1/backtest-daily", "status_code": 200, "event": "http.request", "trace_id": "93196dc5-cfc7-4d07-ac0b-2c83c674fdc0", "level": "info", "timestamp": "2026-04-19T07:04:18.417449Z"}
+INFO:     127.0.0.1:64628 - "GET /api/v1/backtest-daily HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/performance-summary", "status_code": 200, "event": "http.request", "trace_id": "dc2b5fcc-fa3c-42d5-8188-621cbb210e53", "level": "info", "timestamp": "2026-04-19T07:04:18.468841Z"}
+INFO:     127.0.0.1:57599 - "GET /api/v1/performance-summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "070d0e9d-4a13-41ea-9e25-83ecfe432d46", "level": "info", "timestamp": "2026-04-19T07:04:18.513440Z"}
+INFO:     127.0.0.1:57599 - "GET /progress HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "2bd39618-0f73-45c9-a885-cdb1d9a825a3", "level": "info", "timestamp": "2026-04-19T07:04:18.537197Z"}
+INFO:     127.0.0.1:64628 - "GET /health HTTP/1.1" 200 OK
+{"run_id": "f3afd6f6-ae47-4ac8-871f-17ea5bf67795", "event": "backtest_quick.submitted", "trace_id": "743892a4-3894-4e52-820a-5aaede2fd162", "level": "info", "timestamp": "2026-04-19T07:04:22.217793Z"}
+{"method": "POST", "path": "/api/v1/backtest", "status_code": 202, "event": "http.request", "trace_id": "743892a4-3894-4e52-820a-5aaede2fd162", "level": "info", "timestamp": "2026-04-19T07:04:22.222018Z"}
+INFO:     127.0.0.1:64628 - "POST /api/v1/backtest HTTP/1.1" 202 Accepted
+{"run_id": "f3afd6f6-ae47-4ac8-871f-17ea5bf67795", "event": "backtest.running", "level": "info", "timestamp": "2026-04-19T07:04:22.232900Z"}
+{"run_id": "f3afd6f6-ae47-4ac8-871f-17ea5bf67795", "event": "backtest.failed", "level": "error", "timestamp": "2026-04-19T07:04:22.242768Z", "exception": "Traceback (most recent call last):\n  File \"C:\\Users\\Sandeep\\Documents\\Work\\code\\riia-cowork-jun\\riia-jun-release\\src\\rita\\services\\backtest_service.py\", line 49, in _run_backtest_job\n    outcome = run_backtest(config)\n              ^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Sandeep\\Documents\\Work\\code\\riia-cowork-jun\\riia-jun-release\\src\\rita\\core\\backtest_dispatch.py\", line 91, in run_backtest\n    raise ValueError(\nValueError: No model file found for model_version='latest' in C:\\Users\\Sandeep\\Documents\\Work\\code\\riia-cowork-jun\\riia-jun-release\\models\\NIFTY. Train a model first."}
+{"method": "GET", "path": "/api/v1/backtest-daily", "status_code": 200, "event": "http.request", "trace_id": "dc2a69b6-5259-49d2-88f0-104e27f22b8a", "level": "info", "timestamp": "2026-04-19T07:04:22.335209Z"}
+INFO:     127.0.0.1:57599 - "GET /api/v1/backtest-daily HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/performance-summary", "status_code": 200, "event": "http.request", "trace_id": "4023a78e-7036-4478-8b0d-42d422237b2c", "level": "info", "timestamp": "2026-04-19T07:04:22.405165Z"}
+INFO:     127.0.0.1:64628 - "GET /api/v1/performance-summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "18d9f3e9-8da1-4c83-860e-779a7f002bf2", "level": "info", "timestamp": "2026-04-19T07:04:22.436509Z"}
+INFO:     127.0.0.1:64628 - "GET /progress HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "36d5e96f-f8fc-43a1-a2f8-871bc6a109fd", "level": "info", "timestamp": "2026-04-19T07:04:22.477141Z"}
+INFO:     127.0.0.1:57599 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/market-signals", "status_code": 200, "event": "http.request", "trace_id": "5d54d4b2-f2de-4754-b18b-ec254f53d4d3", "level": "info", "timestamp": "2026-04-19T07:04:26.405575Z"}
+INFO:     127.0.0.1:57599 - "GET /api/v1/market-signals?timeframe=daily&periods=252 HTTP/1.1" 200 OK
+{"primary": "data\\raw\\NIFTY\\merged.csv", "rows": 6594, "latest": "2025-12-31", "event": "chat.csv_reloaded", "trace_id": "c2e042d8-0aa9-4602-98d5-2d660fb76692", "level": "info", "timestamp": "2026-04-19T07:04:33.975001Z"}
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "7aa0fbb6-37c5-4c4a-a815-782a4f384c2b", "level": "info", "timestamp": "2026-04-19T07:04:45.184992Z"}
+INFO:     127.0.0.1:57093 - "GET /health HTTP/1.1" 200 OK
+
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]
+
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s][A
+Loading weights: 100%|##########| 103/103 [00:00<00:00, 2172.62it/s]
+
+Loading weights: 100%|##########| 103/103 [00:00<00:00, 2219.63it/s]
+[1mBertModel LOAD REPORT[0m from: C:\Users\Sandeep\.cache\huggingface\hub\models--sentence-transformers--all-MiniLM-L6-v2\snapshots\c9745ed1d9f207416be6d2e6f8de32d1f16199bf
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+[3mNotes:
+- UNEXPECTED[3m	:can be ignored when loading from different task/architecture; not ok if you expect identical arch.[0m
+[1mBertModel LOAD REPORT[0m from: C:\Users\Sandeep\.cache\huggingface\hub\models--sentence-transformers--all-MiniLM-L6-v2\snapshots\c9745ed1d9f207416be6d2e6f8de32d1f16199bf
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+[3mNotes:
+- UNEXPECTED[3m	:can be ignored when loading from different task/architecture; not ok if you expect identical arch.[0m
+{"sentiment": "CAUTIOUSLY_BEARISH", "chips": 8, "alerts": 0, "event": "chat.warmed_up", "trace_id": "90d51fea-f899-4d70-968f-04e9ac03cef0", "level": "info", "timestamp": "2026-04-19T07:04:53.670313Z"}
+{"method": "POST", "path": "/api/v1/chat/warmup", "status_code": 202, "event": "http.request", "trace_id": "90d51fea-f899-4d70-968f-04e9ac03cef0", "level": "info", "timestamp": "2026-04-19T07:04:53.672523Z"}
+INFO:     127.0.0.1:57599 - "POST /api/v1/chat/warmup HTTP/1.1" 202 Accepted
+{"intent": "market_sentiment", "confidence": 0.702, "low_confidence": false, "latency_ms": 19992.5, "event": "chat.query", "trace_id": "c2e042d8-0aa9-4602-98d5-2d660fb76692", "level": "info", "timestamp": "2026-04-19T07:04:53.726293Z"}
+{"method": "POST", "path": "/api/v1/chat", "status_code": 200, "event": "http.request", "trace_id": "c2e042d8-0aa9-4602-98d5-2d660fb76692", "level": "info", "timestamp": "2026-04-19T07:04:53.728311Z"}
+INFO:     127.0.0.1:49854 - "POST /api/v1/chat HTTP/1.1" 200 OK
+{"instrument_id": "NIFTY", "event": "instrument.selected", "trace_id": "e95142f5-919a-4c3d-9460-0750fc839e1f", "level": "info", "timestamp": "2026-04-19T07:05:04.877867Z"}
+{"method": "POST", "path": "/api/v1/instrument/select", "status_code": 200, "event": "http.request", "trace_id": "e95142f5-919a-4c3d-9460-0750fc839e1f", "level": "info", "timestamp": "2026-04-19T07:05:04.877867Z"}
+INFO:     127.0.0.1:54945 - "POST /api/v1/instrument/select HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/instrument/active", "status_code": 200, "event": "http.request", "trace_id": "9860ffa2-9cd5-4b33-8738-6347c395e727", "level": "info", "timestamp": "2026-04-19T07:05:04.894688Z"}
+INFO:     127.0.0.1:54945 - "GET /api/v1/instrument/active HTTP/1.1" 200 OK
+{"train_run_id": "0e76b7af-8091-4228-847c-314c12988ec1", "backtest_run_id": "ab1c15eb-e4d1-402a-9fdc-dfd6a1702532", "event": "pipeline.submitted", "trace_id": "72c590b6-301c-4558-a814-cb701e143630", "level": "info", "timestamp": "2026-04-19T07:05:04.916595Z"}
+{"method": "POST", "path": "/api/v1/pipeline", "status_code": 202, "event": "http.request", "trace_id": "72c590b6-301c-4558-a814-cb701e143630", "level": "info", "timestamp": "2026-04-19T07:05:04.918939Z"}
+INFO:     127.0.0.1:54945 - "POST /api/v1/pipeline HTTP/1.1" 202 Accepted
+{"instrument": "NIFTY", "model_path": "C:\\Users\\Sandeep\\Documents\\Work\\code\\riia-cowork-jun\\riia-jun-release\\models\\NIFTY\\pipeline-ecc357a5_ecc357a5.zip", "event": "pipeline.reuse_model", "level": "info", "timestamp": "2026-04-19T07:05:04.935345Z"}
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "9dec3112-6a98-445e-be2f-31f41cc99dc9", "level": "info", "timestamp": "2026-04-19T07:05:04.944906Z"}
+INFO:     127.0.0.1:54945 - "GET /progress HTTP/1.1" 200 OK
+{"run_id": "ab1c15eb-e4d1-402a-9fdc-dfd6a1702532", "event": "backtest.running", "level": "info", "timestamp": "2026-04-19T07:05:04.994494Z"}
+{"run_id": "ab1c15eb-e4d1-402a-9fdc-dfd6a1702532", "event": "backtest.complete", "level": "info", "timestamp": "2026-04-19T07:05:05.911239Z"}
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "692b31bc-cd53-413a-ad55-433eea3d73c1", "level": "info", "timestamp": "2026-04-19T07:05:06.972619Z"}
+INFO:     127.0.0.1:54945 - "GET /progress HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/step-log", "status_code": 200, "event": "http.request", "trace_id": "16138839-44be-416d-9173-0d5959c709e6", "level": "info", "timestamp": "2026-04-19T07:05:07.000537Z"}
+INFO:     127.0.0.1:54945 - "GET /api/v1/step-log HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/instrument/active", "status_code": 200, "event": "http.request", "trace_id": "66fb6b8c-511d-44b9-814f-51878b57f011", "level": "info", "timestamp": "2026-04-19T07:05:07.011685Z"}
+INFO:     127.0.0.1:54945 - "GET /api/v1/instrument/active HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/training-history", "status_code": 200, "event": "http.request", "trace_id": "7d737898-9c92-415d-9187-7ddcff4b1cbe", "level": "info", "timestamp": "2026-04-19T07:05:07.858023Z"}
+INFO:     127.0.0.1:54945 - "GET /api/v1/training-history HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/performance-summary", "status_code": 200, "event": "http.request", "trace_id": "6e33bd18-4430-4e95-a2c7-6fa696c29084", "level": "info", "timestamp": "2026-04-19T07:05:07.910362Z"}
+INFO:     127.0.0.1:64404 - "GET /api/v1/performance-summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/training-history", "status_code": 200, "event": "http.request", "trace_id": "f55cde88-da48-4439-96e0-006c04242025", "level": "info", "timestamp": "2026-04-19T07:05:07.919165Z"}
+INFO:     127.0.0.1:64404 - "GET /api/v1/training-history HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/performance-summary", "status_code": 200, "event": "http.request", "trace_id": "e330eafd-fa3f-420c-9050-46568d478bad", "level": "info", "timestamp": "2026-04-19T07:05:12.993856Z"}
+INFO:     127.0.0.1:64404 - "GET /api/v1/performance-summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/backtest-daily", "status_code": 200, "event": "http.request", "trace_id": "9ec9c22c-20d4-4dc7-9e43-1cfbfa5adb6c", "level": "info", "timestamp": "2026-04-19T07:05:13.060619Z"}
+INFO:     127.0.0.1:64404 - "GET /api/v1/backtest-daily HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "1b27e40d-f1c7-4dcd-a6ad-7bebb0604abd", "level": "info", "timestamp": "2026-04-19T07:05:14.840800Z"}
+INFO:     127.0.0.1:64404 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/performance-summary", "status_code": 200, "event": "http.request", "trace_id": "a45187f4-6ac0-49fa-b0be-0678b8cdc395", "level": "info", "timestamp": "2026-04-19T07:05:21.774912Z"}
+INFO:     127.0.0.1:49518 - "GET /api/v1/performance-summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/backtest-daily", "status_code": 200, "event": "http.request", "trace_id": "3349075c-2899-41b1-b216-1171f336d035", "level": "info", "timestamp": "2026-04-19T07:05:21.842066Z"}
+INFO:     127.0.0.1:49518 - "GET /api/v1/backtest-daily HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/risk-timeline", "status_code": 200, "event": "http.request", "trace_id": "950e72e2-53a9-4a91-aee5-9ce13c0624a0", "level": "info", "timestamp": "2026-04-19T07:05:24.095216Z"}
+INFO:     127.0.0.1:49518 - "GET /api/v1/risk-timeline?phase=all HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/training-history", "status_code": 200, "event": "http.request", "trace_id": "d177cdc8-b026-4833-b45e-1c9d8d20a547", "level": "info", "timestamp": "2026-04-19T07:05:24.107799Z"}
+INFO:     127.0.0.1:49518 - "GET /api/v1/training-history HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/backtest-daily", "status_code": 200, "event": "http.request", "trace_id": "ede28c73-1a4b-49a6-b64d-5d2ed5b0b88c", "level": "info", "timestamp": "2026-04-19T07:05:32.277381Z"}
+INFO:     127.0.0.1:60731 - "GET /api/v1/backtest-daily HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/market-signals", "status_code": 200, "event": "http.request", "trace_id": "f6bdf828-9731-4dfe-b6f7-e15e539452a6", "level": "info", "timestamp": "2026-04-19T07:05:32.393075Z"}
+INFO:     127.0.0.1:60731 - "GET /api/v1/market-signals?timeframe=daily&periods=2000 HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/shap", "status_code": 200, "event": "http.request", "trace_id": "a9870306-63a5-4443-813e-ab20662a3783", "level": "info", "timestamp": "2026-04-19T07:05:34.162350Z"}
+INFO:     127.0.0.1:60731 - "GET /api/v1/shap HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "6a94b49d-4b3b-4235-9aec-d315e15a71fc", "level": "info", "timestamp": "2026-04-19T07:05:44.828412Z"}
+INFO:     127.0.0.1:51973 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "dd27e4fa-c747-4214-ae79-b97fed7f4dba", "level": "info", "timestamp": "2026-04-19T07:06:16.153150Z"}
+INFO:     127.0.0.1:54616 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "e8e19d6b-34a4-49f0-95b1-00f817e65109", "level": "info", "timestamp": "2026-04-19T07:07:15.833853Z"}
+INFO:     127.0.0.1:54164 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "ed9f07da-3831-4621-9eea-733ebb8e40eb", "level": "info", "timestamp": "2026-04-19T07:08:16.161465Z"}
+INFO:     127.0.0.1:60805 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "6aa2a059-e82a-4bf8-9c53-76b0f41a3b83", "level": "info", "timestamp": "2026-04-19T07:09:15.872170Z"}
+INFO:     127.0.0.1:59618 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "e63316a0-7117-4615-a38a-b3601cd7fb56", "level": "info", "timestamp": "2026-04-19T07:10:16.193827Z"}
+INFO:     127.0.0.1:50692 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "65560b84-b151-4f0a-aafe-0607f7579cf4", "level": "info", "timestamp": "2026-04-19T07:11:15.833888Z"}
+INFO:     127.0.0.1:57006 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "9a2a3993-a310-4a6b-a328-d494d2ecd6a7", "level": "info", "timestamp": "2026-04-19T07:12:21.032341Z"}
+INFO:     127.0.0.1:49809 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "3333441d-0f91-4ee1-badb-456a83b7dfb3", "level": "info", "timestamp": "2026-04-19T07:13:15.861616Z"}
+INFO:     127.0.0.1:49801 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "0818751e-9a36-4b70-8bd6-11b3ccea0b14", "level": "info", "timestamp": "2026-04-19T07:14:16.143602Z"}
+INFO:     127.0.0.1:61708 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "d5304374-2338-4b7f-a4ed-b38246d69e8a", "level": "info", "timestamp": "2026-04-19T07:15:15.843422Z"}
+INFO:     127.0.0.1:60932 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "8e6b27b8-7f23-4d4c-858d-28b54ad33cb5", "level": "info", "timestamp": "2026-04-19T07:16:16.163960Z"}
+INFO:     127.0.0.1:63918 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "260e9ade-0ee3-44f3-83c7-2c9c37b40aef", "level": "info", "timestamp": "2026-04-19T07:17:16.718708Z"}
+INFO:     127.0.0.1:59509 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "9d0fe60b-9080-4109-bbfb-4d4d618319d9", "level": "info", "timestamp": "2026-04-19T07:18:16.158135Z"}
+INFO:     127.0.0.1:51426 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "482aa0d9-e2ae-4e18-9dd5-3655167be503", "level": "info", "timestamp": "2026-04-19T07:19:15.849284Z"}
+INFO:     127.0.0.1:63371 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "6d54509a-786f-4ad9-a857-e050009c2d14", "level": "info", "timestamp": "2026-04-19T07:20:16.147831Z"}
+INFO:     127.0.0.1:64207 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "7793c68f-fdf7-4fce-a20e-3e66f5d4e0f8", "level": "info", "timestamp": "2026-04-19T07:21:15.838972Z"}
+INFO:     127.0.0.1:52350 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "2ba8b078-aad0-4fc5-8293-44ffb2e717cc", "level": "info", "timestamp": "2026-04-19T07:22:16.144199Z"}
+INFO:     127.0.0.1:62492 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/market-signals", "status_code": 200, "event": "http.request", "trace_id": "3e426b8e-24a7-4486-a9f3-f53add3fb569", "level": "info", "timestamp": "2026-04-19T07:22:25.658150Z"}
+INFO:     127.0.0.1:61323 - "GET /api/v1/market-signals?timeframe=daily&periods=252 HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/market-signals", "status_code": 200, "event": "http.request", "trace_id": "adfd833b-9950-445a-ba3d-5b52bb7d9a44", "level": "info", "timestamp": "2026-04-19T07:22:28.140851Z"}
+INFO:     127.0.0.1:61323 - "GET /api/v1/market-signals?timeframe=daily&periods=252 HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/market-signals", "status_code": 200, "event": "http.request", "trace_id": "5202737d-8ca4-429b-b776-938122feeee9", "level": "info", "timestamp": "2026-04-19T07:22:30.524991Z"}
+INFO:     127.0.0.1:61323 - "GET /api/v1/market-signals?timeframe=daily&periods=252 HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/performance-summary", "status_code": 200, "event": "http.request", "trace_id": "eb2fde86-d7c0-4c35-8405-aa655c13edd3", "level": "info", "timestamp": "2026-04-19T07:22:33.168089Z"}
+INFO:     127.0.0.1:61323 - "GET /api/v1/performance-summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/backtest-daily", "status_code": 200, "event": "http.request", "trace_id": "6001ca7d-72cb-4ecb-88dc-1c2525fe6f25", "level": "info", "timestamp": "2026-04-19T07:22:33.295300Z"}
+INFO:     127.0.0.1:61323 - "GET /api/v1/backtest-daily HTTP/1.1" 200 OK
+{"run_id": "6663dafe-3cac-4034-a8f6-eca1652a7edf", "event": "backtest_quick.submitted", "trace_id": "d2491e0c-81f4-413b-9b2c-2772e99a90cc", "level": "info", "timestamp": "2026-04-19T07:22:36.614487Z"}
+{"method": "POST", "path": "/api/v1/backtest", "status_code": 202, "event": "http.request", "trace_id": "d2491e0c-81f4-413b-9b2c-2772e99a90cc", "level": "info", "timestamp": "2026-04-19T07:22:36.619523Z"}
+INFO:     127.0.0.1:61323 - "POST /api/v1/backtest HTTP/1.1" 202 Accepted
+{"run_id": "6663dafe-3cac-4034-a8f6-eca1652a7edf", "event": "backtest.running", "level": "info", "timestamp": "2026-04-19T07:22:36.625850Z"}
+{"run_id": "6663dafe-3cac-4034-a8f6-eca1652a7edf", "event": "backtest.failed", "level": "error", "timestamp": "2026-04-19T07:22:36.625850Z", "exception": "Traceback (most recent call last):\n  File \"C:\\Users\\Sandeep\\Documents\\Work\\code\\riia-cowork-jun\\riia-jun-release\\src\\rita\\services\\backtest_service.py\", line 49, in _run_backtest_job\n    outcome = run_backtest(config)\n              ^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Sandeep\\Documents\\Work\\code\\riia-cowork-jun\\riia-jun-release\\src\\rita\\core\\backtest_dispatch.py\", line 91, in run_backtest\n    raise ValueError(\nValueError: No model file found for model_version='latest' in C:\\Users\\Sandeep\\Documents\\Work\\code\\riia-cowork-jun\\riia-jun-release\\models\\NIFTY. Train a model first."}
+{"method": "GET", "path": "/api/v1/performance-summary", "status_code": 200, "event": "http.request", "trace_id": "ee6ace4e-749d-48f9-b2ca-2863169b38d5", "level": "info", "timestamp": "2026-04-19T07:22:36.718790Z"}
+INFO:     127.0.0.1:61323 - "GET /api/v1/performance-summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/backtest-daily", "status_code": 200, "event": "http.request", "trace_id": "8e743013-01bb-4ab1-8a15-b54fe3f2a4fd", "level": "info", "timestamp": "2026-04-19T07:22:36.824359Z"}
+INFO:     127.0.0.1:61323 - "GET /api/v1/backtest-daily HTTP/1.1" 200 OK
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "73de4a00-8de9-404a-ae3e-39f13036d25f", "level": "info", "timestamp": "2026-04-19T07:22:36.871315Z"}
+INFO:     127.0.0.1:61323 - "GET /progress HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "6aa1abf6-e120-4ade-8f11-dbec11adc96b", "level": "info", "timestamp": "2026-04-19T07:22:36.930726Z"}
+INFO:     127.0.0.1:61323 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "f762a1c4-1cf2-4433-ba55-72f3d9c71016", "level": "info", "timestamp": "2026-04-19T07:22:44.823253Z"}
+INFO:     127.0.0.1:61350 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "699eae17-8495-4c8b-bfc6-af581e793eb2", "level": "info", "timestamp": "2026-04-19T07:23:14.834744Z"}
+INFO:     127.0.0.1:55652 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/performance-summary", "status_code": 200, "event": "http.request", "trace_id": "1efffd24-ec07-41bd-a139-dd2edede4a53", "level": "info", "timestamp": "2026-04-19T07:23:40.016761Z"}
+INFO:     127.0.0.1:64337 - "GET /api/v1/performance-summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/backtest-daily", "status_code": 200, "event": "http.request", "trace_id": "72d6ea29-d997-426a-b394-58c4be820c1f", "level": "info", "timestamp": "2026-04-19T07:23:40.133597Z"}
+INFO:     127.0.0.1:64337 - "GET /api/v1/backtest-daily HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/market-signals", "status_code": 200, "event": "http.request", "trace_id": "a2174a6c-204b-4ad2-8614-a3c27fe669c9", "level": "info", "timestamp": "2026-04-19T07:23:41.471473Z"}
+INFO:     127.0.0.1:53781 - "GET /api/v1/market-signals?timeframe=daily&periods=2000 HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/backtest-daily", "status_code": 200, "event": "http.request", "trace_id": "bfc80363-2808-49db-a5c6-6fbcb55c8b32", "level": "info", "timestamp": "2026-04-19T07:23:41.538241Z"}
+INFO:     127.0.0.1:64337 - "GET /api/v1/backtest-daily HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/training-history", "status_code": 200, "event": "http.request", "trace_id": "870b7009-4af9-4ffb-bd13-28c0fcea0ca9", "level": "info", "timestamp": "2026-04-19T07:23:44.643107Z"}
+INFO:     127.0.0.1:53781 - "GET /api/v1/training-history HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/risk-timeline", "status_code": 200, "event": "http.request", "trace_id": "c155ce34-e568-40a9-b0df-066f8f5d020d", "level": "info", "timestamp": "2026-04-19T07:23:44.753513Z"}
+INFO:     127.0.0.1:64337 - "GET /api/v1/risk-timeline?phase=all HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "51763c4e-570c-4e25-885f-86fa93cb7ef1", "level": "info", "timestamp": "2026-04-19T07:23:44.828353Z"}
+INFO:     127.0.0.1:64337 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/shap", "status_code": 200, "event": "http.request", "trace_id": "7f3ce0c6-5cc9-42a1-a4d2-1255189a0596", "level": "info", "timestamp": "2026-04-19T07:23:52.796510Z"}
+INFO:     127.0.0.1:56687 - "GET /api/v1/shap HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/market-signals", "status_code": 200, "event": "http.request", "trace_id": "ff7ee8bb-e387-4f87-bcd3-93e0527b4100", "level": "info", "timestamp": "2026-04-19T07:23:55.420483Z"}
+INFO:     127.0.0.1:52075 - "GET /api/v1/market-signals?timeframe=daily&periods=2000 HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/backtest-daily", "status_code": 200, "event": "http.request", "trace_id": "38d557f3-a56a-4f39-a172-71b8c1240929", "level": "info", "timestamp": "2026-04-19T07:23:55.829496Z"}
+INFO:     127.0.0.1:56687 - "GET /api/v1/backtest-daily HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "df6cb145-2a19-4edd-9ef2-a8d872a6a8f6", "level": "info", "timestamp": "2026-04-19T07:24:15.150596Z"}
+INFO:     127.0.0.1:64857 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "2929b037-052a-419e-944d-5e1fb80920e0", "level": "info", "timestamp": "2026-04-19T07:24:44.823169Z"}
+INFO:     127.0.0.1:56576 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/backtest-daily", "status_code": 200, "event": "http.request", "trace_id": "16b92a78-9999-495d-9da6-34700dc2cf9e", "level": "info", "timestamp": "2026-04-19T07:25:14.385697Z"}
+INFO:     127.0.0.1:62334 - "GET /api/v1/backtest-daily HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/trade-events", "status_code": 200, "event": "http.request", "trace_id": "70828be3-5332-4b27-8c60-e1f4e049873a", "level": "info", "timestamp": "2026-04-19T07:25:14.485772Z"}
+INFO:     127.0.0.1:57247 - "GET /api/v1/trade-events HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "35636b77-5a61-46bc-a8b2-69288ecebe97", "level": "info", "timestamp": "2026-04-19T07:25:14.523800Z"}
+INFO:     127.0.0.1:62334 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "8e43b484-c8a2-4990-bb2c-e18f57f5869c", "level": "info", "timestamp": "2026-04-19T07:25:44.517174Z"}
+INFO:     127.0.0.1:60016 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "4758e9c7-6a1b-4f94-ac2c-73e9c056f0a5", "level": "info", "timestamp": "2026-04-19T07:26:15.149334Z"}
+INFO:     127.0.0.1:60338 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "fe444d7c-5e6f-44b6-8aa7-a1ba51d7d437", "level": "info", "timestamp": "2026-04-19T07:26:44.822941Z"}
+INFO:     127.0.0.1:64103 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "e3948f33-ecc8-49a4-98cc-c7ec560b1c70", "level": "info", "timestamp": "2026-04-19T07:27:16.139629Z"}
+INFO:     127.0.0.1:59249 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "8b0b0cb3-c978-4d78-9a98-68bc3585f543", "level": "info", "timestamp": "2026-04-19T07:28:15.847085Z"}
+INFO:     127.0.0.1:52672 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "6edc1d8f-e683-4928-bcb6-6526dadd2fb1", "level": "info", "timestamp": "2026-04-19T07:29:16.157042Z"}
+INFO:     127.0.0.1:58992 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/shap", "status_code": 200, "event": "http.request", "trace_id": "91852a51-7f8d-48c8-a833-9b32ed843538", "level": "info", "timestamp": "2026-04-19T07:29:32.697891Z"}
+INFO:     127.0.0.1:51661 - "GET /api/v1/shap HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/performance-summary", "status_code": 200, "event": "http.request", "trace_id": "6ded257c-ff78-418a-8d86-f2ce9f2e0bef", "level": "info", "timestamp": "2026-04-19T07:29:34.000548Z"}
+INFO:     127.0.0.1:51661 - "GET /api/v1/performance-summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/backtest-daily", "status_code": 200, "event": "http.request", "trace_id": "0ff39e60-020e-4b7c-8f2c-3ce11d3ef8ab", "level": "info", "timestamp": "2026-04-19T07:29:34.112229Z"}
+INFO:     127.0.0.1:51661 - "GET /api/v1/backtest-daily HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/training-history", "status_code": 200, "event": "http.request", "trace_id": "b7ced9fe-3671-4d1a-9b10-7fadba484742", "level": "info", "timestamp": "2026-04-19T07:29:34.123908Z"}
+INFO:     127.0.0.1:51661 - "GET /api/v1/training-history HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/training-history", "status_code": 200, "event": "http.request", "trace_id": "e4a8260d-1309-4b4e-b8af-93465238e0f2", "level": "info", "timestamp": "2026-04-19T07:29:34.186013Z"}
+INFO:     127.0.0.1:51661 - "GET /api/v1/training-history HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "af92dc33-19f3-40ea-8880-a06f04dbd6a8", "level": "info", "timestamp": "2026-04-19T07:29:44.512836Z"}
+INFO:     127.0.0.1:63140 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "1ae06343-a523-4fde-8c40-1031d94bed68", "level": "info", "timestamp": "2026-04-19T07:30:14.834912Z"}
+INFO:     127.0.0.1:52229 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/risk-timeline", "status_code": 200, "event": "http.request", "trace_id": "78b59384-a5e8-4aa1-893f-be19aac1d202", "level": "info", "timestamp": "2026-04-19T07:30:35.551779Z"}
+INFO:     127.0.0.1:52173 - "GET /api/v1/risk-timeline HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/trade-events", "status_code": 200, "event": "http.request", "trace_id": "d1872519-6d02-4398-a819-0cb288acc198", "level": "info", "timestamp": "2026-04-19T07:30:35.610651Z"}
+INFO:     127.0.0.1:54034 - "GET /api/v1/trade-events HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/trade-events", "status_code": 200, "event": "http.request", "trace_id": "6b5c6a37-ef4a-4994-83c9-65a608d3f019", "level": "info", "timestamp": "2026-04-19T07:30:41.414818Z"}
+INFO:     127.0.0.1:51565 - "GET /api/v1/trade-events HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/backtest-daily", "status_code": 200, "event": "http.request", "trace_id": "15a95f1e-fe1f-482d-a4bc-40a072cdd872", "level": "info", "timestamp": "2026-04-19T07:30:41.542864Z"}
+INFO:     127.0.0.1:51565 - "GET /api/v1/backtest-daily HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "9a59825a-6411-4225-8234-4d1e7f2fe4a3", "level": "info", "timestamp": "2026-04-19T07:30:44.477747Z"}
+INFO:     127.0.0.1:51565 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/shap", "status_code": 200, "event": "http.request", "trace_id": "9ca5ae09-7129-4de2-bb37-321532bbe710", "level": "info", "timestamp": "2026-04-19T07:30:45.876833Z"}
+INFO:     127.0.0.1:51565 - "GET /api/v1/shap HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/step-log", "status_code": 200, "event": "http.request", "trace_id": "60ace458-d3d3-4317-b264-69bf572de64d", "level": "info", "timestamp": "2026-04-19T07:30:58.607224Z"}
+INFO:     127.0.0.1:64047 - "GET /api/v1/step-log HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/drift", "status_code": 200, "event": "http.request", "trace_id": "72019c17-5e47-4bf6-8b66-92fd0b7d2708", "level": "info", "timestamp": "2026-04-19T07:30:58.874020Z"}
+INFO:     127.0.0.1:56780 - "GET /api/v1/drift HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/shap", "status_code": 200, "event": "http.request", "trace_id": "095e55de-aa13-42c5-9f14-70348a177c8b", "level": "info", "timestamp": "2026-04-19T07:31:07.966059Z"}
+INFO:     127.0.0.1:59121 - "GET /api/v1/shap HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/risk-timeline", "status_code": 200, "event": "http.request", "trace_id": "afbb5522-c8b8-480b-bc67-c05016c2575d", "level": "info", "timestamp": "2026-04-19T07:31:10.510372Z"}
+INFO:     127.0.0.1:59121 - "GET /api/v1/risk-timeline?phase=all HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/training-history", "status_code": 200, "event": "http.request", "trace_id": "f8de88a5-083d-4974-af95-dcbcc4e66619", "level": "info", "timestamp": "2026-04-19T07:31:10.524276Z"}
+INFO:     127.0.0.1:59121 - "GET /api/v1/training-history HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/performance-summary", "status_code": 200, "event": "http.request", "trace_id": "15ae9231-8c2c-47d2-91b2-d90d8389fe8f", "level": "info", "timestamp": "2026-04-19T07:31:14.971342Z"}
+INFO:     127.0.0.1:59121 - "GET /api/v1/performance-summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/backtest-daily", "status_code": 200, "event": "http.request", "trace_id": "3b62ff39-bea4-4199-8ee8-3ca68e72f8cc", "level": "info", "timestamp": "2026-04-19T07:31:15.116864Z"}
+INFO:     127.0.0.1:59121 - "GET /api/v1/backtest-daily HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "ad51cc5a-5c97-4493-ac44-683f6fc08983", "level": "info", "timestamp": "2026-04-19T07:31:15.124845Z"}
+INFO:     127.0.0.1:52533 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "081f4d16-1b0e-46e9-8dec-3e9fd6f651e8", "level": "info", "timestamp": "2026-04-19T07:31:45.136120Z"}
+INFO:     127.0.0.1:50433 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "517e6842-62ef-4281-a27c-9a74837bb941", "level": "info", "timestamp": "2026-04-19T07:32:15.835515Z"}
+INFO:     127.0.0.1:58081 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "c1216a81-df0c-43f2-a3ba-075875e3676e", "level": "info", "timestamp": "2026-04-19T07:32:46.159838Z"}
+INFO:     127.0.0.1:63179 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/backtest-daily", "status_code": 200, "event": "http.request", "trace_id": "6e6ce636-6d37-4cd4-af7a-59678d2448bf", "level": "info", "timestamp": "2026-04-19T07:32:50.560900Z"}
+INFO:     127.0.0.1:51323 - "GET /api/v1/backtest-daily HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/performance-summary", "status_code": 200, "event": "http.request", "trace_id": "2e1712cb-64e6-4200-a1b0-5df53d986547", "level": "info", "timestamp": "2026-04-19T07:32:50.652643Z"}
+INFO:     127.0.0.1:63179 - "GET /api/v1/performance-summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/training-history", "status_code": 200, "event": "http.request", "trace_id": "afae1076-c0f1-4a71-b5a2-b7f90600b296", "level": "info", "timestamp": "2026-04-19T07:32:50.659157Z"}
+INFO:     127.0.0.1:51323 - "GET /api/v1/training-history HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/training-history", "status_code": 200, "event": "http.request", "trace_id": "a671f082-d80f-422c-83de-2625d9a57880", "level": "info", "timestamp": "2026-04-19T07:32:50.714487Z"}
+INFO:     127.0.0.1:51323 - "GET /api/v1/training-history HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "03039186-6c8d-4e26-814a-8f73c59dc7f7", "level": "info", "timestamp": "2026-04-19T07:33:14.852703Z"}
+INFO:     127.0.0.1:60057 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "1e5c8b10-9146-4229-9be3-e816448cc37a", "level": "info", "timestamp": "2026-04-19T07:33:45.150191Z"}
+INFO:     127.0.0.1:61725 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/performance-summary", "status_code": 200, "event": "http.request", "trace_id": "4e7d93a4-f154-44df-8650-5b3fab65f283", "level": "info", "timestamp": "2026-04-19T07:34:03.938359Z"}
+INFO:     127.0.0.1:53302 - "GET /api/v1/performance-summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/backtest-daily", "status_code": 200, "event": "http.request", "trace_id": "7b91a510-95a9-4ae1-95f1-2814824123e3", "level": "info", "timestamp": "2026-04-19T07:34:04.051927Z"}
+INFO:     127.0.0.1:53302 - "GET /api/v1/backtest-daily HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/performance-summary", "status_code": 200, "event": "http.request", "trace_id": "31cbe7fa-f4ff-4d2f-bc4b-776db4102d9b", "level": "info", "timestamp": "2026-04-19T07:34:08.462229Z"}
+INFO:     127.0.0.1:53302 - "GET /api/v1/performance-summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/backtest-daily", "status_code": 200, "event": "http.request", "trace_id": "aa7d5ba9-f36e-4236-b76b-b852f25a0744", "level": "info", "timestamp": "2026-04-19T07:34:08.582346Z"}
+INFO:     127.0.0.1:53302 - "GET /api/v1/backtest-daily HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/market-signals", "status_code": 200, "event": "http.request", "trace_id": "c3d684b9-09cd-433c-b38f-ac68a6f0b206", "level": "info", "timestamp": "2026-04-19T07:34:10.618752Z"}
+INFO:     127.0.0.1:53302 - "GET /api/v1/market-signals?timeframe=daily&periods=252 HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/risk-timeline", "status_code": 200, "event": "http.request", "trace_id": "b998ec36-ae9a-45e3-b7d2-802b21d13f9f", "level": "info", "timestamp": "2026-04-19T07:34:12.099113Z"}
+INFO:     127.0.0.1:53302 - "GET /api/v1/risk-timeline?phase=all HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/training-history", "status_code": 200, "event": "http.request", "trace_id": "c3d82626-4237-4f16-a070-1c4c8be62953", "level": "info", "timestamp": "2026-04-19T07:34:12.111560Z"}
+INFO:     127.0.0.1:53302 - "GET /api/v1/training-history HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/market-signals", "status_code": 200, "event": "http.request", "trace_id": "6ac76ef2-75a6-4514-85e8-b752f8467aff", "level": "info", "timestamp": "2026-04-19T07:34:13.654338Z"}
+INFO:     127.0.0.1:62601 - "GET /api/v1/market-signals?timeframe=daily&periods=2000 HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/backtest-daily", "status_code": 200, "event": "http.request", "trace_id": "45626e60-235d-47e0-869c-de48a2bf71b5", "level": "info", "timestamp": "2026-04-19T07:34:14.049029Z"}
+INFO:     127.0.0.1:53302 - "GET /api/v1/backtest-daily HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/shap", "status_code": 200, "event": "http.request", "trace_id": "c9df6eec-1a38-4811-b6fb-d745ceb62fb1", "level": "info", "timestamp": "2026-04-19T07:34:14.587148Z"}
+INFO:     127.0.0.1:53302 - "GET /api/v1/shap HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "39ce7102-da1d-48a3-ae44-9ba4a284dc6a", "level": "info", "timestamp": "2026-04-19T07:34:14.828625Z"}
+INFO:     127.0.0.1:53302 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/trade-events", "status_code": 200, "event": "http.request", "trace_id": "1e864394-1c02-42cd-9f34-fdf999827f05", "level": "info", "timestamp": "2026-04-19T07:34:18.214466Z"}
+INFO:     127.0.0.1:62601 - "GET /api/v1/trade-events HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/risk-timeline", "status_code": 200, "event": "http.request", "trace_id": "94718a64-d348-4602-bbf3-ca1db18424ef", "level": "info", "timestamp": "2026-04-19T07:34:18.350025Z"}
+INFO:     127.0.0.1:53302 - "GET /api/v1/risk-timeline HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/trade-events", "status_code": 200, "event": "http.request", "trace_id": "44804338-d930-45cd-9419-e5416a57184c", "level": "info", "timestamp": "2026-04-19T07:34:21.412956Z"}
+INFO:     127.0.0.1:53302 - "GET /api/v1/trade-events HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/backtest-daily", "status_code": 200, "event": "http.request", "trace_id": "d1779cfb-8bc7-4775-92d7-317d50f41049", "level": "info", "timestamp": "2026-04-19T07:34:21.498505Z"}
+INFO:     127.0.0.1:62601 - "GET /api/v1/backtest-daily HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "626ba980-932a-43e0-9cf6-62d703104aea", "level": "info", "timestamp": "2026-04-19T07:34:45.152061Z"}
+INFO:     127.0.0.1:56615 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "efda1a57-afae-44e5-8bba-5f9ab88e7cc4", "level": "info", "timestamp": "2026-04-19T07:35:14.841610Z"}
+INFO:     127.0.0.1:62273 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "b1b54f00-10f5-4f9b-a784-8983d2eeeb65", "level": "info", "timestamp": "2026-04-19T07:36:16.140087Z"}
+INFO:     127.0.0.1:60801 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "e7dfafbf-2e4d-4f5a-927f-db28bae7e511", "level": "info", "timestamp": "2026-04-19T07:37:16.166181Z"}
+INFO:     127.0.0.1:65404 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "d9cbdbbc-0d53-4b55-bf41-52c64707492f", "level": "info", "timestamp": "2026-04-19T07:38:15.835749Z"}
+INFO:     127.0.0.1:52176 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "0c790dc6-3872-4352-aee2-0fc07d38a3f5", "level": "info", "timestamp": "2026-04-19T07:39:16.170227Z"}
+INFO:     127.0.0.1:52415 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "2fa74b0d-1c8f-410d-9040-df72367e0cb8", "level": "info", "timestamp": "2026-04-19T07:40:15.836371Z"}
+INFO:     127.0.0.1:52373 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "8f669d1b-1aaf-4328-a043-7dd96acd9f05", "level": "info", "timestamp": "2026-04-19T07:41:16.147378Z"}
+INFO:     127.0.0.1:55174 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "e4e5bfbb-6da8-465b-a162-bfda640aa232", "level": "info", "timestamp": "2026-04-19T07:42:15.832015Z"}
+INFO:     127.0.0.1:62888 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "a0bf890d-1b62-4fe6-957e-8afa7f840cb9", "level": "info", "timestamp": "2026-04-19T07:42:45.148952Z"}
+INFO:     127.0.0.1:55842 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "090702de-68bc-4c8f-ae6b-a3adb67d2119", "level": "info", "timestamp": "2026-04-19T07:43:14.837527Z"}
+INFO:     127.0.0.1:56178 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "d61f817f-fee8-4590-ad46-c967cec94d22", "level": "info", "timestamp": "2026-04-19T07:43:58.738282Z"}
+INFO:     127.0.0.1:63259 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/shap", "status_code": 200, "event": "http.request", "trace_id": "ca0c1859-31cf-4dc3-9be6-09ce8e3f351d", "level": "info", "timestamp": "2026-04-19T07:44:00.339695Z"}
+INFO:     127.0.0.1:63259 - "GET /api/v1/shap HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "91e7b0fe-aabf-4444-9c2e-4f6dc8372fc9", "level": "info", "timestamp": "2026-04-19T07:44:14.503253Z"}
+INFO:     127.0.0.1:58116 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "0b66d701-1463-470c-90d6-0125db0eb74e", "level": "info", "timestamp": "2026-04-19T07:44:45.146044Z"}
+INFO:     127.0.0.1:60372 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "6d7db884-52ed-4944-8c42-449e58b72eca", "level": "info", "timestamp": "2026-04-19T07:45:14.897530Z"}
+INFO:     127.0.0.1:60000 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "ce27e601-7960-49e2-93a9-47f10ad93cf8", "level": "info", "timestamp": "2026-04-19T07:46:16.205475Z"}
+INFO:     127.0.0.1:51248 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "617cf25f-7d17-4d69-9268-b7d64e55a6fd", "level": "info", "timestamp": "2026-04-19T07:46:44.559807Z"}
+INFO:     127.0.0.1:50984 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "7ff5a459-6967-4ae3-b790-8097783b4614", "level": "info", "timestamp": "2026-04-19T07:47:15.226349Z"}
+INFO:     127.0.0.1:53277 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "ecaba076-0ef3-4559-8610-2c8e422eb049", "level": "info", "timestamp": "2026-04-19T07:47:44.841667Z"}
+INFO:     127.0.0.1:49979 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "36a302f4-f0a0-4a49-b989-4cbe27c1e1ae", "level": "info", "timestamp": "2026-04-19T07:48:16.192332Z"}
+INFO:     127.0.0.1:58434 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "8eee3ccc-219e-4fe4-bea3-abeef9c8118b", "level": "info", "timestamp": "2026-04-19T07:49:15.870757Z"}
+INFO:     127.0.0.1:50160 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "62b6d6de-5d24-49c6-ba79-cdebc2dfa5da", "level": "info", "timestamp": "2026-04-19T07:50:16.294774Z"}
+INFO:     127.0.0.1:57081 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "79d506dd-12ba-48a8-8091-78b2b9c2875e", "level": "info", "timestamp": "2026-04-19T07:51:15.882076Z"}
+INFO:     127.0.0.1:54108 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "a2f5761a-810c-4b97-b48b-2c7aaf151db7", "level": "info", "timestamp": "2026-04-19T07:52:16.191052Z"}
+INFO:     127.0.0.1:52047 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "161c3e2e-33f6-4867-9c1f-48204a85aa44", "level": "info", "timestamp": "2026-04-19T07:53:15.889829Z"}
+INFO:     127.0.0.1:63796 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "901b695a-dee4-4878-a699-b8b1d9882e9e", "level": "info", "timestamp": "2026-04-19T07:53:49.962902Z"}
+INFO:     127.0.0.1:51725 - "GET /health HTTP/1.1" 200 OK
+INFO:     Will watch for changes in these directories: ['C:\\Users\\Sandeep\\Documents\\Work\\code\\riia-cowork-jun\\riia-jun-release']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [4504] using WatchFiles
+INFO:     Started server process [10700]
+INFO:     Waiting for application startup.
+{"name": "rita", "version": "1.0.0", "event": "app.startup", "level": "info", "timestamp": "2026-04-19T12:37:07.944971Z"}
+INFO:     Application startup complete.
+{"method": "GET", "path": "/dashboard/", "status_code": 200, "event": "http.request", "trace_id": "2d072667-5f6b-4b6f-825c-fa8444b51a1c", "level": "info", "timestamp": "2026-04-19T12:37:09.431233Z"}
+INFO:     127.0.0.1:57477 - "GET /dashboard/ HTTP/1.1" 200 OK
+{"method": "GET", "path": "/favicon.ico", "status_code": 404, "event": "http.request", "trace_id": "4c9bdec7-51e3-4de2-8b22-554c457280a8", "level": "info", "timestamp": "2026-04-19T12:37:09.634583Z"}
+INFO:     127.0.0.1:57477 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+{"method": "GET", "path": "/api/v1/metrics/summary", "status_code": 200, "event": "http.request", "trace_id": "43437a4d-e30f-407a-9ecf-018f0287a9d3", "level": "info", "timestamp": "2026-04-19T12:37:14.762342Z"}
+INFO:     127.0.0.1:50607 - "GET /api/v1/metrics/summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "c9a83e21-a97f-4b83-957a-1a0705dc6893", "level": "info", "timestamp": "2026-04-19T12:37:14.788768Z"}
+INFO:     127.0.0.1:50607 - "GET /progress HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/performance-summary", "status_code": 200, "event": "http.request", "trace_id": "4096a60d-6a12-4210-9d04-c4e422b62978", "level": "info", "timestamp": "2026-04-19T12:37:14.904995Z"}
+INFO:     127.0.0.1:50607 - "GET /api/v1/performance-summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/instrument/active", "status_code": 200, "event": "http.request", "trace_id": "92b913df-8f8f-422d-aec3-f3f3adfaf5e8", "level": "info", "timestamp": "2026-04-19T12:37:15.029270Z"}
+INFO:     127.0.0.1:58581 - "GET /api/v1/instrument/active HTTP/1.1" 200 OK
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "a7a9dfd8-70ac-4b47-9506-8774ae60b8bb", "level": "info", "timestamp": "2026-04-19T12:37:15.046487Z"}
+INFO:     127.0.0.1:58236 - "GET /progress HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "7a69a74b-2e51-4f54-bca7-9c98af49a254", "level": "info", "timestamp": "2026-04-19T12:37:15.555176Z"}
+INFO:     127.0.0.1:60093 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/drift", "status_code": 200, "event": "http.request", "trace_id": "d1a2ccdb-786a-4df3-8818-d280aa381189", "level": "info", "timestamp": "2026-04-19T12:37:18.411913Z"}
+INFO:     127.0.0.1:50607 - "GET /api/v1/drift HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/ops.html", "status_code": 200, "event": "http.request", "trace_id": "3235ef70-5c3d-4956-af5f-05a516f6d7de", "level": "info", "timestamp": "2026-04-19T12:44:38.168589Z"}
+INFO:     127.0.0.1:59689 - "GET /dashboard/ops.html HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/main.js", "status_code": 200, "event": "http.request", "trace_id": "804e9a00-9240-48b5-9259-aa21dfaaf532", "level": "info", "timestamp": "2026-04-19T12:44:38.260940Z"}
+INFO:     127.0.0.1:59689 - "GET /dashboard/js/ops/main.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/nav.js", "status_code": 200, "event": "http.request", "trace_id": "3bac2370-36df-4160-89b9-fa7f20feccab", "level": "info", "timestamp": "2026-04-19T12:44:38.333347Z"}
+INFO:     127.0.0.1:59689 - "GET /dashboard/js/ops/nav.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/overview.js", "status_code": 200, "event": "http.request", "trace_id": "7a1dec8e-10e8-4932-ab5e-d82c7bfc55b7", "level": "info", "timestamp": "2026-04-19T12:44:38.334860Z"}
+INFO:     127.0.0.1:52835 - "GET /dashboard/js/ops/overview.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/monitoring.js", "status_code": 200, "event": "http.request", "trace_id": "853018ea-754d-4c66-877d-f1dbc50ec401", "level": "info", "timestamp": "2026-04-19T12:44:38.387993Z"}
+INFO:     127.0.0.1:59689 - "GET /dashboard/js/ops/monitoring.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/cicd.js", "status_code": 200, "event": "http.request", "trace_id": "0daac218-4142-4c3b-8a47-ded2e8edfe55", "level": "info", "timestamp": "2026-04-19T12:44:38.401510Z"}
+INFO:     127.0.0.1:52835 - "GET /dashboard/js/ops/cicd.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/deploy.js", "status_code": 200, "event": "http.request", "trace_id": "60c34dcf-8b2e-40f9-98ae-8d3b14275f24", "level": "info", "timestamp": "2026-04-19T12:44:38.439388Z"}
+INFO:     127.0.0.1:59689 - "GET /dashboard/js/ops/deploy.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/observability.js", "status_code": 200, "event": "http.request", "trace_id": "dc71362c-bcc1-479a-9fc1-d3931528897e", "level": "info", "timestamp": "2026-04-19T12:44:38.439388Z"}
+INFO:     127.0.0.1:52835 - "GET /dashboard/js/ops/observability.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/chat.js", "status_code": 200, "event": "http.request", "trace_id": "76c77faf-68e7-404a-914f-2d475225e5e6", "level": "info", "timestamp": "2026-04-19T12:44:38.468975Z"}
+INFO:     127.0.0.1:59689 - "GET /dashboard/js/ops/chat.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/daily-ops.js", "status_code": 200, "event": "http.request", "trace_id": "cd58c6d9-ce1c-4a63-9db3-dad7be345460", "level": "info", "timestamp": "2026-04-19T12:44:38.487866Z"}
+INFO:     127.0.0.1:52835 - "GET /dashboard/js/ops/daily-ops.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/sidebar.js", "status_code": 200, "event": "http.request", "trace_id": "124e71db-9106-4e62-852e-e1c69f908da0", "level": "info", "timestamp": "2026-04-19T12:44:38.516738Z"}
+INFO:     127.0.0.1:59689 - "GET /dashboard/js/ops/sidebar.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/test-results.js", "status_code": 200, "event": "http.request", "trace_id": "bea36e61-d9dd-493d-838c-9da7de4b0c98", "level": "info", "timestamp": "2026-04-19T12:44:38.535340Z"}
+INFO:     127.0.0.1:52835 - "GET /dashboard/js/ops/test-results.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/api.js", "status_code": 200, "event": "http.request", "trace_id": "e573322e-2630-46c3-844d-8f29df4c5ff9", "level": "info", "timestamp": "2026-04-19T12:44:38.546928Z"}
+INFO:     127.0.0.1:59689 - "GET /dashboard/js/ops/api.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/utils.js", "status_code": 200, "event": "http.request", "trace_id": "41a687df-acea-4943-8fbc-e81097809324", "level": "info", "timestamp": "2026-04-19T12:44:38.576292Z"}
+INFO:     127.0.0.1:59689 - "GET /dashboard/js/ops/utils.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/metrics/summary", "status_code": 200, "event": "http.request", "trace_id": "ca273d5e-9bbb-46bf-ac0c-091ae3e075a7", "level": "info", "timestamp": "2026-04-19T12:44:38.619114Z"}
+INFO:     127.0.0.1:52835 - "GET /api/v1/metrics/summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "be039cc5-3233-4d93-a25d-8a23f8ddf8de", "level": "info", "timestamp": "2026-04-19T12:44:38.634862Z"}
+INFO:     127.0.0.1:52835 - "GET /progress HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "b6d04563-c07b-4e0b-8050-8cd6ecc6b6b6", "level": "info", "timestamp": "2026-04-19T12:44:38.668154Z"}
+INFO:     127.0.0.1:59689 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/mcp-calls", "status_code": 200, "event": "http.request", "trace_id": "ec850aa9-4481-43fa-8d20-675f1659700a", "level": "info", "timestamp": "2026-04-19T12:44:38.683554Z"}
+INFO:     127.0.0.1:59689 - "GET /api/v1/mcp-calls HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/step-log", "status_code": 200, "event": "http.request", "trace_id": "ce5ec226-87e2-497d-9019-db5a17f9adba", "level": "info", "timestamp": "2026-04-19T12:44:38.743547Z"}
+INFO:     127.0.0.1:59689 - "GET /api/v1/step-log HTTP/1.1" 200 OK
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "f9d57963-150e-45eb-99ae-e71c4e7bc89c", "level": "info", "timestamp": "2026-04-19T12:45:08.626151Z"}
+INFO:     127.0.0.1:58728 - "GET /progress HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "aa01c7d6-9ebe-4e96-9741-81bb1f8fb326", "level": "info", "timestamp": "2026-04-19T12:45:08.687601Z"}
+INFO:     127.0.0.1:56271 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/metrics/summary", "status_code": 200, "event": "http.request", "trace_id": "fd215994-8c17-4812-bee6-992e1d659fd1", "level": "info", "timestamp": "2026-04-19T12:45:10.936798Z"}
+INFO:     127.0.0.1:56271 - "GET /api/v1/metrics/summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/step-log", "status_code": 200, "event": "http.request", "trace_id": "96355ebc-84e3-4882-87f0-7eb326404482", "level": "info", "timestamp": "2026-04-19T12:45:10.943633Z"}
+INFO:     127.0.0.1:58728 - "GET /api/v1/step-log HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/step-log", "status_code": 200, "event": "http.request", "trace_id": "04b2facc-96d2-407b-ace0-c1ff19f3222f", "level": "info", "timestamp": "2026-04-19T12:45:18.091894Z"}
+INFO:     127.0.0.1:49569 - "GET /api/v1/step-log HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/test-results", "status_code": 200, "event": "http.request", "trace_id": "32b23af3-596d-4298-8c0d-03a99518a3eb", "level": "info", "timestamp": "2026-04-19T12:45:30.122011Z"}
+INFO:     127.0.0.1:59845 - "GET /api/v1/test-results HTTP/1.1" 200 OK
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "04e8d6da-cb18-4270-aa89-79c9c161ac69", "level": "info", "timestamp": "2026-04-19T12:45:38.951711Z"}
+INFO:     127.0.0.1:57316 - "GET /progress HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "b3af7699-8d94-49da-bec8-054d325f3a74", "level": "info", "timestamp": "2026-04-19T12:45:39.018901Z"}
+INFO:     127.0.0.1:57195 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "625239f4-1662-43ef-be7f-9c02a19625ff", "level": "info", "timestamp": "2026-04-19T12:46:08.706437Z"}
+INFO:     127.0.0.1:54370 - "GET /progress HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "44db5757-8c8a-4cd3-a473-c6b794b67e09", "level": "info", "timestamp": "2026-04-19T12:46:08.737574Z"}
+INFO:     127.0.0.1:54370 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/training-history", "status_code": 200, "event": "http.request", "trace_id": "a42d327e-4baf-46e7-b254-6130c53288d6", "level": "info", "timestamp": "2026-04-19T12:46:11.759682Z"}
+INFO:     127.0.0.1:64014 - "GET /api/v1/training-history HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "1442b92c-8b54-4b11-abfa-0acf5132f80e", "level": "info", "timestamp": "2026-04-19T12:46:11.803982Z"}
+INFO:     127.0.0.1:54370 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/mcp-calls", "status_code": 200, "event": "http.request", "trace_id": "98aec214-66ca-4963-9a87-1f2952356c52", "level": "info", "timestamp": "2026-04-19T12:46:14.544828Z"}
+INFO:     127.0.0.1:64014 - "GET /api/v1/mcp-calls HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/drift", "status_code": 200, "event": "http.request", "trace_id": "4a3b0a11-6c1b-4dcc-8700-c21cab9639b3", "level": "info", "timestamp": "2026-04-19T12:46:14.718187Z"}
+INFO:     127.0.0.1:54370 - "GET /api/v1/drift HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "9727e6cb-2791-47bc-b171-ebae27050a55", "level": "info", "timestamp": "2026-04-19T12:46:14.749530Z"}
+INFO:     127.0.0.1:64014 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/chat/monitor", "status_code": 200, "event": "http.request", "trace_id": "db14c80d-dba5-437e-ac7f-5470adf6ca78", "level": "info", "timestamp": "2026-04-19T12:46:16.914929Z"}
+INFO:     127.0.0.1:64014 - "GET /api/v1/chat/monitor HTTP/1.1" 200 OK
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "dca21bc8-1cec-4bf9-b814-0e781196f849", "level": "info", "timestamp": "2026-04-19T12:46:38.700547Z"}
+INFO:     127.0.0.1:56787 - "GET /progress HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "37e4db33-7877-4a5f-891d-7da191c67e8e", "level": "info", "timestamp": "2026-04-19T12:46:38.735255Z"}
+INFO:     127.0.0.1:56787 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "e83c2b70-9154-4799-be03-ab5a63dca36d", "level": "info", "timestamp": "2026-04-19T12:47:08.697556Z"}
+INFO:     127.0.0.1:60804 - "GET /progress HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "5c93df57-07c1-4e1c-99bd-62a6fb5f03eb", "level": "info", "timestamp": "2026-04-19T12:47:08.747288Z"}
+INFO:     127.0.0.1:60804 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "ca535049-b7a7-4618-8ebe-fca0825e1890", "level": "info", "timestamp": "2026-04-19T12:47:38.728115Z"}
+INFO:     127.0.0.1:50475 - "GET /progress HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "6fe20f59-6508-408a-bb73-fc2ffdb29a7d", "level": "info", "timestamp": "2026-04-19T12:47:38.787513Z"}
+INFO:     127.0.0.1:50475 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/ds.html", "status_code": 304, "event": "http.request", "trace_id": "fe69c367-7243-4e5a-816c-75826733be59", "level": "info", "timestamp": "2026-04-19T12:49:55.592362Z"}
+INFO:     127.0.0.1:58087 - "GET /dashboard/ds.html HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/api/v1/instruments", "status_code": 200, "event": "http.request", "trace_id": "37863f53-8fef-4395-acaf-240493cbf24d", "level": "info", "timestamp": "2026-04-19T12:49:55.752884Z"}
+INFO:     127.0.0.1:58087 - "GET /api/v1/instruments HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "20b4a2c0-40aa-4e49-89a1-8b844ee51a0b", "level": "info", "timestamp": "2026-04-19T12:49:55.899442Z"}
+INFO:     127.0.0.1:58087 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/instrument/active", "status_code": 200, "event": "http.request", "trace_id": "fef0456f-35fa-4772-bc44-08070965a644", "level": "info", "timestamp": "2026-04-19T12:49:55.929676Z"}
+INFO:     127.0.0.1:58087 - "GET /api/v1/instrument/active HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/instrument/active", "status_code": 200, "event": "http.request", "trace_id": "d5c08e8a-2629-4a1f-834a-2b06784d3f92", "level": "info", "timestamp": "2026-04-19T12:49:55.954752Z"}
+INFO:     127.0.0.1:59155 - "GET /api/v1/instrument/active HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/instruments", "status_code": 200, "event": "http.request", "trace_id": "8af93539-1b95-4d20-a35e-72a0ca3766a4", "level": "info", "timestamp": "2026-04-19T12:49:55.956160Z"}
+INFO:     127.0.0.1:58087 - "GET /api/v1/instruments HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/data-understanding", "status_code": 200, "event": "http.request", "trace_id": "9439fd0e-bf9c-4706-81a6-68366d0a5b68", "level": "info", "timestamp": "2026-04-19T12:50:20.997672Z"}
+INFO:     127.0.0.1:58087 - "GET /api/v1/data-understanding?instrument_id=NIFTY HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "8b547738-9a75-4cb5-abfa-d37304d51cb9", "level": "info", "timestamp": "2026-04-19T12:50:25.970729Z"}
+INFO:     127.0.0.1:58087 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "9bb13c5d-a5e0-4225-b20d-cb021543e3b0", "level": "info", "timestamp": "2026-04-19T12:50:56.314097Z"}
+INFO:     127.0.0.1:53948 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "3347d7f4-9c17-431c-adbd-03a818df9ea2", "level": "info", "timestamp": "2026-04-19T12:51:26.759438Z"}
+INFO:     127.0.0.1:62176 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "a5ac7e52-4c2c-4406-8fd7-9abdfd6d4684", "level": "info", "timestamp": "2026-04-19T12:51:57.177394Z"}
+INFO:     127.0.0.1:64903 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "accb1d06-b197-47a6-8a0d-0eee8287a958", "level": "info", "timestamp": "2026-04-19T12:52:26.733344Z"}
+INFO:     127.0.0.1:51064 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "6e6bd14e-c113-4b18-afa9-83023b74b369", "level": "info", "timestamp": "2026-04-19T12:52:57.065543Z"}
+INFO:     127.0.0.1:58813 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "4d9b5693-f477-4683-b2a9-1ae844f36f4c", "level": "info", "timestamp": "2026-04-19T12:53:26.744771Z"}
+INFO:     127.0.0.1:54281 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "738f8616-2b8d-4cb2-8ccf-993621a101db", "level": "info", "timestamp": "2026-04-19T12:54:15.072347Z"}
+INFO:     127.0.0.1:56067 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "7108affe-1700-44d5-939e-c2d2323c79e2", "level": "info", "timestamp": "2026-04-19T12:55:14.756591Z"}
+INFO:     127.0.0.1:52521 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "af192146-b1b9-4391-8f02-3dd679ba98bc", "level": "info", "timestamp": "2026-04-19T12:56:15.076605Z"}
+INFO:     127.0.0.1:52207 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "6c7fb8d4-0e23-4354-ad0f-38b3926fd6fa", "level": "info", "timestamp": "2026-04-19T12:57:14.801588Z"}
+INFO:     127.0.0.1:59309 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "a62f04d8-b9e6-429f-8d58-3d97dcaa40ff", "level": "info", "timestamp": "2026-04-19T12:58:15.064984Z"}
+INFO:     127.0.0.1:54753 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "13e80e43-6ffd-453a-a037-b3765ae62596", "level": "info", "timestamp": "2026-04-19T12:59:14.743360Z"}
+INFO:     127.0.0.1:51597 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "f0b96241-bc46-4395-a72e-bc1854f3fc16", "level": "info", "timestamp": "2026-04-19T13:00:15.039401Z"}
+INFO:     127.0.0.1:49507 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "6aa8fdd5-2e75-4760-af2d-c0e8066e0ed5", "level": "info", "timestamp": "2026-04-19T13:01:14.749518Z"}
+INFO:     127.0.0.1:58965 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "418743dc-fe1e-4b88-91de-88206fb64c88", "level": "info", "timestamp": "2026-04-19T13:01:33.853901Z"}
+INFO:     127.0.0.1:56332 - "GET /health HTTP/1.1" 200 OK

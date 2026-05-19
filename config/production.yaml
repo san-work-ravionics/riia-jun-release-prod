@@ -1,0 +1,5 @@
+server:
+  log_level: "warning"
+
+security:
+  cors_origins: ["https://app.ravionics.nl"]

@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RITA — Data Scientist Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500&family=Epilogue:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+:root{
+  --bg:#F5F3EE;--surface:#FFFFFF;--surface2:#F9F8F5;--border:#E4E0D8;--border2:#D0CBBC;
+  --text:#1A1814;--t2:#4A4640;--t3:#8C877A;--t4:#B8B2A6;
+  --build:#1A6B3C;--build-bg:#EDF7F2;--build-bd:#B6DEC9;
+  --run:#0056B8;--run-bg:#EDF4FF;--run-bd:#AECBF5;
+  --mon:#6B2FA0;--mon-bg:#F5EFFE;--mon-bd:#CFADF0;
+  --warn:#92480A;--warn-bg:#FEF4EB;--warn-bd:#F5C99A;
+  --danger:#9B1C1C;--danger-bg:#FEF2F2;--danger-bd:#FCA5A5;
+  --ds:#0E7490;--ds-bg:#ECFEFF;--ds-bd:#67E8F9;
+  --fd:'Epilogue',sans-serif;--fm:'IBM Plex Mono',monospace;--fs:'Instrument Serif',serif;
+  --r:6px;--sh:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+  --shm:0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.05);
+}
+body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px;line-height:1.5;min-height:100vh;}
+.shell{display:grid;grid-template-columns:220px 1fr;grid-template-rows:52px 1fr;min-height:100vh;transition:grid-template-columns .22s cubic-bezier(.4,0,.2,1);}
+.shell.nav-collapsed{grid-template-columns:0px 1fr;}
+.shell.nav-collapsed .sidebar{overflow:hidden;border-right:none;}
+.nav-toggle{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--surface);cursor:pointer;flex-shrink:0;margin-right:10px;transition:background .12s,border-color .12s;}
+.nav-toggle:hover{background:var(--surface2);border-color:var(--border2);}
+.nav-toggle svg{display:block;}
+
+/* ── Topbar ── */
+.topbar{grid-column:1/-1;background:var(--surface);border-bottom:1.5px solid var(--border);display:flex;align-items:center;padding:0 20px;position:sticky;top:0;z-index:200;box-shadow:var(--sh);}
+.logo{display:flex;align-items:center;gap:9px;min-width:202px;}
+.logo-icon{width:26px;height:26px;background:var(--text);border-radius:5px;display:flex;align-items:center;justify-content:center;}
+.logo-icon svg{fill:var(--surface);}
+.logo-name{font-family:var(--fs);font-size:16px;letter-spacing:-.01em;}
+.logo-sub{font-family:var(--fm);font-size:10px;color:var(--t3);margin-left:2px;}
+.topbar-mid{flex:1;padding:0 16px;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.status-pill{display:flex;align-items:center;gap:6px;font-family:var(--fm);font-size:11px;color:var(--t2);background:var(--surface2);border:1px solid var(--border);border-radius:100px;padding:3px 10px;}
+.status-dot{width:7px;height:7px;border-radius:50%;background:#ccc;flex-shrink:0;}
+.status-dot.ok{background:var(--build);animation:blink 2s infinite;}
+.status-dot.err{background:var(--danger);}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:5px;font-family:var(--fd);font-size:12px;font-weight:600;padding:7px 14px;border-radius:var(--r);border:1.5px solid transparent;cursor:pointer;transition:opacity .12s,background .12s;white-space:nowrap;line-height:1;}
+.btn:hover{opacity:.85;} .btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-build{background:var(--build);color:#fff;border-color:var(--build);}
+.btn-run{background:var(--run);color:#fff;border-color:var(--run);}
+.btn-ghost{background:transparent;color:var(--t2);border-color:var(--border);}
+.btn-ds{background:var(--ds);color:#fff;border-color:var(--ds);}
+.btn-warn{background:var(--warn);color:#fff;border-color:var(--warn);}
+.btn-sm{padding:4px 10px;font-size:11px;}
+.btn-full{width:100%;justify-content:center;margin-top:12px;}
+
+/* ── Sidebar ── */
+.sidebar{background:var(--surface);border-right:1.5px solid var(--border);overflow-y:auto;display:flex;flex-direction:column;}
+.nav-section{margin-bottom:2px;padding-top:8px;}
+.nav-label{font-family:var(--fm);font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;color:var(--t4);padding:6px 16px 3px;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 16px;cursor:pointer;font-size:12px;color:var(--t2);transition:background .1s,color .1s;border-left:2px solid transparent;user-select:none;}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{color:var(--text);font-weight:600;}
+.nav-item.active.c-ds{border-left-color:var(--ds);background:var(--ds-bg);}
+.nav-item.active.c-build{border-left-color:var(--build);background:var(--build-bg);}
+.nav-item.active.c-run{border-left-color:var(--run);background:var(--run-bg);}
+.nav-item.active.c-mon{border-left-color:var(--mon);background:var(--mon-bg);}
+.nav-item.active.c-warn{border-left-color:var(--warn);background:var(--warn-bg);}
+.nav-item.active.c-text{border-left-color:var(--text);background:var(--surface2);}
+.nav-icon{width:15px;text-align:center;flex-shrink:0;font-size:12px;}
+.sidebar-footer{margin-top:auto;padding:10px 16px;border-top:1px solid var(--border);}
+.sidebar-footer .lbl{font-family:var(--fm);font-size:10px;color:var(--t4);}
+
+/* ── Main ── */
+.main{overflow-y:auto;padding:22px 26px;}
+
+/* Section visibility */
+.section{display:none;}
+.section.active{display:block;}
+
+/* Page header */
+.page-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;}
+.page-title{font-family:var(--fs);font-size:21px;letter-spacing:-.01em;}
+.page-sub{color:var(--t3);font-size:11px;margin-top:2px;}
+.hdr-actions{display:flex;gap:8px;flex-shrink:0;align-items:flex-start;}
+
+/* Pipeline panels (2-col) */
+.pipeline-panels{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.pipe-panel{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--sh);}
+.pipe-panel.build{border-top:3px solid var(--build);}
+.pipe-panel.reuse{border-top:3px solid var(--run);}
+.pipe-badge{display:inline-flex;align-items:center;gap:5px;font-family:var(--fm);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:3px 9px;border-radius:3px;margin-bottom:10px;}
+.pipe-badge.build{background:var(--build-bg);color:var(--build);border:1px solid var(--build-bd);}
+.pipe-badge.reuse{background:var(--run-bg);color:var(--run);border:1px solid var(--run-bd);}
+.pipe-desc{font-size:12px;color:var(--t2);line-height:1.55;margin-bottom:14px;}
+
+/* Config form inside panels */
+.cfg-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.cfg-group{display:flex;flex-direction:column;gap:3px;}
+.cfg-group.full{grid-column:1/-1;}
+.cfg-label{font-size:11px;font-weight:600;color:var(--t3);}
+.cfg-input,.cfg-select{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r);padding:6px 9px;font-family:var(--fd);font-size:12px;color:var(--text);outline:none;width:100%;transition:border-color .12s;}
+.cfg-input:focus,.cfg-select:focus{border-color:var(--ds);}
+.cfg-input[type="date"]{cursor:pointer;color-scheme:light;}
+.cfg-hint{font-size:10px;color:var(--t4);}
+.cfg-check{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t2);}
+.cfg-check input{accent-color:var(--ds);}
+
+/* Inline step bar inside panels */
+.inline-steps{margin-top:14px;display:none;}
+.inline-steps.visible{display:block;}
+.istep-bar{display:grid;grid-template-columns:repeat(8,1fr);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:6px;}
+.istep{padding:5px 2px;text-align:center;font-family:var(--fm);font-size:8px;color:var(--t4);border-right:1px solid var(--border);}
+.istep:last-child{border-right:none;}
+.istep.done{background:var(--build-bg);color:var(--build);}
+.istep.running{background:var(--run-bg);color:var(--run);font-weight:700;}
+.istep-status{font-family:var(--fm);font-size:11px;color:var(--t3);min-height:18px;}
+
+/* Step detail accordion */
+.step-accordion{margin-top:10px;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.step-acc-item{border-bottom:1px solid var(--border);}
+.step-acc-item:last-child{border-bottom:none;}
+.step-acc-hdr{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;font-size:12px;background:var(--surface);}
+.step-acc-hdr:hover{background:var(--surface2);}
+.step-acc-hdr .sn{font-family:var(--fm);font-size:10px;color:var(--t3);width:18px;}
+.step-acc-hdr .st{flex:1;}
+.step-acc-hdr .sb{font-family:var(--fm);font-size:10px;}
+.step-acc-body{display:none;padding:10px 12px;background:var(--surface2);font-size:12px;color:var(--t2);}
+.step-acc-body.open{display:block;}
+.step-kv{display:flex;flex-wrap:wrap;gap:8px;}
+.step-kv-item{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:6px 10px;min-width:110px;}
+.step-kv-label{font-family:var(--fm);font-size:9px;text-transform:uppercase;color:var(--t4);}
+.step-kv-val{font-family:var(--fm);font-size:13px;font-weight:500;margin-top:1px;}
+
+/* KPI rows */
+.kpi-row{display:grid;gap:10px;margin-bottom:16px;}
+.kpi-row-4{grid-template-columns:repeat(4,1fr);}
+.kpi-row-5{grid-template-columns:repeat(5,1fr);}
+.kpi-row-6{grid-template-columns:repeat(6,1fr);}
+.kpi-row-3{grid-template-columns:repeat(3,1fr);}
+.kpi{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:12px 14px;box-shadow:var(--sh);}
+.kpi-label{font-family:var(--fm);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-bottom:3px;}
+.kpi-value{font-family:var(--fm);font-size:20px;font-weight:500;letter-spacing:-.02em;line-height:1.1;}
+.kpi-delta{font-size:10px;color:var(--t3);margin-top:3px;}
+.kpi-value.pos{color:var(--build);}
+.kpi-value.neg{color:var(--danger);}
+.kpi-value.neu{color:var(--run);}
+.kpi-value.ds{color:var(--ds);}
+
+/* Cards */
+.card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--sh);margin-bottom:14px;}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.card-title{font-size:12px;font-weight:700;color:var(--text);}
+.card-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+.card-row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px;}
+
+/* Charts */
+.chart-wrap{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:14px;box-shadow:var(--sh);margin-bottom:14px;}
+.chart-title{font-size:12px;font-weight:600;margin-bottom:10px;color:var(--t2);}
+.chart-box{position:relative;width:100%;}
+.h180{height:180px;} .h220{height:220px;} .h260{height:260px;} .h300{height:300px;} .h340{height:340px;}
+
+/* Tables */
+.tbl-wrap{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:auto;max-height:228px;box-shadow:var(--sh);margin-bottom:14px;}
+
+/* ── Training phase tabs ── */
+.train-tab-bar{display:flex;gap:4px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:4px;margin-bottom:16px;width:fit-content;}
+.train-tab{font-family:var(--fd);font-size:12px;font-weight:500;padding:6px 18px;border-radius:4px;border:none;cursor:pointer;background:transparent;color:var(--t2);transition:background .12s,color .12s;}
+.train-tab:hover{background:var(--surface2);color:var(--text);}
+.train-tab.active{background:var(--run-bg);color:var(--run);font-weight:700;}
+.train-panel{display:block;}
+.train-panel.hidden{display:none;}
+
+/* ── Performance phase tabs ── */
+.perf-phase-tab{font-family:var(--fd);font-size:12px;font-weight:500;padding:6px 18px;border-radius:4px;border:none;cursor:pointer;background:transparent;color:var(--t2);transition:background .12s,color .12s;}
+.perf-phase-tab:hover{background:var(--surface2);color:var(--text);}
+.perf-phase-tab.active{background:var(--build-bg);color:var(--build);font-weight:700;}
+.perf-phase-panel{display:block;}
+.perf-phase-panel.hidden{display:none;}
+.round-cmp-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;}
+table{width:100%;border-collapse:collapse;}
+th{position:sticky;top:0;z-index:1;background:var(--surface2);font-family:var(--fm);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);}
+td{padding:7px 12px;border-bottom:1px solid var(--border);font-size:12px;color:var(--t2);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface2);}
+.td-mono{font-family:var(--fm);}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;font-family:var(--fm);font-size:10px;font-weight:500;padding:2px 7px;border-radius:3px;text-transform:uppercase;letter-spacing:.04em;}
+.badge.ok{background:var(--build-bg);color:var(--build);border:1px solid var(--build-bd);}
+.badge.warn{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-bd);}
+.badge.err{background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger-bd);}
+.badge.run{background:var(--run-bg);color:var(--run);border:1px solid var(--run-bd);}
+.badge.ds{background:var(--ds-bg);color:var(--ds);border:1px solid var(--ds-bd);}
+.badge.neu{background:var(--surface2);color:var(--t2);border:1px solid var(--border);}
+.badge.mon{background:var(--mon-bg);color:var(--mon);border:1px solid var(--mon-bd);}
+
+/* Alert strip */
+.alert-strip{border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px;}
+.alert-row{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border);}
+.alert-row:last-child{border-bottom:none;}
+.alert-row.ok{background:var(--build-bg);}
+.alert-row.warn{background:var(--warn-bg);}
+.alert-row.err{background:var(--danger-bg);}
+.alert-icon{font-size:13px;flex-shrink:0;}
+.alert-msg{flex:1;font-size:12px;color:var(--t2);}
+.alert-tag{font-family:var(--fm);font-size:10px;color:var(--t3);}
+
+/* Form */
+.form-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;}
+.form-group{display:flex;flex-direction:column;gap:4px;}
+.form-group.full{grid-column:1/-1;}
+.form-label{font-size:11px;font-weight:600;color:var(--t2);}
+.form-input,.form-select,.form-textarea{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-family:var(--fd);font-size:12px;color:var(--text);outline:none;transition:border-color .12s;width:100%;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--ds);}
+.form-textarea{resize:vertical;min-height:64px;}
+
+/* Divider */
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0;}
+
+/* Empty / loading */
+.empty{text-align:center;padding:32px 20px;color:var(--t4);font-size:12px;}
+
+/* Spinner */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid var(--border);border-top-color:var(--ds);border-radius:50%;animation:spin .65s linear infinite;vertical-align:middle;margin-right:5px;}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ── Viz / Data Understanding ── */
+.viz-controls{display:flex;align-items:center;gap:16px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:18px;box-shadow:var(--sh);}
+.viz-pill{font-family:var(--fm);font-size:11px;font-weight:500;padding:5px 14px;border-radius:100px;border:1.5px solid var(--border);background:var(--surface2);color:var(--t2);cursor:pointer;transition:background .1s,border-color .1s,color .1s;white-space:nowrap;}
+.viz-pill:hover{border-color:var(--ds);color:var(--ds);}
+.viz-pill.selected{background:var(--ds-bg);border-color:var(--ds);color:var(--ds);font-weight:700;}
+.viz-pill:disabled{opacity:.4;cursor:not-allowed;}
+.viz-section-hdr{font-family:var(--fm);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--t4);margin:18px 0 10px;display:flex;align-items:center;gap:8px;}
+.viz-section-hdr::after{content:'';flex:1;border-top:1px solid var(--border);}
+.viz-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:4px;}
+.viz-grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:4px;}
+.viz-card{background:var(--surface);border:1.5px solid var(--border);border-top:3px solid var(--ds);border-radius:var(--r);padding:12px;box-shadow:var(--sh);display:flex;flex-direction:column;gap:6px;}
+.viz-card-title{font-size:12px;font-weight:700;color:var(--text);}
+.viz-canvas-wrap{position:relative;height:140px;cursor:pointer;border-radius:4px;overflow:hidden;background:var(--surface2);}
+.viz-canvas-wrap:hover{outline:2px solid var(--ds);}
+.viz-canvas-wrap canvas{width:100%!important;height:100%!important;}
+.viz-desc{font-size:11px;color:var(--t3);line-height:1.5;margin-top:2px;}
+.viz-card-wide{grid-column:1/-1;}
+.viz-canvas-wrap.tall{height:240px;}
+
+/* Viz modal */
+.viz-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:500;align-items:center;justify-content:center;}
+.viz-modal.open{display:flex;}
+.viz-modal-inner{background:var(--surface);border-radius:var(--r);padding:20px;max-width:860px;width:90vw;max-height:90vh;overflow-y:auto;position:relative;}
+.viz-modal-close{position:absolute;top:10px;right:14px;font-size:20px;cursor:pointer;color:var(--t3);line-height:1;}
+.viz-modal-close:hover{color:var(--text);}
+.viz-modal-title{font-size:14px;font-weight:700;margin-bottom:4px;}
+.viz-modal-desc{font-size:12px;color:var(--t3);margin-bottom:12px;}
+.viz-modal-canvas-wrap{position:relative;height:360px;}
+.viz-modal-canvas-wrap canvas{width:100%!important;height:100%!important;}
+
+/* Correlation heatmap table */
+.corr-table-wrap{overflow:auto;margin-top:4px;}
+.corr-table{border-collapse:collapse;font-family:var(--fm);font-size:9px;}
+.corr-table th{padding:3px 6px;background:var(--surface2);color:var(--t3);text-align:center;border:1px solid var(--border);white-space:nowrap;}
+.corr-table td{padding:3px 6px;text-align:center;border:1px solid var(--border);font-size:9px;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ── Topbar ── -->
+<header class="topbar">
+  <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+      <line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="14" y2="12"/>
+    </svg>
+  </button>
+  <a class="logo" href="/dashboard/" style="text-decoration:none;color:inherit;">
+    <div class="logo-icon">
+      <svg width="14" height="14" viewBox="0 0 16 16"><path d="M8 1L1 5v6l7 4 7-4V5L8 1zm0 1.8L13.5 6 8 9.2 2.5 6 8 2.8zM2 7.1l5.5 3.2v3.9L2 11V7.1zm7.5 7.1v-3.9L15 7.1V11l-5.5 3.2z"/></svg>
+    </div>
+    <span class="logo-name">RITA</span>
+    <span class="logo-sub">DS Lab</span>
+  </a>
+  <div class="topbar-mid">
+    <span style="font-family:var(--fm);font-size:11px;color:var(--t3)">Data Scientist Workspace · Double DQN · Model Training · Analytics</span>
+  </div>
+  <div class="topbar-right">
+    <div id="inst-pill" style="display:none;align-items:center;gap:8px;background:var(--surface2);border:1.5px solid var(--border);border-radius:100px;padding:4px 12px 4px 8px;font-family:var(--fm);font-size:11px;color:var(--t2)">
+      <span id="inst-pill-flag" style="font-size:15px"></span>
+      <span id="inst-pill-name"></span>
+      <span id="inst-pill-exch" style="color:var(--t4)"></span>
+      <span style="color:var(--border2)">·</span>
+      <a href="/dashboard/" style="color:var(--run);text-decoration:none;font-size:10px;font-weight:600;letter-spacing:.04em">SWITCH ↗</a>
+    </div>
+    <a href="index.html" style="font-family:var(--fm);font-size:11px;color:var(--t3);text-decoration:none;display:flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid var(--border);border-radius:var(--r)">← Home</a>
+    <div class="status-pill">
+      <span class="status-dot" id="status-dot"></span>
+      <span id="status-text" style="font-family:var(--fm);font-size:11px">Connecting</span>
+    </div>
+  </div>
+</header>
+
+<!-- ── Sidebar ── -->
+<nav class="sidebar">
+  <div class="nav-section">
+    <div class="nav-label">Visualize</div>
+    <div class="nav-item c-ds active" data-s="understand" onclick="show('understand',this)">
+      <span class="nav-icon">🔬</span> <span data-i18n="nav.understand">Understand</span>
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Modeling</div>
+    <div class="nav-item c-text" data-s="dashboard" onclick="show('dashboard',this)">
+      <span class="nav-icon">◈</span> Dashboard
+    </div>
+    <div class="nav-item c-ds" data-s="pipeline" onclick="show('pipeline',this)">
+      <span class="nav-icon">🏗</span> <span data-i18n="nav.pipeline">Build</span>
+    </div>
+    <div class="nav-item c-build" data-s="performance" onclick="show('performance',this)">
+      <span class="nav-icon">📈</span> <span data-i18n="nav.performance">Performance</span>
+    </div>
+    <div class="nav-item c-build" data-s="risk" onclick="show('risk',this)">
+      <span class="nav-icon">🛡</span> <span data-i18n="nav.risk">Risk View</span>
+    </div>
+    <div class="nav-item c-build" data-s="trades" onclick="show('trades',this)">
+      <span class="nav-icon">📊</span> <span data-i18n="nav.trades">Trade Journal</span>
+    </div>
+    <div class="nav-item c-build" data-s="explain" onclick="show('explain',this)">
+      <span class="nav-icon">🔍</span> <span data-i18n="heading.explainability">Explainability</span>
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Portfolio</div>
+    <div class="nav-item c-ds" data-s="scenarios" onclick="show('scenarios',this)">
+      <span class="nav-icon">🗂</span> Scenarios
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Model</div>
+    <div class="nav-item c-run" data-s="training" onclick="show('training',this)">
+      <span class="nav-icon">📉</span> Training Metrics
+    </div>
+    <div class="nav-item c-run" data-s="changelog" onclick="show('changelog',this)">
+      <span class="nav-icon">📝</span> Model Changelog
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Ops</div>
+    <div class="nav-item c-mon" data-s="observability" onclick="show('observability',this)">
+      <span class="nav-icon">🔭</span> Observability
+    </div>
+    <div class="nav-item c-mon" data-s="mcp" onclick="show('mcp',this)">
+      <span class="nav-icon">🔌</span> MCP Calls
+    </div>
+    <div class="nav-item c-warn" data-s="export" onclick="show('export',this)">
+      <span class="nav-icon">📥</span> Export &amp; DevOps
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Analyse</div>
+    <div class="nav-item c-build" data-s="experiment-results" onclick="show('experiment-results',this)">
+      <span class="nav-icon">📋</span> Experiment Results
+    </div>
+    <div class="nav-item c-build" data-s="trade-diagnostics" onclick="show('trade-diagnostics',this)">
+      <span class="nav-icon">🔎</span> Trade Diagnostics
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Monitor</div>
+    <div class="nav-item c-run" data-s="model-train-progress" onclick="show('model-train-progress',this)">
+      <span class="nav-icon">📉</span> Training Progress
+    </div>
+    <div class="nav-item c-mon" data-s="model-observability" onclick="show('model-observability',this)">
+      <span class="nav-icon">🔭</span> Observability
+    </div>
+    <div class="nav-item c-mon" data-s="model-mcp" onclick="show('model-mcp',this)">
+      <span class="nav-icon">🔌</span> MCP Calls
+    </div>
+    <div class="nav-item c-warn" data-s="model-audit" onclick="show('model-audit',this)">
+      <span class="nav-icon">📋</span> Audit
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="lbl" id="sb-data-info">Data: checking…</div>
+    <div class="lbl" style="margin-top:2px" id="sb-model-info">Model: checking…</div>
+  </div>
+</nav>
+
+<!-- ── Main ── -->
+<main class="main">
+
+<!-- ════════════════════════════════════════════════
+     PIPELINE LAB
+     ════════════════════════════════════════════════ -->
+<div id="s-pipeline" class="section">
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">Build</div>
+      <div class="page-sub">Configure and run the DDQN investment model pipeline end-to-end</div>
+    </div>
+    <div class="hdr-actions">
+      <button class="btn btn-ghost btn-sm" onclick="resetSession()">↺ Reset Session</button>
+    </div>
+  </div>
+
+  <div class="pipeline-panels">
+    <!-- Build panel -->
+    <div class="pipe-panel build">
+      <div class="pipe-badge build">🏗 Build Model Pipeline</div>
+      <div class="pipe-desc">Train a <strong>new DDQN model from scratch</strong> using the configured timesteps and seeds, then run all 8 workflow steps. Use this when experimenting with new hyperparameters, features, or reward functions.</div>
+
+      <div class="cfg-grid">
+        <div class="cfg-group">
+          <label class="cfg-label">Instrument</label>
+          <select class="cfg-select" id="b-instrument"></select>
+        </div>
+        <div class="cfg-group">
+          <label class="cfg-label">Training Timesteps</label>
+          <select class="cfg-select" id="b-timesteps">
+            <option value="50000">50,000</option>
+            <option value="100000" selected>100,000</option>
+            <option value="200000">200,000</option>
+            <option value="300000">300,000</option>
+            <option value="500000">500,000</option>
+          </select>
+          <div class="cfg-hint">More = better, slower</div>
+        </div>
+        <div class="cfg-group">
+          <label class="cfg-label">Best-of-N Seeds</label>
+          <select class="cfg-select" id="b-seeds">
+            <option value="1">1 seed</option>
+            <option value="3" selected>3 seeds</option>
+            <option value="5">5 seeds</option>
+            <option value="10">10 seeds</option>
+          </select>
+          <div class="cfg-hint">Keep highest Sharpe</div>
+        </div>
+        <div class="cfg-group">
+          <label class="cfg-label">Simulation Start</label>
+          <input class="cfg-input" id="b-start" type="date" value="2025-08-01">
+        </div>
+        <div class="cfg-group">
+          <label class="cfg-label">Simulation End</label>
+          <input class="cfg-input" id="b-end" type="date">
+        </div>
+        <div class="cfg-group">
+          <label class="cfg-label">Run Notes</label>
+          <input class="cfg-input" id="b-notes" type="text" placeholder="e.g. reward v2">
+        </div>
+        <div class="cfg-group full">
+          <label class="cfg-check"><input type="checkbox" id="b-record" checked> Record to training history</label>
+        </div>
+      </div>
+
+      <button class="btn btn-build btn-full" id="btn-build" onclick="runBuild()">🏗 Build Model Pipeline</button>
+
+      <!-- Inline step progress -->
+      <div class="inline-steps" id="build-steps">
+        <div class="istep-bar" id="build-bar">
+          <div class="istep" id="b-s1">1<br>Set Goal</div>
+          <div class="istep" id="b-s2">2<br>Analyze</div>
+          <div class="istep" id="b-s3">3<br>Design</div>
+          <div class="istep" id="b-s4">4<br>Train</div>
+          <div class="istep" id="b-s5">5<br>Set Period</div>
+          <div class="istep" id="b-s6">6<br>Backtest</div>
+          <div class="istep" id="b-s7">7<br>Get Results</div>
+          <div class="istep" id="b-s8">8<br>Update</div>
+        </div>
+        <div class="istep-status" id="build-status"></div>
+        <div class="step-accordion" id="build-accordion" style="margin-top:10px;display:none;"></div>
+      </div>
+    </div>
+
+    <!-- Re-use panel -->
+    <div class="pipe-panel reuse">
+      <div class="pipe-badge reuse">▶ Re-use Model Pipeline</div>
+      <div class="pipe-desc"><strong>Skip training</strong> — load the existing trained model and run the backtest on the configured period. Faster for testing different date ranges or refreshing with latest market data.</div>
+
+      <div class="cfg-grid">
+        <div class="cfg-group">
+          <label class="cfg-label">Instrument</label>
+          <select class="cfg-select" id="r-instrument"></select>
+        </div>
+        <div class="cfg-group">
+          <label class="cfg-label">Simulation Start</label>
+          <input class="cfg-input" id="r-start" type="date" value="2025-08-01">
+        </div>
+        <div class="cfg-group">
+          <label class="cfg-label">Simulation End</label>
+          <input class="cfg-input" id="r-end" type="date">
+        </div>
+        <div class="cfg-group">
+          <label class="cfg-label">Run Notes</label>
+          <input class="cfg-input" id="r-notes" type="text" placeholder="e.g. backtest 2026 data">
+        </div>
+        <div class="cfg-group full">
+          <label class="cfg-check"><input type="checkbox" id="r-record" checked> Record to training history</label>
+        </div>
+      </div>
+
+      <button class="btn btn-run btn-full" id="btn-reuse" onclick="runReuse()">▶ Re-use Model Pipeline</button>
+
+      <!-- Inline step progress -->
+      <div class="inline-steps" id="reuse-steps">
+        <div class="istep-bar" id="reuse-bar">
+          <div class="istep" id="r-s1">1<br>Set Goal</div>
+          <div class="istep" id="r-s2">2<br>Analyze</div>
+          <div class="istep" id="r-s3">3<br>Design</div>
+          <div class="istep" id="r-s4">4<br>Load</div>
+          <div class="istep" id="r-s5">5<br>Set Period</div>
+          <div class="istep" id="r-s6">6<br>Backtest</div>
+          <div class="istep" id="r-s7">7<br>Get Results</div>
+          <div class="istep" id="r-s8">8<br>Update</div>
+        </div>
+        <div class="istep-status" id="reuse-status"></div>
+        <div class="step-accordion" id="reuse-accordion" style="margin-top:10px;display:none;"></div>
+      </div>
+    </div>
+  </div><!-- /pipeline-panels -->
+</div>
+
+<!-- ════════════════════════════════════════════════
+     DASHBOARD
+     ════════════════════════════════════════════════ -->
+<div id="s-dashboard" class="section">
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub">Results from the last successful model build &nbsp;<span id="dash-run-badge" style="display:none" class="badge neu"></span></div>
+    </div>
+    <div class="hdr-actions"><button class="btn btn-ghost btn-sm" onclick="loadDashboard()">↻ Refresh</button></div>
+  </div>
+
+  <div class="kpi-row kpi-row-5" id="dash-kpis">
+    <div class="kpi"><div class="kpi-label">Return</div><div class="kpi-value" id="d-return">—</div><div class="kpi-delta" id="d-return-d"></div></div>
+    <div class="kpi"><div class="kpi-label">CAGR</div><div class="kpi-value" id="d-cagr">—</div><div class="kpi-delta" id="d-cagr-d"></div></div>
+    <div class="kpi"><div class="kpi-label">Sharpe</div><div class="kpi-value" id="d-sharpe">—</div><div class="kpi-delta" id="d-sharpe-d"></div></div>
+    <div class="kpi"><div class="kpi-label">Max DD</div><div class="kpi-value" id="d-mdd">—</div><div class="kpi-delta" id="d-mdd-d"></div></div>
+    <div class="kpi"><div class="kpi-label">Win Rate</div><div class="kpi-value" id="d-winrate">—</div><div class="kpi-delta" id="d-winrate-d"></div></div>
+  </div>
+
+  <div class="card-row">
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Constraint Status</span></div>
+      <div class="alert-strip" id="dash-constraints">
+        <div class="alert-row"><span class="alert-icon">⏳</span><span class="alert-msg">Run the pipeline to see constraint status.</span></div>
+      </div>
+      <div id="dash-recommendations"></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Last Run Summary</span></div>
+      <div id="dash-goal">
+        <div class="empty" style="padding:16px">No training history found. Run the pipeline first.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     PERFORMANCE
+     ════════════════════════════════════════════════ -->
+<div id="s-performance" class="section">
+  <div class="page-hdr">
+    <div><div class="page-title">Performance</div><div class="page-sub" id="perf-page-sub">Backtest results — DDQN strategy vs Buy &amp; Hold</div></div>
+    <div class="hdr-actions"><button class="btn btn-ghost btn-sm" onclick="loadPerformance()">↻ Refresh</button></div>
+  </div>
+
+  <div class="kpi-row kpi-row-5" id="perf-kpis">
+    <div class="kpi"><div class="kpi-label">Total Return</div><div class="kpi-value" id="p-return">—</div><div class="kpi-delta" id="p-return-d"></div></div>
+    <div class="kpi"><div class="kpi-label">CAGR</div><div class="kpi-value" id="p-cagr">—</div><div class="kpi-delta" id="p-cagr-d"></div></div>
+    <div class="kpi"><div class="kpi-label">Sharpe Ratio</div><div class="kpi-value" id="p-sharpe">—</div><div class="kpi-delta" id="p-sharpe-d"></div></div>
+    <div class="kpi"><div class="kpi-label">Max Drawdown</div><div class="kpi-value" id="p-mdd">—</div><div class="kpi-delta" id="p-mdd-d"></div></div>
+    <div class="kpi"><div class="kpi-label">Win Rate</div><div class="kpi-value" id="p-winrate">—</div><div class="kpi-delta" id="p-winrate-d"></div></div>
+  </div>
+
+  <div class="alert-strip" id="perf-constraints" style="display:none"></div>
+
+  <div class="card-row">
+    <div class="chart-wrap">
+      <div class="chart-title">Cumulative Returns (base = 100)</div>
+      <div class="chart-box h260"><canvas id="ch-returns"></canvas></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Portfolio Drawdown (%)</div>
+      <div class="chart-box h260"><canvas id="ch-drawdown"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card-row">
+    <div class="chart-wrap">
+      <div class="chart-title">Rolling 63-Day Sharpe Ratio</div>
+      <div class="chart-box h220"><canvas id="ch-sharpe-roll"></canvas></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">DDQN Allocation Decisions (0% · 50% · 100%)</div>
+      <div class="chart-box h220"><canvas id="ch-alloc"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── Round-by-Round Comparison ── -->
+  <div class="card">
+    <div class="card-hdr" style="margin-bottom:14px">
+      <span class="card-title">Round-by-Round Comparison</span>
+      <div class="train-tab-bar" style="margin:0">
+        <button class="perf-phase-tab active" onclick="switchPerfTab('training',this)">Training</button>
+        <button class="perf-phase-tab" onclick="switchPerfTab('validation',this)">Validation</button>
+        <button class="perf-phase-tab" onclick="switchPerfTab('backtest',this)">Backtest</button>
+      </div>
+    </div>
+
+    <!-- Training phase -->
+    <div id="pp-training" class="perf-phase-panel">
+      <div class="round-cmp-grid">
+        <div class="chart-wrap" style="margin-bottom:0">
+          <div class="chart-title">Training — Sharpe, MDD, Return &amp; Trades per Round</div>
+          <div class="chart-box h260"><canvas id="ch-pf-train"></canvas></div>
+        </div>
+        <div class="tbl-wrap" id="pf-train-tbl" style="max-height:280px"><div class="empty">No training history yet. Run a Build pipeline first.</div></div>
+      </div>
+    </div>
+
+    <!-- Validation phase -->
+    <div id="pp-validation" class="perf-phase-panel hidden">
+      <div class="round-cmp-grid">
+        <div class="chart-wrap" style="margin-bottom:0">
+          <div class="chart-title">Validation — Sharpe, MDD, Return &amp; Trades per Round</div>
+          <div class="chart-box h260"><canvas id="ch-pf-val"></canvas></div>
+        </div>
+        <div class="tbl-wrap" id="pf-val-tbl" style="max-height:280px"><div class="empty">No validation data yet.</div></div>
+      </div>
+    </div>
+
+    <!-- Backtest phase -->
+    <div id="pp-backtest" class="perf-phase-panel hidden">
+      <div class="round-cmp-grid">
+        <div class="chart-wrap" style="margin-bottom:0">
+          <div class="chart-title">Backtest — Sharpe, MDD, Return &amp; Trades per Round</div>
+          <div class="chart-box h260"><canvas id="ch-pf-bt"></canvas></div>
+        </div>
+        <div class="tbl-wrap" id="pf-bt-tbl" style="max-height:280px"><div class="empty">No backtest data yet.</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════════════════════════
+     RISK VIEW
+     ════════════════════════════════════════════════ -->
+<div id="s-risk" class="section">
+  <div class="page-hdr">
+    <div><div class="page-title">Risk View</div><div class="page-sub">Portfolio VaR, drawdown budget, trade risk impact, and regime confidence</div></div>
+    <div class="hdr-actions"><button class="btn btn-ghost btn-sm" onclick="loadRisk()">↻ Refresh</button></div>
+  </div>
+
+  <div class="kpi-row kpi-row-4" id="risk-kpis">
+    <div class="kpi"><div class="kpi-label">Avg VaR (Invested)</div><div class="kpi-value" id="r-avg-var">—</div></div>
+    <div class="kpi"><div class="kpi-label">Peak VaR</div><div class="kpi-value neg" id="r-peak-var">—</div><div class="kpi-delta" id="r-peak-var-d"></div></div>
+    <div class="kpi"><div class="kpi-label">Max Budget Used</div><div class="kpi-value" id="r-max-budget">—</div><div class="kpi-delta">of 10% MDD limit</div></div>
+    <div class="kpi"><div class="kpi-label">Risk-Increasing Trades</div><div class="kpi-value" id="r-ri-trades">—</div><div class="kpi-delta" id="r-rr-trades-d"></div></div>
+  </div>
+
+  <div class="card-row">
+    <div class="chart-wrap">
+      <div class="chart-title">Rolling 20d Volatility &amp; Portfolio VaR 95%</div>
+      <div class="chart-box h260"><canvas id="ch-var"></canvas></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Drawdown Risk Budget (% of 10% MDD Limit)</div>
+      <div class="chart-box h260"><canvas id="ch-budget"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card-row">
+    <div class="chart-wrap">
+      <div class="chart-title">ΔVaR per Allocation Change (Trade Risk Impact)</div>
+      <div class="chart-box h260"><canvas id="ch-trade-risk"></canvas></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Market Regime — Trend Score</div>
+      <div class="chart-box h260"><canvas id="ch-regime"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">Phase Risk Summary</span></div>
+    <div class="tbl-wrap" id="risk-phase-tbl"><div class="empty">Run the pipeline to populate risk data.</div></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     TRADE JOURNAL
+     ════════════════════════════════════════════════ -->
+<div id="s-trades" class="section">
+  <div class="page-hdr">
+    <div><div class="page-title">Trade Journal</div><div class="page-sub" id="trades-page-sub">Model entry/exit signals overlaid on price — phase-by-phase analysis</div></div>
+    <div class="hdr-actions"><button class="btn btn-ghost btn-sm" onclick="loadTrades()">↻ Refresh</button></div>
+  </div>
+
+  <div class="kpi-row kpi-row-5" id="trade-kpis">
+    <div class="kpi"><div class="kpi-label">Total Entries</div><div class="kpi-value neu" id="t-entries">—</div></div>
+    <div class="kpi"><div class="kpi-label">Profit Exits</div><div class="kpi-value pos" id="t-profit">—</div></div>
+    <div class="kpi"><div class="kpi-label">Loss Exits</div><div class="kpi-value neg" id="t-loss">—</div></div>
+    <div class="kpi"><div class="kpi-label">Exit Win Rate</div><div class="kpi-value" id="t-winrate">—</div></div>
+    <div class="kpi"><div class="kpi-label">Total Trade Events</div><div class="kpi-value" id="t-total">—</div></div>
+  </div>
+
+  <div class="kpi-row kpi-row-3" style="margin-bottom:16px">
+    <div class="kpi"><div class="kpi-label">Avg Sharpe at Entry</div><div class="kpi-value" id="t-sharpe-entry">—</div><div class="kpi-delta">Rolling 63-day at entry date</div></div>
+    <div class="kpi"><div class="kpi-label">Avg Sharpe at Exit</div><div class="kpi-value" id="t-sharpe-exit">—</div><div class="kpi-delta">Rolling 63-day at exit date</div></div>
+    <div class="kpi"><div class="kpi-label">Sharpe Delta (Exit − Entry)</div><div class="kpi-value" id="t-sharpe-delta">—</div><div class="kpi-delta">Positive = model exits on improving risk</div></div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-title" id="trades-chart-title">Rolling 63d Sharpe &amp; Close Price — ▲ Entry (blue) · ▼ Profit Exit (green) · ● Loss Exit (red)</div>
+    <div class="chart-box" style="height:320px"><canvas id="ch-trade-combined"></canvas></div>
+  </div>
+
+  <div class="card-row">
+    <div class="chart-wrap">
+      <div class="chart-title">Portfolio Value (Normalised, base = 1.0)</div>
+      <div class="chart-box h220"><canvas id="ch-trade-pv"></canvas></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Drawdown % by Phase</div>
+      <div class="chart-box h220"><canvas id="ch-trade-dd"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">Per-Phase Trade Statistics</span></div>
+    <div class="tbl-wrap" id="trade-phase-tbl"><div class="empty">Run the pipeline to populate trade journal.</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">Full Trade Log</span></div>
+    <div class="tbl-wrap" id="trade-log-tbl"><div class="empty">Run the pipeline to populate trade log.</div></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     EXPLAINABILITY
+     ════════════════════════════════════════════════ -->
+<div id="s-explain" class="section">
+  <div class="page-hdr">
+    <div><div class="page-title">Explainability</div><div class="page-sub">SHAP feature importance — what drives the DDQN's allocation decisions</div></div>
+    <div class="hdr-actions"><button class="btn btn-ghost btn-sm" onclick="loadExplain()">↻ Refresh</button></div>
+  </div>
+
+  <div class="kpi-row kpi-row-3" id="shap-kpis">
+    <div class="kpi"><div class="kpi-label">Most Influential Feature</div><div class="kpi-value ds" id="sh-top">—</div></div>
+    <div class="kpi"><div class="kpi-label">Top Driver — Cash (0%)</div><div class="kpi-value" id="sh-cash">—</div></div>
+    <div class="kpi"><div class="kpi-label">Top Driver — Full (100%)</div><div class="kpi-value" id="sh-full">—</div></div>
+  </div>
+
+  <div class="card-row">
+    <div class="chart-wrap">
+      <div class="chart-title">Global Feature Importance — Mean |SHAP| per Feature × Action</div>
+      <div class="chart-box h300"><canvas id="ch-shap-bar"></canvas></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Feature Influence per Action — Radar</div>
+      <div class="chart-box h300"><canvas id="ch-shap-radar"></canvas></div>
+    </div>
+  </div>
+
+  <div class="tbl-wrap" id="shap-tbl"><div class="empty">Run the pipeline to generate SHAP explainability data.</div></div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     TRAINING METRICS
+     ════════════════════════════════════════════════ -->
+<div id="s-training" class="section">
+  <div class="page-hdr">
+    <div><div class="page-title">Training Metrics</div><div class="page-sub">Round-by-round model improvement across training experiments</div></div>
+    <div class="hdr-actions"><button class="btn btn-ghost btn-sm" onclick="loadTraining()">↻ Refresh</button></div>
+  </div>
+
+  <div class="kpi-row kpi-row-4" id="train-kpis">
+    <div class="kpi"><div class="kpi-label">Rounds Recorded</div><div class="kpi-value ds" id="tr-rounds">—</div></div>
+    <div class="kpi"><div class="kpi-label">Best Backtest Sharpe</div><div class="kpi-value" id="tr-best-sharpe">—</div></div>
+    <div class="kpi"><div class="kpi-label">Latest Backtest Return</div><div class="kpi-value" id="tr-latest-ret">—</div></div>
+    <div class="kpi"><div class="kpi-label">Latest Val Sharpe</div><div class="kpi-value" id="tr-latest-val">—</div></div>
+  </div>
+
+  <!-- Phase tabs -->
+  <div class="train-tab-bar">
+    <button class="train-tab active" onclick="switchTrainTab('training',this)">Training</button>
+    <button class="train-tab" onclick="switchTrainTab('validation',this)">Validation</button>
+    <button class="train-tab" onclick="switchTrainTab('backtest',this)">Backtest</button>
+  </div>
+
+  <!-- ── Training panel ── -->
+  <div id="tt-training" class="train-panel">
+    <div class="card-row">
+      <div class="chart-wrap">
+        <div class="chart-title">Sharpe Ratio — Round by Round</div>
+        <div class="chart-box h260"><canvas id="ch-tr-sharpe-t"></canvas></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Max Drawdown % — Round by Round (lower is better)</div>
+        <div class="chart-box h260"><canvas id="ch-tr-mdd-t"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">TD Loss &amp; Reward over Timesteps (last build run)</div>
+      <div class="chart-box h220"><canvas id="ch-tr-loss"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Training Progress Log</span></div>
+      <div class="tbl-wrap" id="train-progress-tbl"><div class="empty">No training progress data yet. Run a Build pipeline first.</div></div>
+    </div>
+  </div>
+
+  <!-- ── Validation panel ── -->
+  <div id="tt-validation" class="train-panel hidden">
+    <div id="val-no-data" class="empty" style="display:none;padding:24px 0">No validation metrics recorded. Validation metrics (val_sharpe, val_mdd_pct) are populated when training completes. Loss &amp; Reward curves are on the Training tab.</div>
+    <div id="val-charts-wrap">
+      <div class="card-row">
+        <div class="chart-wrap">
+          <div class="chart-title">Validation Sharpe — Round by Round</div>
+          <div class="chart-box h260"><canvas id="ch-tr-val-sharpe"></canvas></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">Validation Max Drawdown — Round by Round (lower is better)</div>
+          <div class="chart-box h260"><canvas id="ch-tr-val-mdd"></canvas></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">Validation Results by Run</span></div>
+        <div class="tbl-wrap" id="train-val-tbl"><div class="empty">No validation data yet.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Backtest panel ── -->
+  <div id="tt-backtest" class="train-panel hidden">
+    <div class="card-row">
+      <div class="chart-wrap">
+        <div class="chart-title">Backtest Sharpe — Round by Round</div>
+        <div class="chart-box h260"><canvas id="ch-tr-sharpe"></canvas></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Backtest Max Drawdown — Round by Round (lower is better)</div>
+        <div class="chart-box h260"><canvas id="ch-tr-mdd"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Backtest Total Return &amp; CAGR — Round by Round</div>
+      <div class="chart-box h220"><canvas id="ch-tr-return"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Constraint Checklist per Round</span></div>
+      <div class="tbl-wrap" id="train-constraint-tbl"><div class="empty">No data.</div></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Full Training History</span></div>
+      <div class="tbl-wrap" id="train-hist-tbl"><div class="empty">No training history yet.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     OBSERVABILITY
+     ════════════════════════════════════════════════ -->
+<div id="s-observability" class="section">
+  <div class="page-hdr">
+    <div><div class="page-title">Observability</div><div class="page-sub">Pipeline step timing, model drift detection, and system health</div></div>
+    <div class="hdr-actions"><button class="btn btn-ghost btn-sm" onclick="loadObservability()">↻ Refresh</button></div>
+  </div>
+
+  <div class="kpi-row kpi-row-3" id="obs-kpis">
+    <div class="kpi"><div class="kpi-label">Total Steps Logged</div><div class="kpi-value ds" id="ob-total">—</div></div>
+    <div class="kpi"><div class="kpi-label">Failed Steps</div><div class="kpi-value" id="ob-failed">—</div></div>
+    <div class="kpi"><div class="kpi-label">Drift Status</div><div class="kpi-value" id="ob-drift">—</div></div>
+  </div>
+
+  <div class="card-row">
+    <div class="chart-wrap">
+      <div class="chart-title">Avg Step Duration (seconds)</div>
+      <div class="chart-box h220"><canvas id="ch-ob-dur"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Health Checks</span></div>
+      <div class="alert-strip" id="obs-health"><div class="alert-row"><span class="alert-icon">⏳</span><span class="alert-msg">Loading…</span></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">Recent Pipeline Runs</span></div>
+    <div class="tbl-wrap" id="obs-run-tbl"><div class="empty">No runs logged yet.</div></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     MCP CALLS
+     ════════════════════════════════════════════════ -->
+<div id="s-mcp" class="section">
+  <div class="page-hdr">
+    <div><div class="page-title">MCP Calls</div><div class="page-sub">Live log of Claude Desktop → RITA MCP tool invocations</div></div>
+    <div class="hdr-actions"><button class="btn btn-ghost btn-sm" onclick="loadMCP()">↻ Refresh</button></div>
+  </div>
+
+  <div class="kpi-row kpi-row-6" id="mcp-kpis">
+    <div class="kpi"><div class="kpi-label">Total Calls</div><div class="kpi-value ds" id="mc-total">—</div></div>
+    <div class="kpi"><div class="kpi-label">Success Rate</div><div class="kpi-value" id="mc-success">—</div></div>
+    <div class="kpi"><div class="kpi-label">Tools Used</div><div class="kpi-value" id="mc-tools">—</div></div>
+    <div class="kpi"><div class="kpi-label">Avg Latency</div><div class="kpi-value" id="mc-latency">—</div></div>
+    <div class="kpi"><div class="kpi-label">Errors</div><div class="kpi-value" id="mc-errors">—</div></div>
+    <div class="kpi"><div class="kpi-label">Last Call</div><div class="kpi-value" id="mc-last">—</div></div>
+  </div>
+
+  <div class="card-row">
+    <div class="chart-wrap">
+      <div class="chart-title">Tool Usage (total calls per tool)</div>
+      <div class="chart-box h260"><canvas id="ch-mc-usage"></canvas></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Avg Latency per Tool (ms)</div>
+      <div class="chart-box h260"><canvas id="ch-mc-latency"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">Recent MCP Calls (newest first)</span></div>
+    <div class="tbl-wrap" id="mcp-tbl"><div class="empty">No MCP calls logged yet. Connect Claude Desktop and invoke a RITA tool.</div></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     MODEL CHANGELOG
+     ════════════════════════════════════════════════ -->
+<div id="s-changelog" class="section">
+  <div class="page-hdr">
+    <div><div class="page-title">Model Changelog</div><div class="page-sub">Track every model improvement — reward changes, hyperparameters, features, data updates</div></div>
+    <div class="hdr-actions"><button class="btn btn-ghost btn-sm" onclick="loadChangelog()">↻ Refresh</button></div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-hdr">
+      <span class="card-title">Model Build History</span>
+      <span class="badge ds" id="build-badge">0 runs</span>
+    </div>
+    <div class="tbl-wrap" id="build-hist-tbl"><div class="empty">No runs recorded yet.</div></div>
+  </div>
+
+  <div class="tbl-wrap" id="cl-tbl"><div class="empty">Loading…</div></div>
+
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">➕ Log a New Change</span></div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="cl-date" type="text"></div>
+      <div class="form-group"><label class="form-label">Version Tag</label><input class="form-input" id="cl-version" type="text" placeholder="e.g. v1.2"></div>
+      <div class="form-group"><label class="form-label">Category</label>
+        <select class="form-select" id="cl-cat">
+          <option>Reward</option><option>Hyperparameter</option><option>Feature</option>
+          <option>Architecture</option><option>Data</option><option>Other</option>
+        </select>
+      </div>
+      <div class="form-group full"><label class="form-label">Change Description</label><input class="form-input" id="cl-change" type="text" placeholder="What did you change?"></div>
+      <div class="form-group full"><label class="form-label">Rationale / Notes</label><textarea class="form-textarea" id="cl-notes" placeholder="Why? What problem does it solve?"></textarea></div>
+    </div>
+    <button class="btn btn-ds" onclick="saveChangelog()">Save Entry</button>
+    <span id="cl-msg" style="font-size:11px;margin-left:10px;"></span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     EXPORT & DEVOPS
+     ════════════════════════════════════════════════ -->
+<div id="s-export" class="section">
+  <div class="page-hdr">
+    <div><div class="page-title">Export &amp; DevOps</div><div class="page-sub">Download results, API health, deployment manifest, and environment config</div></div>
+  </div>
+
+  <div class="card-row">
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Download Results</span></div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button class="btn btn-ghost" style="justify-content:flex-start" onclick="dlJSON('/api/v1/performance-summary','performance_summary.json')">⬇ Performance Summary (JSON)</button>
+        <button class="btn btn-ghost" style="justify-content:flex-start" onclick="dlJSON('/api/v1/training-history','training_history.json')">⬇ Training History (JSON)</button>
+        <button class="btn btn-ghost" style="justify-content:flex-start" onclick="dlJSON('/api/v1/risk-timeline?phase=all','risk_timeline.json')">⬇ Risk Timeline — all phases (JSON)</button>
+        <button class="btn btn-ghost" style="justify-content:flex-start" onclick="dlJSON('/api/v1/trade-events','trade_events.json')">⬇ Trade Events (JSON)</button>
+        <button class="btn btn-ghost" style="justify-content:flex-start" onclick="dlJSON('/api/v1/mcp-calls','mcp_calls.json')">⬇ MCP Call Log (JSON)</button>
+        <button class="btn btn-ghost" style="justify-content:flex-start" onclick="dlJSON('/api/v1/changelog','model_changelog.json')">⬇ Model Changelog (JSON)</button>
+        <button class="btn btn-ghost" style="justify-content:flex-start" onclick="dlJSON('/api/v1/shap','shap_importance.json')">⬇ SHAP Importance (JSON)</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">API Health</span>
+        <button class="btn btn-ghost btn-sm" onclick="pingAPI()">↻ Ping</button>
+      </div>
+      <div id="api-health"><div class="empty" style="padding:16px">Click Ping to check API.</div></div>
+    </div>
+  </div>
+
+  <div class="card-row">
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Deployment Manifest</span></div>
+      <div id="deploy-manifest"><div class="empty" style="padding:16px">Loading…</div></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Environment Configuration</span></div>
+      <div class="tbl-wrap" id="env-tbl"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     UNDERSTAND DATA
+     ════════════════════════════════════════════════ -->
+<div id="s-understand" class="section active">
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">Understand Data</div>
+      <div class="page-sub">Explore feature distributions, correlations, time series and clustering for the selected instrument</div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="viz-controls">
+    <div style="flex:1;">
+      <div class="cfg-label" style="margin-bottom:8px;">Instrument</div>
+      <div id="viz-instrument-list" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+      <button class="btn btn-ds" onclick="runUnderstand()">Understand Data</button>
+      <span id="viz-status" style="font-family:var(--fm);font-size:11px;color:var(--t3);"></span>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div id="viz-empty" class="empty" style="padding:48px 20px;">
+    Select an instrument and click <strong>Understand Data</strong> to load analysis.
+  </div>
+
+  <!-- Results — hidden until loaded -->
+  <div id="viz-results" style="display:none;">
+
+    <!-- KPIs -->
+    <div class="kpi-row kpi-row-6" id="viz-kpis">
+      <div class="kpi"><div class="kpi-label">Rows</div><div class="kpi-value ds" id="vk-rows">—</div></div>
+      <div class="kpi"><div class="kpi-label">Features</div><div class="kpi-value ds" id="vk-features">—</div></div>
+      <div class="kpi"><div class="kpi-label">From</div><div class="kpi-value" id="vk-from" style="font-size:13px">—</div></div>
+      <div class="kpi"><div class="kpi-label">To</div><div class="kpi-value" id="vk-to" style="font-size:13px">—</div></div>
+      <div class="kpi"><div class="kpi-label">Missing %</div><div class="kpi-value" id="vk-missing">—</div></div>
+      <div class="kpi"><div class="kpi-label">Regimes</div><div class="kpi-value ds" id="vk-trends">—</div></div>
+    </div>
+
+    <!-- Distributions -->
+    <div class="viz-section-hdr">Distributions</div>
+    <div class="viz-grid-4" id="viz-dist-grid"></div>
+
+    <!-- Correlation -->
+    <div class="viz-section-hdr">Correlation Heatmap</div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-hdr"><span class="card-title">Feature Correlation Matrix</span><span class="badge ds" id="viz-corr-badge"></span></div>
+      <div class="corr-table-wrap" id="viz-corr-table"></div>
+    </div>
+
+    <!-- Time Series -->
+    <div class="viz-section-hdr">Time Series</div>
+    <div class="viz-grid-4" id="viz-ts-grid"></div>
+
+    <!-- Clustering -->
+    <div class="viz-section-hdr">Clustering Analysis</div>
+    <div class="viz-grid-2" id="viz-cluster-grid"></div>
+
+  </div><!-- /viz-results -->
+
+  <!-- Portfolio Overview — shown when Portfolio pill selected -->
+  <div id="viz-portfolio-results" style="display:none;">
+    <div class="kpi-row kpi-row-4" style="margin-bottom:14px;">
+      <div class="kpi"><div class="kpi-label">Instruments</div><div class="kpi-value ds" id="vp-count">4</div><div class="kpi-delta">in portfolio</div></div>
+      <div class="kpi"><div class="kpi-label">Common Days</div><div class="kpi-value ds" id="vp-days">—</div><div class="kpi-delta">aligned calendar</div></div>
+      <div class="kpi"><div class="kpi-label">Data From</div><div class="kpi-value" id="vp-from" style="font-size:13px">—</div></div>
+      <div class="kpi"><div class="kpi-label">Data To</div><div class="kpi-value" id="vp-to" style="font-size:13px">—</div></div>
+    </div>
+    <div class="viz-section-hdr">Instrument Coverage</div>
+    <div id="vp-inst-grid" class="viz-grid-4" style="margin-bottom:14px;"></div>
+    <div class="chart-wrap" style="margin-bottom:14px;">
+      <div class="chart-title">Normalized Price (base = 1.0) — All Instruments</div>
+      <div class="chart-box h260"><canvas id="chart-vp-returns"></canvas></div>
+    </div>
+    <div class="viz-section-hdr">Daily Returns Correlation</div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-hdr"><span class="card-title">Correlation Matrix</span></div>
+      <div class="corr-table-wrap" id="vp-corr-table"></div>
+    </div>
+    <div style="padding:12px 16px;background:var(--ds-bg);border:1.5px solid var(--ds-bd);border-radius:var(--r);font-size:12px;color:var(--ds);">
+      Portfolio configured. Go to <strong>Scenarios</strong> in the sidebar to run a portfolio backtest.
+    </div>
+  </div><!-- /viz-portfolio-results -->
+
+</div>
+
+<!-- Viz Modal -->
+<div class="viz-modal" id="viz-modal" onclick="closeVizModal()">
+  <div class="viz-modal-inner" onclick="event.stopPropagation()">
+    <span class="viz-modal-close" onclick="closeVizModal()">&times;</span>
+    <div class="viz-modal-title" id="vm-title"></div>
+    <div class="viz-modal-desc" id="vm-desc"></div>
+    <div class="viz-modal-canvas-wrap"><canvas id="vm-canvas"></canvas></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     PORTFOLIO SCENARIOS
+     ════════════════════════════════════════════════ -->
+<div id="s-scenarios" class="section">
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">Portfolio Scenarios</div>
+      <div class="page-sub">Backtest a multi-instrument portfolio using individually trained DDQN models</div>
+    </div>
+  </div>
+
+  <!-- ── Row 1: Instrument sliders (4-col) ── -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px;">
+    <div id="sc-card-nifty" style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:12px 14px;box-shadow:var(--sh);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <label class="cfg-check" style="margin:0"><input type="checkbox" id="sc-inst-nifty" value="nifty" checked onchange="scToggleInst('nifty')"><span style="font-weight:700">NIFTY 50</span></label>
+        <span class="badge ds" style="font-size:9px">INR</span>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:6px;">
+        <span style="font-family:var(--fm);font-size:22px;font-weight:600;color:var(--ds);line-height:1" id="sc-pct-nifty">25</span>
+        <span style="font-family:var(--fm);font-size:13px;color:var(--ds)">%</span>
+      </div>
+      <input type="range" id="sc-slider-nifty" min="0" max="100" value="25" step="1" style="width:100%;accent-color:var(--ds);cursor:pointer" oninput="scUpdateTotal()">
+      <div style="font-family:var(--fm);font-size:10px;color:var(--t3);text-align:right;margin-top:4px">≈ <span id="sc-eur-nifty">€250</span></div>
+    </div>
+    <div id="sc-card-banknifty" style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:12px 14px;box-shadow:var(--sh);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <label class="cfg-check" style="margin:0"><input type="checkbox" id="sc-inst-banknifty" value="banknifty" checked onchange="scToggleInst('banknifty')"><span style="font-weight:700">BANKNIFTY</span></label>
+        <span class="badge ds" style="font-size:9px">INR</span>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:6px;">
+        <span style="font-family:var(--fm);font-size:22px;font-weight:600;color:var(--ds);line-height:1" id="sc-pct-banknifty">25</span>
+        <span style="font-family:var(--fm);font-size:13px;color:var(--ds)">%</span>
+      </div>
+      <input type="range" id="sc-slider-banknifty" min="0" max="100" value="25" step="1" style="width:100%;accent-color:var(--ds);cursor:pointer" oninput="scUpdateTotal()">
+      <div style="font-family:var(--fm);font-size:10px;color:var(--t3);text-align:right;margin-top:4px">≈ <span id="sc-eur-banknifty">€250</span></div>
+    </div>
+    <div id="sc-card-asml" style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:12px 14px;box-shadow:var(--sh);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <label class="cfg-check" style="margin:0"><input type="checkbox" id="sc-inst-asml" value="asml" checked onchange="scToggleInst('asml')"><span style="font-weight:700">ASML</span></label>
+        <span class="badge ds" style="font-size:9px">EUR</span>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:6px;">
+        <span style="font-family:var(--fm);font-size:22px;font-weight:600;color:var(--ds);line-height:1" id="sc-pct-asml">25</span>
+        <span style="font-family:var(--fm);font-size:13px;color:var(--ds)">%</span>
+      </div>
+      <input type="range" id="sc-slider-asml" min="0" max="100" value="25" step="1" style="width:100%;accent-color:var(--ds);cursor:pointer" oninput="scUpdateTotal()">
+      <div style="font-family:var(--fm);font-size:10px;color:var(--t3);text-align:right;margin-top:4px">≈ <span id="sc-eur-asml">€250</span></div>
+    </div>
+    <div id="sc-card-nvidia" style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:12px 14px;box-shadow:var(--sh);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <label class="cfg-check" style="margin:0"><input type="checkbox" id="sc-inst-nvidia" value="nvidia" checked onchange="scToggleInst('nvidia')"><span style="font-weight:700">NVIDIA</span></label>
+        <span class="badge ds" style="font-size:9px">USD</span>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:6px;">
+        <span style="font-family:var(--fm);font-size:22px;font-weight:600;color:var(--ds);line-height:1" id="sc-pct-nvidia">25</span>
+        <span style="font-family:var(--fm);font-size:13px;color:var(--ds)">%</span>
+      </div>
+      <input type="range" id="sc-slider-nvidia" min="0" max="100" value="25" step="1" style="width:100%;accent-color:var(--ds);cursor:pointer" oninput="scUpdateTotal()">
+      <div style="font-family:var(--fm);font-size:10px;color:var(--t3);text-align:right;margin-top:4px">≈ <span id="sc-eur-nvidia">€250</span></div>
+    </div>
+  </div>
+
+  <!-- ── Row 2: Dates + capital + run button ── -->
+  <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:12px 16px;box-shadow:var(--sh);display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:12px;">
+    <div class="cfg-group" style="margin:0;min-width:130px;">
+      <label class="cfg-label">Start</label>
+      <input class="cfg-input" id="sc-from" type="date" style="padding:5px 8px">
+    </div>
+    <div class="cfg-group" style="margin:0;min-width:130px;">
+      <label class="cfg-label">End</label>
+      <input class="cfg-input" id="sc-to" type="date" style="padding:5px 8px">
+    </div>
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:10px;">
+      <div style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--ds-bg);border:1px solid var(--ds-bd);border-radius:var(--r);">
+        <span style="font-size:11px;color:var(--ds);font-weight:600">Total Capital €</span>
+        <input type="number" id="sc-capital" value="1000" min="100" step="100" style="width:72px;font-family:var(--fm);font-size:13px;font-weight:600;color:var(--ds);border:none;background:transparent;padding:0;text-align:right;outline:none" oninput="scUpdateTotal()">
+      </div>
+      <span style="font-family:var(--fm);font-size:11px;color:var(--t3)" id="sc-remaining-lbl">· 0% stays as cash</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="btn btn-ds" id="btn-sc" onclick="runPortfolioScenario()" style="white-space:nowrap">▶ Run Backtest</button>
+      <span id="sc-spinner" style="display:none"><span class="spinner"></span></span>
+      <span id="sc-status" class="badge" style="display:none"></span>
+    </div>
+  </div>
+
+  <!-- ── Row 3: How it works (compact strip) ── -->
+  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 16px;margin-bottom:16px;display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;">
+    <span style="font-family:var(--fm);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--t4);white-space:nowrap;padding-top:1px">How it works</span>
+    <span style="font-size:11px;color:var(--t2)"><strong>①</strong> Build models per instrument via Build section.</span>
+    <span style="font-size:11px;color:var(--t2)"><strong>②</strong> Set % allocation and date range.</span>
+    <span style="font-size:11px;color:var(--t2)"><strong>③</strong> Run Backtest — Sharpe, MDD, RITA vs B&amp;H.</span>
+    <span style="font-size:11px;color:var(--warn)"><strong>ℹ</strong> Whole-share: if allocation &lt; 1 share cost, that capital stays cash. FX: EUR/INR≈91 · EUR/USD≈1.09 · NIFTY lot=75 · BANKNIFTY lot=30</span>
+  </div>
+
+  <!-- Results -->
+  <div id="sc-result"></div>
+</div>
+
+<!-- ════════ EXPERIMENT RESULTS ════════ -->
+<div id="s-experiment-results" class="section">
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">Experiment Results</div>
+      <div class="page-sub">Trade journal — executed trades and allocation timeline across training phases</div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="downloadExperimentResults()">Download CSV</button>
+  </div>
+  <div id="exp-results-wrap"><div class="empty">Loading…</div></div>
+</div>
+
+<!-- ════════ TRADE DIAGNOSTICS ════════ -->
+<div id="s-trade-diagnostics" class="section">
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">Trade Diagnostics</div>
+      <div class="page-sub">Entry/exit analysis and decision quality — allocation changes with market signals</div>
+    </div>
+  </div>
+  <div id="trade-diag-wrap"><div class="empty">Loading…</div></div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     MODEL — TRAINING PROGRESS
+     ════════════════════════════════════════════════ -->
+<div id="s-model-train-progress" class="section">
+  <div class="page-hdr">
+    <div><div class="page-title">Training Progress</div><div class="page-sub">Round-by-round model improvement across training experiments</div></div>
+    <div class="hdr-actions"><button class="btn btn-ghost btn-sm" onclick="loadModelTrainProgress()">↻ Refresh</button></div>
+  </div>
+
+  <div class="chart-wrap" style="margin-bottom:14px">
+    <div class="chart-title">Sharpe Ratio by Training Round</div>
+    <div class="chart-box h220"><canvas id="ch-mtp-sharpe"></canvas></div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">Training History</span></div>
+    <div class="tbl-wrap" id="mtp-table-wrap"><div class="empty">No training history found.</div></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     MODEL — OBSERVABILITY
+     ════════════════════════════════════════════════ -->
+<div id="s-model-observability" class="section">
+  <div class="page-hdr">
+    <div><div class="page-title">Observability</div><div class="page-sub">Pipeline timing, drift detection and API health</div></div>
+    <div class="hdr-actions"><button class="btn btn-ghost btn-sm" onclick="loadModelObservability()">↻ Refresh</button></div>
+  </div>
+
+  <div class="card-row" style="margin-bottom:14px">
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Drift Report</span><span id="mob-drift-badge" class="badge">—</span></div>
+      <div id="mob-drift-details"><div class="empty">Loading…</div></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">API Request Stats</span></div>
+      <div id="mob-api-stats"><div class="empty">Loading…</div></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Pipeline Timing</span></div>
+      <div id="mob-pipeline-stats"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">Step Execution Log</span></div>
+    <div class="tbl-wrap" id="mob-step-log-wrap"><div class="empty">Loading step log…</div></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     MODEL — MCP CALLS
+     ════════════════════════════════════════════════ -->
+<div id="s-model-mcp" class="section">
+  <div class="page-hdr">
+    <div><div class="page-title">MCP Calls</div><div class="page-sub">Claude Desktop tool invocations via Model Context Protocol</div></div>
+    <div class="hdr-actions"><button class="btn btn-ghost btn-sm" onclick="loadModelMcp()">↻ Refresh</button></div>
+  </div>
+
+  <div class="card-row" style="margin-bottom:14px">
+    <div class="chart-wrap">
+      <div class="chart-title">Calls by Tool</div>
+      <div class="chart-box h220"><canvas id="ch-mmcp-tools"></canvas></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Avg Duration by Tool (ms)</div>
+      <div class="chart-box h220"><canvas id="ch-mmcp-duration"></canvas></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Count of MCP Function Calls</div>
+      <div class="chart-box h220"><canvas id="ch-mmcp-share"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">Recent MCP Calls</span></div>
+    <div class="tbl-wrap" id="mmcp-table-wrap"><div class="empty">No MCP call log entries found.</div></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     MODEL — AUDIT
+     ════════════════════════════════════════════════ -->
+<div id="s-model-audit" class="section">
+  <div class="page-hdr">
+    <div><div class="page-title">Audit</div><div class="page-sub">Run history, step execution log and training constraint outcomes</div></div>
+    <div class="hdr-actions"><button class="btn btn-ghost btn-sm" onclick="loadModelAudit()">↻ Refresh</button></div>
+  </div>
+
+  <div class="kpi-row kpi-row-3" style="margin-bottom:14px">
+    <div class="kpi"><div class="kpi-label">Training Rounds</div><div class="kpi-value ds" id="mau-rounds">—</div></div>
+    <div class="kpi"><div class="kpi-label">Constraint Pass Rate</div><div class="kpi-value" id="mau-pass-rate">—</div></div>
+    <div class="kpi"><div class="kpi-label">Best Sharpe</div><div class="kpi-value" id="mau-best-sharpe">—</div><div class="kpi-sub" id="mau-best-sharpe-sub"></div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-hdr"><span class="card-title">Training History</span><span class="card-sub">one row per pipeline run</span></div>
+    <div class="tbl-wrap" id="mau-history-wrap"><div class="empty">Loading…</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">Step Execution Log</span><span class="card-sub">recent 40 step entries</span></div>
+    <div class="tbl-wrap" id="mau-steplog-wrap"><div class="empty">Loading…</div></div>
+  </div>
+</div>
+
+</main>
+</div><!-- /shell -->
+
+<!-- ══════════════════════════════════════
+     JAVASCRIPT — injected in next step
+     ══════════════════════════════════════ -->
+<!-- Inline script block replaced by ES module tree (Feature 10 Phase 4) -->
+<!-- Main app logic now lives in dashboard/js/ds/main.js -->
+<script type="module" src="js/ds/main.js"></script>
+
+<!-- ── Chart expand modal ───────────────────────────────── -->
+<div id="chart-modal" onclick="closeChartModal()" style="
+  display:none;position:fixed;inset:0;z-index:9999;
+  background:rgba(0,0,0,0.72);
+  align-items:center;justify-content:center;cursor:zoom-out;">
+  <div onclick="event.stopPropagation()" style="
+    background:var(--surface);border-radius:var(--r);
+    padding:24px;width:94vw;max-width:94vw;max-height:96vh;
+    box-shadow:0 8px 40px rgba(0,0,0,0.4);position:relative;overflow:auto;">
+    <button onclick="closeChartModal()" style="
+      position:absolute;top:10px;right:14px;
+      background:none;border:none;font-size:22px;
+      cursor:pointer;color:var(--t2);line-height:1;">✕</button>
+    <div id="chart-modal-title" style="font-family:var(--fs);font-size:16px;font-weight:600;margin-bottom:16px;padding-right:28px;color:var(--text)"></div>
+    <img id="chart-modal-img" style="width:100%;max-height:88vh;display:block;border-radius:4px;object-fit:contain;" />
+  </div>
+</div>
+
+<!-- ── Nav toggle (desktop collapse) ─────────────────────── -->
+<script>
+(function(){
+  var KEY='rita_nav_collapsed';
+  var btn=document.getElementById('nav-toggle');
+  var shell=document.querySelector('.shell');
+  var sidebar=document.querySelector('.sidebar');
+  if(!btn||!shell||!sidebar)return;
+  if(window.innerWidth>768&&localStorage.getItem(KEY)==='1')shell.classList.add('nav-collapsed');
+  btn.addEventListener('click',function(){
+    if(window.innerWidth>768){
+      var c=shell.classList.toggle('nav-collapsed');
+      localStorage.setItem(KEY,c?'1':'0');
+    } else {
+      sidebar.classList.toggle('open');
+      document.body.classList.toggle('nav-open');
+    }
+  });
+  document.addEventListener('click',function(e){
+    if(document.body.classList.contains('nav-open')&&!sidebar.contains(e.target)&&e.target!==btn){
+      sidebar.classList.remove('open');document.body.classList.remove('nav-open');
+    }
+  });
+})();
+</script>
+</body>
+</html>

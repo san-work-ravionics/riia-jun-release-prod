@@ -1,0 +1,15 @@
+# NIFTY 50 — Fine-tuning defaults
+# ~25 years of daily OHLCV data; large dataset → larger budget and buffer.
+instrument: NIFTY
+
+training:
+  timesteps: 300000
+  learning_rate: 0.0001
+  buffer_size: 100000
+  exploration_pct: 0.50
+  n_seeds: 3
+  episode_length: 252       # 1 trading year
+
+notes: >
+  Indian index. Trend-following regime; RSI and MACD signals historically
+  reliable. Higher timesteps justified by the longer history (~6 000 rows).

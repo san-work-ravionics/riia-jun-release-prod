@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rita-api
+  namespace: default
+  labels:
+    app: rita
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rita
+  template:
+    metadata:
+      labels:
+        app: rita
+    spec:
+      containers:
+        - name: rita
+          # Replaced at deploy time by envsubst: GHCR_IMAGE=ghcr.io/<owner>/<repo>/rita:latest
+          image: ${GHCR_IMAGE}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - secretRef:
+                name: rita-secrets
+          env:
+            - name: RITA_ENV
+              value: "production"
+            - name: RITA_SERVER__PORT
+              value: "8000"
+          volumeMounts:
+            - name: rita-input
+              mountPath: /app/rita_input
+              readOnly: true
+            - name: rita-output
+              mountPath: /app/rita_output
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 30
+      volumes:
+        - name: rita-input
+          hostPath:
+            path: /opt/rita_input
+            type: DirectoryOrCreate
+        - name: rita-output
+          hostPath:
+            path: /opt/rita_output
+            type: DirectoryOrCreate

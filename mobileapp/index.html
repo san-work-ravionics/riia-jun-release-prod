@@ -1,0 +1,2358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+window.onerror = function(msg, src, line, col, err) {
+    console.error('[RITA-PWA] onerror', msg, src, line, col, err);
+    fetch('/api/v1/client-error', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: String(msg), source: src, lineno: line, colno: col, stack: err ? err.stack : null, url: location.href })
+    }).catch(function(e) { console.error('[RITA-PWA] failed to send error', e); });
+    return false;
+};
+window.addEventListener('unhandledrejection', function(e) {
+    console.error('[RITA-PWA] unhandledrejection', e.reason);
+    fetch('/api/v1/client-error', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: String(e.reason), url: location.href })
+    }).catch(function(f) { console.error('[RITA-PWA] failed to send rejection', f); });
+});
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>RITA</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#F5F3EE">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500;600&family=Epilogue:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+
+/* ── Reset ─────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+button { cursor: pointer; border: none; background: none; font: inherit; }
+
+/* ── Design tokens ──────────────────────────────────────────────── */
+:root {
+  --bg:     #F5F3EE;
+  --surface:   #FFFFFF;
+  --surface2:  #F9F8F5;
+  --border:    #E4E0D8;
+  --border2:   #D0CBBC;
+  --text:    #1A1814;
+  --t2:     #4A4640;
+  --t3:     #8C877A;
+  --t4:     #B8B2A6;
+  --build:  #1A6B3C;
+  --build-bg:  #EDF7F2;
+  --build-bd:  #B6DEC9;
+  --run:    #0056B8;
+  --run-bg:  #EDF4FF;
+  --run-bd:  #AECBF5;
+  --mon:    #6B2FA0;
+  --mon-bg:  #F5EFFE;
+  --mon-bd:  #CFADF0;
+  --warn:   #92480A;
+  --warn-bg: #FEF4EB;
+  --warn-bd: #F5C99A;
+  --danger:    #9B1C1C;
+  --danger-bg:  #FEF2F2;
+  --danger-bd:  #FCA5A5;
+  --chat:   #BE185D;
+  --chatBg: #FFF0F5;
+  --chatBd: #FBCFE8;
+  --fd: 'Epilogue', system-ui, sans-serif;
+  --fm: 'IBM Plex Mono', 'SF Mono', monospace;
+  --fs: 'Instrument Serif', Georgia, serif;
+  /* ── Regime background colors ── */
+  --regime-bull:    #EDFAF3;
+  --regime-neutral: #FEFCE8;
+  --regime-bear:    #FFF7ED;
+}
+
+/* ── App shell ──────────────────────────────────────────────────── */
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  font-family: var(--fd);
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.6s ease;
+}
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+}
+
+/* ── Carousel ───────────────────────────────────────────────────── */
+.carousel-viewport { flex: 1; overflow: hidden; position: relative; min-height: 0; }
+.carousel-track {
+  display: flex;
+  width: calc(10 * 100vw);
+  height: 100%;
+  transform: translateX(calc(var(--slide, 0) * -100vw));
+  transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+.screen { width: 100vw; height: 100%; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; flex-shrink: 0; position: relative; }
+.screen::-webkit-scrollbar { display: none; }
+.screen-inner { padding-bottom: 32px; }
+
+/* ── Tab bar ────────────────────────────────────────────────────── */
+.tab-bar {
+  flex-shrink: 0;
+  background: var(--bg);
+  display: flex;
+  align-items: flex-start;
+  padding: 8px 12px;
+  padding-bottom: max(env(safe-area-inset-bottom), 8px);
+  border-top: 1px solid var(--border);
+  z-index: 20;
+}
+.tab-pill {
+  flex: 1;
+  display: flex;
+  background: var(--surface);
+  border-radius: 28px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.04);
+  padding: 6px 4px 8px;
+}
+.tab-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 5px 0; border-radius: 20px; transition: background 0.18s;
+  -webkit-tap-highlight-color: transparent; cursor: pointer; user-select: none;
+}
+.tab-lbl { font-family: var(--fm); font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--t3); font-weight: 500; transition: color 0.2s; }
+.tab-item[data-active="true"] { background: var(--build-bg); }
+.tab-item[data-active="true"] .tab-lbl { color: var(--build); font-weight: 700; }
+.tab-item[data-active="true"] svg { stroke: var(--build); }
+.tab-item svg { display: block; stroke: var(--t3); transition: stroke 0.2s; }
+
+/* ── Overlays ───────────────────────────────────────────────────── */
+.overlay {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; flex-direction: column; background: var(--bg);
+  transform: translateY(100%);
+  transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: max(env(safe-area-inset-bottom), 8px);
+}
+.overlay.open { transform: translateY(0); }
+.drag-handle { display: flex; justify-content: center; padding: 10px 0 2px; }
+.drag-handle-pill { width: 36px; height: 4px; border-radius: 2px; background: var(--border2); }
+
+/* ── Chat FAB ───────────────────────────────────────────────────── */
+.chat-fab {
+  position: absolute; right: 18px; bottom: 16px;
+  width: 52px; height: 52px; border-radius: 26px;
+  background: linear-gradient(135deg, var(--chat), #E94BA3);
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 10px 28px rgba(190,24,93,.45);
+  cursor: pointer; z-index: 30; user-select: none; -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Shared components ──────────────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center; padding: 3px 8px;
+  border-radius: 4px; font-family: var(--fm); font-size: 9px;
+  font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; flex-shrink: 0;
+}
+.badge-build { background: var(--build-bg); color: var(--build); }
+.badge-run   { background: var(--run-bg); color: var(--run); }
+.badge-mon   { background: var(--mon-bg); color: var(--mon); }
+.badge-warn  { background: var(--warn-bg); color: var(--warn); }
+.badge-dng   { background: var(--danger-bg); color: var(--danger); }
+.badge-muted { background: var(--surface2); color: var(--t2); border: 1px solid var(--border); }
+
+/* ── Sig chips ──────────────────────────────────────────────────── */
+.sig-chips { display: flex; gap: 8px; padding: 14px 24px 16px; overflow-x: auto; scrollbar-width: none; }
+.sig-chips::-webkit-scrollbar { display: none; }
+.chip {
+  display: flex; align-items: center; padding: 6px 14px;
+  border-radius: 20px; border: 1px solid var(--border); background: var(--surface);
+  font-family: var(--fm); font-size: 9px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--t2); white-space: nowrap;
+  cursor: pointer; flex-shrink: 0; -webkit-tap-highlight-color: transparent;
+}
+.chip.active { background: var(--text); color: #fff; border-color: var(--text); }
+
+/* ── Signal card ────────────────────────────────────────────────── */
+.sig-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 16px 16px 14px; }
+.sig-card-hdr { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
+.sig-card-title { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.3; flex: 1; margin-right: 8px; }
+.sig-card-body  { font-size: 12px; color: var(--t2); line-height: 1.55; }
+.sig-card-foot  { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+.sig-card-when  { font-family: var(--fm); font-size: 9px; color: var(--t4); letter-spacing: 0.06em; }
+
+/* ── Chat UI ────────────────────────────────────────────────────── */
+.chat-hdr { padding: 16px 20px 12px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.chat-avatar { width: 38px; height: 38px; border-radius: 19px; background: var(--chat); display: flex; align-items: center; justify-content: center; font-family: var(--fs); font-size: 18px; font-style: italic; color: #fff; flex-shrink: 0; }
+.chat-hdr-name   { font-weight: 600; font-size: 16px; color: var(--text); }
+.chat-hdr-status { font-family: var(--fm); font-size: 9px; color: var(--build); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+.chat-msgs       { padding: 16px 16px 8px; display: flex; flex-direction: column; gap: 12px; }
+.msg-wrap        { display: flex; flex-direction: column; }
+.msg-wrap.user   { align-items: flex-end; }
+.msg-wrap.rita   { align-items: flex-start; }
+.bubble { max-width: 82%; padding: 11px 14px; border-radius: 20px; font-size: 14px; line-height: 1.5; }
+.bubble-user { background: var(--text); color: #F5F3EE; border-radius: 20px 20px 4px 20px; }
+.bubble-rita { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 20px 20px 20px 4px; }
+.bubble-rita strong { color: var(--build); }
+.msg-time { font-family: var(--fm); font-size: 9px; color: var(--t4); margin-top: 4px; letter-spacing: 0.06em; }
+.chat-chips-area { padding: 4px 16px 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+.chat-chip {
+  padding: 8px 14px; border-radius: 20px; border: 1px solid var(--chatBd);
+  background: var(--chatBg); font-family: var(--fm); font-size: 10px;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--chat);
+  cursor: pointer; white-space: nowrap; -webkit-tap-highlight-color: transparent;
+}
+.chat-input-bar { margin: 0 16px; display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 10px 10px 10px 18px; }
+.chat-input-field { flex: 1; font-family: var(--fd); font-size: 14px; color: var(--t3); border: none; outline: none; background: transparent; }
+.chat-send-btn { width: 36px; height: 36px; border-radius: 18px; background: var(--chat); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+/* ── Portfolio holdings ─────────────────────────────────────────── */
+.holding-row { display: flex; align-items: center; gap: 12px; padding: 12px 8px; border-bottom: 1px solid var(--border); }
+.holding-chip { width: 36px; height: 36px; border-radius: 10px; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-family: var(--fm); font-size: 11px; font-weight: 600; color: var(--t2); flex-shrink: 0; }
+.holding-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.holding-sub  { font-size: 11px; color: var(--t3); font-family: var(--fm); margin-top: 1px; }
+.holding-val { font-family: var(--fm); font-size: 13px; font-weight: 500; color: var(--text); text-align: right; }
+.holding-chg { font-family: var(--fm); font-size: 11px; text-align: right; margin-top: 1px; }
+
+/* ── Period selector ────────────────────────────────────────────── */
+.period-bar { display: flex; justify-content: space-between; font-size: 11px; }
+.period-pill {
+  padding: 3px 10px; border-radius: 100px; font-family: var(--fm); font-size: 11px;
+  font-weight: 500; color: var(--t3); cursor: pointer;
+}
+.period-pill.active { background: var(--build-bg); color: var(--build); font-weight: 700; }
+
+/* ── Signal hero screen ─────────────────────────────────────────── */
+.sig-hero-inner {
+  min-height: 100%;
+  background: linear-gradient(180deg, var(--build) 0%, var(--build) 42%, var(--bg) 100%);
+  padding-bottom: 90px;
+}
+.sig-hero-glass {
+  margin: 28px 22px 0; padding: 16px 18px; border-radius: 18px;
+  background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,.2);
+  -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+}
+.sig-hero-chart {
+  margin: 12px 22px 0; padding: 14px 18px; border-radius: 18px;
+  background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,.2);
+}
+
+</style>
+<script>window.RITA_API_BASE = 'http://localhost:8000';</script>
+<script>
+// ── i18n ─────────────────────────────────────────────────────────
+const _I18N_LOCALES = {
+  en: {
+    'mobile.home': 'Home', 'mobile.goal': 'Goal', 'mobile.market': 'Market',
+    'mobile.signal_hero': 'Signal', 'mobile.strategy': 'Strategy',
+    'mobile.today': 'Today', 'mobile.overview': 'Overview',
+    'mobile.market_feed': 'Market Feed', 'mobile.portfolio': 'Portfolio',
+    'mobile.live_toggle': 'Live', 'mobile.greeting': 'Good morning',
+    'ui.loading': 'Loading…', 'ui.no_data': 'No data',
+    'btn.refresh': 'Refresh', 'nav.overview': 'Overview',
+  },
+  nl: {
+    'mobile.home': 'Start', 'mobile.goal': 'Doel', 'mobile.market': 'Markt',
+    'mobile.signal_hero': 'Signaal', 'mobile.strategy': 'Strategie',
+    'mobile.today': 'Vandaag', 'mobile.overview': 'Overzicht',
+    'mobile.market_feed': 'Marktfeed', 'mobile.portfolio': 'Portefeuille',
+    'mobile.live_toggle': 'Live', 'mobile.greeting': 'Goedemorgen',
+    'ui.loading': 'Laden…', 'ui.no_data': 'Geen gegevens',
+    'btn.refresh': 'Vernieuwen', 'nav.overview': 'Overzicht',
+  },
+  fr: {
+    'mobile.home': 'Accueil', 'mobile.goal': 'Objectif', 'mobile.market': 'Marché',
+    'mobile.signal_hero': 'Signal', 'mobile.strategy': 'Stratégie',
+    'mobile.today': "Aujourd'hui", 'mobile.overview': "Vue d'ensemble",
+    'mobile.market_feed': 'Flux de Marché', 'mobile.portfolio': 'Portefeuille',
+    'mobile.live_toggle': 'En Direct', 'mobile.greeting': 'Bonjour',
+    'ui.loading': 'Chargement…', 'ui.no_data': 'Aucune donnée',
+    'btn.refresh': 'Actualiser', 'nav.overview': "Vue d'ensemble",
+  },
+};
+let _i18nLang = 'en';
+function _getI18nLang() {
+  try { const s = localStorage.getItem('ritaLanguage'); return ['en','nl','fr'].includes(s) ? s : 'en'; } catch { return 'en'; }
+}
+function t(key) {
+  const d = _I18N_LOCALES[_i18nLang] || _I18N_LOCALES.en;
+  return d[key] ?? _I18N_LOCALES.en[key] ?? key;
+}
+function applyTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('.lang-btn').forEach(b => { b.classList.toggle('active', b.dataset.lang === _i18nLang); });
+}
+function setLanguage(lang) {
+  if (!['en','nl','fr'].includes(lang)) return;
+  _i18nLang = lang;
+  try { localStorage.setItem('ritaLanguage', lang); } catch {}
+  applyTranslations();
+}
+document.addEventListener('DOMContentLoaded', () => { _i18nLang = _getI18nLang(); applyTranslations(); });
+// ─────────────────────────────────────────────────────────────────
+</script>
+</head>
+<body>
+
+<!-- ═══ APP SHELL ═══════════════════════════════════════════════════ -->
+<div id="app">
+
+  <div class="carousel-viewport" id="viewport">
+    <div class="carousel-track" id="track">
+
+
+      <!-- ══ SCREEN 0: HOME (LAUNCHER TILES) ══════════════════════ -->
+      <div class="screen" id="s0">
+        <div class="screen-inner">
+
+          <!-- Language capsule -->
+          <div class="lang-capsule" style="margin:8px auto;text-align:center;">
+            <button class="lang-btn" data-lang="en" onclick="setLanguage('en')">EN</button>
+            <button class="lang-btn" data-lang="nl" onclick="setLanguage('nl')">NL</button>
+            <button class="lang-btn" data-lang="fr" onclick="setLanguage('fr')">FR</button>
+          </div>
+
+          <!-- Greeting -->
+          <div style="padding:26px 22px 0;display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+              <div id="s0-date" style="font-family:var(--fm);font-size:11px;color:var(--t3);font-weight:600;letter-spacing:0.08em;">TUE · 22 APR</div>
+              <div style="font-family:var(--fs);font-size:34px;line-height:1.05;letter-spacing:-0.02em;margin-top:6px;color:var(--text);">
+                Good morning,<br><span style="font-style:italic;color:var(--t2);">Rita.</span>
+              </div>
+            </div>
+            <div style="width:44px;height:44px;border-radius:22px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--fs);font-size:17px;font-style:italic;color:var(--t2);flex-shrink:0;">R</div>
+          </div>
+
+          <!-- Live data toggle -->
+          <div style="padding:10px 22px 0;display:flex;align-items:center;gap:10px;">
+            <div id="liveToggle" onclick="toggleLiveMode()"
+                 style="width:42px;height:24px;border-radius:12px;background:#D0CBBC;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0;">
+              <div id="liveToggleKnob" style="position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:9px;background:#fff;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></div>
+            </div>
+            <span style="font-family:var(--fm);font-size:10px;font-weight:600;color:var(--t3);letter-spacing:0.06em;">
+              LIVE DATA <span id="liveStatusDot" style="display:inline-block;width:6px;height:6px;border-radius:3px;background:#B8B2A6;margin-left:4px;vertical-align:middle;"></span>
+            </span>
+          </div>
+
+          <!-- RITA SAYS -->
+          <div style="padding:18px 16px 0;">
+            <div style="padding:14px 16px;border-radius:18px;background:var(--build-bg);border:1px solid var(--build-bd);display:flex;align-items:center;gap:12px;">
+              <div style="width:36px;height:36px;border-radius:12px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-family:var(--fs);font-size:18px;font-style:italic;color:var(--build);flex-shrink:0;">R</div>
+              <div style="flex:1;">
+                <div style="font-size:10px;color:var(--build);font-weight:700;letter-spacing:0.06em;font-family:var(--fm);">RITA SAYS</div>
+                <div id="s0-rita-says" style="font-size:13px;color:var(--t2);margin-top:2px;line-height:1.4;font-style:italic;font-family:var(--fs);">"Bull regime, momentum is leading. 4 new signals on ASML.AS."</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 6-tile grid -->
+          <div style="padding:20px 12px 0;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+
+            <!-- Today / Signals -->
+            <div onclick="goTo(3)" style="padding:16px;border-radius:20px;background:var(--surface);border:1px solid var(--border);min-height:124px;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+              <div style="width:36px;height:36px;border-radius:12px;background:var(--build-bg);display:flex;align-items:center;justify-content:center;margin-bottom:22px;">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="var(--build)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l3-3 4 4 7-7M14 6h4v4"/></svg>
+              </div>
+              <div style="font-size:16px;font-weight:700;letter-spacing:-0.01em;color:var(--text);" data-i18n="mobile.today">Today</div>
+              <div id="s0-tile-today" style="font-size:11px;color:var(--t3);margin-top:4px;line-height:1.4;">4 signals · bull</div>
+            </div>
+
+            <!-- Goal -->
+            <div onclick="goTo(1)" style="padding:16px;border-radius:20px;background:var(--surface);border:1px solid var(--border);min-height:124px;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+              <div style="width:36px;height:36px;border-radius:12px;background:var(--run-bg);display:flex;align-items:center;justify-content:center;margin-bottom:22px;">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="var(--run)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v14M3 10h14"/></svg>
+              </div>
+              <div style="font-size:16px;font-weight:700;letter-spacing:-0.01em;color:var(--text);" data-i18n="mobile.goal">Goal</div>
+              <div id="s0-tile-goal" style="font-size:11px;color:var(--t3);margin-top:4px;line-height:1.4;">7.4% of 10%</div>
+            </div>
+
+            <!-- Market -->
+            <div onclick="goTo(2)" style="padding:16px;border-radius:20px;background:var(--surface);border:1px solid var(--border);min-height:124px;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+              <div style="width:36px;height:36px;border-radius:12px;background:var(--mon-bg);display:flex;align-items:center;justify-content:center;margin-bottom:22px;">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="var(--mon)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16l4-4 3 3 7-7"/></svg>
+              </div>
+              <div style="font-size:16px;font-weight:700;letter-spacing:-0.01em;color:var(--text);" data-i18n="mobile.market">Market</div>
+              <div id="s0-tile-market" style="font-size:11px;color:var(--t3);margin-top:4px;line-height:1.4;">ASML.AS · +1.80%</div>
+            </div>
+
+            <!-- Signals -->
+            <div onclick="goTo(3)" style="padding:16px;border-radius:20px;background:var(--surface);border:1px solid var(--border);min-height:124px;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+              <div style="width:36px;height:36px;border-radius:12px;background:var(--warn-bg);display:flex;align-items:center;justify-content:center;margin-bottom:22px;">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="var(--warn)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2l2 6h6l-5 4 2 6-5-4-5 4 2-6-5-4h6z"/></svg>
+              </div>
+              <div style="font-size:16px;font-weight:700;letter-spacing:-0.01em;color:var(--text);">Signals</div>
+              <div id="s0-tile-signals" style="font-size:11px;color:var(--t3);margin-top:4px;line-height:1.4;">4 new · last 4h</div>
+            </div>
+
+            <!-- Strategy -->
+            <div onclick="goTo(4)" style="padding:16px;border-radius:20px;background:var(--surface);border:1px solid var(--border);min-height:124px;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+              <div style="width:36px;height:36px;border-radius:12px;background:var(--chatBg);display:flex;align-items:center;justify-content:center;margin-bottom:22px;">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="var(--chat)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 5-9"/></svg>
+              </div>
+              <div style="font-size:16px;font-weight:700;letter-spacing:-0.01em;color:var(--text);" data-i18n="mobile.strategy">Strategy</div>
+              <div id="s0-tile-strategy" style="font-size:11px;color:var(--t3);margin-top:4px;line-height:1.4;">Swing-Mom v3 · +€8,240</div>
+            </div>
+
+            <!-- Portfolio -->
+            <div onclick="goTo(8)" style="padding:16px;border-radius:20px;background:var(--surface);border:1px solid var(--border);min-height:124px;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+              <div style="width:36px;height:36px;border-radius:12px;background:var(--danger-bg);display:flex;align-items:center;justify-content:center;margin-bottom:22px;">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="var(--danger)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h14v3H3zM3 9h14v3H3zM3 14h14v3H3z"/></svg>
+              </div>
+              <div style="font-size:16px;font-weight:700;letter-spacing:-0.01em;color:var(--text);" data-i18n="mobile.portfolio">Portfolio</div>
+              <div id="s0-tile-portfolio" style="font-size:11px;color:var(--t3);margin-top:4px;line-height:1.4;">€124,820 · +2.4%</div>
+            </div>
+
+          </div>
+
+          <!-- Ask Rita banner -->
+          <div onclick="openChat()" style="margin:14px 16px 24px;padding:18px;border-radius:20px;background:linear-gradient(135deg,var(--chat),#E94BA3);color:#fff;display:flex;align-items:center;gap:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+            <div style="width:44px;height:44px;border-radius:22px;background:rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+            </div>
+            <div style="flex:1;">
+              <div style="font-family:var(--fs);font-size:18px;letter-spacing:-0.01em;font-style:italic;">Ask Rita</div>
+              <div style="font-size:11px;opacity:0.85;margin-top:2px;">Why is ASML moving today?</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- ══ SCREEN 1: GOAL ════════════════════════════════════════ -->
+      <div class="screen" id="s1">
+        <div class="screen-inner">
+
+          <div style="padding:26px 22px 10px;">
+            <div style="font-size:12px;color:var(--t3);">Financial Goal</div>
+            <div id="s1-headline" style="font-size:28px;font-weight:700;letter-spacing:-0.02em;margin-top:4px;color:var(--text);">Set your target</div>
+          </div>
+
+          <!-- Goal form -->
+          <div style="margin:10px 16px 0;padding:20px;border-radius:22px;background:var(--surface);border:1px solid var(--border);">
+
+            <!-- Portfolio size -->
+            <div style="margin-bottom:16px;">
+              <div style="font-size:11px;color:var(--t3);font-weight:600;letter-spacing:0.06em;font-family:var(--fm);margin-bottom:6px;">PORTFOLIO SIZE (₹)</div>
+              <div style="display:flex;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;gap:8px;">
+                <span style="font-family:var(--fm);font-size:14px;color:var(--t3);">₹</span>
+                <input id="g-portfolio" type="number" value="1000000" min="10000" step="50000"
+                  style="flex:1;background:none;border:none;outline:none;font-family:var(--fm);font-size:15px;font-weight:500;color:var(--text);">
+              </div>
+            </div>
+
+            <!-- Annual target + Time horizon -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+              <div>
+                <div style="font-size:11px;color:var(--t3);font-weight:600;letter-spacing:0.06em;font-family:var(--fm);margin-bottom:6px;">ANNUAL TARGET</div>
+                <div style="display:flex;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;gap:4px;">
+                  <input id="g-return" type="number" value="12" min="1" max="100" step="1"
+                    style="flex:1;width:0;background:none;border:none;outline:none;font-family:var(--fm);font-size:15px;font-weight:500;color:var(--text);">
+                  <span style="font-family:var(--fm);font-size:13px;color:var(--t3);">%</span>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:11px;color:var(--t3);font-weight:600;letter-spacing:0.06em;font-family:var(--fm);margin-bottom:6px;">TIME HORIZON</div>
+                <div style="display:flex;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;gap:4px;">
+                  <input id="g-years" type="number" value="1" min="1" max="20" step="1"
+                    style="flex:1;width:0;background:none;border:none;outline:none;font-family:var(--fm);font-size:15px;font-weight:500;color:var(--text);">
+                  <span style="font-family:var(--fm);font-size:13px;color:var(--t3);">yr</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Goal type selector -->
+            <div>
+              <div style="font-size:11px;color:var(--t3);font-weight:600;letter-spacing:0.06em;font-family:var(--fm);margin-bottom:8px;">SELECT GOAL TYPE</div>
+              <div style="display:flex;gap:8px;">
+                <button id="g-goal-growth" onclick="selectGoal('growth')"
+                  style="flex:1;padding:10px 4px;border-radius:10px;font-family:var(--fm);font-size:10px;font-weight:700;letter-spacing:0.04em;border:1.5px solid var(--border);background:var(--surface2);color:var(--t3);cursor:pointer;transition:all 0.15s;text-align:center;line-height:1.6;">
+                  GROWTH<br><span style="font-size:9px;font-weight:500;opacity:0.75;">15%+ / yr</span>
+                </button>
+                <button id="g-goal-balanced" onclick="selectGoal('balanced')"
+                  style="flex:1;padding:10px 4px;border-radius:10px;font-family:var(--fm);font-size:10px;font-weight:700;letter-spacing:0.04em;border:1.5px solid var(--build);background:var(--build-bg);color:var(--build);cursor:pointer;transition:all 0.15s;text-align:center;line-height:1.6;">
+                  BALANCED<br><span style="font-size:9px;font-weight:500;opacity:0.8;">10–15% / yr</span>
+                </button>
+                <button id="g-goal-preserve" onclick="selectGoal('preserve')"
+                  style="flex:1;padding:10px 4px;border-radius:10px;font-family:var(--fm);font-size:10px;font-weight:700;letter-spacing:0.04em;border:1.5px solid var(--border);background:var(--surface2);color:var(--t3);cursor:pointer;transition:all 0.15s;text-align:center;line-height:1.6;">
+                  PROTECT<br><span style="font-size:9px;font-weight:500;opacity:0.75;">6–10% / yr</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Analyse button -->
+          <div style="padding:14px 16px 0;">
+            <button id="g-analyse-btn" onclick="runGoalAnalysis()"
+              style="width:100%;padding:15px;border-radius:14px;background:var(--build);color:#fff;font-family:var(--fm);font-size:13px;font-weight:700;letter-spacing:0.08em;border:none;cursor:pointer;transition:opacity 0.15s;">ANALYSE GOAL</button>
+          </div>
+
+          <!-- Results (hidden until analysis runs) -->
+          <div id="g-results" style="display:none;padding:14px 16px 0;">
+
+            <!-- Progress ring + feasibility -->
+            <div style="padding:20px;border-radius:22px;background:var(--surface);border:1px solid var(--border);display:flex;gap:16px;align-items:center;">
+              <svg width="100" height="100" viewBox="0 0 110 110" style="flex-shrink:0;">
+                <circle cx="55" cy="55" r="46" fill="none" stroke="#F9F8F5" stroke-width="12"/>
+                <circle cx="55" cy="55" r="46" fill="none" stroke="#1A6B3C" stroke-width="12"
+                  stroke-dasharray="0 999" stroke-linecap="round" transform="rotate(-90 55 55)" id="goal-ring-arc"/>
+                <text x="55" y="60" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="22" font-weight="500" fill="#1A1814" id="goal-ring-pct">0%</text>
+              </svg>
+              <div style="flex:1;">
+                <div id="g-feasibility-badge" style="display:inline-flex;padding:3px 10px;border-radius:4px;font-family:var(--fm);font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;background:var(--build-bg);color:var(--build);margin-bottom:8px;">—</div>
+                <div style="font-size:11px;color:var(--t3);">YTD return</div>
+                <div id="goal-ytd-pct" style="font-family:var(--fm);font-size:22px;font-weight:500;color:var(--build);margin-top:2px;letter-spacing:-0.02em;">—</div>
+                <div id="g-pace-text" style="font-size:11px;color:var(--t2);margin-top:4px;line-height:1.4;">—</div>
+              </div>
+            </div>
+
+            <!-- KPI row: annualised | monthly required | last 12m -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;">
+              <div style="padding:14px 12px;border-radius:14px;background:var(--surface);border:1px solid var(--border);">
+                <div style="font-size:9px;color:var(--t3);font-weight:600;letter-spacing:0.06em;font-family:var(--fm);text-transform:uppercase;margin-bottom:4px;">Annual</div>
+                <div id="g-annual" style="font-family:var(--fm);font-size:17px;font-weight:500;color:var(--text);">—</div>
+              </div>
+              <div style="padding:14px 12px;border-radius:14px;background:var(--surface);border:1px solid var(--border);">
+                <div style="font-size:9px;color:var(--t3);font-weight:600;letter-spacing:0.06em;font-family:var(--fm);text-transform:uppercase;margin-bottom:4px;">Monthly</div>
+                <div id="g-monthly" style="font-family:var(--fm);font-size:17px;font-weight:500;color:var(--text);">—</div>
+              </div>
+              <div style="padding:14px 12px;border-radius:14px;background:var(--surface);border:1px solid var(--border);">
+                <div style="font-size:9px;color:var(--t3);font-weight:600;letter-spacing:0.06em;font-family:var(--fm);text-transform:uppercase;margin-bottom:4px;">Last 12m</div>
+                <div id="g-last12m" style="font-family:var(--fm);font-size:17px;font-weight:500;color:var(--text);">—</div>
+              </div>
+            </div>
+
+            <!-- ASML historical returns mini bar chart -->
+            <div style="margin-top:10px;padding:16px;border-radius:14px;background:var(--surface);border:1px solid var(--border);">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;">
+                <div style="font-size:12px;font-weight:700;color:var(--text);">ASML Historical Returns</div>
+                <div style="font-size:10px;color:var(--t3);font-family:var(--fm);">Target: <span id="g-target-line-val">—</span></div>
+              </div>
+              <div id="g-returns-bars" style="display:flex;align-items:flex-end;gap:3px;height:52px;"></div>
+            </div>
+
+          </div>
+
+          <div style="height:80px;"></div>
+          <div class="chat-fab" onclick="openChat()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ══ SCREEN 2: MARKET ══════════════════════════════════════ -->
+      <div class="screen" id="s2">
+        <div class="screen-inner">
+
+          <div style="padding:26px 22px 10px;">
+            <div style="font-size:12px;color:var(--t3);">Market Analysis</div>
+            <div style="font-size:26px;font-weight:700;letter-spacing:-0.02em;margin-top:4px;color:var(--text);">Today's regime</div>
+          </div>
+
+          <!-- Regime hero -->
+          <div style="margin:10px 16px 14px;padding:20px;border-radius:22px;background:var(--build-bg);border:1px solid var(--build-bd);">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <span style="width:8px;height:8px;border-radius:4px;background:var(--build);display:inline-block;"></span>
+              <span id="s2-regime-label" style="font-size:11px;font-weight:700;color:var(--build);letter-spacing:0.08em;font-family:var(--fm);">BULL</span>
+            </div>
+            <div id="s2-price-hero" style="font-size:22px;font-weight:700;color:var(--build);letter-spacing:-0.01em;">ASML.AS · €724.30</div>
+            <div id="s2-price-change" style="font-family:var(--fm);font-size:13px;color:var(--build);opacity:0.85;margin-top:2px;">+12.80 · +1.80%</div>
+            <svg width="100%" height="44" viewBox="0 0 280 44" style="margin-top:12px;display:block;" preserveAspectRatio="none">
+              <polyline id="s2-sparkline" fill="none" stroke="#1A6B3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                points="0,35.7 14.7,33.2 29.5,34.4 44.2,30.7 58.9,28.2 73.7,29.5 88.4,25.8 103.2,24.5 117.9,27.0 132.6,23.3 147.4,20.8 162.1,22.1 176.8,18.4 191.6,19.6 206.3,15.9 221.1,13.4 235.8,14.7 250.5,10.9 265.3,12.2 280,8.5"/>
+            </svg>
+          </div>
+
+          <!-- Timeframe tabs -->
+          <div style="display:flex;align-items:center;margin:0 16px 14px;border-bottom:1.5px solid var(--border);">
+            <button id="ms-tab-daily" onclick="switchMsTab('daily')"
+              style="background:none;border:none;border-bottom:2px solid var(--build);padding:8px 14px;font-family:var(--fm);font-size:11px;font-weight:700;letter-spacing:0.04em;color:var(--build);cursor:pointer;margin-bottom:-1.5px;transition:all 0.15s;">DAILY</button>
+            <button id="ms-tab-weekly" onclick="switchMsTab('weekly')"
+              style="background:none;border:none;border-bottom:2px solid transparent;padding:8px 14px;font-family:var(--fm);font-size:11px;font-weight:700;letter-spacing:0.04em;color:var(--t3);cursor:pointer;margin-bottom:-1.5px;transition:all 0.15s;">WEEKLY</button>
+            <button id="ms-tab-monthly" onclick="switchMsTab('monthly')"
+              style="background:none;border:none;border-bottom:2px solid transparent;padding:8px 14px;font-family:var(--fm);font-size:11px;font-weight:700;letter-spacing:0.04em;color:var(--t3);cursor:pointer;margin-bottom:-1.5px;transition:all 0.15s;">MONTHLY</button>
+            <span id="ms-data-range" style="margin-left:auto;font-size:9px;color:var(--t3);padding-bottom:8px;font-family:var(--fm);">—</span>
+          </div>
+
+          <!-- Indicator KPI grid: 4 cols × 2 rows -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:0 16px 10px;">
+            <div id="ms-kpi-rsi" style="padding:10px 8px;border-radius:10px;background:var(--surface);border:1px solid var(--border);transition:all 0.2s;">
+              <div style="font-size:9px;color:var(--t3);font-family:var(--fm);font-weight:600;letter-spacing:0.06em;">RSI-14</div>
+              <div id="ms-rsi-val" style="font-family:var(--fm);font-size:15px;font-weight:500;color:var(--text);margin-top:3px;">—</div>
+              <div id="ms-rsi-sig" style="font-size:9px;color:var(--t3);margin-top:2px;line-height:1.3;">—</div>
+            </div>
+            <div id="ms-kpi-macd" style="padding:10px 8px;border-radius:10px;background:var(--surface);border:1px solid var(--border);">
+              <div style="font-size:9px;color:var(--t3);font-family:var(--fm);font-weight:600;letter-spacing:0.06em;">MACD</div>
+              <div id="ms-macd-val" style="font-family:var(--fm);font-size:15px;font-weight:500;color:var(--text);margin-top:3px;">—</div>
+              <div id="ms-macd-sig" style="font-size:9px;color:var(--t3);margin-top:2px;line-height:1.3;">—</div>
+            </div>
+            <div id="ms-kpi-bb" style="padding:10px 8px;border-radius:10px;background:var(--surface);border:1px solid var(--border);transition:all 0.2s;">
+              <div style="font-size:9px;color:var(--t3);font-family:var(--fm);font-weight:600;letter-spacing:0.06em;">BB %B</div>
+              <div id="ms-bb-val" style="font-family:var(--fm);font-size:15px;font-weight:500;color:var(--text);margin-top:3px;">—</div>
+              <div id="ms-bb-sig" style="font-size:9px;color:var(--t3);margin-top:2px;line-height:1.3;">—</div>
+            </div>
+            <div id="ms-kpi-atr" style="padding:10px 8px;border-radius:10px;background:var(--surface);border:1px solid var(--border);">
+              <div style="font-size:9px;color:var(--t3);font-family:var(--fm);font-weight:600;letter-spacing:0.06em;">ATR-14</div>
+              <div id="ms-atr-val" style="font-family:var(--fm);font-size:15px;font-weight:500;color:var(--text);margin-top:3px;">—</div>
+              <div id="ms-atr-sig" style="font-size:9px;color:var(--t3);margin-top:2px;line-height:1.3;">—</div>
+            </div>
+            <div id="ms-kpi-ema5" style="padding:10px 8px;border-radius:10px;background:var(--surface);border:1px solid var(--border);">
+              <div style="font-size:9px;color:var(--t3);font-family:var(--fm);font-weight:600;letter-spacing:0.06em;">EMA 5</div>
+              <div id="ms-ema5-val" style="font-family:var(--fm);font-size:15px;font-weight:500;color:var(--text);margin-top:3px;">—</div>
+              <div id="ms-ema5-sig" style="font-size:9px;color:var(--t3);margin-top:2px;line-height:1.3;">—</div>
+            </div>
+            <div id="ms-kpi-ema13" style="padding:10px 8px;border-radius:10px;background:var(--surface);border:1px solid var(--border);">
+              <div style="font-size:9px;color:var(--t3);font-family:var(--fm);font-weight:600;letter-spacing:0.06em;">EMA 13</div>
+              <div id="ms-ema13-val" style="font-family:var(--fm);font-size:15px;font-weight:500;color:var(--text);margin-top:3px;">—</div>
+              <div id="ms-ema13-sig" style="font-size:9px;color:var(--t3);margin-top:2px;line-height:1.3;">—</div>
+            </div>
+            <div id="ms-kpi-ema26" style="padding:10px 8px;border-radius:10px;background:var(--surface);border:1px solid var(--border);">
+              <div style="font-size:9px;color:var(--t3);font-family:var(--fm);font-weight:600;letter-spacing:0.06em;">EMA 26</div>
+              <div id="ms-ema26-val" style="font-family:var(--fm);font-size:15px;font-weight:500;color:var(--text);margin-top:3px;">—</div>
+              <div id="ms-ema26-sig" style="font-size:9px;color:var(--t3);margin-top:2px;line-height:1.3;">—</div>
+            </div>
+            <div id="ms-kpi-trend" style="padding:10px 8px;border-radius:10px;background:var(--surface);border:1px solid var(--border);transition:all 0.2s;">
+              <div style="font-size:9px;color:var(--t3);font-family:var(--fm);font-weight:600;letter-spacing:0.06em;">TREND</div>
+              <div id="ms-trend-val" style="font-family:var(--fm);font-size:15px;font-weight:500;color:var(--text);margin-top:3px;">—</div>
+              <div id="ms-trend-sig" style="font-size:9px;color:var(--t3);margin-top:2px;line-height:1.3;">—</div>
+            </div>
+          </div>
+
+          <!-- Signal highlights -->
+          <div id="ms-alerts" style="padding:0 16px 10px;display:flex;flex-direction:column;gap:5px;"></div>
+
+          <!-- Price & Volume SVG -->
+          <div style="margin:0 16px 24px;padding:14px;border-radius:14px;background:var(--surface);border:1px solid var(--border);">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;">
+              <div style="font-size:12px;font-weight:700;color:var(--text);">Price &amp; Volume</div>
+              <div id="ms-pv-subtitle" style="font-size:9px;color:var(--t3);font-family:var(--fm);">close · volume</div>
+            </div>
+            <svg id="ms-pv-svg" width="100%" viewBox="0 0 320 124" preserveAspectRatio="none" style="display:block;overflow:visible;">
+              <g id="ms-vol-bars"></g>
+              <polyline id="ms-price-line" fill="none" stroke="var(--build)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" points="0,40"/>
+              <text id="ms-date-start-lbl" x="0" y="122" font-family="IBM Plex Mono,monospace" font-size="8" fill="var(--t4)" text-anchor="start">—</text>
+              <text id="ms-date-end-lbl"   x="320" y="122" font-family="IBM Plex Mono,monospace" font-size="8" fill="var(--t4)" text-anchor="end">—</text>
+            </svg>
+          </div>
+
+          <div class="chat-fab" onclick="openChat()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ══ SCREEN 3: SIGNAL HERO ════════════════════════════════ -->
+      <div class="screen" id="s3">
+        <div class="sig-hero-inner">
+
+          <!-- Top status bar -->
+          <div style="padding:26px 22px 0;display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:11px;font-weight:600;letter-spacing:0.12em;color:rgba(255,255,255,.85);font-family:var(--fm);">SIGNAL 1 / 4</div>
+            <div style="display:flex;gap:4px;">
+              <div style="width:20px;height:3px;border-radius:2px;background:#fff;"></div>
+              <div style="width:6px;height:3px;border-radius:2px;background:rgba(255,255,255,.35);"></div>
+              <div style="width:6px;height:3px;border-radius:2px;background:rgba(255,255,255,.35);"></div>
+              <div style="width:6px;height:3px;border-radius:2px;background:rgba(255,255,255,.35);"></div>
+            </div>
+          </div>
+
+          <!-- Severity badge -->
+          <div style="padding:28px 22px 0;">
+            <div id="s3-signal-type" style="display:inline-block;padding:4px 10px;border-radius:100px;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.3);font-size:10px;font-weight:700;letter-spacing:0.12em;color:#fff;font-family:var(--fm);">MOMENTUM</div>
+          </div>
+
+          <!-- Hero headline -->
+          <div style="padding:20px 22px 0;">
+            <div id="s3-headline" style="font-family:var(--fs);font-size:44px;line-height:1.05;letter-spacing:-0.02em;color:#fff;">Momentum score at 78</div>
+            <div style="font-size:13px;color:rgba(255,255,255,.85);margin-top:16px;line-height:1.6;">RSI on ASML closed above 70 for 3 consecutive sessions; relative strength vs STOXX 600 is in the top decile.</div>
+          </div>
+
+          <!-- Evidence panel -->
+          <div class="sig-hero-glass" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+            <div>
+              <div style="font-size:10px;color:rgba(255,255,255,.7);letter-spacing:0.06em;text-transform:uppercase;font-family:var(--fm);">Instrument</div>
+              <div style="font-family:var(--fm);font-size:16px;font-weight:500;color:#fff;margin-top:2px;">ASML</div>
+            </div>
+            <div>
+              <div style="font-size:10px;color:rgba(255,255,255,.7);letter-spacing:0.06em;text-transform:uppercase;font-family:var(--fm);">Confidence</div>
+              <div id="s3-confidence" style="font-family:var(--fm);font-size:16px;font-weight:500;color:#fff;margin-top:2px;">0.78</div>
+            </div>
+            <div>
+              <div style="font-size:10px;color:rgba(255,255,255,.7);letter-spacing:0.06em;text-transform:uppercase;font-family:var(--fm);">Regime</div>
+              <div id="s3-regime" style="font-family:var(--fm);font-size:16px;font-weight:500;color:#fff;margin-top:2px;">Bull</div>
+            </div>
+          </div>
+
+          <!-- Mini sparkline -->
+          <div class="sig-hero-chart">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <span id="s3-instrument-label" style="font-size:11px;color:rgba(255,255,255,.75);">ASML · today</span>
+              <span id="s3-price-label" style="font-family:var(--fm);font-size:13px;font-weight:500;color:#fff;">—</span>
+            </div>
+            <svg width="100%" height="40" viewBox="0 0 280 40">
+              <polyline id="s3-sparkline" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"
+                points="0,35.7 14.7,33.2 29.5,34.4 44.2,30.7 58.9,28.2 73.7,29.5 88.4,25.8 103.2,24.5 117.9,27.0 132.6,23.3 147.4,20.8 162.1,22.1 176.8,18.4 191.6,19.6 206.3,15.9 221.1,13.4 235.8,14.7 250.5,10.9 265.3,12.2 280,8.5"/>
+            </svg>
+          </div>
+
+          <!-- Swipe hint -->
+          <div style="text-align:center;margin-top:24px;font-size:11px;color:rgba(255,255,255,.7);letter-spacing:0.08em;font-family:var(--fm);">swipe left for next signal →</div>
+
+          <!-- Chat FAB (white tint version) -->
+          <div onclick="openChat()" style="position:absolute;right:18px;bottom:16px;width:52px;height:52px;border-radius:26px;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:30;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- ══ SCREEN 4: STRATEGY ════════════════════════════════════ -->
+      <div class="screen" id="s4">
+        <div class="screen-inner">
+
+          <div style="padding:26px 22px 10px;">
+            <div style="font-size:12px;color:var(--t3);">Strategy</div>
+            <div style="font-size:26px;font-weight:700;letter-spacing:-0.02em;margin-top:4px;color:var(--text);">Swing-Momentum v3</div>
+          </div>
+
+          <div style="margin:8px 16px 14px;padding:18px;border-radius:20px;background:var(--surface);border:1px solid var(--border);">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+              <span style="width:8px;height:8px;border-radius:4px;background:var(--build);display:inline-block;"></span>
+              <span style="font-size:11px;font-weight:700;color:var(--build);letter-spacing:0.08em;font-family:var(--fm);">ACTIVE</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+              <div>
+                <div style="font-size:10px;color:var(--t3);letter-spacing:0.06em;text-transform:uppercase;font-family:var(--fm);">P&amp;L</div>
+                <div id="s4-pnl" style="font-family:var(--fm);font-size:22px;font-weight:500;color:var(--build);margin-top:2px;letter-spacing:-0.01em;">+€8,240</div>
+              </div>
+              <div>
+                <div style="font-size:10px;color:var(--t3);letter-spacing:0.06em;text-transform:uppercase;font-family:var(--fm);">Win Rate</div>
+                <div id="s4-winrate" style="font-family:var(--fm);font-size:22px;font-weight:500;color:var(--text);margin-top:2px;letter-spacing:-0.01em;">64%</div>
+              </div>
+              <div>
+                <div style="font-size:10px;color:var(--t3);letter-spacing:0.06em;text-transform:uppercase;font-family:var(--fm);">Sharpe</div>
+                <div id="s4-sharpe" style="font-family:var(--fm);font-size:22px;font-weight:500;color:var(--text);margin-top:2px;letter-spacing:-0.01em;">1.82</div>
+              </div>
+              <div>
+                <div style="font-size:10px;color:var(--t3);letter-spacing:0.06em;text-transform:uppercase;font-family:var(--fm);">Universe</div>
+                <div style="font-family:var(--fm);font-size:22px;font-weight:500;color:var(--text);margin-top:2px;letter-spacing:-0.01em;">12 syms</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="padding:0 22px 6px;font-size:14px;font-weight:700;color:var(--text);">Recent decisions</div>
+          <div id="s4-decisions" style="padding:0 16px 24px;display:flex;flex-direction:column;gap:8px;">
+            <div style="padding:12px;border-radius:12px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;gap:10px;">
+              <span style="font-family:var(--fm);font-size:11px;color:var(--t3);width:40px;flex-shrink:0;">10:42</span>
+              <span style="font-family:var(--fm);font-size:10px;font-weight:700;color:var(--build);padding:2px 7px;border-radius:4px;background:var(--surface2);letter-spacing:0.04em;flex-shrink:0;">ENTER</span>
+              <span style="font-size:13px;font-weight:600;flex:1;color:var(--text);">ASML.AS</span>
+              <span style="font-family:var(--fm);font-size:12px;color:var(--t2);">+12 sh</span>
+            </div>
+            <div style="padding:12px;border-radius:12px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;gap:10px;">
+              <span style="font-family:var(--fm);font-size:11px;color:var(--t3);width:40px;flex-shrink:0;">09:58</span>
+              <span style="font-family:var(--fm);font-size:10px;font-weight:700;color:var(--run);padding:2px 7px;border-radius:4px;background:var(--surface2);letter-spacing:0.04em;flex-shrink:0;">EXIT</span>
+              <span style="font-size:13px;font-weight:600;flex:1;color:var(--text);">SAP.DE</span>
+              <span style="font-family:var(--fm);font-size:12px;color:var(--t2);">−20 sh</span>
+            </div>
+            <div style="padding:12px;border-radius:12px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;gap:10px;">
+              <span style="font-family:var(--fm);font-size:11px;color:var(--t3);width:40px;flex-shrink:0;">09:31</span>
+              <span style="font-family:var(--fm);font-size:10px;font-weight:700;color:var(--build);padding:2px 7px;border-radius:4px;background:var(--surface2);letter-spacing:0.04em;flex-shrink:0;">SCALE</span>
+              <span style="font-size:13px;font-weight:600;flex:1;color:var(--text);">ASR.AS</span>
+              <span style="font-family:var(--fm);font-size:12px;color:var(--t2);">+8 sh</span>
+            </div>
+            <div style="padding:12px;border-radius:12px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;gap:10px;">
+              <span style="font-family:var(--fm);font-size:11px;color:var(--t3);width:40px;flex-shrink:0;">09:16</span>
+              <span style="font-family:var(--fm);font-size:10px;font-weight:700;color:var(--t3);padding:2px 7px;border-radius:4px;background:var(--surface2);letter-spacing:0.04em;flex-shrink:0;">SKIP</span>
+              <span style="font-size:13px;font-weight:600;flex:1;color:var(--text);">INGA.AS</span>
+              <span style="font-family:var(--fm);font-size:12px;color:var(--t2);">no-go</span>
+            </div>
+          </div>
+
+          <div class="chat-fab" onclick="openChat()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ══ SCREEN 5: TODAY (SignalFeedOverview) ════════════════════ -->
+      <div class="screen" id="s5">
+        <div class="screen-inner">
+
+          <div style="padding:26px 22px 8px;">
+            <div id="s5-date" style="font-family:var(--fm);font-size:11px;color:var(--t3);font-weight:600;letter-spacing:0.08em;">TUE · 22 APR</div>
+            <div style="font-family:var(--fs);font-size:32px;letter-spacing:-0.02em;margin-top:6px;line-height:1.1;">
+              Today at a <span style="font-style:italic;color:var(--t2);">glance</span>
+            </div>
+          </div>
+
+          <!-- Regime hero -->
+          <div style="margin:14px 16px 12px;padding:20px;border-radius:20px;background:linear-gradient(135deg,var(--build) 0%,#2D9456 100%);color:#fff;">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;opacity:0.85;margin-bottom:4px;font-family:var(--fm);">REGIME</div>
+            <div id="s5-regime-label" style="font-family:var(--fs);font-size:30px;letter-spacing:-0.01em;margin-top:2px;">Bull market</div>
+            <div style="display:flex;align-items:baseline;gap:10px;margin-top:14px;">
+              <span id="s5-instrument" style="font-size:12px;opacity:0.85;">ASML</span>
+              <span id="s5-price" style="font-family:var(--fm);font-size:22px;font-weight:500;letter-spacing:-0.01em;">€724.30</span>
+              <span id="s5-price-chg" style="font-family:var(--fm);font-size:12px;opacity:0.9;">+1.80%</span>
+            </div>
+            <svg width="100%" height="40" viewBox="0 0 280 40" style="margin-top:10px;display:block;">
+              <polyline fill="none" stroke="#fff" stroke-opacity="0.9" stroke-width="1.8" stroke-linecap="round"
+                points="0,35.7 14.7,33.2 29.5,34.4 44.2,30.7 58.9,28.2 73.7,29.5 88.4,25.8 103.2,24.5 117.9,27.0 132.6,23.3 147.4,20.8 162.1,22.1 176.8,18.4 191.6,19.6 206.3,15.9 221.1,13.4 235.8,14.7 250.5,10.9 265.3,12.2 280,8.5"/>
+            </svg>
+          </div>
+
+          <!-- Goal mini widget -->
+          <div style="margin:0 16px 12px;padding:16px;border-radius:16px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;gap:14px;">
+            <div style="position:relative;width:52px;height:52px;flex-shrink:0;">
+              <svg width="52" height="52" viewBox="0 0 52 52">
+                <circle cx="26" cy="26" r="22" fill="none" stroke="var(--surface2)" stroke-width="5"/>
+                <circle cx="26" cy="26" r="22" fill="none" stroke="var(--build)" stroke-width="5"
+                  stroke-dasharray="102 999" stroke-linecap="round" transform="rotate(-90 26 26)" id="s5-goal-arc"/>
+              </svg>
+              <div id="s5-goal-pct" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--fm);font-size:12px;font-weight:600;color:var(--text);">74%</div>
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:10px;color:var(--t3);letter-spacing:0.06em;text-transform:uppercase;">Yearly goal 10%</div>
+              <div id="s5-goal-ytd" style="font-size:16px;font-weight:700;margin-top:2px;color:var(--text);">7.4% YTD</div>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="var(--t4)" stroke-width="2" stroke-linecap="round"><path d="M5 3l4 4-4 4"/></svg>
+          </div>
+
+          <!-- Signals list -->
+          <div style="padding:0 22px 6px;">
+            <div id="s5-signal-count" style="font-size:14px;font-weight:700;color:var(--text);">Signals · 4</div>
+          </div>
+          <div id="s5-signal-list" style="padding:8px 16px 24px;">
+            <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);align-items:flex-start;">
+              <div style="width:4px;align-self:stretch;background:var(--build);border-radius:2px;margin-top:2px;flex-shrink:0;"></div>
+              <div style="flex:1;">
+                <div style="display:flex;gap:8px;align-items:center;margin-bottom:3px;">
+                  <span style="font-family:var(--fm);font-size:9px;font-weight:600;color:var(--build);letter-spacing:0.08em;">MOMENTUM</span>
+                  <span style="font-family:var(--fm);font-size:9px;color:var(--t4);">14 min ago</span>
+                </div>
+                <div style="font-size:13px;font-weight:600;color:var(--text);line-height:1.3;">Momentum score at 78</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);align-items:flex-start;">
+              <div style="width:4px;align-self:stretch;background:var(--run);border-radius:2px;margin-top:2px;flex-shrink:0;"></div>
+              <div style="flex:1;">
+                <div style="display:flex;gap:8px;align-items:center;margin-bottom:3px;">
+                  <span style="font-family:var(--fm);font-size:9px;font-weight:600;color:var(--run);letter-spacing:0.08em;">ROTATION</span>
+                  <span style="font-family:var(--fm);font-size:9px;color:var(--t4);">1 hr ago</span>
+                </div>
+                <div style="font-size:13px;font-weight:600;color:var(--text);line-height:1.3;">Semis leading STOXX 600</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;padding:12px 0;align-items:flex-start;">
+              <div style="width:4px;align-self:stretch;background:var(--t4);border-radius:2px;margin-top:2px;flex-shrink:0;"></div>
+              <div style="flex:1;">
+                <div style="display:flex;gap:8px;align-items:center;margin-bottom:3px;">
+                  <span style="font-family:var(--fm);font-size:9px;font-weight:600;color:var(--t3);letter-spacing:0.08em;">VOLATILITY</span>
+                  <span style="font-family:var(--fm);font-size:9px;color:var(--t4);">3 hr ago</span>
+                </div>
+                <div style="font-size:13px;font-weight:600;color:var(--text);line-height:1.3;">VSTOXX at 13.2</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-fab" onclick="openChat()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ SCREEN 6: OVERVIEW (CardAppOverview) ════════════════════ -->
+      <div class="screen" id="s6">
+        <div class="screen-inner">
+
+          <!-- Greeting -->
+          <div style="padding:26px 22px 14px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-size:12px;color:var(--t3);margin-bottom:2px;">Tuesday morning</div>
+              <div style="font-size:22px;font-weight:700;letter-spacing:-0.01em;color:var(--text);">Hi, Rita 👋</div>
+            </div>
+            <div style="width:40px;height:40px;border-radius:20px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--fs);font-size:16px;font-style:italic;color:var(--t2);flex-shrink:0;">R</div>
+          </div>
+
+          <!-- Market hero card -->
+          <div style="margin:6px 16px 14px;padding:22px;border-radius:22px;background:var(--build-bg);position:relative;overflow:hidden;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
+              <span style="width:6px;height:6px;border-radius:50%;background:var(--build);display:inline-block;"></span>
+              <span id="s6-regime-label" style="font-size:11px;font-weight:600;color:var(--build);letter-spacing:0.04em;">BULL MARKET</span>
+            </div>
+            <div id="s6-instrument" style="font-size:13px;color:var(--t2);margin-bottom:4px;">ASML</div>
+            <div id="s6-price" style="font-family:var(--fm);font-size:34px;font-weight:500;letter-spacing:-0.02em;color:var(--text);">€724.30</div>
+            <div id="s6-price-change" style="font-family:var(--fm);font-size:13px;color:var(--build);margin-top:3px;">+12.80 · +1.80%</div>
+            <svg width="100%" height="50" viewBox="0 0 280 50" style="margin-top:10px;display:block;">
+              <defs>
+                <linearGradient id="ov-grad" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0" stop-color="#1A6B3C" stop-opacity="0.25"/>
+                  <stop offset="1" stop-color="#1A6B3C" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <polygon fill="url(#ov-grad)"
+                points="0,50 0,43.6 14.7,41.4 29.5,42.5 44.2,38.4 58.9,40.4 73.7,36.3 88.4,34.8 103.2,37.2 117.9,33.1 132.6,30.2 147.4,32.6 162.1,28.5 176.8,31.1 191.6,27.0 206.3,24.1 221.1,26.6 235.8,22.5 250.5,24.4 265.3,21.5 280,18.0 280,50"/>
+              <polyline fill="none" stroke="#1A6B3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                points="0,43.6 14.7,41.4 29.5,42.5 44.2,38.4 58.9,40.4 73.7,36.3 88.4,34.8 103.2,37.2 117.9,33.1 132.6,30.2 147.4,32.6 162.1,28.5 176.8,31.1 191.6,27.0 206.3,24.1 221.1,26.6 235.8,22.5 250.5,24.4 265.3,21.5 280,18.0"/>
+            </svg>
+          </div>
+
+          <!-- Goal card -->
+          <div style="margin:0 16px 14px;padding:18px;border-radius:18px;background:var(--surface);border:1px solid var(--border);">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+              <div>
+                <div style="font-size:11px;color:var(--t3);letter-spacing:0.04em;text-transform:uppercase;">Your yearly goal</div>
+                <div id="s6-goal-text" style="font-size:18px;font-weight:700;margin-top:2px;color:var(--text);">7.4% of 10%</div>
+              </div>
+              <div id="s6-goal-badge" style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px;background:var(--build-bg);color:var(--build);">74%</div>
+            </div>
+            <div style="height:8px;border-radius:4px;background:var(--surface2);overflow:hidden;">
+              <div id="s6-goal-bar" style="height:100%;width:74%;border-radius:4px;background:linear-gradient(90deg,var(--build),#2D9456);"></div>
+            </div>
+            <div style="font-size:12px;color:var(--t3);margin-top:8px;">Pace suggests 11 months to reach target.</div>
+          </div>
+
+          <!-- Signals preview -->
+          <div style="padding:0 22px 6px;display:flex;justify-content:space-between;align-items:baseline;">
+            <div style="font-size:15px;font-weight:700;color:var(--text);">Signals today</div>
+            <div style="font-size:12px;color:var(--run);font-weight:600;">See all</div>
+          </div>
+          <div style="padding:8px 16px 24px;display:flex;flex-direction:column;gap:10px;">
+            <div style="padding:16px;border-radius:16px;background:var(--surface);border:1px solid var(--border);">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                <div style="width:36px;height:36px;border-radius:12px;background:var(--build-bg);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--build);flex-shrink:0;">↑</div>
+                <div style="flex:1;">
+                  <div id="s6-sig1-type" style="font-size:10px;font-weight:700;color:var(--build);letter-spacing:0.06em;">MOMENTUM</div>
+                  <div id="s6-sig1-headline" style="font-size:14px;font-weight:600;color:var(--text);line-height:1.3;">Momentum score at 78</div>
+                </div>
+                <div style="font-size:10px;color:var(--t4);">14 min</div>
+              </div>
+              <div style="font-size:12px;color:var(--t2);line-height:1.5;">RSI on ASML closed above 70 for 3 consecutive sessions; relative strength vs STOXX 600 is in the top decile.</div>
+            </div>
+            <div style="padding:16px;border-radius:16px;background:var(--surface);border:1px solid var(--border);">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                <div style="width:36px;height:36px;border-radius:12px;background:var(--run-bg);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--run);flex-shrink:0;">↑</div>
+                <div style="flex:1;">
+                  <div id="s6-sig2-type" style="font-size:10px;font-weight:700;color:var(--run);letter-spacing:0.06em;">ROTATION</div>
+                  <div id="s6-sig2-headline" style="font-size:14px;font-weight:600;color:var(--text);line-height:1.3;">Semis leading STOXX 600</div>
+                </div>
+                <div style="font-size:10px;color:var(--t4);">1 hr</div>
+              </div>
+              <div style="font-size:12px;color:var(--t2);line-height:1.5;">STOXX 600 Tech sub-index outperformed the broad market by 2.4 standard deviations over the last 5 sessions.</div>
+            </div>
+          </div>
+
+          <div class="chat-fab" onclick="openChat()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ SCREEN 7: MARKET FEED (SignalFeedMarket) ════════════════ -->
+      <div class="screen" id="s7">
+        <div class="screen-inner">
+
+          <div style="padding:26px 22px 8px;">
+            <div style="font-family:var(--fm);font-size:12px;color:var(--t3);font-weight:600;letter-spacing:0.06em;">MARKET ANALYSIS</div>
+            <div style="font-family:var(--fs);font-size:30px;letter-spacing:-0.01em;margin-top:4px;line-height:1.15;">
+              What Rita sees, <span style="font-style:italic;color:var(--t2);">explained</span>.
+            </div>
+          </div>
+
+          <!-- Regime pill -->
+          <div style="padding:8px 22px 14px;">
+            <div style="padding:14px 16px;border-radius:18px;background:var(--build-bg);border:1px solid var(--build-bd);">
+              <div style="font-size:10px;color:var(--build);font-weight:700;letter-spacing:0.08em;margin-bottom:4px;font-family:var(--fm);">CURRENT REGIME</div>
+              <div id="s7-regime-label" style="font-size:20px;font-weight:700;color:var(--build);">Bull market</div>
+              <div id="s7-regime-narrative" style="font-size:12px;color:var(--t2);margin-top:6px;line-height:1.5;">Rita's classifier says momentum is dominant and volatility is compressed.</div>
+            </div>
+          </div>
+
+          <!-- Factor breakdown -->
+          <div style="padding:4px 22px 14px;">
+            <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px;">Factor breakdown</div>
+
+            <div style="margin-bottom:10px;">
+              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+                <span style="color:var(--t2);">Momentum</span>
+                <span id="s7-momentum-val" style="font-family:var(--fm);color:var(--text);font-weight:500;">0.72</span>
+              </div>
+              <div style="height:6px;border-radius:3px;background:var(--surface2);overflow:hidden;"><div id="s7-momentum-bar" style="height:100%;width:72%;background:var(--build);border-radius:3px;"></div></div>
+            </div>
+
+            <div style="margin-bottom:10px;">
+              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+                <span style="color:var(--t2);">Value</span>
+                <span id="s7-value-val" style="font-family:var(--fm);color:var(--text);font-weight:500;">0.41</span>
+              </div>
+              <div style="height:6px;border-radius:3px;background:var(--surface2);overflow:hidden;"><div id="s7-value-bar" style="height:100%;width:41%;background:var(--run);border-radius:3px;"></div></div>
+            </div>
+
+            <div style="margin-bottom:10px;">
+              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+                <span style="color:var(--t2);">Quality</span>
+                <span id="s7-quality-val" style="font-family:var(--fm);color:var(--text);font-weight:500;">0.58</span>
+              </div>
+              <div style="height:6px;border-radius:3px;background:var(--surface2);overflow:hidden;"><div id="s7-quality-bar" style="height:100%;width:58%;background:var(--mon);border-radius:3px;"></div></div>
+            </div>
+
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+                <span style="color:var(--t2);">Volatility</span>
+                <span id="s7-vol-val" style="font-family:var(--fm);color:var(--text);font-weight:500;">0.33</span>
+              </div>
+              <div style="height:6px;border-radius:3px;background:var(--surface2);overflow:hidden;"><div id="s7-vol-bar" style="height:100%;width:33%;background:var(--warn);border-radius:3px;"></div></div>
+            </div>
+          </div>
+
+          <!-- Rita explains -->
+          <div style="margin:4px 16px 24px;padding:18px;border-radius:18px;background:var(--chatBg);border:1px solid var(--chatBd);">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <div style="width:28px;height:28px;border-radius:14px;background:var(--chat);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--fs);font-size:14px;font-style:italic;flex-shrink:0;">R</div>
+              <div style="font-size:11px;font-weight:700;color:var(--chat);letter-spacing:0.04em;font-family:var(--fm);">RITA EXPLAINS</div>
+            </div>
+            <div id="s7-rita-explains" style="font-size:13px;color:var(--t2);line-height:1.55;font-style:italic;font-family:var(--fs);">"Momentum is doing most of the work today. Volatility is compressed and breadth is positive — that combination is what Rita classifies as a bull regime."</div>
+          </div>
+
+          <div class="chat-fab" onclick="openChat()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ SCREEN 8: PORTFOLIO (PortfolioUpdate) ════════════════════ -->
+      <div class="screen" id="s8">
+        <div class="screen-inner">
+
+          <!-- Header row -->
+          <div style="padding:26px 16px 12px;display:flex;align-items:center;gap:12px;">
+            <div onclick="goTo(0)" style="width:36px;height:36px;border-radius:18px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="var(--t2)" stroke-width="2" stroke-linecap="round"><path d="M9 3l-4 4 4 4"/></svg>
+            </div>
+            <div style="flex:1;font-size:13px;color:var(--t3);font-weight:500;">Portfolio</div>
+            <div style="width:36px;height:36px;border-radius:18px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="var(--t2)" stroke-width="2" stroke-linecap="round"><circle cx="7" cy="3.5" r="1.2"/><circle cx="7" cy="7" r="1.2"/><circle cx="7" cy="10.5" r="1.2"/></svg>
+            </div>
+          </div>
+
+          <!-- Total value -->
+          <div style="padding:0 22px 0;">
+            <div style="font-family:var(--fm);font-size:11px;color:var(--t3);letter-spacing:0.08em;font-weight:600;">TOTAL VALUE</div>
+            <div id="s8-total-value" style="font-family:var(--fm);font-size:40px;font-weight:500;letter-spacing:-0.025em;margin-top:4px;color:var(--text);">€124,820</div>
+            <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px;">
+              <span id="s8-daily-gain" style="font-family:var(--fm);font-size:14px;font-weight:500;color:var(--build);">+€2,940</span>
+              <span id="s8-daily-pct" style="font-family:var(--fm);font-size:13px;color:var(--build);">+2.4%</span>
+              <span style="font-size:12px;color:var(--t3);margin-left:4px;">today</span>
+            </div>
+          </div>
+
+          <!-- Period selector + area chart -->
+          <div style="margin:14px 16px 0;padding:16px;border-radius:18px;background:var(--surface);border:1px solid var(--border);">
+            <div class="period-bar" style="margin-bottom:10px;">
+              <span class="period-pill">1D</span>
+              <span class="period-pill">1W</span>
+              <span class="period-pill">1M</span>
+              <span class="period-pill">3M</span>
+              <span class="period-pill active">YTD</span>
+              <span class="period-pill">1Y</span>
+            </div>
+            <svg width="100%" height="80" viewBox="0 0 280 80" style="display:block;">
+              <defs>
+                <linearGradient id="pf-grad2" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0" stop-color="#1A6B3C" stop-opacity="0.22"/>
+                  <stop offset="1" stop-color="#1A6B3C" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <polygon id="s8-chart-polygon" fill="url(#pf-grad2)"
+                points="0,80 0,71.7 14.7,68.9 29.5,70.3 44.2,63.3 58.9,66.6 73.7,59.6 88.4,56.9 103.2,60.3 117.9,53.3 132.6,49.0 147.4,52.5 162.1,45.5 176.8,49.8 191.6,42.8 206.3,38.5 221.1,42.3 235.8,34.3 250.5,37.0 265.3,32.7 280,27.6 280,80"/>
+              <polyline id="s8-chart-line" fill="none" stroke="#1A6B3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                points="0,71.7 14.7,68.9 29.5,70.3 44.2,63.3 58.9,66.6 73.7,59.6 88.4,56.9 103.2,60.3 117.9,53.3 132.6,49.0 147.4,52.5 162.1,45.5 176.8,49.8 191.6,42.8 206.3,38.5 221.1,42.3 235.8,34.3 250.5,37.0 265.3,32.7 280,27.6"/>
+            </svg>
+          </div>
+
+          <!-- Holdings header + allocation bar -->
+          <div style="padding:14px 22px 6px;display:flex;justify-content:space-between;align-items:baseline;">
+            <div id="s8-holdings-count" style="font-size:14px;font-weight:700;color:var(--text);">Holdings · 6</div>
+            <div style="font-size:11px;color:var(--t3);font-family:var(--fm);">by value</div>
+          </div>
+          <div style="padding:0 22px 12px;">
+            <div id="s8-alloc-bar" style="height:8px;border-radius:4px;overflow:hidden;display:flex;">
+              <div style="width:28%;background:var(--build);"></div>
+              <div style="width:22%;background:var(--run);"></div>
+              <div style="width:13%;background:var(--mon);"></div>
+              <div style="width:13%;background:var(--warn);"></div>
+              <div style="width:13%;background:var(--chat);"></div>
+              <div style="width:11%;background:var(--danger);"></div>
+            </div>
+          </div>
+
+          <!-- Holdings list -->
+          <div id="s8-holdings-list" style="padding:0 16px 32px;">
+            <div class="holding-row">
+              <div class="holding-chip">ASM</div>
+              <div style="flex:1;min-width:0;">
+                <div class="holding-name">ASML Holding</div>
+                <div class="holding-sub">24 sh · €724.30</div>
+              </div>
+              <div>
+                <div class="holding-val">€17,383</div>
+                <div class="holding-chg" style="color:var(--build);">+1.80%</div>
+              </div>
+            </div>
+            <div class="holding-row">
+              <div class="holding-chip">SAP</div>
+              <div style="flex:1;min-width:0;">
+                <div class="holding-name">SAP SE</div>
+                <div class="holding-sub">85 sh · €164.20</div>
+              </div>
+              <div>
+                <div class="holding-val">€13,957</div>
+                <div class="holding-chg" style="color:var(--build);">+0.62%</div>
+              </div>
+            </div>
+            <div class="holding-row">
+              <div class="holding-chip">ING</div>
+              <div style="flex:1;min-width:0;">
+                <div class="holding-name">ING Groep</div>
+                <div class="holding-sub">420 sh · €16.84</div>
+              </div>
+              <div>
+                <div class="holding-val">€7,073</div>
+                <div class="holding-chg" style="color:var(--danger);">−0.42%</div>
+              </div>
+            </div>
+            <div class="holding-row">
+              <div class="holding-chip">ASR</div>
+              <div style="flex:1;min-width:0;">
+                <div class="holding-name">ASR Nederland</div>
+                <div class="holding-sub">180 sh · €44.12</div>
+              </div>
+              <div>
+                <div class="holding-val">€7,942</div>
+                <div class="holding-chg" style="color:var(--build);">+0.94%</div>
+              </div>
+            </div>
+            <div class="holding-row">
+              <div class="holding-chip">AD</div>
+              <div style="flex:1;min-width:0;">
+                <div class="holding-name">Ahold Delhaize</div>
+                <div class="holding-sub">260 sh · €31.06</div>
+              </div>
+              <div>
+                <div class="holding-val">€8,076</div>
+                <div class="holding-chg" style="color:var(--danger);">−0.18%</div>
+              </div>
+            </div>
+            <div class="holding-row" style="border-bottom:none;">
+              <div class="holding-chip">PHI</div>
+              <div style="flex:1;min-width:0;">
+                <div class="holding-name">Philips</div>
+                <div class="holding-sub">300 sh · €22.40</div>
+              </div>
+              <div>
+                <div class="holding-val">€6,720</div>
+                <div class="holding-chg" style="color:var(--build);">+0.31%</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ══ SCREEN 9: placeholder — swipe buffer ══════════════════ -->
+      <div class="screen" id="s9" style="pointer-events:none;"></div>
+
+
+    </div><!-- /carousel-track -->
+  </div><!-- /carousel-viewport -->
+
+  <!-- Tab bar -->
+  <div class="tab-bar" id="tabBar">
+    <div class="tab-pill">
+      <div class="tab-item" data-tab="0" data-active="true">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l7-7 7 7v9a1 1 0 01-1 1h-4v-6h-4v6H4a1 1 0 01-1-1v-9z"/></svg>
+        <div class="tab-lbl">Home</div>
+      </div>
+      <div class="tab-item" data-tab="1" data-active="false">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v14M3 10h14"/></svg>
+        <div class="tab-lbl">Goal</div>
+      </div>
+      <div class="tab-item" data-tab="2" data-active="false">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14l4-4 3 3 7-7"/></svg>
+        <div class="tab-lbl">Market</div>
+      </div>
+      <div class="tab-item" data-tab="3" data-active="false">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2l2 6h6l-5 4 2 6-5-4-5 4 2-6-5-4h6z"/></svg>
+        <div class="tab-lbl">Signals</div>
+      </div>
+      <div class="tab-item" data-tab="4" data-active="false">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 5-9"/></svg>
+        <div class="tab-lbl">Strategy</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+
+<!-- ═══ CHAT OVERLAY ════════════════════════════════════════════════ -->
+<div id="chat-overlay" class="overlay">
+  <div class="drag-handle"><div class="drag-handle-pill"></div></div>
+  <div class="chat-hdr">
+    <div class="chat-avatar">R</div>
+    <div style="flex:1;">
+      <div class="chat-hdr-name">Ask Rita</div>
+      <div class="chat-hdr-status" id="chat-status">● Online · ASML</div>
+    </div>
+    <div onclick="closeChat()" style="width:32px;height:32px;border-radius:16px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round"><path d="M2 2l10 10M12 2L2 12"/></svg>
+    </div>
+  </div>
+  <div style="flex:1;overflow-y:auto;scrollbar-width:none;" id="chatScroll">
+    <div class="chat-msgs" id="chat-msgs">
+      <div class="msg-wrap rita">
+        <div class="bubble bubble-rita">Hi! I'm <strong>Rita</strong>. Ask me anything about your portfolio — signals, strategy, or risk.</div>
+        <div class="msg-time">Now</div>
+      </div>
+    </div>
+    <div class="chat-chips-area" id="chat-chips"></div>
+  </div>
+  <div style="padding:8px 16px 12px;background:var(--bg);">
+    <div class="chat-input-bar">
+      <input class="chat-input-field" id="chat-input" type="text" placeholder="Ask anything about your portfolio…" onkeydown="if(event.key==='Enter')sendChatMessage()">
+      <button class="chat-send-btn" onclick="sendChatMessage()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 12V2M7 2L2 7M7 2l5 5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ PORTFOLIO OVERLAY ════════════════════════════════════════════ -->
+<div id="portfolio-overlay" class="overlay">
+  <div class="drag-handle"><div class="drag-handle-pill"></div></div>
+
+  <!-- Header row -->
+  <div style="padding:4px 16px 12px;display:flex;align-items:center;gap:12px;flex-shrink:0;">
+    <div onclick="closePortfolio()" style="width:36px;height:36px;border-radius:18px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="var(--t2)" stroke-width="2" stroke-linecap="round"><path d="M9 3l-4 4 4 4"/></svg>
+    </div>
+    <div style="flex:1;font-size:13px;color:var(--t3);font-weight:500;">Portfolio</div>
+    <div style="width:36px;height:36px;border-radius:18px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="var(--t2)" stroke-width="2" stroke-linecap="round"><circle cx="7" cy="3.5" r="1.2"/><circle cx="7" cy="7" r="1.2"/><circle cx="7" cy="10.5" r="1.2"/></svg>
+    </div>
+  </div>
+
+  <!-- Total value -->
+  <div style="padding:4px 22px 0;flex-shrink:0;">
+    <div style="font-family:var(--fm);font-size:11px;color:var(--t3);letter-spacing:0.08em;font-weight:600;">TOTAL VALUE</div>
+    <div id="ov-total-value" style="font-family:var(--fm);font-size:40px;font-weight:500;letter-spacing:-0.025em;margin-top:4px;color:var(--text);">€124,820</div>
+    <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px;">
+      <span id="ov-daily-gain" style="font-family:var(--fm);font-size:14px;font-weight:500;color:var(--build);">+€2,940</span>
+      <span id="ov-daily-pct" style="font-family:var(--fm);font-size:13px;color:var(--build);">+2.4%</span>
+      <span style="font-size:12px;color:var(--t3);margin-left:4px;">today</span>
+    </div>
+  </div>
+
+  <!-- Period selector + area chart -->
+  <div style="margin:14px 16px 0;padding:16px;border-radius:18px;background:var(--surface);border:1px solid var(--border);flex-shrink:0;">
+    <div class="period-bar" style="margin-bottom:10px;">
+      <span class="period-pill">1D</span>
+      <span class="period-pill">1W</span>
+      <span class="period-pill">1M</span>
+      <span class="period-pill">3M</span>
+      <span class="period-pill active">YTD</span>
+      <span class="period-pill">1Y</span>
+    </div>
+    <svg width="100%" height="80" viewBox="0 0 280 80" style="display:block;">
+      <defs>
+        <linearGradient id="pf-grad" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#1A6B3C" stop-opacity="0.22"/>
+          <stop offset="1" stop-color="#1A6B3C" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <polygon id="ov-chart-polygon" fill="url(#pf-grad)"
+        points="0,80 0,71.7 14.7,68.9 29.5,70.3 44.2,63.3 58.9,66.6 73.7,59.6 88.4,56.9 103.2,60.3 117.9,53.3 132.6,49.0 147.4,52.5 162.1,45.5 176.8,49.8 191.6,42.8 206.3,38.5 221.1,42.3 235.8,34.3 250.5,37.0 265.3,32.7 280,27.6 280,80"/>
+      <polyline id="ov-chart-line" fill="none" stroke="#1A6B3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+        points="0,71.7 14.7,68.9 29.5,70.3 44.2,63.3 58.9,66.6 73.7,59.6 88.4,56.9 103.2,60.3 117.9,53.3 132.6,49.0 147.4,52.5 162.1,45.5 176.8,49.8 191.6,42.8 206.3,38.5 221.1,42.3 235.8,34.3 250.5,37.0 265.3,32.7 280,27.6"/>
+    </svg>
+  </div>
+
+  <!-- Holdings list -->
+  <div style="flex:1;overflow-y:auto;scrollbar-width:none;">
+
+    <!-- Holdings header + allocation bar -->
+    <div style="padding:14px 22px 6px;display:flex;justify-content:space-between;align-items:baseline;">
+      <div id="ov-holdings-count" style="font-size:14px;font-weight:700;color:var(--text);">Holdings · 6</div>
+      <div style="font-size:11px;color:var(--t3);font-family:var(--fm);">by value</div>
+    </div>
+    <div style="padding:0 22px 12px;">
+      <div id="ov-alloc-bar" style="height:8px;border-radius:4px;overflow:hidden;display:flex;">
+        <div style="width:28%;background:var(--build);"></div>
+        <div style="width:22%;background:var(--run);"></div>
+        <div style="width:13%;background:var(--mon);"></div>
+        <div style="width:13%;background:var(--warn);"></div>
+        <div style="width:13%;background:var(--chat);"></div>
+        <div style="width:11%;background:var(--danger);"></div>
+      </div>
+    </div>
+
+    <div id="ov-holdings-list" style="padding:0 16px 0;">
+
+      <div class="holding-row">
+        <div class="holding-chip">ASM</div>
+        <div style="flex:1;min-width:0;">
+          <div class="holding-name">ASML Holding</div>
+          <div class="holding-sub">24 sh · €724.30</div>
+        </div>
+        <div>
+          <div class="holding-val">€17,383</div>
+          <div class="holding-chg" style="color:var(--build);">+1.80%</div>
+        </div>
+      </div>
+
+      <div class="holding-row">
+        <div class="holding-chip">SAP</div>
+        <div style="flex:1;min-width:0;">
+          <div class="holding-name">SAP SE</div>
+          <div class="holding-sub">85 sh · €164.20</div>
+        </div>
+        <div>
+          <div class="holding-val">€13,957</div>
+          <div class="holding-chg" style="color:var(--build);">+0.62%</div>
+        </div>
+      </div>
+
+      <div class="holding-row">
+        <div class="holding-chip">ING</div>
+        <div style="flex:1;min-width:0;">
+          <div class="holding-name">ING Groep</div>
+          <div class="holding-sub">420 sh · €16.84</div>
+        </div>
+        <div>
+          <div class="holding-val">€7,073</div>
+          <div class="holding-chg" style="color:var(--danger);">−0.42%</div>
+        </div>
+      </div>
+
+      <div class="holding-row">
+        <div class="holding-chip">ASR</div>
+        <div style="flex:1;min-width:0;">
+          <div class="holding-name">ASR Nederland</div>
+          <div class="holding-sub">180 sh · €44.12</div>
+        </div>
+        <div>
+          <div class="holding-val">€7,942</div>
+          <div class="holding-chg" style="color:var(--build);">+0.94%</div>
+        </div>
+      </div>
+
+      <div class="holding-row">
+        <div class="holding-chip">AD</div>
+        <div style="flex:1;min-width:0;">
+          <div class="holding-name">Ahold Delhaize</div>
+          <div class="holding-sub">260 sh · €31.06</div>
+        </div>
+        <div>
+          <div class="holding-val">€8,076</div>
+          <div class="holding-chg" style="color:var(--danger);">−0.18%</div>
+        </div>
+      </div>
+
+      <div class="holding-row" style="border-bottom:none;">
+        <div class="holding-chip">PHI</div>
+        <div style="flex:1;min-width:0;">
+          <div class="holding-name">Philips</div>
+          <div class="holding-sub">300 sh · €22.40</div>
+        </div>
+        <div>
+          <div class="holding-val">€6,720</div>
+          <div class="holding-chg" style="color:var(--build);">+0.31%</div>
+        </div>
+      </div>
+
+    </div>
+    <div style="height:24px;"></div>
+  </div>
+</div>
+
+
+<script>
+// ── Config ──────────────────────────────────────────────────────────
+const API_BASE = window.RITA_API_BASE || 'http://localhost:8000';
+let LIVE_MODE  = localStorage.getItem('ritaLiveMode') === 'true';
+
+// ── API client ──────────────────────────────────────────────────────
+async function fetchTimeline() {
+  try { const r = await fetch(`${API_BASE}/api/v1/experience/rita/risk-timeline`); return r.ok ? r.json() : null; } catch { return null; }
+}
+async function fetchSignals() {
+  try { const r = await fetch(`${API_BASE}/api/v1/market-signals?instrument=ASML&periods=5`); return r.ok ? r.json() : null; } catch { return null; }
+}
+async function fetchPerformance() {
+  try { const r = await fetch(`${API_BASE}/api/v1/performance-summary`); return r.ok ? r.json() : null; } catch { return null; }
+}
+async function fetchPortfolioSummary() {
+  try { const r = await fetch(`${API_BASE}/api/v1/portfolio/summary`); return r.ok ? r.json() : null; } catch { return null; }
+}
+async function fetchPositions() {
+  try { const r = await fetch(`${API_BASE}/api/v1/portfolio/positions?mode=paper`); return r.ok ? r.json() : null; } catch { return null; }
+}
+async function fetchPriceHistory() {
+  try { const r = await fetch(`${API_BASE}/api/v1/portfolio/price-history?periods=30`); return r.ok ? r.json() : null; } catch { return null; }
+}
+async function fetchTradeEvents() {
+  try { const r = await fetch(`${API_BASE}/api/v1/trade-events`); return r.ok ? r.json() : null; } catch { return null; }
+}
+
+// ── Regime → background color ────────────────────────────────────────
+function applyRegime(timeline) {
+  if (!timeline || !timeline.length) return;
+  const regime = (timeline[timeline.length - 1].regime || '').toLowerCase();
+  const color  = regime === 'bull' ? '#EDFAF3'
+               : regime === 'bear' ? '#FFF7ED'
+               : '#FEFCE8';   // neutral or unknown
+  document.body.style.backgroundColor = color;
+}
+
+// ── Live data coordinator (populated in subsequent steps) ────────────
+async function initLiveData() {
+  if (!LIVE_MODE) return;
+  const [timeline, signals, perf, portSummary] = await Promise.all([
+    fetchTimeline(), fetchSignals(), fetchPerformance(), fetchPortfolioSummary()
+  ]);
+  applyRegime(timeline);
+  bindHomeScreen(signals, portSummary, timeline, perf);
+  bindGoalScreen(perf);
+  bindMarketScreen(signals, portSummary, timeline);
+  loadMsSignals();
+  bindTodayAndOverview(signals, portSummary, timeline, perf);
+  bindMarketFeed(signals, timeline);
+  bindStrategyScreen(perf);
+  bindPortfolioScreen(portSummary);
+  const priceHistory = await fetchPriceHistory();
+  bindSparklines(priceHistory);
+}
+
+// ── Portfolio screen (s8) + overlay + sparklines ──────────────────────
+function pricesToPoints(prices, w, h) {
+  if (!prices.length) return { line: '', polygon: '' };
+  const min    = Math.min(...prices);
+  const max    = Math.max(...prices);
+  const range  = max - min || 1;
+  const pts    = prices.map((p, i) =>
+    `${(i / (prices.length - 1) * w).toFixed(1)},${(h - (p - min) / range * (h - 4)).toFixed(1)}`
+  );
+  return {
+    line:    pts.join(' '),
+    polygon: `0,${h} ${pts.join(' ')} ${w},${h}`
+  };
+}
+
+async function bindPortfolioScreen(portSummary) {
+  const [positions, priceHistory] = await Promise.all([
+    fetchPositions(), fetchPriceHistory()
+  ]);
+
+  // ── Totals ────────────────────────────────────────────────────────
+  const totalPnl  = portSummary?.total_pnl ?? 0;
+  const lotCount  = portSummary?.lot_count ?? 0;
+  const pnlSign   = totalPnl >= 0 ? '+' : '';
+  const pnlColor  = totalPnl >= 0 ? 'var(--build)' : 'var(--danger)';
+  const pnlFmt    = `${pnlSign}₹${Math.abs(totalPnl).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+
+  function g(id) { return document.getElementById(id); }
+
+  ['s8', 'ov'].forEach(p => {
+    const tv = g(`${p}-total-value`);
+    const dg = g(`${p}-daily-gain`);
+    const dp = g(`${p}-daily-pct`);
+    if (tv) tv.textContent = pnlFmt;
+    if (dg) { dg.textContent = pnlFmt; dg.style.color = pnlColor; }
+    if (dp) { dp.textContent = `${lotCount} lots`; dp.style.color = 'var(--t3)'; }
+  });
+
+  // ── Sparklines ────────────────────────────────────────────────────
+  if (priceHistory && priceHistory.length > 1) {
+    const prices = priceHistory.map(r => r.close).filter(Boolean);
+    const { line, polygon } = pricesToPoints(prices, 280, 80);
+    ['s8', 'ov'].forEach(p => {
+      const pl = g(`${p}-chart-line`);
+      const pg = g(`${p}-chart-polygon`);
+      if (pl) pl.setAttribute('points', line);
+      if (pg) pg.setAttribute('points', polygon);
+    });
+  }
+
+  // ── Holdings list ─────────────────────────────────────────────────
+  if (!positions || !positions.length) return;
+  const colors   = ['var(--build)', 'var(--run)', 'var(--mon)', 'var(--warn)', 'var(--chat)', 'var(--danger)'];
+  const holdHtml = positions.slice(0, 8).map((pos, i) => {
+    const inst   = (pos.instrument || 'N/A').toUpperCase();
+    const chip   = inst.slice(0, 3);
+    const name   = pos.full || inst;
+    const qty    = pos.qty ?? 0;
+    const ltp    = pos.ltp ?? 0;
+    const pnl    = pos.pnl ?? 0;
+    const chg    = pos.chg ?? 0;
+    const col    = colors[i % colors.length];
+    const pCol   = pnl >= 0 ? 'var(--build)' : 'var(--danger)';
+    const chgStr = `${chg >= 0 ? '+' : ''}${chg.toFixed(2)}%`;
+    const pnlStr = `${pnl >= 0 ? '+' : ''}₹${Math.abs(pnl).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+    const isLast = i === Math.min(positions.length, 8) - 1;
+    return `<div class="holding-row"${isLast ? ' style="border-bottom:none;"' : ''}>
+      <div class="holding-chip" style="background:${col}22;color:${col};">${chip}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="holding-name">${name}</div>
+        <div class="holding-sub">${qty} lots · ₹${ltp.toFixed(2)}</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="holding-val">${pnlStr}</div>
+        <div class="holding-chg" style="color:${pCol};">${chgStr}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const countTxt = `Holdings · ${positions.length}`;
+  ['s8', 'ov'].forEach(p => {
+    const list  = g(`${p}-holdings-list`);
+    const count = g(`${p}-holdings-count`);
+    if (list)  list.innerHTML   = holdHtml;
+    if (count) count.textContent = countTxt;
+  });
+
+  // Allocation bar — proportional to absolute P&L per position
+  const totalAbsPnl = positions.reduce((s, p) => s + Math.abs(p.pnl ?? 0), 0) || 1;
+  const barHtml     = positions.slice(0, 6).map((pos, i) =>
+    `<div style="flex:${Math.abs(pos.pnl ?? 0) / totalAbsPnl};background:${colors[i % colors.length]};min-width:4px;"></div>`
+  ).join('');
+  ['s8-alloc-bar', 'ov-alloc-bar'].forEach(id => {
+    const bar = g(id);
+    if (bar) bar.innerHTML = barHtml;
+  });
+}
+
+// ── Strategy screen (s4) ─────────────────────────────────────────────
+async function bindStrategyScreen(perf) {
+  if (!perf) return;
+
+  // KPI cards
+  const pnlEl  = document.getElementById('s4-pnl');
+  const wrEl   = document.getElementById('s4-winrate');
+  const shEl   = document.getElementById('s4-sharpe');
+
+  const returnPct = perf.portfolio_total_return_pct ?? 0;
+  const sign      = returnPct >= 0 ? '+' : '';
+  if (pnlEl) pnlEl.textContent  = `${sign}${returnPct.toFixed(1)}%`;
+  if (wrEl)  wrEl.textContent   = `${(perf.win_rate_pct ?? 64).toFixed(0)}%`;
+  if (shEl)  shEl.textContent   = (perf.sharpe_ratio ?? 1.82).toFixed(2);
+
+  // Decisions list — self-fetch trade events
+  const events = await fetchTradeEvents();
+  const listEl = document.getElementById('s4-decisions');
+  if (!listEl || !events || !events.length) return;
+
+  const colorMap = {
+    BUY:   'var(--build)', ENTER: 'var(--build)', LONG:  'var(--build)',
+    SELL:  'var(--danger)',   EXIT:  'var(--danger)',   SHORT: 'var(--danger)',
+    HOLD:  'var(--t3)',    SKIP:  'var(--t3)',    CASH:  'var(--t3)',
+  };
+
+  const last4 = events.slice(-4).reverse();
+  listEl.innerHTML = last4.map(ev => {
+    const type     = (ev.event_type || ev.trade_type || 'HOLD').toUpperCase();
+    const color    = colorMap[type] || 'var(--t3)';
+    const dateStr  = (ev.date || '').slice(0, 10);
+    const detail   = ev.delta_allocation != null
+      ? `${ev.delta_allocation >= 0 ? '+' : ''}${(ev.delta_allocation * 100).toFixed(0)}% alloc`
+      : ev.pnl != null
+        ? `${ev.pnl >= 0 ? '+' : ''}${ev.pnl.toFixed(0)}`
+        : '';
+
+    return `<div style="padding:12px;border-radius:12px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;gap:10px;">
+      <span style="font-family:var(--fm);font-size:11px;color:var(--t3);width:72px;flex-shrink:0;">${dateStr}</span>
+      <span style="font-family:var(--fm);font-size:10px;font-weight:700;color:${color};padding:2px 7px;border-radius:4px;background:var(--surface2);letter-spacing:0.04em;flex-shrink:0;">${type}</span>
+      <span style="font-size:13px;font-weight:600;flex:1;color:var(--text);">ASML</span>
+      <span style="font-family:var(--fm);font-size:12px;color:var(--t2);">${detail}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── Market Feed (s7) ─────────────────────────────────────────────────
+function bindMarketFeed(signals, timeline) {
+  if (!signals || !signals.length) return;
+  const row    = signals[signals.length - 1];
+  const regime = timeline && timeline.length
+    ? (timeline[timeline.length - 1].regime || 'Neutral') : 'Neutral';
+
+  // Factor scores — same mapping as s2
+  const close    = 1;  // no close needed for ratio here; vol uses relative value
+  const momentum = Math.min(Math.max((row.rsi_14 ?? 50) / 100, 0), 1);
+  const value    = Math.min(Math.max(1 - (row.bb_pct_b ?? 0.5), 0), 1);
+  const quality  = Math.min(Math.max(row.trend_score ?? 0.5, 0), 1);
+  // Volatility: use macd_hist magnitude normalised to a rough ceiling
+  const volRaw   = Math.abs(row.macd_hist ?? 0);
+  const vol      = Math.min(volRaw / 50, 1);
+
+  function set(id, val, pct) {
+    const v = document.getElementById(id + '-val');
+    const b = document.getElementById(id + '-bar');
+    if (v) v.textContent = val.toFixed(2);
+    if (b) b.style.width = `${(pct * 100).toFixed(0)}%`;
+  }
+  set('s7-momentum', momentum, momentum);
+  set('s7-value',    value,    value);
+  set('s7-quality',  quality,  quality);
+  set('s7-vol',      vol,      vol);
+
+  // Regime label
+  const lbl = document.getElementById('s7-regime-label');
+  if (lbl) lbl.textContent = `${regime} market`;
+
+  // Narrative — built from live data
+  const rsi       = Math.round(row.rsi_14 ?? 50);
+  const trendPct  = Math.round((row.trend_score ?? 0.5) * 100);
+  const leadFactor = momentum > quality ? 'Momentum' : 'Quality';
+  const volWord    = vol < 0.4 ? 'compressed' : vol > 0.7 ? 'elevated' : 'moderate';
+  const narrative  = `Rita's classifier: ${leadFactor} is leading at RSI ${rsi}. Trend score ${trendPct}. Volatility is ${volWord} — that combination signals a ${regime.toLowerCase()} regime.`;
+
+  const narEl = document.getElementById('s7-regime-narrative');
+  if (narEl) narEl.textContent = narrative;
+
+  // Rita explains quote
+  const explainEl = document.getElementById('s7-rita-explains');
+  if (explainEl) explainEl.textContent = `"${leadFactor} is doing most of the work. Trend score at ${trendPct} with volatility ${volWord} — Rita classifies this as a ${regime.toLowerCase()} regime."`;
+}
+
+// ── Today (s5) + Overview (s6) ───────────────────────────────────────
+function bindTodayAndOverview(signals, portSummary, timeline, perf) {
+  const regime   = timeline && timeline.length
+    ? (timeline[timeline.length - 1].regime || 'Neutral') : 'Neutral';
+  const row      = signals && signals.length ? signals[signals.length - 1] : null;
+  const asml     = portSummary?.market?.ASML;
+  const close    = asml?.close;
+  const chgFromP = asml?.chgFromPrev;
+  const ytd      = perf?.portfolio_total_return_pct ?? 7.4;
+  const goalPct  = Math.min(ytd / 10, 1);
+
+  // Derive active signals from thresholds (reuses logic from s3)
+  const activeSignals = [];
+  if (row) {
+    const vol = close ? Math.min((row.atr_14 ?? 0) / close / 0.015, 1) : 0;
+    if ((row.rsi_14 ?? 0) > 60)   activeSignals.push({ type: 'MOMENTUM', headline: `Momentum RSI at ${Math.round(row.rsi_14)}` });
+    if ((row.trend_score ?? 0) > 0.6) activeSignals.push({ type: 'TREND',     headline: `Trend score at ${Math.round((row.trend_score ?? 0) * 100)}` });
+    if (vol > 0.6)                 activeSignals.push({ type: 'VOLATILITY', headline: `Volatility elevated` });
+    if ((row.bb_pct_b ?? 0.5) > 0.85 || (row.bb_pct_b ?? 0.5) < 0.15)
+                                   activeSignals.push({ type: 'REVERSAL',   headline: `Price at band extreme` });
+  }
+
+  // Today's date string
+  const now     = new Date();
+  const dateStr = now.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' })
+                     .toUpperCase().replace(',','').replace(' ', ' · ');
+
+  // ── s5 bindings ──
+  function s(id) { return document.getElementById(id); }
+
+  if (s('s5-date'))    s('s5-date').textContent = dateStr;
+  if (s('s5-regime-label')) s('s5-regime-label').textContent = `${regime} market`;
+
+  if (close) {
+    const sign = (chgFromP ?? 0) >= 0 ? '+' : '';
+    const pct  = close ? (((chgFromP ?? 0) / (close - (chgFromP ?? 0))) * 100).toFixed(2) : '0.00';
+    if (s('s5-instrument')) s('s5-instrument').textContent = 'ASML';
+    if (s('s5-price'))      s('s5-price').textContent = `€${close.toFixed(2)}`;
+    if (s('s5-price-chg'))  s('s5-price-chg').textContent = `${sign}${pct}%`;
+  }
+
+  // s5 goal mini donut (r=22, circumference=138.2)
+  const dash5 = (goalPct * 138.2).toFixed(1);
+  if (s('s5-goal-arc')) s('s5-goal-arc').setAttribute('stroke-dasharray', `${dash5} 999`);
+  if (s('s5-goal-pct')) s('s5-goal-pct').textContent = `${Math.round(goalPct * 100)}%`;
+  if (s('s5-goal-ytd')) s('s5-goal-ytd').textContent = `${ytd.toFixed(1)}% YTD`;
+
+  // s5 signal list — replace with live active signals
+  const sigCount = s('s5-signal-count');
+  const sigList  = s('s5-signal-list');
+  if (sigCount) sigCount.textContent = `Signals · ${activeSignals.length}`;
+  if (sigList && activeSignals.length) {
+    const colorMap = { MOMENTUM:'var(--build)', TREND:'var(--build)', VOLATILITY:'var(--warn)', REVERSAL:'var(--run)' };
+    sigList.innerHTML = activeSignals.map((sig, i) => {
+      const isLast  = i === activeSignals.length - 1;
+      const color   = colorMap[sig.type] || 'var(--t4)';
+      return `<div style="display:flex;gap:12px;padding:12px 0;${isLast ? '' : 'border-bottom:1px solid var(--border);'}align-items:flex-start;">
+        <div style="width:4px;align-self:stretch;background:${color};border-radius:2px;margin-top:2px;flex-shrink:0;"></div>
+        <div style="flex:1;">
+          <div style="font-family:var(--fm);font-size:9px;font-weight:600;color:${color};letter-spacing:0.08em;">${sig.type}</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);line-height:1.3;margin-top:2px;">${sig.headline}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── s6 bindings ──
+  if (s('s6-regime-label')) s('s6-regime-label').textContent = `${regime.toUpperCase()} MARKET`;
+  if (s('s6-instrument'))   s('s6-instrument').textContent   = 'ASML';
+  if (close) {
+    const sign = (chgFromP ?? 0) >= 0 ? '+' : '';
+    const pct  = close ? (((chgFromP ?? 0) / (close - (chgFromP ?? 0))) * 100).toFixed(2) : '0.00';
+    if (s('s6-price'))        s('s6-price').textContent        = `€${close.toFixed(2)}`;
+    if (s('s6-price-change')) s('s6-price-change').textContent = `${sign}${(chgFromP ?? 0).toFixed(2)} · ${sign}${pct}%`;
+  }
+
+  const pctLabel = `${ytd.toFixed(1)}% of 10%`;
+  const badge    = `${Math.round(goalPct * 100)}%`;
+  if (s('s6-goal-text'))  s('s6-goal-text').textContent  = pctLabel;
+  if (s('s6-goal-badge')) s('s6-goal-badge').textContent = badge;
+  if (s('s6-goal-bar'))   s('s6-goal-bar').style.width   = `${Math.round(goalPct * 100)}%`;
+
+  // s6 signal preview cards (first two active signals)
+  if (activeSignals[0]) {
+    if (s('s6-sig1-type'))     s('s6-sig1-type').textContent     = activeSignals[0].type;
+    if (s('s6-sig1-headline')) s('s6-sig1-headline').textContent = activeSignals[0].headline;
+  }
+  if (activeSignals[1]) {
+    if (s('s6-sig2-type'))     s('s6-sig2-type').textContent     = activeSignals[1].type;
+    if (s('s6-sig2-headline')) s('s6-sig2-headline').textContent = activeSignals[1].headline;
+  }
+}
+
+// ── Market screen (s2) + Signal Hero (s3) ────────────────────────────
+function bindMarketScreen(signals, portSummary, timeline) {
+  if (!signals || !signals.length) return;
+  const row    = signals[signals.length - 1];
+  const regime = timeline && timeline.length
+    ? (timeline[timeline.length - 1].regime || 'Neutral')
+    : 'Neutral';
+
+  const close   = portSummary?.market?.ASML?.close || 1;
+  const quality = Math.min(Math.max(row.trend_score ?? 0.5, 0), 1);
+  const vol     = Math.min(Math.max((row.atr_14 ?? 0) / close / 0.015, 0), 1);
+
+  // Regime label + price hero (s2)
+  const regimeLbl = document.getElementById('s2-regime-label');
+  if (regimeLbl) regimeLbl.textContent = regime.toUpperCase();
+
+  const asmlClose  = portSummary?.market?.ASML?.close;
+  const asmlChg    = portSummary?.market?.ASML?.chgFromPrev;
+  if (asmlClose) {
+    const hero = document.getElementById('s2-price-hero');
+    const chg  = document.getElementById('s2-price-change');
+    if (hero) hero.textContent = `ASML.AS · €${asmlClose.toFixed(2)}`;
+    if (chg && asmlChg != null) {
+      const sign = asmlChg >= 0 ? '+' : '';
+      const pct  = ((asmlChg / (asmlClose - asmlChg)) * 100).toFixed(2);
+      chg.textContent = `${sign}${asmlChg.toFixed(2)} · ${sign}${pct}%`;
+    }
+  }
+
+  // Signal Hero (s3)
+  // Determine leading signal type from thresholds
+  const activeSignals = [];
+  if ((row.rsi_14 ?? 0) > 60)                              activeSignals.push('MOMENTUM');
+  if ((row.trend_score ?? 0) > 0.6)                        activeSignals.push('TREND');
+  if (vol > 0.6)                                            activeSignals.push('VOLATILITY');
+  if ((row.bb_pct_b ?? 0.5) > 0.85 || (row.bb_pct_b ?? 0.5) < 0.15) activeSignals.push('REVERSAL');
+
+  const leadSignal = activeSignals[0] || 'TREND';
+  const s3Type     = document.getElementById('s3-signal-type');
+  const s3Head     = document.getElementById('s3-headline');
+  const s3Conf     = document.getElementById('s3-confidence');
+  const s3Reg      = document.getElementById('s3-regime');
+
+  if (s3Type) s3Type.textContent = leadSignal;
+  if (s3Head) s3Head.textContent = `${leadSignal.charAt(0) + leadSignal.slice(1).toLowerCase()} score at ${Math.round(quality * 100)}`;
+  if (s3Conf) s3Conf.textContent = quality.toFixed(2);
+  if (s3Reg)  s3Reg.textContent  = regime;
+}
+
+// ── Home screen (s0) ─────────────────────────────────────────────────
+function bindHomeScreen(signals, portSummary, timeline, perf) {
+  const regime   = timeline && timeline.length ? (timeline[timeline.length - 1].regime || 'Neutral') : 'Neutral';
+  const row      = signals && signals.length ? signals[signals.length - 1] : null;
+  const asml      = portSummary?.market?.ASML;
+  const asmlChg   = asml?.chgFromPrev;
+  const asmlClose = asml?.close;
+  const ytd      = perf?.portfolio_total_return_pct ?? 0;
+  const sharpe   = perf?.sharpe_ratio ?? 0;
+  const winRate  = perf?.win_rate_pct ?? 0;
+  const totalPnl = portSummary?.total_pnl ?? 0;
+
+  // Active signal count
+  const sigs = [];
+  if (row) {
+    if ((row.rsi_14 ?? 0) > 60)   sigs.push('Momentum');
+    if ((row.trend_score ?? 0) > 0.6) sigs.push('Trend');
+    const vol = asmlClose ? Math.min((row.atr_14 ?? 0) / asmlClose / 0.015, 1) : 0;
+    if (vol > 0.6) sigs.push('Volatility');
+    if ((row.bb_pct_b ?? 0.5) > 0.85 || (row.bb_pct_b ?? 0.5) < 0.15) sigs.push('Reversal');
+  }
+  const sigCount = sigs.length;
+
+  function s(id) { return document.getElementById(id); }
+
+  // RITA SAYS
+  const lead = sigs[0] || 'signals';
+  const ritaEl = s('s0-rita-says');
+  if (ritaEl) ritaEl.textContent = `"${regime} regime, ${lead.toLowerCase()} is leading. ${sigCount} active signal${sigCount !== 1 ? 's' : ''} on ASML."`;
+
+  // Tile subtitles
+  if (s('s0-tile-today'))    s('s0-tile-today').textContent    = `${sigCount} signal${sigCount !== 1 ? 's' : ''} · ${regime.toLowerCase()}`;
+  if (s('s0-tile-goal'))     s('s0-tile-goal').textContent     = `${ytd.toFixed(1)}% of 10%`;
+  if (asmlClose && asmlChg != null) {
+    const pct  = ((asmlChg / (asmlClose - asmlChg)) * 100).toFixed(2);
+    const sign = asmlChg >= 0 ? '+' : '';
+    if (s('s0-tile-market')) s('s0-tile-market').textContent = `ASML · ${sign}${pct}%`;
+  }
+  if (s('s0-tile-signals'))  s('s0-tile-signals').textContent  = `${sigCount} new · ASML`;
+  if (s('s0-tile-strategy')) s('s0-tile-strategy').textContent = `Sharpe ${sharpe.toFixed(2)} · ${winRate.toFixed(0)}% WR`;
+  const pnlSign = totalPnl >= 0 ? '+' : '';
+  const pnlFmt  = `₹${Math.abs(totalPnl).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+  if (s('s0-tile-portfolio')) s('s0-tile-portfolio').textContent = `${pnlFmt} ${pnlSign}P&L`;
+}
+
+// ── Sparklines (s2 + s3) ──────────────────────────────────────────────
+function bindSparklines(history) {
+  if (!history || history.length < 2) return;
+  const prices = history.map(r => r.close).filter(Boolean);
+  const min    = Math.min(...prices), max = Math.max(...prices);
+  const range  = max - min || 1;
+
+  function toPoints(w, h) {
+    return prices.map((p, i) =>
+      `${(i / (prices.length - 1) * w).toFixed(1)},${(h - (p - min) / range * (h - 4)).toFixed(1)}`
+    ).join(' ');
+  }
+
+  const s2 = document.getElementById('s2-sparkline');
+  if (s2) s2.setAttribute('points', toPoints(280, 44));
+
+  const s3 = document.getElementById('s3-sparkline');
+  if (s3) s3.setAttribute('points', toPoints(280, 40));
+
+  const last = history[history.length - 1];
+  if (last) {
+    const lbl = document.getElementById('s3-price-label');
+    if (lbl) lbl.textContent = `₹${(last.close || 0).toLocaleString('en-IN')}`;
+  }
+}
+
+// ── Goal screen (s1) ─────────────────────────────────────────────────
+let _livePerf = null;
+
+function bindGoalScreen(perf) {
+  _livePerf = perf || null;
+}
+
+// ── Market Signals screen (s2) ───────────────────────────────────────
+let msTimeframe = 'daily';
+
+function switchMsTab(tf) {
+  msTimeframe = tf;
+  ['daily','weekly','monthly'].forEach(t => {
+    const btn = document.getElementById(`ms-tab-${t}`);
+    if (!btn) return;
+    const active = t === tf;
+    btn.style.borderBottomColor = active ? 'var(--build)' : 'transparent';
+    btn.style.color = active ? 'var(--build)' : 'var(--t3)';
+  });
+  loadMsSignals();
+}
+
+async function loadMsSignals() {
+  try {
+    const periods = msTimeframe === 'monthly' ? 60 : msTimeframe === 'weekly' ? 104 : 252;
+    const r = await fetch(`${API_BASE}/api/v1/market-signals?instrument=ASML&timeframe=${msTimeframe}&periods=${periods}`);
+    if (r.ok) renderMsSignals(await r.json());
+  } catch {}
+}
+
+function renderMsSignals(data) {
+  if (!data || !data.length) return;
+  const row = data[data.length - 1];
+  const el  = id => document.getElementById(id);
+
+  // Date range label
+  const first = (data[0]?.date || '').slice(0, 10);
+  const last  = (row?.date   || '').slice(0, 10);
+  if (el('ms-data-range')) el('ms-data-range').textContent = `${first} – ${last}`;
+
+  const close = row.Close;
+
+  // Helper: set KPI tile
+  function setKpi(prefix, val, sigText, sigColor, bgColor, bdColor) {
+    if (el(`${prefix}-val`)) el(`${prefix}-val`).textContent = val;
+    if (el(`${prefix}-sig`)) { el(`${prefix}-sig`).textContent = sigText; el(`${prefix}-sig`).style.color = sigColor || 'var(--t3)'; }
+    const tile = el(`ms-kpi-${prefix.split('-')[1]}`);
+    if (tile) { tile.style.background = bgColor || 'var(--surface)'; tile.style.borderColor = bdColor || 'var(--border)'; }
+  }
+
+  // RSI-14
+  const rsi = row.rsi_14;
+  if (rsi != null) {
+    const ob = rsi > 70, nearOb = rsi > 60, os = rsi < 30, nearOs = rsi < 40;
+    setKpi('ms-rsi', rsi.toFixed(1),
+      ob ? 'Overbought' : nearOb ? 'Near OB' : os ? 'Oversold' : nearOs ? 'Near OS' : 'Neutral',
+      ob ? '#EF4444' : nearOb ? '#B45309' : os ? 'var(--build)' : nearOs ? 'var(--build)' : 'var(--t3)',
+      ob ? '#FEE2E2' : nearOb ? '#FEF3C7' : os ? 'var(--build-bg)' : nearOs ? '#EFF9F4' : 'var(--surface)',
+      ob ? '#EF4444' : nearOb ? '#F59E0B' : (os || nearOs) ? 'var(--build)' : 'var(--border)'
+    );
+  }
+
+  // MACD
+  const macd = row.macd, macdSig = row.macd_signal;
+  if (macd != null) {
+    const bull = macdSig != null && macd > macdSig;
+    const bear = macdSig != null && macd < macdSig;
+    setKpi('ms-macd', macd.toFixed(2),
+      bull ? 'Bullish' : bear ? 'Bearish' : 'Neutral',
+      bull ? 'var(--build)' : bear ? '#EF4444' : 'var(--t3)'
+    );
+  }
+
+  // BB %B
+  const bb = row.bb_pct_b;
+  if (bb != null) {
+    const nearUp = bb > 0.85, nearDn = bb < 0.15;
+    setKpi('ms-bb', bb.toFixed(2),
+      nearUp ? 'Near upper' : nearDn ? 'Near lower' : 'Mid-range',
+      (nearUp || nearDn) ? '#B45309' : 'var(--t3)',
+      (nearUp || nearDn) ? '#FEF3C7' : 'var(--surface)',
+      (nearUp || nearDn) ? '#F59E0B' : 'var(--border)'
+    );
+  }
+
+  // ATR-14
+  const atr = row.atr_14;
+  if (atr != null) {
+    const atrPct = close ? `${((atr / close) * 100).toFixed(2)}% of px` : '—';
+    setKpi('ms-atr', atr.toFixed(2), atrPct);
+  }
+
+  // EMAs vs close
+  [['ema_5','ms-ema5'], ['ema_13','ms-ema13'], ['ema_26','ms-ema26']].forEach(([field, prefix]) => {
+    const v = row[field];
+    if (v != null) {
+      const diff = close != null ? ((close - v) / v * 100) : null;
+      const sign = diff >= 0 ? '+' : '';
+      setKpi(prefix, v.toFixed(2),
+        diff != null ? `${sign}${diff.toFixed(1)}% vs px` : '—',
+        diff != null ? (diff >= 0 ? 'var(--build)' : '#EF4444') : 'var(--t3)'
+      );
+    }
+  });
+
+  // Trend score
+  const trend = row.trend_score;
+  if (trend != null) {
+    const sBull = trend > 0.6, mBull = trend > 0.2, sBear = trend < -0.6, mBear = trend < -0.2;
+    setKpi('ms-trend', trend.toFixed(2),
+      sBull ? 'Strong bull' : mBull ? 'Mild bull' : sBear ? 'Strong bear' : mBear ? 'Mild bear' : 'Neutral',
+      (sBull || mBull) ? 'var(--build)' : (sBear || mBear) ? '#EF4444' : 'var(--t3)',
+      sBull ? 'var(--build-bg)' : sBear ? '#FEE2E2' : 'var(--surface)',
+      sBull ? 'var(--build)' : sBear ? '#EF4444' : 'var(--border)'
+    );
+  }
+
+  // Signal highlights
+  const alertsEl = el('ms-alerts');
+  if (alertsEl) {
+    const alerts = [];
+    if (rsi != null) {
+      if      (rsi > 70) alerts.push(['#FEE2E2','#EF4444', `RSI ${rsi.toFixed(1)} — overbought territory (>70)`]);
+      else if (rsi > 60) alerts.push(['#FEF3C7','#B45309', `RSI ${rsi.toFixed(1)} — approaching overbought (>70)`]);
+      else if (rsi < 30) alerts.push(['var(--build-bg)','var(--build)', `RSI ${rsi.toFixed(1)} — oversold territory (<30)`]);
+      else if (rsi < 40) alerts.push(['#EFF9F4','var(--build)', `RSI ${rsi.toFixed(1)} — approaching oversold (<30)`]);
+    }
+    if (bb != null && bb > 0.85) alerts.push(['#FEF3C7','#B45309', `BB %B ${bb.toFixed(2)} — price near upper band`]);
+    if (bb != null && bb < 0.15) alerts.push(['#EFF9F4','var(--build)', `BB %B ${bb.toFixed(2)} — price near lower band`]);
+    if (macd != null && macdSig != null) {
+      if (macd > macdSig) alerts.push(['var(--build-bg)','var(--build)', `MACD ${macd.toFixed(2)} above signal — bullish momentum`]);
+      else                alerts.push(['#FEE2E2','#EF4444', `MACD ${macd.toFixed(2)} below signal — bearish momentum`]);
+    }
+    if (trend != null && Math.abs(trend) > 0.6)
+      alerts.push([trend > 0 ? 'var(--build-bg)' : '#FEE2E2', trend > 0 ? 'var(--build)' : '#EF4444',
+        `Trend score ${trend.toFixed(2)} — ${trend > 0 ? 'strong bullish' : 'strong bearish'} regime`]);
+
+    alertsEl.innerHTML = alerts.map(([bg, col, txt]) =>
+      `<div style="padding:7px 10px;border-radius:8px;background:${bg};font-size:11px;color:${col};font-family:var(--fm);line-height:1.4;">${txt}</div>`
+    ).join('');
+  }
+
+  renderMsPvChart(data);
+}
+
+function renderMsPvChart(data) {
+  const svg = document.getElementById('ms-pv-svg');
+  if (!svg) return;
+  const valid = data.filter(d => d.Close != null);
+  if (valid.length < 2) return;
+
+  const W = 320, PH = 82, VH = 28, GAP = 6;
+  const prices  = valid.map(d => d.Close);
+  const volumes = valid.map(d => d.Volume ?? 0);
+  const n = valid.length;
+
+  const pMin = Math.min(...prices) * 0.998;
+  const pMax = Math.max(...prices) * 1.002;
+  const vMax = Math.max(...volumes) || 1;
+
+  // Price polyline
+  const pts = valid.map((d, i) => {
+    const x = ((i / (n - 1)) * W).toFixed(1);
+    const y = (PH - 2 - ((d.Close - pMin) / (pMax - pMin)) * (PH - 6)).toFixed(1);
+    return `${x},${y}`;
+  }).join(' ');
+  document.getElementById('ms-price-line').setAttribute('points', pts);
+
+  // Volume bars
+  const barW = Math.max(1.5, (W / n) - 1);
+  const volHtml = valid.map((d, i) => {
+    const x  = ((i / n) * W).toFixed(1);
+    const h  = Math.max(2, ((d.Volume ?? 0) / vMax) * VH).toFixed(1);
+    const y  = (PH + GAP + VH - h).toFixed(1);
+    return `<rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="var(--build)" opacity="0.35" rx="1"/>`;
+  }).join('');
+  document.getElementById('ms-vol-bars').innerHTML = volHtml;
+
+  // Date labels
+  const fmt = s => s ? s.slice(0, 10) : '—';
+  const startLbl = document.getElementById('ms-date-start-lbl');
+  const endLbl   = document.getElementById('ms-date-end-lbl');
+  if (startLbl) startLbl.textContent = fmt(valid[0].date);
+  if (endLbl)   { endLbl.textContent = fmt(valid[n-1].date); endLbl.setAttribute('x', W); }
+}
+
+// ── Goal type selector ───────────────────────────────────────────────
+const GOAL_PRESETS = {
+  growth:   { ret: 18, years: 3 },
+  balanced: { ret: 12, years: 1 },
+  preserve: { ret: 8,  years: 1 },
+};
+let currentGoal = 'balanced';
+
+function selectGoal(type) {
+  currentGoal = type;
+  ['growth','balanced','preserve'].forEach(t => {
+    const btn = document.getElementById(`g-goal-${t}`);
+    if (!btn) return;
+    const active = t === type;
+    btn.style.borderColor = active ? 'var(--build)' : 'var(--border)';
+    btn.style.background  = active ? 'var(--build-bg)' : 'var(--surface2)';
+    btn.style.color       = active ? 'var(--build)' : 'var(--t3)';
+  });
+  const preset = GOAL_PRESETS[type];
+  const retEl = document.getElementById('g-return');
+  const yrEl  = document.getElementById('g-years');
+  if (retEl) retEl.value = preset.ret;
+  if (yrEl)  yrEl.value  = preset.years;
+}
+
+function runGoalAnalysis() {
+  const portfolio = parseFloat(document.getElementById('g-portfolio').value) || 1000000;
+  const targetPct = parseFloat(document.getElementById('g-return').value)   || 12;
+  const years     = parseFloat(document.getElementById('g-years').value)    || 1;
+
+  const ASML_HIST = [
+    { year: 2015, ret: 12.2 }, { year: 2016, ret:  8.5 }, { year: 2017, ret: 35.8 },
+    { year: 2018, ret: -5.2 }, { year: 2019, ret: 72.1 }, { year: 2020, ret: 46.8 },
+    { year: 2021, ret: 64.7 }, { year: 2022, ret: -26.7 }, { year: 2023, ret: 36.5 },
+    { year: 2024, ret: -6.0 },
+  ];
+
+  const avg10yr      = ASML_HIST.reduce((s, d) => s + d.ret, 0) / ASML_HIST.length;
+  const yearsBeating = ASML_HIST.filter(d => d.ret >= targetPct).length;
+  const feasPct      = Math.round((yearsBeating / ASML_HIST.length) * 100);
+  const lastASML     = ASML_HIST[ASML_HIST.length - 1].ret;
+
+  // Use live portfolio return when available, fall back to ASML 10yr avg
+  const hasLive    = _livePerf && _livePerf.portfolio_total_return_pct != null;
+  const liveReturn = hasLive ? _livePerf.portfolio_total_return_pct : null;
+  const liveCagr   = hasLive ? (_livePerf.portfolio_cagr_pct ?? liveReturn) : null;
+
+  // Ring: actual progress vs target (live) or feasibility score (no live data)
+  const ringPct  = hasLive ? Math.round(Math.min(Math.max(liveReturn / targetPct, 0), 1.5) * 100) : feasPct;
+  const ringFrac = Math.min(ringPct / 100, 1);
+
+  let badge, badgeColor, badgeBg;
+  if (hasLive) {
+    const onTrack = liveReturn >= targetPct * 0.75;
+    if (liveReturn >= targetPct)       { badge = 'ON TARGET';  badgeColor = 'var(--build)';  badgeBg = 'var(--build-bg)'; }
+    else if (onTrack)                  { badge = 'ON PACE';    badgeColor = '#B45309';       badgeBg = '#FEF3C7'; }
+    else                               { badge = 'BEHIND';     badgeColor = 'var(--danger)'; badgeBg = 'var(--danger-bg,#FEE2E2)'; }
+  } else {
+    if (feasPct >= 60)      { badge = 'FEASIBLE';  badgeColor = 'var(--build)';   badgeBg = 'var(--build-bg)'; }
+    else if (feasPct >= 40) { badge = 'MODERATE';  badgeColor = '#B45309';        badgeBg = '#FEF3C7'; }
+    else                    { badge = 'AMBITIOUS'; badgeColor = 'var(--danger)';  badgeBg = 'var(--danger-bg,#FEE2E2)'; }
+  }
+
+  const monthlyReq  = ((Math.pow(1 + targetPct / 100, 1 / 12) - 1) * 100).toFixed(2);
+  const annualGain  = Math.round(portfolio * targetPct / 100).toLocaleString('en-IN');
+
+  const CIRCUMF = 289;
+  const dash = (ringFrac * CIRCUMF).toFixed(1);
+
+  const el = id => document.getElementById(id);
+  if (el('goal-ring-arc')) el('goal-ring-arc').setAttribute('stroke-dasharray', `${dash} 999`);
+  if (el('goal-ring-pct')) el('goal-ring-pct').textContent = `${ringPct}%`;
+
+  if (el('g-feasibility-badge')) {
+    el('g-feasibility-badge').textContent = badge;
+    el('g-feasibility-badge').style.color = badgeColor;
+    el('g-feasibility-badge').style.background = badgeBg;
+  }
+
+  const ytdLabel = el('goal-ytd-pct')?.previousElementSibling;
+  if (hasLive) {
+    if (ytdLabel) ytdLabel.textContent = 'Portfolio return';
+    if (el('goal-ytd-pct')) el('goal-ytd-pct').textContent = `${liveReturn > 0 ? '+' : ''}${liveReturn.toFixed(1)}%`;
+    if (el('g-pace-text'))  el('g-pace-text').textContent  =
+      liveReturn >= targetPct
+        ? `Target reached — ${liveReturn.toFixed(1)}% vs ${targetPct}% goal`
+        : `${(targetPct - liveReturn).toFixed(1)}% more needed to reach ${targetPct}% target`;
+  } else {
+    if (ytdLabel) ytdLabel.textContent = 'ASML 10yr avg';
+    if (el('goal-ytd-pct')) el('goal-ytd-pct').textContent = `${avg10yr.toFixed(1)}%`;
+    if (el('g-pace-text'))  el('g-pace-text').textContent  =
+      feasPct >= 60
+        ? `${feasPct}% of years ASML beat ${targetPct}% — goal is realistic`
+        : feasPct >= 40
+          ? `${feasPct}% of years ASML beat ${targetPct}% — requires active strategy`
+          : `Only ${feasPct}% of years ASML beat ${targetPct}% — ambitious target`;
+  }
+
+  if (el('g-annual'))  el('g-annual').textContent  = `₹${annualGain}`;
+  if (el('g-monthly')) el('g-monthly').textContent = `${monthlyReq}%`;
+  if (el('g-last12m')) {
+    const last12Val = hasLive ? (liveCagr ?? lastASML) : lastASML;
+    const last12Lbl = hasLive ? 'CAGR' : 'Last 12m';
+    el('g-last12m').textContent = `${last12Val > 0 ? '+' : ''}${last12Val.toFixed(1)}%`;
+    const last12Header = el('g-last12m')?.previousElementSibling;
+    if (last12Header) last12Header.textContent = last12Lbl;
+  }
+  if (el('g-target-line-val')) el('g-target-line-val').textContent = `${targetPct}%`;
+
+  const barsEl = el('g-returns-bars');
+  if (barsEl) {
+    const maxAbs = Math.max(...ASML_HIST.map(d => Math.abs(d.ret)));
+    barsEl.innerHTML = ASML_HIST.map(d => {
+      const h    = Math.round((Math.abs(d.ret) / maxAbs) * 44);
+      const col  = d.ret >= targetPct ? 'var(--build)' : d.ret >= 0 ? '#86BFAA' : 'var(--danger,#EF4444)';
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
+        <div style="width:100%;height:${h}px;background:${col};border-radius:2px 2px 0 0;min-height:2px;"></div>
+        <div style="font-family:var(--fm);font-size:8px;color:var(--t4);">${String(d.year).slice(2)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  const results = el('g-results');
+  if (results) { results.style.display = 'block'; setTimeout(() => results.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50); }
+}
+
+// ── Live toggle ──────────────────────────────────────────────────────
+function toggleLiveMode() {
+  LIVE_MODE = !LIVE_MODE;
+  localStorage.setItem('ritaLiveMode', LIVE_MODE);
+  updateToggleUI();
+  if (LIVE_MODE) initLiveData();
+  else document.body.style.backgroundColor = '';
+}
+function updateToggleUI() {
+  const tog  = document.getElementById('liveToggle');
+  const knob = document.getElementById('liveToggleKnob');
+  const dot  = document.getElementById('liveStatusDot');
+  if (!tog) return;
+  tog.style.background = LIVE_MODE ? '#1A6B3C' : '#D0CBBC';
+  knob.style.transform = LIVE_MODE ? 'translateX(18px)' : 'translateX(0)';
+  dot.style.background = LIVE_MODE ? '#4ADE80' : '#B8B2A6';
+}
+
+// ── Navigation ──────────────────────────────────────────────────────
+let current = 0;
+const track    = document.getElementById('track');
+const tabBar   = document.getElementById('tabBar');
+const viewport = document.getElementById('viewport');
+const TOTAL    = 9;
+
+// Tab i jumps to screen TAB_TO_SCREEN[i]
+const TAB_TO_SCREEN  = [0, 1, 3, 5, 7];
+// Screen n highlights tab SCREEN_TO_TAB[n]
+const SCREEN_TO_TAB  = [0, 1, 1, 2, 2, 3, 3, 4, 4];
+
+function goTo(n) {
+  if (n < 0 || n >= TOTAL) return;
+  current = n;
+  track.style.setProperty('--slide', n);
+  document.querySelectorAll('.screen').forEach((s, i) => { if (i !== n) s.scrollTop = 0; });
+  const activeTab = SCREEN_TO_TAB[n] ?? 0;
+  document.querySelectorAll('.tab-item').forEach((tab, i) => {
+    tab.dataset.active = (i === activeTab) ? 'true' : 'false';
+  });
+  if (n === 2) loadMsSignals();
+}
+tabBar.querySelectorAll('.tab-item').forEach((tab, i) => {
+  tab.addEventListener('click', () => goTo(TAB_TO_SCREEN[i]));
+});
+
+// ── Overlays ─────────────────────────────────────────────────────────
+const chatOverlay      = document.getElementById('chat-overlay');
+const portfolioOverlay = document.getElementById('portfolio-overlay');
+const chatScroll       = document.getElementById('chatScroll');
+
+// ── Chat helpers ─────────────────────────────────────────────────────
+let _chatReady = false, _chatPending = false;
+
+function scrollChat() {
+  setTimeout(() => { if (chatScroll) chatScroll.scrollTop = chatScroll.scrollHeight; }, 60);
+}
+
+function appendChatMsg(who, html) {
+  const msgs = document.getElementById('chat-msgs');
+  if (!msgs) return;
+  const time = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  msgs.innerHTML += `<div class="msg-wrap ${who}"><div class="bubble bubble-${who}">${html}</div><div class="msg-time">${time}</div></div>`;
+}
+
+function renderChatChips(chips) {
+  const area = document.getElementById('chat-chips');
+  if (!area) return;
+  area.innerHTML = (chips || []).map(c =>
+    `<div class="chat-chip" onclick="sendChatMessage(this.dataset.q)" data-q="${(c.query||'').replace(/"/g,'&quot;')}">${c.label}</div>`
+  ).join('');
+}
+
+async function warmupChat() {
+  try {
+    const r = await fetch(`${API_BASE}/api/v1/chat/warmup`, { method: 'POST' });
+    if (!r.ok) return;
+    const d = await r.json();
+    renderChatChips(d.chips || []);
+    const statusEl = document.getElementById('chat-status');
+    if (statusEl) statusEl.textContent = `● Online · ${d.instrument || 'ASML'}`;
+    (d.alerts || []).forEach(a => {
+      const col = a.severity === 'danger' ? 'var(--danger)' : 'var(--warn)';
+      appendChatMsg('rita', `<span style="color:${col}">${a.message}</span>`);
+    });
+    scrollChat();
+  } catch {}
+}
+
+function openChat() {
+  chatOverlay.classList.add('open');
+  scrollChat();
+  if (!_chatReady) { _chatReady = true; warmupChat(); }
+}
+function closeChat() { chatOverlay.classList.remove('open'); }
+
+async function sendChatMessage(query) {
+  const input = document.getElementById('chat-input');
+  const q = (typeof query === 'string' && query) ? query : (input && input.value.trim());
+  if (!q || _chatPending) return;
+  appendChatMsg('user', q);
+  if (input) input.value = '';
+  scrollChat();
+  _chatPending = true;
+  const typingId = 'ty' + Date.now();
+  appendChatMsg('rita', `<span id="${typingId}" style="color:var(--t3)">Rita is thinking…</span>`);
+  scrollChat();
+  try {
+    const r = await fetch(`${API_BASE}/api/v1/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: q })
+    });
+    const msgs = document.getElementById('chat-msgs');
+    if (msgs) { const ty = msgs.querySelector(`#${typingId}`); if (ty) ty.closest('.msg-wrap').remove(); }
+    if (r.ok) {
+      const d = await r.json();
+      const prefix = d.low_confidence
+        ? `<em style="color:var(--t3);font-size:12px;">Low confidence (${(d.confidence*100).toFixed(0)}%)</em><br><br>`
+        : '';
+      appendChatMsg('rita', prefix + (d.response || '').replace(/\n/g, '<br>'));
+    } else {
+      appendChatMsg('rita', 'Sorry, I couldn\'t process that right now.');
+    }
+  } catch {
+    const msgs = document.getElementById('chat-msgs');
+    if (msgs) { const ty = msgs.querySelector(`#${typingId}`); if (ty) ty.closest('.msg-wrap').remove(); }
+    appendChatMsg('rita', 'No connection to the server. Make sure RITA is running.');
+  }
+  _chatPending = false;
+  scrollChat();
+}
+function openPortfolio()  { portfolioOverlay.classList.add('open'); }
+function closePortfolio() { portfolioOverlay.classList.remove('open'); }
+
+// Drag-to-close on overlays
+function addDragClose(el, closeFn) {
+  let startY = 0;
+  el.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
+  el.addEventListener('touchend',   e => { if (e.changedTouches[0].clientY - startY > 80) closeFn(); }, { passive: true });
+}
+addDragClose(chatOverlay,      closeChat);
+addDragClose(portfolioOverlay, closePortfolio);
+
+// ── Swipe between tabs ───────────────────────────────────────────────
+let txStart = 0, tyStart = 0, swiping = false;
+viewport.addEventListener('touchstart', e => { txStart = e.touches[0].clientX; tyStart = e.touches[0].clientY; swiping = true; }, { passive: true });
+viewport.addEventListener('touchmove',  e => {
+  if (!swiping) return;
+  if (Math.abs(e.touches[0].clientX - txStart) > Math.abs(e.touches[0].clientY - tyStart) + 10) e.preventDefault();
+}, { passive: false });
+viewport.addEventListener('touchend', e => {
+  if (!swiping) return;
+  const dx = e.changedTouches[0].clientX - txStart;
+  const dy = e.changedTouches[0].clientY - tyStart;
+  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 44) goTo(Math.min(TOTAL - 1, Math.max(0, current + (dx < 0 ? 1 : -1))));
+  swiping = false;
+}, { passive: true });
+
+// ── Signal filter chips (visual) ─────────────────────────────────────
+function filterChip(el) {
+  document.querySelectorAll('.sig-chips .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── Keyboard nav ──────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); goTo(current - 1); }
+  if (e.key === 'ArrowRight') { e.preventDefault(); goTo(current + 1); }
+  if (e.key === 'Escape') { closeChat(); closePortfolio(); }
+});
+
+// ── Service worker ────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); });
+}
+
+goTo(0);
+updateToggleUI();
+// Set home date immediately — no API needed
+(function() {
+  const el = document.getElementById('s0-date');
+  if (!el) return;
+  const d = new Date();
+  el.textContent = d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' })
+                    .toUpperCase().replace(',', '').replace(' ', ' · ');
+})();
+if (LIVE_MODE) initLiveData();
+loadMsSignals();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Step 7 — Actions</title><link rel="stylesheet" href="styles.css"></head>
+<body style="margin:0;display:grid;place-items:center;min-height:100vh;background:#f0eee9">
+<div class="phone">
+  <div class="status-bar"><span>9:41</span><div class="icons">
+    <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+    <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+  </div></div>
+
+  <div class="app-bar">
+    <a class="back" href="sel-06-results.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></a>
+    <div class="title">Your plan is ready</div>
+  </div>
+
+  <div class="body">
+    <div class="hand" style="font-size:14px;margin-top:8px">nice work ✓</div>
+    <div class="h1" style="margin-top:4px">What now?</div>
+
+    <div class="sketch fill" style="margin-top:16px;padding:14px">
+      <div style="display:flex;justify-content:space-between">
+        <div><div class="tiny">Plan</div><div style="font-size:14px;font-weight:600;margin-top:2px">€250/mo · 12y</div></div>
+        <div style="text-align:right"><div class="tiny">You keep</div><div style="font-size:16px;font-weight:800;color:var(--accent)">€38k</div></div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:18px">
+      <a class="choice" href="sel-03-plan.html" style="text-decoration:none;color:inherit">
+        <div class="glyph"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 2l3 3-7 7H2v-3z"/></svg></div>
+        <div style="flex:1"><div class="choice-title">Adjust plan</div><div class="choice-meta">Change amount, timeline, or assumptions</div></div>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg>
+      </a>
+      <a class="choice" href="sel-06-results.html" style="text-decoration:none;color:inherit">
+        <div class="glyph"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M7 2v3M7 9v3M2 7h3M9 7h3M3.5 3.5l2 2M8.5 8.5l2 2M3.5 10.5l2-2M8.5 5.5l2-2"/></svg></div>
+        <div style="flex:1"><div class="choice-title">Recalculate scenarios</div><div class="choice-meta">Try best/worst-case projections</div></div>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg>
+      </a>
+      <a class="choice selected" href="sel-08-riia.html" style="background:var(--accent);border-color:var(--accent);color:#fff;text-decoration:none">
+        <div class="glyph" style="border-color:#fff">→</div>
+        <div style="flex:1"><div class="choice-title">Explore RIIA App</div><div style="font-size:11px;opacity:0.9;margin-top:2px">to assist in your investment journey</div></div>
+      </a>
+    </div>
+
+    <div class="hint" style="margin-top:18px">
+      <div class="hint-icon">↗</div>
+      <div>Your plan settings carry over to RIIA so the portfolio matches.</div>
+    </div>
+  </div>
+  <div class="gesture-bar"></div>
+</div>
+<script src="app.js"></script>
+</body></html>

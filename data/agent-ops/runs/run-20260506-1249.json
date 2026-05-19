@@ -1,0 +1,107 @@
+{
+  "run_id": "20260506-1249",
+  "app": "invest-game",
+  "request": "Invest game: ASML over 10 days",
+  "skill_file": "n/a",
+  "overall_status": "pass",
+  "total_tokens_estimated": 3000,
+  "duration_minutes": 0.4,
+  "branch": "n/a",
+  "merge_status": "n/a",
+  "merge_commit": null,
+  "agents": [
+    {
+      "role": "pm",
+      "status": "pass",
+      "token_estimate": 800,
+      "adherence_score": 1.0,
+      "grounding_checks": {
+        "session_valid": true,
+        "agent_chain_ran": true,
+        "day_log_complete": true,
+        "run_log_written": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "architect",
+      "status": "pass",
+      "token_estimate": 600,
+      "adherence_score": 1.0,
+      "grounding_checks": {
+        "session_valid": true,
+        "agent_chain_ran": true,
+        "day_log_complete": true,
+        "run_log_written": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "engineer",
+      "status": "pass",
+      "token_estimate": 500,
+      "adherence_score": 1.0,
+      "grounding_checks": {
+        "session_valid": true,
+        "agent_chain_ran": true,
+        "day_log_complete": true,
+        "run_log_written": true,
+        "memory_used": false,
+        "tool_error_handled": false
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "qa",
+      "status": "pass",
+      "token_estimate": 700,
+      "adherence_score": 1.0,
+      "grounding_checks": {
+        "session_valid": true,
+        "agent_chain_ran": true,
+        "day_log_complete": true,
+        "run_log_written": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "techwriter",
+      "status": "pass",
+      "token_estimate": 400,
+      "adherence_score": 1.0,
+      "grounding_checks": {
+        "session_valid": true,
+        "agent_chain_ran": true,
+        "day_log_complete": true,
+        "run_log_written": true
+      },
+      "failure_modes": []
+    }
+  ],
+  "retry_count": 0,
+  "abandoned": false,
+  "loop_events": 0,
+  "hitl_events": [],
+  "human_score": {
+    "accuracy": null,
+    "relevance": null,
+    "planning_ok": null,
+    "csat": null,
+    "time_saved_hours": null
+  },
+  "token_forecast": {
+    "complexity": "small",
+    "complexity_score": 0.7,
+    "feature_type": "invest-game",
+    "per_role": {
+      "pm": 343,
+      "architect": 449,
+      "engineer": 1400,
+      "qa": 509,
+      "techwriter": 299
+    },
+    "total_forecast": 3000,
+    "confidence": "\u00b140%",
+    "basis_runs": 3
+  }
+}

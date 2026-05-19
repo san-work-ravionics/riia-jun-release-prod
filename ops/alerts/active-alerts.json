@@ -1,0 +1,16 @@
+{
+  "generated_at": "2026-05-08T16:10:05.447147+00:00",
+  "alerts": [
+    {
+      "id": "ALT-20260508-001",
+      "severity": "critical",
+      "rule": "data_stale_critical",
+      "message": "Data freshness 99.0 days \u2014 critically stale",
+      "component": "data",
+      "started_at": "2026-05-08T15:23:07.087674+00:00",
+      "value": 99.0,
+      "threshold": 3.0,
+      "status": "resolved"
+    }
+  ]
+}

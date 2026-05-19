@@ -1,0 +1,117 @@
+{
+  "run_id": "20260508-improve-observability",
+  "app": "ops",
+  "request": "Add structured observability across all RITA projects \u00e2\u20ac\u201d log_event schema, experience.compose provenance, JSONL logs, aggregator, alert generator, Ops dashboard panels, apiFetch wrapper, client-error endpoint",
+  "skill_file": "project-office/skills/skill-add-ops-feature.md",
+  "agents": [
+    {
+      "role": "pm",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 2100,
+      "grounding_checks": {
+        "plan_status_read": true,
+        "sprint_fit_confirmed": true,
+        "risk_flags_assessed": true,
+        "approved": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "architect",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 3400,
+      "grounding_checks": {
+        "api_contract_present": true,
+        "files_listed": true,
+        "dod_checklist_filled": true,
+        "spec_reference_valid": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "engineer",
+      "status": "pass",
+      "steps_required": 5,
+      "steps_completed": 5,
+      "adherence_score": 1.0,
+      "token_estimate": 18000,
+      "grounding_checks": {
+        "branch_created": true,
+        "code_changed": true,
+        "spec_updated": true,
+        "ruff_passed": true,
+        "contract_matches_architect": true,
+        "memory_used": false,
+        "tool_error_handled": false
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "qa",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 2800,
+      "grounding_checks": {
+        "tests_written": true,
+        "tests_passed": true,
+        "coverage_delta_recorded": true,
+        "contract_check_done": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "techwriter",
+      "status": "pass",
+      "steps_required": 3,
+      "steps_completed": 3,
+      "adherence_score": 1.0,
+      "token_estimate": 1900,
+      "grounding_checks": {
+        "confluence_updated": true,
+        "spec_file_confirmed": true,
+        "branch_noted": true
+      },
+      "failure_modes": []
+    }
+  ],
+  "overall_status": "pass",
+  "total_tokens_estimated": 28200,
+  "duration_minutes": 180,
+  "branch": "worktree-agent-ab190a43c42d82923",
+  "merge_status": "merged",
+  "merge_commit": "af148b6",
+  "retry_count": 0,
+  "abandoned": false,
+  "loop_events": 0,
+  "hitl_events": [],
+  "human_score": {
+    "accuracy": null,
+    "relevance": null,
+    "planning_ok": null,
+    "csat": null,
+    "time_saved_hours": null
+  },
+  "token_forecast": {
+    "complexity": "small",
+    "complexity_score": 0.7,
+    "feature_type": "ops",
+    "per_role": {
+      "pm": 3221,
+      "architect": 4221,
+      "engineer": 13164,
+      "qa": 4781,
+      "techwriter": 2814
+    },
+    "total_forecast": 28201,
+    "confidence": "\u00b140%",
+    "basis_runs": 1
+  }
+}

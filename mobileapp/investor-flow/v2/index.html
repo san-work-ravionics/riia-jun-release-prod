@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Invest — Onboarding Flow</title>
+  <link rel="stylesheet" href="../v1/invest-flow-app/styles.css">
+  <style>
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: #f0eee9;
+      overflow-x: hidden;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       STAGE — wide canvas. Cards animate between three zones:
+         left pile  (waiting — all cards start here, staggered)
+         center     (active  — current screen, full size)
+         far-left   (done    — completed, grey slivers)
+    ═══════════════════════════════════════════════════════════════ */
+    .stage {
+      position: relative;
+      width: 900px;
+      height: 650px;
+      overflow: hidden;
+    }
+
+    /* ── Card shell ─────────────────────────────────────────────── */
+    .card {
+      position: absolute;
+      top: 20px;
+      width: 280px;
+      height: 610px;
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.07);
+      transition: all 0.65s cubic-bezier(0.25, 1, 0.5, 1);
+      cursor: default;
+    }
+
+    /* Phone shell (360×780) scaled to fit the 280×560 card */
+    .card .phone {
+      width: 360px  !important;
+      height: 780px !important;
+      transform: scale(0.778);
+      transform-origin: top left;
+      border-radius: 0 !important;
+    }
+
+    /* ── WAITING — left pile, all cards start here ──────────────── */
+    .card.waiting {
+      opacity: 0.35;
+      filter: grayscale(0.8);
+      z-index: 1;
+    }
+
+    /* Per-card initial stagger: front card fully visible,
+       each successive card 16 px further right and more faded */
+    /* Only the front card of the queue peeks as a sliver — others stack behind it */
+    #card-0.waiting { transform: translateX(862px); z-index: 8; opacity: 1.00; filter: none; }
+    #card-1.waiting { transform: translateX(870px); z-index: 7; opacity: 0.72; filter: grayscale(0.2); }
+    #card-2.waiting { transform: translateX(876px); z-index: 6; opacity: 0.60; filter: grayscale(0.4); }
+    #card-3.waiting { transform: translateX(881px); z-index: 5; opacity: 0.50; filter: grayscale(0.6); }
+    #card-4.waiting { transform: translateX(885px); z-index: 4; opacity: 0.42; filter: grayscale(0.7); }
+    #card-5.waiting { transform: translateX(888px); z-index: 3; opacity: 0.36; filter: grayscale(0.8); }
+    #card-6.waiting { transform: translateX(891px); z-index: 2; opacity: 0.30; filter: grayscale(1); }
+    #card-7.waiting { transform: translateX(893px); z-index: 1; opacity: 0.25; filter: grayscale(1); }
+
+    /* ── Light-blue theme overrides ── */
+    :root { --blue: #4a9ed8; }
+    .btn:not(.ghost) { background: var(--blue) !important; border-color: var(--blue) !important; color: #fff !important; }
+    .choice.selected { background: var(--blue) !important; border-color: var(--blue) !important; color: #fff !important; }
+    .choice.selected .choice-meta { color: rgba(255,255,255,0.75) !important; }
+    .tile.selected { background: var(--blue) !important; border-color: var(--blue) !important; color: #fff !important; }
+    .chip.selected { background: var(--blue) !important; border-color: var(--blue) !important; color: #fff !important; }
+    .choice .tick { display: none; flex-shrink: 0; }
+    .choice.selected .tick { display: block; }
+
+    /* ── ACTIVE — centre of stage ───────────────────────────────── */
+    .card.active {
+      transform: translateX(310px) !important;
+      opacity: 1;
+      filter: none;
+      z-index: 10;
+      box-shadow: 0 24px 56px rgba(0,0,0,0.18);
+      border: 2px solid var(--blue);
+    }
+
+    /* ── DONE — tiny sliver peeking from far left ───────────────── */
+    .card.done {
+      opacity: 0.38;
+      filter: grayscale(1);
+      z-index: 1;
+    }
+    /* Stack done cards so each sliver is slightly offset */
+    .card.done:nth-child(1)  { transform: translateX(-232px); z-index: 8; }
+    .card.done:nth-child(2)  { transform: translateX(-240px); z-index: 7; }
+    .card.done:nth-child(3)  { transform: translateX(-248px); z-index: 6; }
+    .card.done:nth-child(4)  { transform: translateX(-256px); z-index: 5; }
+    .card.done:nth-child(5)  { transform: translateX(-262px); z-index: 4; }
+    .card.done:nth-child(6)  { transform: translateX(-268px); z-index: 3; }
+    .card.done:nth-child(7)  { transform: translateX(-272px); z-index: 2; }
+    .card.done:nth-child(8)  { transform: translateX(-276px); z-index: 1; }
+
+    /* ── Nav-bottom: show only on active card + front waiting ────── */
+    .card .nav-bottom           { display: none !important; }
+    .card.active .nav-bottom    { display: flex   !important; }
+    #card-0.waiting .nav-bottom { display: flex   !important; }
+
+    /* Hide gesture bar (decorative only) */
+    .card .gesture-bar { display: none !important; }
+
+    /* ── Labels under the stage ─────────────────────────────────── */
+    .stage-labels {
+      width: 900px;
+      display: flex;
+      justify-content: space-between;
+      font-family: 'Architects Daughter', cursive;
+      font-size: 12px;
+      color: #8a8a8a;
+      margin-top: 10px;
+      padding: 0 6px;
+    }
+
+  </style>
+</head>
+
+<body>
+<div class="stage" id="stage">
+
+  <!-- ══════════════════════════════════════
+       CARD 0 — Get Started
+  ══════════════════════════════════════ -->
+  <div class="card waiting" id="card-0">
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><div class="icons">
+        <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+        <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+      </div></div>
+      <div class="body" style="padding-top:16px;display:flex;flex-direction:column;gap:14px">
+        <div style="font-size:10px;color:var(--ink-3);line-height:1.5;background:var(--paper-2);border:1px solid var(--ink-4);border-radius:6px;padding:8px 10px">
+          <strong style="color:var(--ink-2)">Disclaimer:</strong> This platform is intended solely for research and informational purposes. It should not be considered financial, investment, or trading advice or recommendations.
+          <div style="margin-top:5px">We use only essential functional cookies to improve user experience and platform performance, respecting privacy and data protection regulations.</div>
+        </div>
+        <div>
+          <div class="h1" style="font-size:26px;line-height:1.1">Plan for future<br><span style="border-bottom:3px solid var(--accent)">with eyes open.</span></div>
+          <div class="body-text" style="margin-top:10px">Tell us about your goals, we will show you real return after ecosystem cost.</div>
+        </div>
+        <div class="scribble" style="height:140px">
+          <div style="display:flex;gap:8px;align-items:flex-end;height:90px">
+            <div style="width:18px;height:25px;background:var(--ink-4);border-radius:2px"></div>
+            <div style="width:18px;height:42px;background:var(--ink-4);border-radius:2px"></div>
+            <div style="width:18px;height:62px;background:var(--ink-4);border-radius:2px"></div>
+            <div style="width:18px;height:80px;background:var(--ink-3);border-radius:2px"></div>
+            <span class="hand" style="font-size:11px;margin-left:4px;margin-bottom:2px">= gross</span>
+          </div>
+          <div class="hand" style="position:absolute;bottom:12px;right:14px;color:var(--accent);font-size:12px">↓ what you keep</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <span style="font-size:13px;font-weight:600;color:var(--ink)">Goal</span>
+          <span class="hand" style="color:var(--accent);font-size:18px">→</span>
+          <span style="font-size:13px;font-weight:600;color:var(--ink)">Timelines</span>
+          <span class="hand" style="color:var(--accent);font-size:18px">→</span>
+          <span style="font-size:13px;font-weight:600;color:var(--ink)">Ecosystem costs</span>
+          <span class="hand" style="color:var(--accent);font-size:18px">→</span>
+          <span style="font-size:13px;font-weight:600;color:var(--ink)">Real returns</span>
+        </div>
+      </div>
+      <div class="nav-bottom">
+        <button class="btn" onclick="go()">Get started <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       CARD 1 — Step 1: Investor Type
+  ══════════════════════════════════════ -->
+  <div class="card waiting" id="card-1">
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><div class="icons">
+        <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+        <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+      </div></div>
+      <div class="app-bar"><div class="title">Set up your plan</div><div class="step-pill">Step 1 / 7</div></div>
+      <div class="step-strip"><div class="seg active"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div></div>
+      <div class="body">
+        <div class="label" style="margin-top:12px">Step 1 of 7</div>
+        <div class="h1" style="margin-top:6px">What type of investor are you?</div>
+        <div class="body-text" style="margin-top:6px">This sets your default risk level. You can change it later.</div>
+        <div data-choice-group="investor" style="display:flex;flex-direction:column;gap:10px;margin-top:18px">
+          <button class="choice" data-choice="short"><div class="glyph">1y</div><div style="flex:1"><div class="choice-title">I can take risk</div><div class="choice-meta">Short horizon.</div></div><svg class="tick" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7l3 3 5-6"/></svg></button>
+          <button class="choice selected" data-choice="goal"><div class="glyph">5y</div><div style="flex:1"><div class="choice-title">I want steady growth</div><div class="choice-meta">Around 5 years.</div></div><svg class="tick" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7l3 3 5-6"/></svg></button>
+          <button class="choice" data-choice="long"><div class="glyph">10y+</div><div style="flex:1"><div class="choice-title">Protect capital, decent returns</div><div class="choice-meta">10 to 15 years.</div></div><svg class="tick" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7l3 3 5-6"/></svg></button>
+        </div>
+        <div class="hint" style="margin-top:16px"><div class="hint-icon">i</div><div>Your timeline shapes the rest of your plan.</div></div>
+      </div>
+      <div class="nav-bottom">
+        <button class="btn ghost icon-only" onclick="back()"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></button>
+        <button class="btn" onclick="go()">Continue <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       CARD 2 — Step 2: Goal
+  ══════════════════════════════════════ -->
+  <div class="card waiting" id="card-2">
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><div class="icons">
+        <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+        <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+      </div></div>
+      <div class="app-bar"><div class="title">Goal</div><div class="step-pill">Step 2 / 7</div></div>
+      <div class="step-strip"><div class="seg done"></div><div class="seg active"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div></div>
+      <div class="body">
+        <div class="label" style="margin-top:12px">Pick one</div>
+        <div class="h1" style="margin-top:6px">What's the money for?</div>
+        <div class="grid-2" style="margin-top:18px;gap:10px" data-choice-group="goal">
+          <button class="tile" data-choice="purchase"><div class="tile-icon"><svg width="28" height="28" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M6 2L4 6H18L16 2"/><rect x="2" y="6" width="18" height="14" rx="1"/><path d="M9 11a2 2 0 004 0"/></svg></div><div class="tile-label">Next Purchase</div><div class="tiny" style="margin-top:2px;color:#999">Horizon: up to 1 yr</div></button>
+          <button class="tile" data-choice="edu"><div class="tile-icon"><svg width="28" height="28" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 8l9-4 9 4-9 4-9-4z"/><path d="M6 10v4c0 1.5 2.5 3 5 3s5-1.5 5-3v-4M19 9v5"/></svg></div><div class="tile-label">Education</div><div class="tiny" style="margin-top:2px;color:#999">Horizon: 5 to 10 yrs</div></button>
+          <button class="tile selected" data-choice="retire" style="grid-column:span 2"><div class="tile-icon"><svg width="28" height="28" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 18h16M5 18V8l6-4 6 4v10M9 18v-5h4v5"/></svg></div><div class="tile-label">Retirement</div><div class="tiny" style="margin-top:2px;color:#999">Horizon: 20 to 30 yrs</div></button>
+        </div>
+        <div class="hint" style="margin-top:16px"><div class="hint-icon">i</div><div>This is for reference only — your investor type on the previous screen sets your timeline.</div></div>
+      </div>
+      <div class="nav-bottom">
+        <button class="btn ghost icon-only" onclick="back()"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></button>
+        <button class="btn" onclick="go()">Continue <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       CARD 3 — Step 3: Timeline & Numbers
+  ══════════════════════════════════════ -->
+  <div class="card waiting" id="card-3">
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><div class="icons">
+        <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+        <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+      </div></div>
+      <div class="app-bar"><div class="title">Timeline & plan</div><div class="step-pill">Step 3 / 7</div></div>
+      <div class="step-strip"><div class="seg done"></div><div class="seg done"></div><div class="seg active"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div></div>
+      <div class="body">
+        <div class="label" style="margin-top:12px">Step 3 of 6</div>
+        <div class="h1" style="margin-top:6px">Your timeline &amp; numbers</div>
+        <div class="sketch" style="margin-top:16px;padding:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div class="label">Your investment horizon</div>
+            <span class="tiny" style="color:#999">set by investor type</span>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px"><span class="big-number" style="font-size:34px" id="c3-h-display">5y</span></div>
+          <input id="c3-slider" type="range" min="1" max="5" step="1" value="5" class="slider">
+          <div id="c3-ticks" class="slider-ticks"><span>1y</span><span>2y</span><span>3y</span><span>4y</span><span>5y</span></div>
+          <div id="c3-milestones" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px;min-height:24px"></div>
+          <div style="display:flex;gap:8px;margin-top:8px;align-items:center"><span class="badge warn" data-risk-badge>Balanced</span><span class="tiny">· Medium tolerance</span></div>
+        </div>
+        <div class="sketch" style="margin-top:12px;padding:14px">
+          <div class="label">Monthly investment</div>
+          <div class="input-row" style="margin-top:4px"><span class="currency">€</span><input type="number" value="250" data-recalc><span class="tiny">/mo</span></div>
+          <div class="label" style="margin-top:14px">Target goal</div>
+          <div class="input-row" style="margin-top:4px"><span class="currency">€</span><input id="c3-target" type="number" value="15000" data-recalc></div>
+        </div>
+      </div>
+      <div class="nav-bottom">
+        <button class="btn ghost icon-only" onclick="back()"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></button>
+        <button class="btn" onclick="go()">Continue <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       CARD 5 — Step 5: Advanced assumptions
+  ══════════════════════════════════════ -->
+  <div class="card waiting" id="card-5">
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><div class="icons">
+        <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+        <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+      </div></div>
+      <div class="app-bar"><div class="title">Fine-tune</div><div class="step-pill">Step 5 / 7</div></div>
+      <div class="step-strip"><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg active"></div><div class="seg"></div><div class="seg"></div></div>
+      <div class="body">
+        <div class="label" style="margin-top:12px">Step 5 of 7 — optional</div>
+        <div class="h1" style="margin-top:6px">Fine-tune assumptions</div>
+        <div class="body-text" style="margin-top:6px">We pre-filled sensible defaults. Adjust if you have specific numbers.</div>
+        <div data-accordion style="margin-top:18px">
+          <div class="accordion-head open">
+            <div style="display:flex;align-items:center;gap:8px"><span class="h3">Reality factors</span><span class="badge good" style="padding:2px 8px;font-size:10px">4 set</span></div>
+            <span class="chev"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 5l3 3 3-3"/></svg></span>
+          </div>
+          <div class="accordion-body" style="padding:4px 2px">
+            <div class="row-input"><div><div class="row-label">Inflation rate</div><div class="tiny">EU avg ≈ 2–3%</div></div><div class="stepper" data-stepper data-value="2.5" data-step-by="0.1"><button data-step="minus">−</button><div class="num">2.5%</div><button data-step="plus">+</button></div></div>
+            <div class="row-input"><div><div class="row-label">Tax on gains</div><div class="tiny">NL box-3 ≈ 25–36%</div></div><div class="stepper" data-stepper data-value="25" data-step-by="1"><button data-step="minus">−</button><div class="num">25%</div><button data-step="plus">+</button></div></div>
+            <div class="row-input"><div><div class="row-label">Investment costs</div><div class="tiny">ETF: 0.2–1.5% TER</div></div><div class="stepper" data-stepper data-value="1.2" data-step-by="0.1"><button data-step="minus">−</button><div class="num">1.2%</div><button data-step="plus">+</button></div></div>
+            <div class="row-input"><div><div class="row-label">Expected gross return</div><div class="tiny">Stocks long-run ≈ 7–9%</div></div><div class="stepper" data-stepper data-value="8" data-step-by="0.5"><button data-step="minus">−</button><div class="num">8%</div><button data-step="plus">+</button></div></div>
+          </div>
+        </div>
+        <div class="hint" style="margin-top:16px"><div class="hint-icon">!</div><div>Costs &amp; tax compound the wrong way. A 1% fee can eat 20%+ of your final pot.</div></div>
+      </div>
+      <div class="nav-bottom">
+        <button class="btn ghost icon-only" onclick="back()"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></button>
+        <button class="btn" onclick="go()">See results <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       CARD 6 — Step 6: Results
+  ══════════════════════════════════════ -->
+  <div class="card waiting" id="card-6">
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><div class="icons">
+        <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+        <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+      </div></div>
+      <div class="app-bar"><div class="title">Reality check</div><div class="step-pill">Step 6 / 7</div></div>
+      <div class="step-strip"><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg active"></div><div class="seg"></div></div>
+      <div class="body" style="padding-bottom:90px">
+
+        <!-- Row 1: Gross return | What you keep -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:10px;border:1.5px solid var(--ink);border-radius:8px;overflow:hidden">
+          <div style="padding:12px;border-right:1px dashed var(--ink-4)">
+            <div class="label">Gross return</div>
+            <div style="font-size:22px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums" id="r-gross-fv">—</div>
+            <div style="font-size:11px;color:var(--ink-3);margin-top:2px" id="r-gross-rate">at 8% /yr</div>
+          </div>
+          <div style="padding:12px;background:#edf7f2">
+            <div class="label" style="color:#1a6b3c">What you keep</div>
+            <div style="font-size:22px;font-weight:800;margin-top:4px;color:#1a6b3c;font-variant-numeric:tabular-nums" id="r-net-fv">—</div>
+            <div style="font-size:11px;color:var(--ink-3);margin-top:2px" id="r-net-rate">at 3.4% real</div>
+          </div>
+        </div>
+
+        <!-- Row 2: Single stacked bar -->
+        <div style="margin-top:12px;border:2px solid var(--ink);border-radius:8px;padding:12px">
+          <div class="label">From your total return</div>
+          <div style="margin-top:8px;height:32px;border:1.5px solid var(--ink-4);border-radius:4px;overflow:hidden;display:flex">
+            <div id="r-stack-costs" style="background:#9b1c1c;height:100%;width:15%;flex-shrink:0;transition:width .3s"></div>
+            <div id="r-stack-tax"   style="background:#92480a;height:100%;width:21%;flex-shrink:0;transition:width .3s"></div>
+            <div id="r-stack-infl"  style="background:#f59e0b;height:100%;width:31%;flex-shrink:0;transition:width .3s"></div>
+            <div id="r-stack-net"   style="background:#1a6b3c;height:100%;width:33%;flex-shrink:0;transition:width .3s"></div>
+          </div>
+          <div style="display:flex;margin-top:4px">
+            <div id="r-leg-costs" style="width:15%;flex-shrink:0;overflow:hidden;text-align:center;font-size:10px;color:#9b1c1c">
+              <div>Costs</div><strong id="r-bv-costs">−1.2%</strong>
+            </div>
+            <div id="r-leg-tax" style="width:21%;flex-shrink:0;overflow:hidden;text-align:center;font-size:10px;color:#92480a">
+              <div>Tax</div><strong id="r-bv-tax">−1.7%</strong>
+            </div>
+            <div id="r-leg-infl" style="width:31%;flex-shrink:0;overflow:hidden;text-align:center;font-size:10px;color:#b45309">
+              <div>Inflation</div><strong id="r-bv-infl">−2.5%</strong>
+            </div>
+            <div id="r-leg-net" style="width:33%;flex-shrink:0;overflow:hidden;text-align:center;font-size:10px;color:#1a6b3c">
+              <div>You keep</div><strong id="r-bv-net">3.4%</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="sketch fill" style="margin-top:10px;padding:12px;border-style:dashed">
+          <div class="label">Insight</div>
+          <div class="hand" id="r-insight" style="font-size:13px;margin-top:4px;line-height:1.3">"Costs matter more than most investors expect."</div>
+        </div>
+      </div>
+      <div class="nav-bottom">
+        <button class="btn ghost icon-only" onclick="back()"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></button>
+        <button class="btn" onclick="go()">Next steps <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       CARD 7 — Step 7: Actions
+  ══════════════════════════════════════ -->
+  <div class="card waiting" id="card-7">
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><div class="icons">
+        <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4"/><rect x="3" y="4" width="2" height="6"/><rect x="6" y="2" width="2" height="8"/><rect x="9" y="0" width="2" height="10"/></svg>
+        <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1"><rect x="0.5" y="0.5" width="16" height="9" rx="1.5"/><rect x="2" y="2" width="11" height="6" fill="currentColor"/><rect x="17" y="3" width="2" height="4" fill="currentColor"/></svg>
+      </div></div>
+      <div class="app-bar"><div class="title">Your plan is ready</div></div>
+      <div class="step-strip"><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg active"></div></div>
+      <div class="body">
+        <div class="hand" style="font-size:14px;margin-top:8px">nice work ✓</div>
+        <div class="h1" style="margin-top:4px">What now?</div>
+        <div class="sketch fill" style="margin-top:14px;padding:12px">
+          <div style="display:flex;justify-content:space-between">
+            <div><div class="tiny">Plan</div><div id="r-summary-plan" style="font-size:13px;font-weight:600;margin-top:2px">€250/mo · 5y</div></div>
+            <div style="text-align:right"><div class="tiny">You keep</div><div id="r-summary-net" style="font-size:15px;font-weight:800;color:#1a6b3c">—</div></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
+          <div class="choice" onclick="goToCard(1)" style="cursor:pointer"><div class="glyph"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 2l3 3-7 7H2v-3z"/></svg></div><div style="flex:1"><div class="choice-title">Adjust Plan</div><div class="choice-meta">Go back to investor type and reset your profile</div></div></div>
+          <a id="card7-game-link" class="choice" href="#" target="_blank" style="background:#fef4eb;border-color:#f5c99a;color:#92480a;text-decoration:none"><div class="glyph" style="border-color:#f5c99a">▶</div><div style="flex:1"><div class="choice-title">Try the Invest Game</div><div style="font-size:11px;opacity:0.8;margin-top:2px">Experience the Market volatility and make your choices</div></div></a>
+          <a class="choice" href="http://localhost:8000/dashboard/" target="_blank" style="background:#0056b8;border-color:#0056b8;color:#fff;text-decoration:none"><div class="glyph" style="border-color:rgba(255,255,255,0.5)">→</div><div style="flex:1"><div class="choice-title">Start research with RIIA, an AI assisted research platform</div></div></a>
+        </div>
+        <div class="hint" style="margin-top:14px"><div class="hint-icon">↗</div><div>Your plan settings carry over to RIIA so the portfolio matches.</div></div>
+      </div>
+      <div class="nav-bottom">
+        <button class="btn ghost icon-only" onclick="back()"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2 4 7l5 5"/></svg></button>
+        <button class="btn ghost" onclick="reset()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reset overlay — shown when all 8 cards are done -->
+  <div id="reset-overlay" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:20;background:#fafaf7;border:2px solid #1a1a1a;border-radius:14px;padding:28px 36px;text-align:center;box-shadow:0 24px 56px rgba(0,0,0,0.18);font-family:'Inter',sans-serif;">
+    <div style="font-family:'Architects Daughter',cursive;font-size:20px;margin-bottom:6px">all done ✓</div>
+    <div style="font-size:12px;color:#8a8a8a;margin-bottom:18px">Your plan is set. Run it again?</div>
+    <button onclick="reset()" style="height:46px;padding:0 28px;border:2px solid #4a9ed8;border-radius:8px;background:#4a9ed8;color:#fafaf7;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;">
+      ↺ Start over
+    </button>
+  </div>
+
+</div><!-- /stage -->
+
+<!-- Labels -->
+<div class="stage-labels">
+  <span id="lbl-done">← completed steps</span>
+  <span id="lbl-active" style="color:#1a1a1a;font-weight:600"></span>
+  <span id="lbl-queue">steps ahead →</span>
+</div>
+
+<script src="../v1/invest-flow-app/app.js"></script>
+<script>
+  /* ── Navigation ── */
+  var cards   = Array.from(document.querySelectorAll('.card'));
+  var current = -1;
+  var TOTAL   = cards.length;
+
+  var TITLES = [
+    'Get Started', 'Step 1 — Investor type', 'Step 2 — Goal',
+    'Step 3 — Timeline', 'Step 4 — Fine-tune', 'Step 5 — Results', 'Step 6 — Actions'
+  ];
+
+  function updateLabels() {
+    var done  = current > 0 ? current : 0;
+    var ahead = current >= 0 ? Math.max(0, TOTAL - current - 1) : TOTAL;
+    var lblDone   = document.getElementById('lbl-done');
+    var lblActive = document.getElementById('lbl-active');
+    var lblQueue  = document.getElementById('lbl-queue');
+    if (lblDone)   lblDone.textContent   = done  > 0 ? '← ' + done + ' done'   : '← completed steps';
+    if (lblActive) lblActive.textContent = current >= 0 ? TITLES[current] : '';
+    if (lblQueue)  lblQueue.textContent  = ahead > 0 ? ahead + ' ahead →' : 'all done ✓';
+  }
+
+  function go() {
+    if (current >= 0) {
+      cards[current].classList.remove('active');
+      cards[current].classList.add('done');
+    }
+    current++;
+    if (current < TOTAL) {
+      cards[current].classList.remove('waiting');
+      cards[current].classList.add('active');
+      document.getElementById('reset-overlay').style.display = 'none';
+    } else {
+      document.getElementById('reset-overlay').style.display = 'flex';
+    }
+    updateLabels();
+    if (window.recalc) window.recalc();
+  }
+
+  function back() {
+    if (current <= 0) return;
+    cards[current].classList.remove('active');
+    cards[current].classList.add('waiting');
+    current--;
+    cards[current].classList.remove('done');
+    cards[current].classList.add('active');
+    document.getElementById('reset-overlay').style.display = 'none';
+    updateLabels();
+  }
+
+  function reset() {
+    cards.forEach(function (c) {
+      c.classList.remove('active', 'done');
+      c.classList.add('waiting');
+    });
+    current = -1;
+    document.getElementById('reset-overlay').style.display = 'none';
+    go();
+  }
+
+  function goToCard(idx) {
+    cards.forEach(function (c, i) {
+      c.classList.remove('active', 'done', 'waiting');
+      if (i < idx) c.classList.add('done');
+      else if (i === idx) c.classList.add('active');
+      else c.classList.add('waiting');
+    });
+    current = idx;
+    document.getElementById('reset-overlay').style.display = 'none';
+    updateLabels();
+  }
+
+  /* ── Slider stop definitions per investor type ── */
+  var SLIDER_STOPS = {
+    short: [{v:0.25,l:'Q1'},{v:0.5,l:'Q2'},{v:0.75,l:'Q3'},{v:1,l:'Q4'}],
+    goal:  [{v:1,l:'1y'},{v:2,l:'2y'},{v:3,l:'3y'},{v:4,l:'4y'},{v:5,l:'5y'}],
+    long:  [{v:5,l:'5y'},{v:10,l:'10y'},{v:15,l:'15y'},{v:20,l:'20y'}]
+  };
+  var currentStops = SLIDER_STOPS.goal;
+
+  function applyStops(stops, initialValue) {
+    currentStops = stops;
+    var slider = document.getElementById('c3-slider');
+    if (!slider) return;
+    var vals = stops.map(function(s){return s.v;});
+    slider.min   = vals[0];
+    slider.max   = vals[vals.length - 1];
+    slider.step  = vals.length > 1 ? vals[1] - vals[0] : 1;
+    slider.value = initialValue !== undefined ? initialValue : vals[vals.length - 1];
+    slider.dispatchEvent(new Event('input'));
+  }
+
+  function renderMilestones(years) {
+    var container = document.getElementById('c3-milestones');
+    var ticks     = document.getElementById('c3-ticks');
+    var hDisp     = document.getElementById('c3-h-display');
+    var dotOn  = 'width:12px;height:12px;border-radius:50%;background:#4a9ed8;flex-shrink:0;';
+    var dotOff = 'width:12px;height:12px;border-radius:50%;background:#ccc;flex-shrink:0;';
+    var lblOn  = 'font-size:10px;color:#4a9ed8;text-align:center;';
+    var lblOff = 'font-size:10px;color:#999;text-align:center;';
+
+    var activeStop = currentStops.filter(function(s){return s.v <= years;}).pop() || currentStops[0];
+    if (hDisp) hDisp.textContent = activeStop.l;
+
+    if (container) {
+      container.innerHTML = '';
+      currentStops.forEach(function(s) {
+        var on = s.v <= years;
+        var w = document.createElement('div');
+        w.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;';
+        w.innerHTML = '<div style="' + (on ? dotOn : dotOff) + '"></div><span style="' + (on ? lblOn : lblOff) + '">' + s.l + '</span>';
+        container.appendChild(w);
+      });
+    }
+
+    if (ticks) {
+      ticks.innerHTML = currentStops.map(function(s){return '<span>' + s.l + '</span>';}).join('');
+    }
+  }
+
+  function autoTarget(years) {
+    var monthlyInp = document.querySelector('#card-3 input[type=number]');
+    var monthly = parseFloat(monthlyInp && monthlyInp.value) || 250;
+    return Math.round(monthly * 12 * years * 1.12 / 100) * 100;
+  }
+
+  /* ── Wire Card-3 slider ── */
+  (function () {
+    var slider    = document.getElementById('c3-slider');
+    var targetInp = document.getElementById('c3-target');
+    if (!slider) return;
+    function onSlide() {
+      var years = parseFloat(slider.value);
+      renderMilestones(years);
+      if (targetInp && !targetInp.dataset.userEdited) {
+        targetInp.value = autoTarget(years);
+      }
+      if (window.recalc) window.recalc();
+    }
+    slider.addEventListener('input', onSlide);
+    var monthlyInp = document.querySelector('#card-3 input[type=number]');
+    if (monthlyInp) {
+      monthlyInp.addEventListener('input', function () {
+        if (targetInp && !targetInp.dataset.userEdited) {
+          targetInp.value = autoTarget(parseFloat(slider.value));
+          if (window.recalc) window.recalc();
+        }
+      });
+    }
+    if (targetInp) targetInp.addEventListener('input', function () { targetInp.dataset.userEdited = '1'; });
+    onSlide();
+  })();
+
+  /* ── Card 1 investor type → applies stop set to Card 3 slider ── */
+  (function () {
+    var investorGroup = document.querySelector('#card-1 [data-choice-group="investor"]');
+    if (!investorGroup) return;
+    investorGroup.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-choice]');
+      if (!btn) return;
+      var choice = btn.dataset.choice;
+      if (!SLIDER_STOPS[choice]) return;
+      applyStops(SLIDER_STOPS[choice]);
+      var targetInp = document.getElementById('c3-target');
+      if (targetInp) delete targetInp.dataset.userEdited;
+    });
+  })();
+
+  /* ── Recalc engine ── */
+  window.recalc = function () {
+    var inv = window.invest;
+    if (!inv) return;
+
+    var c3nums   = document.querySelectorAll('#card-3 input[type=number]');
+    var monthly  = parseFloat(c3nums[0] && c3nums[0].value) || 250;
+    var target   = parseFloat(c3nums[1] && c3nums[1].value) || 15000;
+    var c3range  = document.querySelector('#card-3 input[type=range]');
+    var horizon  = parseFloat(c3range ? c3range.value : 5);
+
+    var st        = document.querySelectorAll('#card-5 [data-stepper]');
+    var inflation = parseFloat(st[0] && st[0].dataset.value) || 2.5;
+    var tax       = parseFloat(st[1] && st[1].dataset.value) || 25;
+    var costs     = parseFloat(st[2] && st[2].dataset.value) || 1.2;
+    var grossRate = parseFloat(st[3] && st[3].dataset.value) || 8;
+
+    var months     = horizon * 12;
+    var g          = grossRate  / 100;
+    var c          = costs      / 100;
+    var t          = tax        / 100;
+    var inf        = inflation  / 100;
+    var afterCosts = g - c;
+    var taxDrag    = afterCosts * t;
+    var netNominal = afterCosts - taxDrag;
+    var netReal    = netNominal - inf;
+    var grossFV    = inv.fv(monthly, months, g);
+    var netFV      = inv.fv(monthly, months, Math.max(netReal, 0.001));
+    var reqNominal = inv.requiredRate(monthly, months, target);
+
+    function pct(r) { return (r * 100).toFixed(1).replace(/\.0$/, '') + '%'; }
+    function upd(id, text) { var el = document.getElementById(id); if (el) el.textContent = text; }
+    function barW(id, frac) { var el = document.getElementById(id); if (el) el.style.width = Math.min(100, Math.max(0, frac * 100)).toFixed(1) + '%'; }
+    function fmtFull(n) { return '€' + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
+    var reqReal = reqNominal != null ? reqNominal - inf - c : null;
+    upd('r-req-rate', reqReal != null ? pct(reqReal) : '—');
+
+    var rb = document.getElementById('r-risk-badge');
+    if (rb && reqNominal != null) {
+      rb.className = 'badge';
+      if      (reqNominal > 0.12) { rb.classList.add('bad');  rb.textContent = '⚠ High risk'; }
+      else if (reqNominal > 0.07) { rb.classList.add('warn'); rb.textContent = '⚠ Moderate risk'; }
+      else                        { rb.classList.add('good'); rb.textContent = '✓ Achievable'; }
+    }
+
+    upd('r-gross-fv',   fmtFull(grossFV));
+    upd('r-gross-rate', 'at ' + pct(g) + ' /yr');
+    upd('r-net-fv',     fmtFull(netFV));
+    upd('r-net-rate',   'at ' + pct(netReal) + ' real');
+
+    var costsF = c / g, taxF = taxDrag / g, inflF = inf / g, netF = Math.max(netReal, 0) / g;
+    barW('r-stack-costs', costsF); barW('r-leg-costs', costsF);
+    barW('r-stack-tax',   taxF);   barW('r-leg-tax',   taxF);
+    barW('r-stack-infl',  inflF);  barW('r-leg-infl',  inflF);
+    barW('r-stack-net',   netF);   barW('r-leg-net',   netF);
+    upd('r-bv-costs', '−' + pct(c));
+    upd('r-bv-tax',   '−' + pct(taxDrag));
+    upd('r-bv-infl',  '−' + pct(inf));
+    upd('r-bv-net',   pct(Math.max(netReal, 0)));
+
+    var msg;
+    if      (c > inf)           msg = '"Costs matter more than most investors expect."';
+    else if (reqNominal > 0.12) msg = '"Consider raising monthly savings or extending your horizon."';
+    else if (inf > c * 1.5)     msg = '"Inflation silently erodes your real return."';
+    else                        msg = '"Tax compounds the wrong way — every % saved matters."';
+    upd('r-insight', msg);
+
+    var hDisp = document.getElementById('c3-h-display');
+    var hLabel = hDisp ? hDisp.textContent : (horizon + 'y');
+    upd('r-summary-plan', '€' + monthly + '/mo · ' + hLabel);
+    upd('r-summary-net',  fmtFull(netFV));
+  };
+
+  /* ── Boot: activate card-0 immediately so the stage isn't empty ── */
+  go();
+</script>
+
+</body>
+</html>
