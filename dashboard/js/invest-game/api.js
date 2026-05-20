@@ -1,5 +1,77 @@
 export const MOCK_MODE = false;
 
+// ── Volatile mock data (used regardless of MOCK_MODE) ──────────────────────────
+const MOCK_VOLATILE = {
+  ASML: {
+    select: {
+      game_id: 'volatile-asml-001', instrument: 'ASML', currency: 'EUR', starting_capital: 5000,
+      warmup_days: [
+        { date: '2025-04-24', close: 726.40 },
+        { date: '2025-04-25', close: 711.80 }
+      ],
+      game_days: [
+        { date: '2025-04-28', close: 694.50 },
+        { date: '2025-04-29', close: 655.20 },
+        { date: '2025-04-30', close: 668.90 },
+        { date: '2025-05-02', close: 641.30 },
+        { date: '2025-05-05', close: 612.70 },
+        { date: '2025-05-06', close: 635.40 },
+        { date: '2025-05-07', close: 658.10 },
+        { date: '2025-05-08', close: 671.60 }
+      ]
+    },
+    ai: [
+      { ai_action:'SELL', compliance_status:'pass',    compliance_rule:'Volatility gate',       ai_insight:'Tariff escalation detected — reducing exposure ahead of volatility.' },
+      { ai_action:'HOLD', compliance_status:'pass',    compliance_rule:'Drawdown gate',         ai_insight:'Confirming downtrend before re-entry — holding cash.' },
+      { ai_action:'HOLD', compliance_status:'pass',    compliance_rule:'Sector exposure check', ai_insight:'Bounce looks weak — staying on sidelines.' },
+      { ai_action:'BUY',  compliance_status:'pass',    compliance_rule:'Position limit check',  ai_insight:'Oversold signal — initiating position near support.' },
+      { ai_action:'HOLD', compliance_status:'pass',    compliance_rule:'Drawdown gate',         ai_insight:'Holding through pressure — support level intact.' },
+      { ai_action:'BUY',  compliance_status:'pass',    compliance_rule:'Position limit check',  ai_insight:'Volume confirms reversal — adding to position.' },
+      { ai_action:'HOLD', compliance_status:'pass',    compliance_rule:'Sector exposure check', ai_insight:'Recovery in progress — maintaining long.' },
+      { ai_action:'SELL', compliance_status:'pass',    compliance_rule:'End-of-period gate',    ai_insight:'Target reached — closing position at period end.' }
+    ]
+  },
+  NVIDIA: {
+    select: {
+      game_id: 'volatile-nvidia-001', instrument: 'NVIDIA', currency: 'USD', starting_capital: 5000,
+      warmup_days: [
+        { date: '2025-02-06', close: 128.40 },
+        { date: '2025-02-07', close: 131.20 }
+      ],
+      game_days: [
+        { date: '2025-02-10', close: 124.80 },
+        { date: '2025-02-11', close: 120.30 },
+        { date: '2025-02-12', close: 117.60 },
+        { date: '2025-02-13', close: 124.10 },
+        { date: '2025-02-14', close: 121.50 },
+        { date: '2025-02-18', close: 116.20 },
+        { date: '2025-02-19', close: 111.80 },
+        { date: '2025-02-20', close: 108.40 }
+      ]
+    },
+    ai: [
+      { ai_action:'SELL', compliance_status:'pass',    compliance_rule:'Volatility gate',       ai_insight:'DeepSeek shock continuing — exiting AI exposure.' },
+      { ai_action:'HOLD', compliance_status:'pass',    compliance_rule:'Drawdown gate',         ai_insight:'Further downside possible — holding cash.' },
+      { ai_action:'BUY',  compliance_status:'pass',    compliance_rule:'Position limit check',  ai_insight:'Oversold — partial entry at technical support.' },
+      { ai_action:'SELL', compliance_status:'flagged', compliance_rule:'Consecutive loss gate', ai_insight:'Support broken — flagging and exiting to protect capital.' },
+      { ai_action:'HOLD', compliance_status:'pass',    compliance_rule:'Drawdown gate',         ai_insight:'Consolidating — no clear entry signal yet.' },
+      { ai_action:'BUY',  compliance_status:'pass',    compliance_rule:'Position limit check',  ai_insight:'Base forming — re-entering with tighter stop.' },
+      { ai_action:'HOLD', compliance_status:'pass',    compliance_rule:'Sector exposure check', ai_insight:'Holding — monitoring for recovery confirmation.' },
+      { ai_action:'SELL', compliance_status:'pass',    compliance_rule:'End-of-period gate',    ai_insight:'Period close — liquidating all positions at market.' }
+    ]
+  }
+};
+
+export function selectVolatileDays(instrument) {
+  const key = instrument === 'NVIDIA' ? 'NVIDIA' : 'ASML';
+  return { ...MOCK_VOLATILE[key].select };
+}
+
+export function runDayVolatile(instrument, day_index) {
+  const key = instrument === 'NVIDIA' ? 'NVIDIA' : 'ASML';
+  return { ...MOCK_VOLATILE[key].ai[day_index] };
+}
+
 function apiBase() {
   return window.location.origin;
 }

@@ -114,45 +114,57 @@ input[type="date"]:focus{border-color:var(--game);}
 #winner-badge.ai-wins{background:var(--danger);color:#fff;}
 #winner-badge.tie{background:var(--game);color:#fff;}
 
-/* ── Investing Journal table (FnO Active Positions style) ── */
-#game-table{border-collapse:collapse;font-size:12px;width:100%;}
-#game-table thead th{font-family:var(--fm);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);background:var(--surface2);padding:8px 12px;text-align:center;position:sticky;top:0;z-index:2;border-bottom:1px solid var(--border);white-space:nowrap;}
+/* ── Day Action Bar ── */
+.day-action-bar{display:flex;align-items:stretch;margin-top:12px;background:var(--game-light);border:1px solid var(--game-bd);border-radius:var(--r);overflow:hidden;}
+.dbar-day{width:25%;display:flex;flex-direction:column;justify-content:center;gap:3px;padding:12px 20px;}
+.dbar-day-lbl{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--game);font-weight:600;}
+.dbar-day-date{font-family:var(--fm);font-size:10px;color:var(--t3);}
+.dbar-day-price{font-family:var(--fm);font-size:16px;font-weight:700;color:var(--text);line-height:1.1;}
+.dbar-sep{width:1px;background:var(--game-bd);flex-shrink:0;}
+.dbar-actions{width:50%;display:flex;align-items:center;justify-content:center;gap:20px;padding:14px 20px;}
+/* Arcade oval buttons */
+.arc-btn{border-radius:100px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:8px 20px;transition:transform .09s,box-shadow .09s;user-select:none;-webkit-tap-highlight-color:transparent;}
+.arc-btn-lbl{font-family:var(--fd);font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;line-height:1;}
+.arc-buy{background:radial-gradient(circle at 35% 30%,#60a5fa,#1d4ed8);color:#fff;box-shadow:0 5px 0 #1e3a8a,0 6px 8px rgba(0,0,0,.28);}
+.arc-buy:hover:not(:disabled){background:radial-gradient(circle at 35% 30%,#93c5fd,#2563eb);}
+.arc-buy:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 #1e3a8a,0 2px 4px rgba(0,0,0,.2);}
+.arc-hold{background:radial-gradient(circle at 35% 30%,#ffffff,#e2e8f0);color:#374151;box-shadow:0 5px 0 #94a3b8,0 6px 8px rgba(0,0,0,.22);}
+.arc-hold:hover:not(:disabled){background:radial-gradient(circle at 35% 30%,#ffffff,#f1f5f9);}
+.arc-hold:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 #94a3b8,0 2px 4px rgba(0,0,0,.15);}
+.arc-sell{background:radial-gradient(circle at 35% 30%,#fb923c,#ea580c);color:#fff;box-shadow:0 5px 0 #9a3412,0 6px 8px rgba(0,0,0,.28);}
+.arc-sell:hover:not(:disabled){background:radial-gradient(circle at 35% 30%,#fdba74,#f97316);}
+.arc-sell:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 #9a3412,0 2px 4px rgba(0,0,0,.2);}
+.arc-btn:disabled{opacity:.28;cursor:not-allowed;box-shadow:0 2px 0 rgba(0,0,0,.15);}
+
+/* ── Investing Journal table ── */
+#game-table{border-collapse:collapse;font-size:14px;width:100%;}
+#game-table thead th{font-family:var(--fm);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);background:var(--surface2);padding:8px 12px;text-align:center;position:sticky;top:0;z-index:2;border-bottom:1px solid var(--border);white-space:nowrap;}
 #game-table tbody tr{border-bottom:1px solid var(--border);}
 #game-table tbody tr:last-child{border-bottom:none;}
 #game-table tbody tr:hover{background:var(--surface2);}
 #game-table tbody td{padding:8px 12px;color:var(--t2);white-space:nowrap;text-align:center;vertical-align:middle;}
-.row-label{font-family:var(--fm);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);background:var(--surface2);padding:8px 12px;text-align:left;position:sticky;left:0;z-index:1;min-width:80px;border-right:1px solid var(--border);}
+.row-label{font-family:var(--fm);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);background:var(--surface2);padding:8px 12px;text-align:left;position:sticky;left:0;z-index:1;min-width:80px;border-right:1px solid var(--border);}
 .day-col{font-family:var(--fm);font-size:10px;font-weight:500;color:var(--text);padding:8px 12px;text-align:center;background:var(--surface2);min-width:100px;}
 .greyed-out{opacity:.25;pointer-events:none;}
-.day-col.warmup{color:var(--t3);}
 .day-col.active-col{background:var(--p03-bg);color:var(--p03);}
 .day-tag{display:block;font-size:8px;font-weight:400;color:var(--t4);text-transform:uppercase;letter-spacing:.05em;margin-top:1px;}
-.day-data{padding:8px 12px;text-align:center;vertical-align:middle;font-family:var(--fm);font-size:11px;color:var(--t2);min-width:100px;}
-.day-data.warmup{background:var(--surface2);color:var(--t3);}
+.day-data{padding:8px 12px;text-align:center;vertical-align:middle;font-family:var(--fm);font-size:13px;color:var(--t2);min-width:100px;}
 .day-data.active-col{background:var(--p03-bg);}
-.col-actions{display:flex;flex-direction:column;gap:3px;}
-.btn-buy,.btn-sell,.btn-hold{width:100%;padding:3px 6px;border-radius:4px;border:1.5px solid;font-family:var(--fd);font-size:10px;font-weight:600;cursor:pointer;transition:all .12s;}
-.btn-buy{background:var(--ok-bg);color:var(--ok);border-color:var(--ok-bd);}
-.btn-buy:hover:not(:disabled){background:var(--ok);color:#fff;}
-.btn-sell{background:var(--danger-bg);color:var(--danger);border-color:var(--danger-bd);}
-.btn-sell:hover:not(:disabled){background:var(--danger);color:#fff;}
-.btn-hold{background:var(--surface2);color:var(--t2);border-color:var(--border2);}
-.btn-hold:hover:not(:disabled){background:var(--border);color:var(--text);}
-.btn-buy:disabled,.btn-sell:disabled,.btn-hold:disabled{opacity:.35;cursor:not-allowed;}
-.btn-buy.selected{background:var(--ok);color:#fff;}
-.btn-sell.selected{background:var(--danger);color:#fff;}
-.btn-hold.selected{background:var(--game-bg);color:var(--game);border-color:var(--game-bd);}
-.ai-cell{font-family:var(--fm);font-size:11px;font-weight:500;}
+.action-label{display:inline-flex;align-items:center;padding:3px 10px;border-radius:4px;border:1.5px solid;font-family:var(--fd);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+.action-label.buy{background:var(--ok-bg);color:var(--ok);border-color:var(--ok-bd);}
+.action-label.sell{background:var(--danger-bg);color:var(--danger);border-color:var(--danger-bd);}
+.action-label.hold{background:var(--surface2);color:var(--t2);border-color:var(--border2);}
+.ai-cell{font-family:var(--fm);font-size:13px;font-weight:500;}
 .ai-cell.ai-buy{color:var(--ok);}
 .ai-cell.ai-sell{color:var(--danger);}
 .ai-cell.ai-hold{color:var(--t2);}
-.pnl-cell{font-family:var(--fm);font-size:11px;}
+.pnl-cell{font-family:var(--fm);font-size:13px;}
 .pnl-cell.pos{color:var(--ok);}
 .pnl-cell.neg{color:var(--danger);}
 .gate-cell{display:flex;flex-direction:column;gap:2px;align-items:center;}
-.gate-rule{font-family:var(--fm);font-size:9px;color:var(--t3);white-space:normal;text-align:center;max-width:110px;}
-.comp-insight{font-size:10px;color:var(--t3);font-style:italic;white-space:normal;text-align:center;max-width:110px;}
-#game-table tbody td.comp-insight{white-space:normal;min-width:130px;max-width:160px;line-height:1.4;padding:8px 14px;}
+.gate-rule{font-family:var(--fm);font-size:11px;color:var(--t3);white-space:normal;text-align:center;max-width:120px;}
+.comp-insight{font-size:12px;color:var(--t3);font-style:italic;white-space:normal;text-align:center;max-width:130px;}
+#game-table tbody td.comp-insight{white-space:normal;min-width:130px;max-width:180px;line-height:1.4;padding:8px 14px;}
 .status-badge{display:inline-flex;align-items:center;font-family:var(--fm);font-size:9px;font-weight:500;padding:2px 7px;border-radius:3px;border:1px solid;text-transform:uppercase;letter-spacing:.04em;}
 .status-badge.ok{background:var(--p01-bg);color:var(--p01);border-color:var(--p01-bd);}
 .status-badge.flag{background:var(--neg-bg);color:var(--neg);border-color:var(--neg-bd);}
@@ -208,8 +220,9 @@ input[type="date"]:focus{border-color:var(--game);}
           <input type="date" id="end-date">
         </div>
         <div class="ctrl-group ctrl-actions">
-          <button id="btn-select-days" class="btn btn-primary" disabled>Select Days</button>
-          <button id="btn-new-game" class="btn btn-ghost" style="display:none">&#8635; New Game</button>
+          <button id="btn-select-days"   class="btn btn-primary" disabled>Select</button>
+          <button id="btn-new-game"      class="btn btn-ghost"   style="display:none">&#8635; New Game</button>
+          <button id="btn-volatile-days" class="btn btn-ghost">&#9889; Volatile</button>
         </div>
       </div>
       <div id="selection-label" class="selected-range-info" style="display:none">
@@ -217,6 +230,25 @@ input[type="date"]:focus{border-color:var(--game);}
         <span id="selected-instrument">—</span> &mdash;
         <span id="selected-range-text">—</span> &nbsp;·&nbsp;
         <span id="selected-days-count">8 trading days</span>
+      </div>
+      <div id="day-action-bar" class="day-action-bar" style="display:none">
+        <div class="dbar-day">
+          <span class="dbar-day-lbl">Day 1</span>
+          <span class="dbar-day-date" id="dbar-date-1">—</span>
+          <span class="dbar-day-price" id="dbar-price-1">—</span>
+        </div>
+        <div class="dbar-sep"></div>
+        <div class="dbar-day">
+          <span class="dbar-day-lbl">Day 2</span>
+          <span class="dbar-day-date" id="dbar-date-2">—</span>
+          <span class="dbar-day-price" id="dbar-price-2">—</span>
+        </div>
+        <div class="dbar-sep"></div>
+        <div class="dbar-actions">
+          <button id="dbar-buy"  class="arc-btn arc-buy"  disabled><span class="arc-btn-lbl">Buy</span></button>
+          <button id="dbar-hold" class="arc-btn arc-hold" disabled><span class="arc-btn-lbl">Hold</span></button>
+          <button id="dbar-sell" class="arc-btn arc-sell" disabled><span class="arc-btn-lbl">Sell</span></button>
+        </div>
       </div>
     </section>
 
@@ -271,8 +303,6 @@ input[type="date"]:focus{border-color:var(--game);}
         <thead>
           <tr>
             <th class="row-label"></th>
-            <th id="game-row-1" class="day-col warmup">1<span class="day-tag">Warm-up</span></th>
-            <th id="game-row-2" class="day-col warmup">2<span class="day-tag">Warm-up</span></th>
             <th id="game-row-3"  class="day-col" data-day="3"  style="display:none">3</th>
             <th id="game-row-4"  class="day-col" data-day="4"  style="display:none">4</th>
             <th id="game-row-5"  class="day-col" data-day="5"  style="display:none">5</th>
@@ -284,25 +314,9 @@ input[type="date"]:focus{border-color:var(--game);}
           </tr>
         </thead>
         <tbody>
-          <!-- Date -->
-          <tr>
-            <td class="row-label">Date</td>
-            <td id="row1-date" class="day-data warmup">—</td>
-            <td id="row2-date" class="day-data warmup">—</td>
-            <td id="row3-date"  class="day-data" data-day="3"  style="display:none">—</td>
-            <td id="row4-date"  class="day-data" data-day="4"  style="display:none">—</td>
-            <td id="row5-date"  class="day-data" data-day="5"  style="display:none">—</td>
-            <td id="row6-date"  class="day-data" data-day="6"  style="display:none">—</td>
-            <td id="row7-date"  class="day-data" data-day="7"  style="display:none">—</td>
-            <td id="row8-date"  class="day-data" data-day="8"  style="display:none">—</td>
-            <td id="row9-date"  class="day-data" data-day="9"  style="display:none">—</td>
-            <td id="row10-date" class="day-data" data-day="10" style="display:none">—</td>
-          </tr>
           <!-- Price -->
           <tr>
             <td class="row-label">Price</td>
-            <td id="row1-price" class="day-data warmup">—</td>
-            <td id="row2-price" class="day-data warmup">—</td>
             <td id="row3-price"  class="day-data" data-day="3"  style="display:none">—</td>
             <td id="row4-price"  class="day-data" data-day="4"  style="display:none">—</td>
             <td id="row5-price"  class="day-data" data-day="5"  style="display:none">—</td>
@@ -315,22 +329,18 @@ input[type="date"]:focus{border-color:var(--game);}
           <!-- Action -->
           <tr>
             <td class="row-label">Action</td>
-            <td class="day-data warmup">—</td>
-            <td class="day-data warmup">—</td>
-            <td class="day-data" data-day="3"  style="display:none"><div class="col-actions"><button id="buy-3"  class="btn-buy"  disabled>Buy</button><button id="sell-3"  class="btn-sell" disabled>Sell</button><button id="hold-3"  class="btn-hold" disabled>Hold</button></div></td>
-            <td class="day-data" data-day="4"  style="display:none"><div class="col-actions"><button id="buy-4"  class="btn-buy"  disabled>Buy</button><button id="sell-4"  class="btn-sell" disabled>Sell</button><button id="hold-4"  class="btn-hold" disabled>Hold</button></div></td>
-            <td class="day-data" data-day="5"  style="display:none"><div class="col-actions"><button id="buy-5"  class="btn-buy"  disabled>Buy</button><button id="sell-5"  class="btn-sell" disabled>Sell</button><button id="hold-5"  class="btn-hold" disabled>Hold</button></div></td>
-            <td class="day-data" data-day="6"  style="display:none"><div class="col-actions"><button id="buy-6"  class="btn-buy"  disabled>Buy</button><button id="sell-6"  class="btn-sell" disabled>Sell</button><button id="hold-6"  class="btn-hold" disabled>Hold</button></div></td>
-            <td class="day-data" data-day="7"  style="display:none"><div class="col-actions"><button id="buy-7"  class="btn-buy"  disabled>Buy</button><button id="sell-7"  class="btn-sell" disabled>Sell</button><button id="hold-7"  class="btn-hold" disabled>Hold</button></div></td>
-            <td class="day-data" data-day="8"  style="display:none"><div class="col-actions"><button id="buy-8"  class="btn-buy"  disabled>Buy</button><button id="sell-8"  class="btn-sell" disabled>Sell</button><button id="hold-8"  class="btn-hold" disabled>Hold</button></div></td>
-            <td class="day-data" data-day="9"  style="display:none"><div class="col-actions"><button id="buy-9"  class="btn-buy"  disabled>Buy</button><button id="sell-9"  class="btn-sell" disabled>Sell</button><button id="hold-9"  class="btn-hold" disabled>Hold</button></div></td>
-            <td class="day-data" data-day="10" style="display:none"><div class="col-actions"><button id="buy-10" class="btn-buy"  disabled>Buy</button><button id="sell-10" class="btn-sell" disabled>Sell</button><button id="hold-10" class="btn-hold" disabled>Hold</button></div></td>
+            <td id="action-label-3"  class="day-data" data-day="3"  style="display:none">—</td>
+            <td id="action-label-4"  class="day-data" data-day="4"  style="display:none">—</td>
+            <td id="action-label-5"  class="day-data" data-day="5"  style="display:none">—</td>
+            <td id="action-label-6"  class="day-data" data-day="6"  style="display:none">—</td>
+            <td id="action-label-7"  class="day-data" data-day="7"  style="display:none">—</td>
+            <td id="action-label-8"  class="day-data" data-day="8"  style="display:none">—</td>
+            <td id="action-label-9"  class="day-data" data-day="9"  style="display:none">—</td>
+            <td id="action-label-10" class="day-data" data-day="10" style="display:none">—</td>
           </tr>
           <!-- AI Action -->
           <tr>
             <td class="row-label">AI Action</td>
-            <td class="day-data warmup">—</td>
-            <td class="day-data warmup">—</td>
             <td id="ai-cell-3"  class="day-data ai-cell" data-day="3"  style="display:none">—</td>
             <td id="ai-cell-4"  class="day-data ai-cell" data-day="4"  style="display:none">—</td>
             <td id="ai-cell-5"  class="day-data ai-cell" data-day="5"  style="display:none">—</td>
@@ -343,8 +353,6 @@ input[type="date"]:focus{border-color:var(--game);}
           <!-- Gate -->
           <tr>
             <td class="row-label">Gate</td>
-            <td class="day-data warmup">—</td>
-            <td class="day-data warmup">—</td>
             <td class="day-data" data-day="3"  style="display:none"><div class="gate-cell"><span id="comp-status-3">—</span><span id="comp-rule-3"   class="gate-rule">—</span></div></td>
             <td class="day-data" data-day="4"  style="display:none"><div class="gate-cell"><span id="comp-status-4">—</span><span id="comp-rule-4"   class="gate-rule">—</span></div></td>
             <td class="day-data" data-day="5"  style="display:none"><div class="gate-cell"><span id="comp-status-5">—</span><span id="comp-rule-5"   class="gate-rule">—</span></div></td>
@@ -354,11 +362,9 @@ input[type="date"]:focus{border-color:var(--game);}
             <td class="day-data" data-day="9"  style="display:none"><div class="gate-cell"><span id="comp-status-9">—</span><span id="comp-rule-9"   class="gate-rule">—</span></div></td>
             <td class="day-data" data-day="10" style="display:none"><div class="gate-cell"><span id="comp-status-10">—</span><span id="comp-rule-10" class="gate-rule">—</span></div></td>
           </tr>
-          <!-- Insight -->
+          <!-- AI Insight -->
           <tr>
             <td class="row-label">Insight</td>
-            <td class="day-data warmup">—</td>
-            <td class="day-data warmup">—</td>
             <td id="comp-insight-3"  class="day-data comp-insight" data-day="3"  style="display:none">—</td>
             <td id="comp-insight-4"  class="day-data comp-insight" data-day="4"  style="display:none">—</td>
             <td id="comp-insight-5"  class="day-data comp-insight" data-day="5"  style="display:none">—</td>

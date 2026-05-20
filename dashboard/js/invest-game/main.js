@@ -1,4 +1,4 @@
-import { selectDays, runDay, getResult } from './api.js';
+import { selectDays, runDay, getResult, selectVolatileDays, runDayVolatile } from './api.js';
 
 const TRANSACTION_RATE = 0.001;
 const TAX_RATE = 0.30;
@@ -12,6 +12,7 @@ const gameState = {
   gameDays: [],
   currentDayIndex: 0,
   started: false,
+  volatileMode: false,
   buysLeft: 4,
   sellsLeft: 4,
   aiBuysLeft: 4,
@@ -103,6 +104,20 @@ function renderBudgetDisplay() {
   if (aiEl) aiEl.innerHTML = budgetHtml(gameState.aiBuysLeft, gameState.aiSellsLeft);
 }
 
+function showDayBar(n) {
+  const canBuy  = gameState.buysLeft  > 0 && gameState.user.cash > 0;
+  const canSell = gameState.sellsLeft > 0 && gameState.user.shares > 0;
+  const buyBtn  = document.getElementById('dbar-buy');
+  const sellBtn = document.getElementById('dbar-sell');
+  const holdBtn = document.getElementById('dbar-hold');
+  buyBtn.disabled  = !canBuy;
+  sellBtn.disabled = !canSell;
+  holdBtn.disabled = false;
+  buyBtn.onclick  = () => handleUserAction(n, 'BUY');
+  sellBtn.onclick = () => handleUserAction(n, 'SELL');
+  holdBtn.onclick = () => handleUserAction(n, 'HOLD');
+}
+
 function setEndDateMax() {
   const d = new Date();
   d.setMonth(d.getMonth() - 3);
@@ -121,21 +136,23 @@ function lockControls() {
   ['pill-asml', 'pill-nvidia', 'start-date', 'end-date'].forEach(id => {
     document.getElementById(id).disabled = true;
   });
-  document.getElementById('btn-select-days').style.display = 'none';
-  document.getElementById('btn-new-game').style.display    = '';
+  document.getElementById('btn-select-days').style.display   = 'none';
+  document.getElementById('btn-volatile-days').style.display = 'none';
+  document.getElementById('btn-new-game').style.display      = '';
 }
 
 function renderWarmupRows() {
+  const s = sym();
   [1, 2].forEach((n, i) => {
     const d = gameState.warmupDays[i];
-    document.getElementById(`row${n}-date`).textContent  = d.date;
-    document.getElementById(`row${n}-price`).textContent = sym() + d.close.toFixed(2);
+    document.getElementById(`dbar-date-${n}`).textContent  = d.date;
+    document.getElementById(`dbar-price-${n}`).textContent = s + d.close.toFixed(2);
   });
+  document.getElementById('day-action-bar').style.display = '';
 }
 
 function populateActiveRowData(n) {
   const d = gameState.gameDays[n - 3];
-  document.getElementById(`row${n}-date`).textContent  = d.date;
   document.getElementById(`row${n}-price`).textContent = sym() + d.close.toFixed(2);
 }
 
@@ -143,18 +160,10 @@ function unlockRow(n) {
   populateActiveRowData(n);
 
   if (n === 10) {
-    ['buy', 'sell', 'hold'].forEach(a => {
-      const b = document.getElementById(`${a}-10`);
-      if (b) b.style.display = 'none';
+    showDayBar(n);
+    ['dbar-buy', 'dbar-sell', 'dbar-hold'].forEach(id => {
+      document.getElementById(id).disabled = true;
     });
-    const colActions = document.querySelector('[data-day="10"] .col-actions');
-    if (colActions && !document.getElementById('day10-auto-badge')) {
-      const badge = document.createElement('span');
-      badge.id = 'day10-auto-badge';
-      badge.style.cssText = 'font-family:var(--fm);font-size:10px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase';
-      badge.textContent = 'Auto-Sell';
-      colActions.appendChild(badge);
-    }
     setTimeout(() => {
       const action = gameState.user.position === 'long' ? 'SELL' : 'HOLD';
       handleUserAction(10, action);
@@ -162,15 +171,7 @@ function unlockRow(n) {
     return;
   }
 
-  const canBuy  = gameState.buysLeft  > 0 && gameState.user.cash > 0;
-  const canSell = gameState.sellsLeft > 0 && gameState.user.shares > 0;
-
-  document.getElementById(`buy-${n}`).disabled  = !canBuy;
-  document.getElementById(`sell-${n}`).disabled = !canSell;
-  document.getElementById(`hold-${n}`).disabled = false;
-  document.getElementById(`buy-${n}`).onclick  = () => handleUserAction(n, 'BUY');
-  document.getElementById(`sell-${n}`).onclick = () => handleUserAction(n, 'SELL');
-  document.getElementById(`hold-${n}`).onclick = () => handleUserAction(n, 'HOLD');
+  showDayBar(n);
 }
 
 function showAllGreyed() {
@@ -193,10 +194,14 @@ function revealDay(n) {
 }
 
 async function handleUserAction(n, action) {
-  ['buy', 'sell', 'hold'].forEach(a => { document.getElementById(`${a}-${n}`).disabled = true; });
-  document.getElementById(`buy-${n}`).classList.toggle('selected',  action === 'BUY');
-  document.getElementById(`sell-${n}`).classList.toggle('selected', action === 'SELL');
-  document.getElementById(`hold-${n}`).classList.toggle('selected', action === 'HOLD');
+  ['dbar-buy', 'dbar-sell', 'dbar-hold'].forEach(id => {
+    document.getElementById(id).disabled = true;
+  });
+
+  const actionCell = document.getElementById(`action-label-${n}`);
+  if (actionCell) {
+    actionCell.innerHTML = `<span class="action-label ${action.toLowerCase()}">${action}</span>`;
+  }
 
   document.getElementById(`game-row-${n}`).classList.remove('active-col');
 
@@ -216,10 +221,12 @@ async function handleUserAction(n, action) {
 
   let result;
   try {
-    result = await runDay(gameState.gameId, dayIndex, action);
+    result = gameState.volatileMode
+      ? runDayVolatile(gameState.instrument, dayIndex)
+      : await runDay(gameState.gameId, dayIndex, action);
   } catch (e) {
     console.error('runDay error', e);
-    ['buy', 'sell', 'hold'].forEach(a => { document.getElementById(`${a}-${n}`).disabled = false; });
+    showDayBar(n);
     return;
   }
 
@@ -270,7 +277,7 @@ function resetGame() {
   const freshActor = () => ({ position: 'flat', cash: cap, shares: 0, entryPrice: 0, portfolio: 0, cumCosts: 0, cumTax: 0, netValue: cap, prevNetValue: cap });
   Object.assign(gameState, {
     gameId: null, instrument: 'ASML', currency: 'EUR', startingCapital: cap,
-    warmupDays: [], gameDays: [], currentDayIndex: 0, started: false,
+    warmupDays: [], gameDays: [], currentDayIndex: 0, started: false, volatileMode: false,
     buysLeft: 4, sellsLeft: 4, aiBuysLeft: 4, aiSellsLeft: 4,
     user: freshActor(), ai: freshActor()
   });
@@ -281,8 +288,9 @@ function resetGame() {
   });
   document.getElementById('pill-asml').classList.add('active');
   document.getElementById('pill-nvidia').classList.remove('active');
-  document.getElementById('btn-select-days').style.display = '';
-  document.getElementById('btn-new-game').style.display    = 'none';
+  document.getElementById('btn-select-days').style.display   = '';
+  document.getElementById('btn-new-game').style.display      = 'none';
+  document.getElementById('btn-volatile-days').style.display = '';
   document.getElementById('selection-label').style.display = 'none';
   document.getElementById('selected-instrument').textContent = '—';
   document.getElementById('selected-range-text').textContent = '—';
@@ -312,26 +320,28 @@ function resetGame() {
   document.getElementById('progress-label-text').textContent = 'Day 0 of 8';
   document.getElementById('row-performance').style.display   = 'none';
 
-  // Warmup rows
-  [1, 2].forEach(n => {
-    document.getElementById(`row${n}-date`).textContent  = '—';
-    document.getElementById(`row${n}-price`).textContent = '—';
+  // Day action bar
+  document.getElementById('day-action-bar').style.display = 'none';
+  ['dbar-date-1', 'dbar-price-1', 'dbar-date-2', 'dbar-price-2'].forEach(id => {
+    document.getElementById(id).textContent = '—';
+  });
+  ['dbar-buy', 'dbar-sell', 'dbar-hold'].forEach(id => {
+    const el = document.getElementById(id);
+    el.disabled = true;
+    el.onclick  = null;
   });
 
   // Active columns
   for (let n = 3; n <= 10; n++) {
     document.querySelectorAll(`[data-day="${n}"]`).forEach(el => { el.classList.add('greyed-out'); });
     document.getElementById(`game-row-${n}`).classList.remove('active-col');
-    ['buy', 'sell', 'hold'].forEach(a => {
-      const b = document.getElementById(`${a}-${n}`);
-      b.disabled = true; b.classList.remove('selected'); b.onclick = null; b.style.display = '';
-    });
-    document.getElementById(`ai-cell-${n}`).textContent     = '—';
-    document.getElementById(`ai-cell-${n}`).className       = 'day-data ai-cell';
-    document.getElementById(`row${n}-date`).textContent     = '—';
-    document.getElementById(`row${n}-price`).textContent    = '—';
-    document.getElementById(`comp-status-${n}`).innerHTML   = '—';
-    document.getElementById(`comp-rule-${n}`).textContent   = '—';
+    const actionCell = document.getElementById(`action-label-${n}`);
+    if (actionCell) actionCell.textContent = '—';
+    document.getElementById(`row${n}-price`).textContent  = '—';
+    document.getElementById(`ai-cell-${n}`).textContent   = '—';
+    document.getElementById(`ai-cell-${n}`).className     = 'day-data ai-cell';
+    document.getElementById(`comp-status-${n}`).innerHTML  = '—';
+    document.getElementById(`comp-rule-${n}`).textContent  = '—';
     document.getElementById(`comp-insight-${n}`).textContent = '—';
   }
 
@@ -403,6 +413,51 @@ function initControls() {
   });
 
   document.getElementById('btn-new-game').addEventListener('click', resetGame);
+
+  document.getElementById('btn-volatile-days').addEventListener('click', () => {
+    const isNvidia = gameState.instrument === 'NVIDIA';
+    if (gameState.started) {
+      resetGame();
+      if (isNvidia) {
+        gameState.instrument = 'NVIDIA';
+        gameState.currency   = 'USD';
+        document.getElementById('pill-nvidia').classList.add('active');
+        document.getElementById('pill-asml').classList.remove('active');
+      }
+    }
+
+    const data = selectVolatileDays(gameState.instrument);
+
+    gameState.gameId          = data.game_id;
+    gameState.currency        = data.currency;
+    gameState.startingCapital = data.starting_capital;
+    gameState.warmupDays      = data.warmup_days;
+    gameState.gameDays        = data.game_days;
+    gameState.user.cash       = gameState.startingCapital;
+    gameState.user.netValue   = gameState.startingCapital;
+    gameState.user.prevNetValue = gameState.startingCapital;
+    gameState.ai.cash         = gameState.startingCapital;
+    gameState.ai.netValue     = gameState.startingCapital;
+    gameState.ai.prevNetValue = gameState.startingCapital;
+    gameState.started         = true;
+    gameState.volatileMode    = true;
+
+    lockControls();
+    document.getElementById('selected-instrument').textContent = data.instrument;
+    document.getElementById('selected-range-text').textContent =
+      data.game_days[0].date + ' — ' + data.game_days[data.game_days.length - 1].date;
+    document.getElementById('selected-days-count').textContent = '8 volatile days';
+    document.getElementById('selection-label').style.display   = '';
+    document.getElementById('row-performance').style.display   = '';
+    document.getElementById('progress-fill').style.width       = '0%';
+    document.getElementById('progress-label-text').textContent = 'Day 0 of 8';
+
+    renderPnLCards();
+    renderBudgetDisplay();
+    renderWarmupRows();
+    document.querySelectorAll('.warmup').forEach(el => el.classList.remove('greyed-out'));
+    revealDay(3);
+  });
 
   showAllGreyed();
 }
