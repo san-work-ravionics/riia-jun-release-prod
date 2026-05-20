@@ -84,7 +84,7 @@ jobs:
             docker run -d \
               --name rita \
               --restart unless-stopped \
-              -p 80:8000 \
+              -p 127.0.0.1:8000:8000 \
               -e RITA_ENV=production \
               -e RITA_JWT_SECRET='${{ secrets.RITA_JWT_SECRET }}' \
               -e RITA_GOOGLE_CLIENT_ID='${{ secrets.GOOGLE_CLIENT_ID }}' \
@@ -98,7 +98,7 @@ jobs:
             # Wait for the health endpoint to respond
             echo "Waiting for /health..."
             for i in \$(seq 1 20); do
-              if curl -sf http://localhost/health > /dev/null; then
+              if curl -sf http://localhost:8000/health > /dev/null; then
                 echo "RITA is up."
                 exit 0
               fi
