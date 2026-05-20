@@ -41,6 +41,7 @@ def ds_payload(instrument: str = "NIFTY", db: Session = Depends(get_db)) -> dict
             {"id": i.instrument_id, "name": i.name, "exchange": i.exchange,
              "data_ready": i.is_available}
             for i in instruments_raw
+            if i.is_available
         ]
         sources["instruments"] = {
             "status": "ok" if instruments else "empty",

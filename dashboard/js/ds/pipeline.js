@@ -204,9 +204,11 @@ export async function loadInstruments() {
   try {
     const d = await api('/api/v1/instruments');
     const raw = Array.isArray(d) ? d : (d.instruments||[]);
-    _instrumentList = raw.map(i => typeof i === 'string'
-      ? { id: i, name: i }
-      : { id: i.id||i.name||'nifty', name: i.name||i.symbol||i.id||'NIFTY' });
+    _instrumentList = raw
+      .filter(i => typeof i === 'string' || i.data_ready !== false)
+      .map(i => typeof i === 'string'
+        ? { id: i, name: i }
+        : { id: i.id||i.name||'nifty', name: i.name||i.symbol||i.id||'NIFTY' });
     if (!_instrumentList.length) _instrumentList = [{ id:'nifty', name:'NIFTY' }];
   } catch(e){ _instrumentList = [{ id:'nifty', name:'NIFTY' }]; }
 

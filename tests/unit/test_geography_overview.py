@@ -79,28 +79,44 @@ def _cache_with_two_rows(
 
 
 def _full_cache() -> list:
-    """Cache with two rows for every instrument in all three regions."""
+    """Cache with two rows for every instrument in _MOCK_INSTRUMENTS."""
     pairs = [
-        # US
-        ("AAPL",     150.0, 151.5),
-        ("MSFT",     300.0, 298.0),
-        ("GOOGL",    140.0, 141.0),
-        ("AMZN",     180.0, 180.0),
-        # EU
-        ("SAP",       90.0,  91.0),
-        ("ASML",     700.0, 703.5),
-        ("LVMH",     800.0, 795.0),
-        ("SIE",       85.0,  85.5),
         # India
-        ("NIFTY",  22000.0, 22150.0),
+        ("NIFTY",     22000.0, 22150.0),
         ("BANKNIFTY", 48000.0, 47800.0),
-        ("RELIANCE", 2900.0, 2920.0),
-        ("INFY",     1500.0, 1520.0),
+        ("RELIANCE",   2900.0,  2920.0),
+        # EU
+        ("ASML",        700.0,   703.5),
+        ("AEX",         880.0,   878.0),
+        # US
+        ("NVIDIA",      900.0,   910.0),
+        ("DJI",       39000.0, 39200.0),
     ]
     records = []
     for und, prev, latest in pairs:
         records.extend(_cache_with_two_rows(und, prev, latest))
     return records
+
+
+def _make_instrument(instrument_id: str, country_code: str, name: str = "") -> MagicMock:
+    inst = MagicMock()
+    inst.instrument_id = instrument_id
+    inst.country_code = country_code
+    inst.name = name or instrument_id
+    inst.is_available = True
+    return inst
+
+
+# Covers all three regions using the actual seed instruments.
+_MOCK_INSTRUMENTS = [
+    _make_instrument("NIFTY",     "IN", "NIFTY 50"),
+    _make_instrument("BANKNIFTY", "IN", "Bank Nifty"),
+    _make_instrument("RELIANCE",  "IN", "Reliance Industries"),
+    _make_instrument("ASML",      "NL", "ASML Holding"),
+    _make_instrument("AEX",       "NL", "AEX Index"),
+    _make_instrument("NVIDIA",    "US", "NVIDIA"),
+    _make_instrument("DJI",       "US", "Dow Jones"),
+]
 
 
 def _override(app, dep, mock_value):
@@ -123,6 +139,9 @@ def _get_response(patch_return_value: list) -> tuple:
         with patch(
             "rita.repositories.market_data.MarketDataCacheRepository.read_all",
             return_value=patch_return_value,
+        ), patch(
+            "rita.repositories.instrument.InstrumentRepository.read_all",
+            return_value=_MOCK_INSTRUMENTS,
         ):
             client = TestClient(app, raise_server_exceptions=False)
             resp = client.get(_GEO_URL)
@@ -347,6 +366,9 @@ class TestGeographyOverviewEdgeCases:
             with patch(
                 "rita.repositories.market_data.MarketDataCacheRepository.read_all",
                 side_effect=Exception("DB unavailable"),
+            ), patch(
+                "rita.repositories.instrument.InstrumentRepository.read_all",
+                return_value=_MOCK_INSTRUMENTS,
             ):
                 client = TestClient(app, raise_server_exceptions=False)
                 resp = client.get(_GEO_URL)

@@ -429,3 +429,91 @@ class TestOpsRouter:
             assert body["recent_audit"] == []
         finally:
             _clear(app, *deps)
+
+
+# ---------------------------------------------------------------------------
+# DS experience router
+# ---------------------------------------------------------------------------
+
+class TestDSExperienceRouter:
+    """Tests for GET /api/experience/ds/ — instruments filter and payload shape."""
+
+    def _make_instrument_record(self, instrument_id: str, is_available: bool):
+        from unittest.mock import MagicMock
+        rec = MagicMock()
+        rec.instrument_id = instrument_id
+        rec.name = instrument_id
+        rec.exchange = "NSE"
+        rec.is_available = is_available
+        return rec
+
+    def test_get_ds_returns_200(self):
+        """GET /api/experience/ds/ returns 200."""
+        from rita.main import app
+        from rita.database import get_db
+        from unittest.mock import MagicMock, patch
+
+        mock_db = MagicMock()
+        _override(app, get_db, mock_db)
+        try:
+            with patch(
+                "rita.repositories.instrument.InstrumentRepository.read_all",
+                return_value=[self._make_instrument_record("NIFTY", True)],
+            ):
+                client = TestClient(app, raise_server_exceptions=False)
+                response = client.get("/api/experience/ds/")
+            assert response.status_code == 200
+        finally:
+            _clear(app, get_db)
+
+    def test_get_ds_has_instruments_key(self):
+        """GET /api/experience/ds/ response contains 'instruments' key."""
+        from rita.main import app
+        from rita.database import get_db
+        from unittest.mock import MagicMock, patch
+
+        mock_db = MagicMock()
+        _override(app, get_db, mock_db)
+        try:
+            with patch(
+                "rita.repositories.instrument.InstrumentRepository.read_all",
+                return_value=[self._make_instrument_record("NIFTY", True)],
+            ):
+                client = TestClient(app, raise_server_exceptions=False)
+                response = client.get("/api/experience/ds/")
+            assert "instruments" in response.json()
+        finally:
+            _clear(app, get_db)
+
+    def test_instruments_filtered_by_is_available(self):
+        """Only is_available=True instruments appear in the DS payload."""
+        from rita.main import app
+        from rita.database import get_db
+        from unittest.mock import MagicMock, patch
+
+        mock_db = MagicMock()
+        _override(app, get_db, mock_db)
+        mock_instruments = [
+            self._make_instrument_record("NIFTY",    True),
+            self._make_instrument_record("BANKNIFTY", True),
+            self._make_instrument_record("ATHER",    False),  # not available
+        ]
+        try:
+            with patch(
+                "rita.repositories.instrument.InstrumentRepository.read_all",
+                return_value=mock_instruments,
+            ):
+                client = TestClient(app, raise_server_exceptions=False)
+                response = client.get("/api/experience/ds/")
+            body = response.json()
+            instruments = body.get("instruments", [])
+            ids = [i["id"] for i in instruments]
+            assert "NIFTY" in ids
+            assert "BANKNIFTY" in ids
+            assert "ATHER" not in ids, "Unavailable instrument must not appear in DS payload"
+            for inst in instruments:
+                assert inst["data_ready"] is True, (
+                    f"Instrument {inst['id']} returned with data_ready=False"
+                )
+        finally:
+            _clear(app, get_db)
