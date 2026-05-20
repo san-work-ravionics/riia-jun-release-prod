@@ -616,3 +616,9 @@
 }
 .step-strip .seg.done { background: var(--ink); }
 .step-strip .seg.active { background: var(--accent); }
+
+/* ─── Responsive: real handheld device ─── */
+@media (max-width: 480px) {
+  body { display: block !important; background: var(--paper) !important; }
+  .phone { width: 100%; height: 100svh; height: 100vh; }
+}

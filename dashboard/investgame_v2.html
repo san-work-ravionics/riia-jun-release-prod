@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RIIA — Invest Game v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500&family=Epilogue:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ─── RITA design tokens ─── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+:root{
+  --bg:#F5F3EE;--surface:#FFFFFF;--surface2:#F9F8F5;--border:#E4E0D8;--border2:#D0CBBC;
+  --text:#1A1814;--t2:#4A4640;--t3:#8C877A;--t4:#B8B2A6;
+  --ok:#1A6B3C;--ok-bg:#EDF7F2;--ok-bd:#B6DEC9;
+  --danger:#9B1C1C;--danger-bg:#FEF2F2;--danger-bd:#FCA5A5;
+  --info:#0056B8;
+  --game:#B45309;--game-bg:#FEF3C7;--game-bd:#FCD34D;
+  --p01:#1A6B3C;--p01-bg:#EDF7F2;--p01-bd:#B6DEC9;
+  --neg:#9B1C1C;--neg-bg:#FEF2F2;--neg-bd:#FCA5A5;
+  --fd:'Epilogue',sans-serif;--fm:'IBM Plex Mono',monospace;--fs:'Instrument Serif',serif;
+  --r:6px;
+  --sh:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+}
+body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px;line-height:1.5;min-height:100vh;}
+
+/* ─── Topbar ─── */
+.topbar{background:var(--surface);border-bottom:1.5px solid var(--border);display:flex;align-items:center;padding:0 20px;height:52px;position:sticky;top:0;z-index:200;box-shadow:var(--sh);}
+.logo{display:flex;align-items:center;gap:9px;text-decoration:none;color:inherit;}
+.logo-icon{width:26px;height:26px;background:var(--text);border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.logo-icon svg{fill:var(--surface);}
+.logo-name{font-family:var(--fs);font-size:16px;letter-spacing:-.01em;}
+.logo-sub{color:var(--t3);font-size:10px;font-family:var(--fm);}
+.t-sep{width:1px;height:24px;background:var(--border);margin:0 14px;}
+.t-crumb{font-family:var(--fm);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;}
+.game-phase-badge{display:inline-flex;align-items:center;background:var(--game-bg);border:1px solid var(--game-bd);border-radius:100px;padding:2px 10px;font-family:var(--fm);font-size:10px;color:var(--game);margin-left:10px;font-weight:500;}
+.t-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.t-nav-link{font-family:var(--fm);font-size:11px;color:var(--t3);text-decoration:none;padding:4px 10px;border:1px solid var(--border);border-radius:var(--r);transition:color .12s,border-color .12s;}
+.t-nav-link:hover{color:var(--text);border-color:var(--border2);}
+
+/* ─── Winner banner ─── */
+.winner-banner{position:sticky;top:52px;z-index:150;display:flex;align-items:center;justify-content:center;gap:14px;padding:10px 28px;border-bottom:2px solid var(--game-bd);background:var(--game-bg);}
+.winner-banner-label{font-family:var(--fs);font-size:16px;color:var(--game);}
+#winner-badge{display:inline-block;padding:5px 22px;border-radius:100px;font-family:var(--fd);font-size:13px;font-weight:700;}
+#winner-badge.you-win{background:var(--ok);color:#fff;}
+#winner-badge.ai-wins{background:var(--danger);color:#fff;}
+#winner-badge.tie{background:var(--game);color:#fff;}
+
+/* ─── Layout ─── */
+.game-main{max-width:100%;padding:20px 28px 60px;}
+.game-row{background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:16px;box-shadow:var(--sh);}
+.top-row-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.top-row-grid .game-row{margin-bottom:0;}
+.row-hdr{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.row-hdr h2{font-family:var(--fs);font-size:18px;font-weight:400;}
+.row-badge{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.1em;padding:2px 9px;border-radius:100px;background:var(--game-bg);border:1px solid var(--game-bd);color:var(--game);}
+
+/* ─── Controls ─── */
+.controls-body{display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap;}
+.ctrl-group{display:flex;flex-direction:column;gap:6px;}
+.ctrl-group label{font-family:var(--fm);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;}
+.pill-group{display:flex;border:1.5px solid var(--border);border-radius:100px;overflow:hidden;}
+.pill{padding:7px 18px;border:none;background:transparent;font-family:var(--fd);font-size:12px;font-weight:500;color:var(--t3);cursor:pointer;transition:all .12s;display:flex;align-items:center;gap:6px;}
+.pill:first-child{border-right:1.5px solid var(--border);}
+.pill.active{background:var(--game-bg);color:var(--game);}
+.pill-ccy{font-family:var(--fm);font-size:10px;color:var(--t4);}
+.pill.active .pill-ccy{color:var(--game);opacity:.7;}
+input[type="date"]{font-family:var(--fm);font-size:12px;color:var(--text);background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:6px 10px;outline:none;transition:border-color .12s;}
+input[type="date"]:focus{border-color:var(--game);}
+.ctrl-actions{flex-direction:row;gap:8px;align-items:flex-end;}
+.btn{padding:7px 18px;border-radius:var(--r);border:1.5px solid transparent;font-family:var(--fd);font-size:12px;font-weight:600;cursor:pointer;transition:all .14s;}
+.btn-primary{background:var(--game);color:#fff;border-color:var(--game);}
+.btn-primary:hover:not(:disabled){background:#92400E;}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed;}
+.btn-ghost{background:var(--surface2);color:var(--t2);border-color:var(--border);}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text);}
+.selected-range-info{display:flex;align-items:center;gap:8px;margin-top:12px;font-family:var(--fm);font-size:11px;color:var(--ok);background:var(--ok-bg);border:1px solid var(--ok-bd);border-radius:var(--r);padding:6px 14px;}
+.selected-range-info .range-label{color:var(--t3);font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin-right:4px;}
+
+/* ─── P&L score cards ─── */
+.pnl-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.pnl-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;}
+.pnl-card-label{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;}
+.dot-you{background:var(--info);}
+.dot-ai{background:var(--game);}
+.pnl-net{font-family:var(--fm);font-size:22px;font-weight:600;color:var(--text);line-height:1;}
+.pnl-net.pos{color:var(--ok);}
+.pnl-net.neg{color:var(--danger);}
+.pnl-subs{display:flex;gap:12px;margin-top:5px;flex-wrap:wrap;}
+.pnl-sub{font-family:var(--fm);font-size:10px;color:var(--t3);}
+.pnl-sub .lv{color:var(--t2);font-weight:500;}
+.progress-wrap{display:flex;align-items:center;gap:12px;}
+.progress-bar{flex:1;height:6px;background:var(--border);border-radius:100px;overflow:hidden;}
+#progress-fill{height:100%;background:linear-gradient(90deg,var(--game),#F59E0B);border-radius:100px;transition:width .4s ease;}
+#progress-label-text{font-family:var(--fm);font-size:10px;color:var(--t3);white-space:nowrap;}
+
+/* ─── Arcade Row (Row 2) ─── */
+.arcade-section{background:var(--surface);border:1.5px solid var(--border);border-radius:10px;margin-bottom:16px;box-shadow:var(--sh);overflow:hidden;}
+.arcade-body{display:grid;grid-template-columns:15% 85%;}
+.arcade-left{padding:18px 14px;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;background:var(--game-bg);}
+.al-day-lbl{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--game);font-weight:600;}
+.al-date{font-family:var(--fm);font-size:10px;color:var(--t2);}
+.al-price{font-family:var(--fm);font-size:26px;font-weight:700;color:var(--text);line-height:1;margin-top:2px;}
+.al-delta{font-family:var(--fm);font-size:12px;font-weight:600;}
+.al-delta.pos{color:var(--ok);}
+.al-delta.neg{color:var(--danger);}
+.al-delta-pct{font-family:var(--fm);font-size:10px;color:var(--t3);}
+
+/* ─── Arcade round buttons ─── */
+.arcade-btns{display:flex;gap:10px;align-items:center;margin-top:6px;}
+.arc-btn{width:54px;height:54px;border-radius:50%;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;transition:transform .09s,box-shadow .09s;user-select:none;-webkit-tap-highlight-color:transparent;}
+.arc-btn-icon{font-size:15px;line-height:1;font-weight:700;}
+.arc-btn-lbl{font-family:var(--fd);font-size:8px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;line-height:1;}
+/* Buy — green */
+.arc-buy{background:radial-gradient(circle at 35% 30%,#2d9e5e,#1A6B3C);color:#fff;box-shadow:0 5px 0 #0f4023,0 6px 8px rgba(0,0,0,.28);}
+.arc-buy:hover:not(:disabled){background:radial-gradient(circle at 35% 30%,#36b46d,#1e7d47);}
+.arc-buy:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 #0f4023,0 2px 4px rgba(0,0,0,.2);}
+/* Hold — amber */
+.arc-hold{background:radial-gradient(circle at 35% 30%,#d97706,#B45309);color:#fff;box-shadow:0 5px 0 #7c3a06,0 6px 8px rgba(0,0,0,.28);}
+.arc-hold:hover:not(:disabled){background:radial-gradient(circle at 35% 30%,#f59e0b,#ca6208);}
+.arc-hold:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 #7c3a06,0 2px 4px rgba(0,0,0,.2);}
+/* Sell — red */
+.arc-sell{background:radial-gradient(circle at 35% 30%,#dc3737,#9B1C1C);color:#fff;box-shadow:0 5px 0 #5e1111,0 6px 8px rgba(0,0,0,.28);}
+.arc-sell:hover:not(:disabled){background:radial-gradient(circle at 35% 30%,#ef4444,#b22020);}
+.arc-sell:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 #5e1111,0 2px 4px rgba(0,0,0,.2);}
+/* Disabled / selected states */
+.arc-btn:disabled{opacity:.28;cursor:not-allowed;box-shadow:0 2px 0 rgba(0,0,0,.15);}
+.arc-btn.pressed{transform:translateY(4px);box-shadow:0 1px 0 rgba(0,0,0,.2) !important;opacity:.9;}
+.al-budget{display:flex;gap:6px;margin-top:2px;}
+.al-chip{font-family:var(--fm);font-size:9px;padding:2px 7px;border-radius:100px;border:1px solid;}
+.al-chip-b{background:var(--ok-bg);color:var(--ok);border-color:var(--ok-bd);}
+.al-chip-s{background:var(--neg-bg);color:var(--neg);border-color:var(--neg-bd);}
+/* Waiting state */
+.al-waiting{font-family:var(--fm);font-size:10px;color:var(--t4);text-align:center;padding:8px 0;}
+
+/* ─── Journey nodes (right 85%) ─── */
+.arcade-right{padding:18px 20px;display:flex;align-items:center;}
+.journey-track{display:flex;align-items:flex-start;width:100%;}
+.day-node{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;min-width:0;}
+.day-connector{position:absolute;top:17px;left:50%;width:100%;height:2px;background:var(--border);z-index:0;}
+.day-connector.done{background:var(--border2);}
+.day-node:last-child .day-connector{display:none;}
+
+.day-circle{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--fm);font-size:10px;font-weight:700;position:relative;z-index:1;transition:all .22s;user-select:none;}
+.day-circle.warmup{border:2px solid var(--border2);background:var(--surface2);color:var(--t3);}
+.day-circle.locked{border:2px dashed var(--border);background:var(--surface);color:var(--t4);}
+.day-circle.active{border:2px solid var(--game);background:var(--game-bg);color:var(--game);box-shadow:0 0 0 5px rgba(180,83,9,.14);animation:pulse-node 1.6s ease-in-out infinite;}
+.day-circle.done-buy{border:2px solid var(--ok);background:var(--ok);color:#fff;}
+.day-circle.done-sell{border:2px solid var(--danger);background:var(--danger);color:#fff;}
+.day-circle.done-hold{border:2px solid var(--border2);background:var(--surface2);color:var(--t2);}
+@keyframes pulse-node{0%,100%{box-shadow:0 0 0 5px rgba(180,83,9,.14)}50%{box-shadow:0 0 0 9px rgba(180,83,9,.06)}}
+
+.day-meta{margin-top:6px;text-align:center;}
+.day-meta-date{font-family:var(--fm);font-size:8px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:66px;}
+.day-meta-price{font-family:var(--fm);font-size:9px;font-weight:500;color:var(--text);margin-top:1px;}
+.day-meta-delta{font-family:var(--fm);font-size:8px;margin-top:1px;}
+.day-meta-delta.pos{color:var(--ok);}
+.day-meta-delta.neg{color:var(--danger);}
+.day-meta-tag{font-family:var(--fm);font-size:7px;color:var(--t4);text-transform:uppercase;letter-spacing:.05em;margin-top:2px;}
+
+/* ─── Reveal bar ─── */
+.reveal-bar{padding:9px 20px;background:var(--surface2);border-top:1px solid var(--border);display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
+.reveal-item{display:flex;align-items:center;gap:6px;}
+.reveal-lbl{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);}
+.reveal-val{font-family:var(--fm);font-size:11px;font-weight:700;}
+.reveal-val.BUY{color:var(--ok);}
+.reveal-val.SELL{color:var(--danger);}
+.reveal-val.HOLD{color:var(--t2);}
+.reveal-insight{font-family:var(--fm);font-size:10px;color:var(--t3);font-style:italic;margin-left:auto;max-width:380px;text-align:right;}
+.status-badge{display:inline-flex;align-items:center;font-family:var(--fm);font-size:9px;font-weight:500;padding:2px 7px;border-radius:3px;border:1px solid;text-transform:uppercase;letter-spacing:.04em;}
+.status-badge.ok{background:var(--p01-bg);color:var(--p01);border-color:var(--p01-bd);}
+.status-badge.flag{background:var(--neg-bg);color:var(--neg);border-color:var(--neg-bd);}
+
+/* ─── Game Log ─── */
+.card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);margin-bottom:18px;}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);}
+.card-title{font-size:13px;font-weight:600;}
+.card-sub{font-size:11px;color:var(--t3);}
+.tbl-wrap{overflow-x:auto;max-height:320px;overflow-y:auto;}
+.log-tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.log-tbl th{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.08em;padding:7px 12px;text-align:left;border-bottom:1.5px solid var(--border);background:var(--surface2);color:var(--t3);white-space:nowrap;position:sticky;top:0;z-index:1;}
+.log-tbl td{padding:7px 12px;border-bottom:1px solid var(--border);font-family:var(--fm);font-size:11px;color:var(--t2);vertical-align:middle;}
+.log-tbl tbody tr:last-child td{border-bottom:none;}
+.log-tbl tbody tr:hover{background:var(--surface2);}
+.act-tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:3px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;}
+.act-tag.BUY{background:var(--ok-bg);color:var(--ok);border:1px solid var(--ok-bd);}
+.act-tag.SELL{background:var(--neg-bg);color:var(--neg);border:1px solid var(--neg-bd);}
+.act-tag.HOLD{background:var(--surface2);color:var(--t3);border:1px solid var(--border2);}
+.nv{font-weight:600;}
+.nv.pos{color:var(--ok);}
+.nv.neg{color:var(--danger);}
+
+/* ─── Mobile (≤640px) ─── */
+@media (max-width:640px){
+  .game-main{padding:12px 14px 40px;}
+  /* stack setup + performance cards */
+  .top-row-grid{grid-template-columns:1fr;}
+  .top-row-grid .game-row{margin-bottom:0;}
+  .game-row{padding:14px;}
+  /* topbar: hide nav links + separator to save space */
+  .topbar{padding:0 12px;}
+  .t-sep,.t-nav-link{display:none;}
+  .game-phase-badge{margin-left:6px;}
+  /* winner banner */
+  .winner-banner{padding:8px 14px;flex-wrap:wrap;gap:8px;}
+  /* arcade: stack price panel above day track */
+  .arcade-body{grid-template-columns:1fr;}
+  .arcade-left{border-right:none;border-bottom:1px solid var(--border);padding:14px 16px;}
+  .al-price{font-size:22px;}
+  .arcade-btns{gap:18px;justify-content:center;}
+  .arc-btn{width:62px;height:62px;}
+  /* day track: allow horizontal scroll */
+  .arcade-right{padding:14px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .journey-track{min-width:max-content;}
+  /* reveal bar */
+  .reveal-bar{padding:9px 14px;gap:10px;}
+  .reveal-insight{margin-left:0;max-width:100%;text-align:left;}
+  /* controls wrap tightly */
+  .controls-body{gap:12px;}
+  .pnl-subs{gap:8px;}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="logo" href="index.html">
+    <div class="logo-icon">
+      <svg width="15" height="15" viewBox="0 0 16 16"><path d="M8 1L1 5v6l7 4 7-4V5L8 1zm0 1.8L13.5 6 8 9.2 2.5 6 8 2.8zM2 7.1l5.5 3.2v3.9L2 11V7.1zm7.5 7.1v-3.9L15 7.1V11l-5.5 3.2z"/></svg>
+    </div>
+    <span class="logo-name">RIIA</span>
+    <span class="logo-sub">v2.0</span>
+  </a>
+  <div class="t-sep"></div>
+  <span class="t-crumb">Trial Invest Game</span>
+  <span class="game-phase-badge" id="phase-badge">Mock Mode</span>
+  <div class="t-right">
+    <a href="index.html" class="t-nav-link">← Home</a>
+    <a href="rita.html" class="t-nav-link">RITA</a>
+    <a href="investgame.html" class="t-nav-link">v1</a>
+  </div>
+</header>
+
+<div id="winner-banner" class="winner-banner" style="display:none">
+  <span class="winner-banner-label">Game Over</span>
+  <div id="winner-badge">—</div>
+  <button class="btn btn-ghost" id="btn-new-game-banner" style="margin-left:12px">&#8635; New Game</button>
+</div>
+
+<main class="game-main">
+
+  <!-- Row 1: Setup + Performance -->
+  <div class="top-row-grid">
+    <section class="game-row">
+      <div class="row-hdr"><h2>Configure Your Game</h2><span class="row-badge">Setup</span></div>
+      <div class="controls-body">
+        <div class="ctrl-group">
+          <label>Instrument</label>
+          <div class="pill-group">
+            <button id="pill-asml" class="pill active">ASML <span class="pill-ccy">EUR</span></button>
+            <button id="pill-nvidia" class="pill">NVIDIA <span class="pill-ccy">USD</span></button>
+          </div>
+        </div>
+        <div class="ctrl-group">
+          <label>Start Date</label>
+          <input type="date" id="start-date" min="2025-01-01" value="2025-01-01">
+        </div>
+        <div class="ctrl-group">
+          <label>End Date</label>
+          <input type="date" id="end-date">
+        </div>
+        <div class="ctrl-group ctrl-actions">
+          <button id="btn-select-days" class="btn btn-primary" disabled>Select Days</button>
+          <button id="btn-new-game" class="btn btn-ghost" style="display:none">&#8635; New Game</button>
+        </div>
+      </div>
+      <div id="selection-label" class="selected-range-info" style="display:none">
+        <span class="range-label">Selected</span>
+        <span id="selected-instrument">—</span> &mdash;
+        <span id="selected-range-text">—</span>
+      </div>
+    </section>
+
+    <section id="row-performance" class="game-row" style="display:none">
+      <div class="row-hdr"><h2>Performance</h2><span class="row-badge">vs AI</span></div>
+      <div class="pnl-cards">
+        <div class="pnl-card">
+          <div class="pnl-card-label"><span class="dot dot-you"></span>You</div>
+          <div class="pnl-net" id="user-net">€5,000.00</div>
+          <div class="pnl-subs">
+            <span class="pnl-sub">Cash <span class="lv" id="user-cash">€5,000</span></span>
+            <span class="pnl-sub">Holdings <span class="lv" id="user-portfolio">€0</span></span>
+          </div>
+          <div class="pnl-subs" style="margin-top:2px">
+            <span class="pnl-sub">Costs <span class="lv" id="user-costs">−€0.00</span></span>
+            <span class="pnl-sub">Tax <span class="lv" id="user-tax">−€0.00</span></span>
+          </div>
+        </div>
+        <div class="pnl-card">
+          <div class="pnl-card-label"><span class="dot dot-ai"></span>AI Agent</div>
+          <div class="pnl-net" id="ai-net">€5,000.00</div>
+          <div class="pnl-subs">
+            <span class="pnl-sub">Cash <span class="lv" id="ai-cash">€5,000</span></span>
+            <span class="pnl-sub">Holdings <span class="lv" id="ai-portfolio">€0</span></span>
+          </div>
+          <div class="pnl-subs" style="margin-top:2px">
+            <span class="pnl-sub">Costs <span class="lv" id="ai-costs">−€0.00</span></span>
+            <span class="pnl-sub">Tax <span class="lv" id="ai-tax">−€0.00</span></span>
+          </div>
+        </div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-bar"><div id="progress-fill" style="width:0%"></div></div>
+        <span id="progress-label-text">Day 0 of 8</span>
+      </div>
+    </section>
+  </div>
+
+  <!-- Row 2: Arcade — 15% price+buttons | 85% day track -->
+  <section id="arcade-section" class="arcade-section" style="display:none">
+    <div class="arcade-body">
+
+      <!-- Left 15%: price + round arcade buttons -->
+      <div class="arcade-left" id="arcade-left">
+        <div class="al-day-lbl" id="al-day-lbl">—</div>
+        <div class="al-date" id="al-date">—</div>
+        <div class="al-price" id="al-price">—</div>
+        <div>
+          <span class="al-delta" id="al-delta">—</span>
+          <span class="al-delta-pct" id="al-delta-pct"></span>
+        </div>
+        <div class="arcade-btns" id="arcade-btns">
+          <button class="arc-btn arc-buy" id="arc-buy" disabled>
+            <span class="arc-btn-icon">↑</span>
+            <span class="arc-btn-lbl">Buy</span>
+          </button>
+          <button class="arc-btn arc-hold" id="arc-hold" disabled>
+            <span class="arc-btn-icon">—</span>
+            <span class="arc-btn-lbl">Hold</span>
+          </button>
+          <button class="arc-btn arc-sell" id="arc-sell" disabled>
+            <span class="arc-btn-icon">↓</span>
+            <span class="arc-btn-lbl">Sell</span>
+          </button>
+        </div>
+        <div class="al-budget" id="al-budget">
+          <span class="al-chip al-chip-b" id="chip-buys">B:4</span>
+          <span class="al-chip al-chip-s" id="chip-sells">S:4</span>
+        </div>
+      </div>
+
+      <!-- Right 85%: 10-day journey track -->
+      <div class="arcade-right">
+        <div class="journey-track" id="journey-track"></div>
+      </div>
+
+    </div>
+    <!-- Reveal bar: full width, shown after each action -->
+    <div class="reveal-bar" id="reveal-bar" style="display:none">
+      <div class="reveal-item">
+        <span class="reveal-lbl">You</span>
+        <span class="reveal-val" id="rv-you">—</span>
+      </div>
+      <div class="reveal-item">
+        <span class="reveal-lbl">AI Agent</span>
+        <span class="reveal-val" id="rv-ai">—</span>
+      </div>
+      <div class="reveal-item">
+        <span class="reveal-lbl">Gate</span>
+        <span id="rv-gate">—</span>
+      </div>
+      <div class="reveal-insight" id="rv-insight">—</div>
+    </div>
+  </section>
+
+  <!-- Row 3: Game Log -->
+  <section class="card" id="game-log-section" style="display:none">
+    <div class="card-hdr">
+      <span class="card-title">Game Log</span>
+      <span class="card-sub">Investing Journal</span>
+    </div>
+    <div class="tbl-wrap">
+      <table class="log-tbl">
+        <thead>
+          <tr>
+            <th>Day</th><th>Date</th><th>Price</th><th>Change</th>
+            <th>You</th><th>AI</th><th>Gate</th>
+            <th>Your Net</th><th>AI Net</th><th>AI Insight</th>
+          </tr>
+        </thead>
+        <tbody id="log-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<script>
+// ─── Config ───────────────────────────────────────────────────────────────────
+const MOCK_MODE = true;
+const TX_RATE   = 0.001;
+const TAX_RATE  = 0.30;
+
+// ─── Mock data ────────────────────────────────────────────────────────────────
+const MOCK_SELECT = {
+  game_id:'mock-001', instrument:'ASML', currency:'EUR', starting_capital:5000,
+  warmup_days:[
+    { date:'2025-01-06', close:678.50 },
+    { date:'2025-01-07', close:682.10 }
+  ],
+  game_days:[
+    { date:'2025-01-08', close:675.30 },
+    { date:'2025-01-09', close:671.80 },
+    { date:'2025-01-10', close:680.00 },
+    { date:'2025-01-13', close:685.40 },
+    { date:'2025-01-14', close:679.90 },
+    { date:'2025-01-15', close:692.20 },
+    { date:'2025-01-16', close:688.70 },
+    { date:'2025-01-17', close:695.00 }
+  ]
+};
+const MOCK_AI = [
+  { ai_action:'BUY',  compliance_status:'pass',    compliance_rule:'Position limit check',  ai_insight:'Bull momentum confirmed — entering long at day close.' },
+  { ai_action:'SELL', compliance_status:'pass',    compliance_rule:'Drawdown gate',         ai_insight:'Short-term reversal signal — taking profit.' },
+  { ai_action:'BUY',  compliance_status:'pass',    compliance_rule:'Position limit check',  ai_insight:'Momentum recovering — re-entering long.' },
+  { ai_action:'HOLD', compliance_status:'pass',    compliance_rule:'Sector exposure check', ai_insight:'No new signal — holding current position.' },
+  { ai_action:'SELL', compliance_status:'pass',    compliance_rule:'Drawdown gate',         ai_insight:'Profit target reached — exiting position.' },
+  { ai_action:'BUY',  compliance_status:'pass',    compliance_rule:'Position limit check',  ai_insight:'New breakout signal — entering long.' },
+  { ai_action:'HOLD', compliance_status:'flagged', compliance_rule:'Consecutive loss gate', ai_insight:'Signal strength marginal — flagged for review.' },
+  { ai_action:'SELL', compliance_status:'pass',    compliance_rule:'End-of-period gate',    ai_insight:'Final day — closing all positions at market.' }
+];
+
+// ─── Game state ───────────────────────────────────────────────────────────────
+const S = {
+  gameId:null, instrument:'ASML', currency:'EUR', startingCapital:5000,
+  warmupDays:[], gameDays:[], activeDayNum:0, log:[],
+  buysLeft:4, sellsLeft:4, aiBuysLeft:4, aiSellsLeft:4,
+  user:{ position:'flat', cash:5000, shares:0, entryPrice:0, portfolio:0, cumCosts:0, cumTax:0, netValue:5000 },
+  ai:  { position:'flat', cash:5000, shares:0, entryPrice:0, portfolio:0, cumCosts:0, cumTax:0, netValue:5000 }
+};
+function sym(){ return S.currency === 'USD' ? '$' : '€'; }
+
+// ─── API ──────────────────────────────────────────────────────────────────────
+async function apiSelectDays(instrument, start_date, end_date){
+  if (MOCK_MODE) return { ...MOCK_SELECT, instrument, currency: instrument === 'NVIDIA' ? 'USD' : 'EUR' };
+  const r = await fetch('/api/experience/invest-game/select-days',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({instrument,start_date,end_date})
+  });
+  if(!r.ok) throw new Error(`select-days ${r.status}`);
+  return r.json();
+}
+async function apiRunDay(game_id, day_index, user_action){
+  if (MOCK_MODE) return { ...MOCK_AI[day_index] };
+  const r = await fetch('/api/experience/invest-game/run-day',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({game_id,day_index,user_action})
+  });
+  if(!r.ok) throw new Error(`run-day ${r.status}`);
+  return r.json();
+}
+
+// ─── P&L calculation ──────────────────────────────────────────────────────────
+function calcDay(actor, action, close){
+  const tranche = S.startingCapital / 4;
+  if (action === 'BUY' && actor.cash > 0){
+    const invest = Math.min(tranche, actor.cash);
+    const txCost = invest * TX_RATE;
+    actor.cumCosts += txCost;
+    const newShares = (invest - txCost) / close;
+    actor.entryPrice = actor.shares > 0
+      ? (actor.shares * actor.entryPrice + newShares * close) / (actor.shares + newShares)
+      : close;
+    actor.shares += newShares; actor.cash -= invest; actor.position = 'long';
+  } else if (action === 'SELL' && actor.shares > 0){
+    const qty      = Math.min(tranche / close, actor.shares);
+    const proceeds = qty * close;
+    const txCost   = proceeds * TX_RATE;
+    actor.cumCosts += txCost;
+    const gross    = qty * (close - actor.entryPrice);
+    const tax      = gross > 0 ? gross * TAX_RATE : 0;
+    actor.cumTax  += tax; actor.cash += proceeds - txCost - tax; actor.shares -= qty;
+    if(actor.shares < 1e-9){ actor.shares=0; actor.entryPrice=0; actor.position='flat'; }
+  }
+  actor.portfolio = actor.shares * close;
+  actor.netValue  = actor.cash + actor.portfolio;
+}
+
+// ─── P&L cards ────────────────────────────────────────────────────────────────
+function renderPnL(){
+  const s = sym(), cap = S.startingCapital;
+  const set = (p, a) => {
+    document.getElementById(`${p}-cash`).textContent      = s + a.cash.toFixed(0);
+    document.getElementById(`${p}-portfolio`).textContent = s + a.portfolio.toFixed(0);
+    document.getElementById(`${p}-costs`).textContent     = '−' + s + a.cumCosts.toFixed(2);
+    document.getElementById(`${p}-tax`).textContent       = '−' + s + a.cumTax.toFixed(2);
+    const el = document.getElementById(`${p}-net`);
+    el.textContent = s + a.netValue.toFixed(2);
+    el.className   = 'pnl-net' + (a.netValue > cap ? ' pos' : a.netValue < cap ? ' neg' : '');
+  };
+  set('user', S.user); set('ai', S.ai);
+}
+
+// ─── Journey track ────────────────────────────────────────────────────────────
+function buildTrack(){
+  const track = document.getElementById('journey-track');
+  track.innerHTML = '';
+  const total = 2 + S.gameDays.length;
+  for(let i = 1; i <= total; i++){
+    const isWarmup = i <= 2;
+    const d = isWarmup ? S.warmupDays[i-1] : S.gameDays[i-3];
+    const node = document.createElement('div');
+    node.className = 'day-node'; node.id = `node-${i}`;
+    node.innerHTML =
+      (i < total ? `<div class="day-connector" id="conn-${i}"></div>` : '') +
+      `<div class="day-circle ${isWarmup ? 'warmup' : 'locked'}" id="circ-${i}">${i}</div>
+       <div class="day-meta">
+         <div class="day-meta-date" id="mdate-${i}">${isWarmup ? d.date : '—'}</div>
+         <div class="day-meta-price" id="mprice-${i}">${isWarmup ? sym()+d.close.toFixed(0) : ''}</div>
+         <div class="day-meta-delta" id="mdelta-${i}"></div>
+         <div class="day-meta-tag">${isWarmup ? 'Warm-up' : 'Day '+(i-2)}</div>
+       </div>`;
+    track.appendChild(node);
+  }
+}
+
+function setCircle(n, state, icon){
+  const el = document.getElementById(`circ-${n}`);
+  if(!el) return;
+  el.className = `day-circle ${state}`;
+  if(icon) el.textContent = icon;
+}
+
+function setNodeMeta(n, d, prevClose){
+  const de = document.getElementById(`mdate-${n}`);
+  const pe = document.getElementById(`mprice-${n}`);
+  const dl = document.getElementById(`mdelta-${n}`);
+  if(de) de.textContent = d.date;
+  if(pe) pe.textContent = sym() + d.close.toFixed(0);
+  if(dl && prevClose){
+    const delta = d.close - prevClose;
+    const pct   = (delta / prevClose * 100).toFixed(1);
+    dl.textContent = (delta >= 0 ? '+' : '') + pct + '%';
+    dl.className   = 'day-meta-delta ' + (delta >= 0 ? 'pos' : 'neg');
+  }
+  const conn = document.getElementById(`conn-${n-1}`);
+  if(conn) conn.className = 'day-connector done';
+}
+
+// ─── Arcade left panel ────────────────────────────────────────────────────────
+function showDay(dayNum){
+  const dayIndex  = dayNum - 3;
+  const d         = S.gameDays[dayIndex];
+  const prevClose = dayIndex === 0 ? S.warmupDays[1].close : S.gameDays[dayIndex-1].close;
+  const delta     = d.close - prevClose;
+  const pct       = (delta / prevClose * 100);
+  const s         = sym();
+
+  document.getElementById('al-day-lbl').textContent  = `Day ${dayIndex+1} of ${S.gameDays.length}`;
+  document.getElementById('al-date').textContent     = d.date;
+  document.getElementById('al-price').textContent    = s + d.close.toFixed(2);
+
+  const dEl = document.getElementById('al-delta');
+  dEl.textContent = (delta >= 0 ? '+' : '−') + s + Math.abs(delta).toFixed(2);
+  dEl.className   = 'al-delta ' + (delta >= 0 ? 'pos' : 'neg');
+  document.getElementById('al-delta-pct').textContent = ` (${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%)`;
+
+  const isLast = dayIndex === S.gameDays.length - 1;
+  const canBuy  = S.buysLeft  > 0 && S.user.cash > 0;
+  const canSell = S.sellsLeft > 0 && S.user.shares > 0;
+
+  const bB = document.getElementById('arc-buy');
+  const bH = document.getElementById('arc-hold');
+  const bS = document.getElementById('arc-sell');
+  bB.disabled = !canBuy || isLast;
+  bH.disabled = false;
+  bS.disabled = !canSell || isLast;
+  bB.classList.remove('pressed'); bH.classList.remove('pressed'); bS.classList.remove('pressed');
+  bH.querySelector('.arc-btn-icon').textContent = '—';
+  bH.querySelector('.arc-btn-lbl').textContent  = 'Hold';
+
+  bB.onclick = () => handleAction(dayNum, 'BUY');
+  bH.onclick = () => handleAction(dayNum, 'HOLD');
+  bS.onclick = () => handleAction(dayNum, 'SELL');
+
+  document.getElementById('chip-buys').textContent  = 'B:' + S.buysLeft;
+  document.getElementById('chip-sells').textContent = 'S:' + S.sellsLeft;
+  document.getElementById('reveal-bar').style.display = 'none';
+
+  setCircle(dayNum, 'active', null);
+  setNodeMeta(dayNum, d, prevClose);
+  S.activeDayNum = dayNum;
+
+  if(isLast){
+    bH.querySelector('.arc-btn-icon').textContent = '⟲';
+    bH.querySelector('.arc-btn-lbl').textContent  = 'Auto';
+    setTimeout(() => handleAction(dayNum, S.user.position === 'long' ? 'SELL' : 'HOLD'), 700);
+  }
+}
+
+// ─── Handle action ────────────────────────────────────────────────────────────
+async function handleAction(dayNum, action){
+  ['arc-buy','arc-hold','arc-sell'].forEach(id => { document.getElementById(id).disabled = true; });
+  const btnId = { BUY:'arc-buy', HOLD:'arc-hold', SELL:'arc-sell' };
+  document.getElementById(btnId[action]).classList.add('pressed');
+
+  const dayIndex  = dayNum - 3;
+  const d         = S.gameDays[dayIndex];
+  const prevClose = dayIndex === 0 ? S.warmupDays[1].close : S.gameDays[dayIndex-1].close;
+
+  const wasBuying  = action === 'BUY'  && S.user.cash > 0;
+  const wasSelling = action === 'SELL' && S.user.shares > 0;
+  calcDay(S.user, action, d.close);
+  if(wasBuying)  S.buysLeft--;
+  if(wasSelling) S.sellsLeft--;
+
+  let result;
+  try { result = await apiRunDay(S.gameId, dayIndex, action); }
+  catch(e){ console.error('runDay:', e); return; }
+
+  const aiEff = (result.ai_action === 'SELL' && S.ai.shares <= 0) ? 'HOLD'
+              : (result.ai_action === 'BUY'  && S.ai.cash   <= 0) ? 'HOLD'
+              : result.ai_action;
+  if(aiEff === 'BUY')  S.aiBuysLeft--;
+  if(aiEff === 'SELL') S.aiSellsLeft--;
+  calcDay(S.ai, aiEff, d.close);
+
+  renderPnL();
+  const pct = ((dayIndex+1) / S.gameDays.length) * 100;
+  document.getElementById('progress-fill').style.width       = `${pct}%`;
+  document.getElementById('progress-label-text').textContent = `Day ${dayIndex+1} of ${S.gameDays.length}`;
+
+  const iconMap  = { BUY:'↑', SELL:'↓', HOLD:'—' };
+  const stateMap = { BUY:'done-buy', SELL:'done-sell', HOLD:'done-hold' };
+  setCircle(dayNum, stateMap[action], iconMap[action]);
+
+  const isFlag = result.compliance_status === 'flagged';
+  document.getElementById('rv-you').textContent = action;
+  document.getElementById('rv-you').className   = `reveal-val ${action}`;
+  document.getElementById('rv-ai').textContent  = aiEff;
+  document.getElementById('rv-ai').className    = `reveal-val ${aiEff}`;
+  document.getElementById('rv-gate').innerHTML  =
+    `<span class="status-badge ${isFlag?'flag':'ok'}">${isFlag?'FLAGGED':'PASS'}</span>` +
+    `<span style="font-family:var(--fm);font-size:10px;color:var(--t3);margin-left:6px">${result.compliance_rule}</span>`;
+  document.getElementById('rv-insight').textContent = result.ai_insight;
+  document.getElementById('reveal-bar').style.display = '';
+
+  const delta = d.close - prevClose;
+  S.log.push({ dayNum, dayIndex, date:d.date, price:d.close, delta,
+    userAction:action, aiAction:aiEff,
+    compStatus:result.compliance_status, compRule:result.compliance_rule,
+    insight:result.ai_insight, userNet:S.user.netValue, aiNet:S.ai.netValue });
+  appendLogRow(S.log[S.log.length-1]);
+
+  if(dayIndex + 1 < S.gameDays.length){
+    setTimeout(() => showDay(dayNum + 1), 1400);
+  } else {
+    setTimeout(() => finishGame(), 1400);
+  }
+}
+
+// ─── Game log ─────────────────────────────────────────────────────────────────
+function appendLogRow(e){
+  const s = sym(), cap = S.startingCapital;
+  const ds = e.delta >= 0 ? '+' : '−';
+  const tr = document.createElement('tr');
+  tr.innerHTML =
+    `<td>${e.dayIndex+1}</td><td>${e.date}</td>` +
+    `<td>${s}${e.price.toFixed(2)}</td>` +
+    `<td style="color:${e.delta>=0?'var(--ok)':'var(--danger)'}">${ds}${s}${Math.abs(e.delta).toFixed(2)}</td>` +
+    `<td><span class="act-tag ${e.userAction}">${e.userAction}</span></td>` +
+    `<td><span class="act-tag ${e.aiAction}">${e.aiAction}</span></td>` +
+    `<td><span class="status-badge ${e.compStatus==='flagged'?'flag':'ok'}">${e.compStatus==='flagged'?'FLAGGED':'PASS'}</span></td>` +
+    `<td class="nv ${e.userNet>cap?'pos':e.userNet<cap?'neg':''}">${s}${e.userNet.toFixed(2)}</td>` +
+    `<td class="nv ${e.aiNet>cap?'pos':e.aiNet<cap?'neg':''}">${s}${e.aiNet.toFixed(2)}</td>` +
+    `<td style="color:var(--t3);font-style:italic;white-space:normal;max-width:200px;line-height:1.4">${e.insight}</td>`;
+  document.getElementById('log-tbody').appendChild(tr);
+}
+
+// ─── End game ─────────────────────────────────────────────────────────────────
+function finishGame(){
+  document.getElementById('phase-badge').textContent = 'Game Over';
+  ['arc-buy','arc-hold','arc-sell'].forEach(id => { document.getElementById(id).disabled = true; });
+  const banner = document.getElementById('winner-banner');
+  const badge  = document.getElementById('winner-badge');
+  banner.style.display = '';
+  if(S.user.netValue > S.ai.netValue){ badge.textContent='You Win!'; badge.className='you-win'; }
+  else if(S.ai.netValue > S.user.netValue){ badge.textContent='AI Wins'; badge.className='ai-wins'; }
+  else { badge.textContent='Tie'; badge.className='tie'; }
+}
+
+// ─── Reset ────────────────────────────────────────────────────────────────────
+function resetGame(){
+  const cap = 5000;
+  const fresh = () => ({ position:'flat', cash:cap, shares:0, entryPrice:0, portfolio:0, cumCosts:0, cumTax:0, netValue:cap });
+  Object.assign(S,{
+    gameId:null, instrument:'ASML', currency:'EUR', startingCapital:cap,
+    warmupDays:[], gameDays:[], activeDayNum:0, log:[],
+    buysLeft:4, sellsLeft:4, aiBuysLeft:4, aiSellsLeft:4,
+    user:fresh(), ai:fresh()
+  });
+  ['pill-asml','pill-nvidia','start-date','end-date'].forEach(id=>{ document.getElementById(id).disabled=false; });
+  document.getElementById('pill-asml').classList.add('active');
+  document.getElementById('pill-nvidia').classList.remove('active');
+  document.getElementById('btn-select-days').style.display    = '';
+  document.getElementById('btn-new-game').style.display       = 'none';
+  document.getElementById('selection-label').style.display    = 'none';
+  document.getElementById('row-performance').style.display    = 'none';
+  document.getElementById('arcade-section').style.display     = 'none';
+  document.getElementById('game-log-section').style.display   = 'none';
+  document.getElementById('winner-banner').style.display      = 'none';
+  document.getElementById('journey-track').innerHTML          = '';
+  document.getElementById('log-tbody').innerHTML              = '';
+  document.getElementById('phase-badge').textContent          = 'Mock Mode';
+  document.getElementById('progress-fill').style.width        = '0%';
+  document.getElementById('progress-label-text').textContent  = 'Day 0 of 8';
+  const s = '€';
+  ['user','ai'].forEach(p=>{
+    document.getElementById(`${p}-net`).textContent       = s+'5,000.00';
+    document.getElementById(`${p}-net`).className         = 'pnl-net';
+    document.getElementById(`${p}-cash`).textContent      = s+'5,000';
+    document.getElementById(`${p}-portfolio`).textContent = s+'0';
+    document.getElementById(`${p}-costs`).textContent     = '−'+s+'0.00';
+    document.getElementById(`${p}-tax`).textContent       = '−'+s+'0.00';
+  });
+  validateDates();
+}
+
+// ─── Controls init ────────────────────────────────────────────────────────────
+function setEndDateMax(){
+  const d = new Date(); d.setMonth(d.getMonth()-3);
+  const el = document.getElementById('end-date');
+  el.max = d.toISOString().split('T')[0]; el.value = el.max;
+}
+function validateDates(){
+  const s = document.getElementById('start-date').value;
+  const e = document.getElementById('end-date').value;
+  document.getElementById('btn-select-days').disabled = !(s && e && e > s);
+}
+function lockControls(){
+  ['pill-asml','pill-nvidia','start-date','end-date'].forEach(id=>{ document.getElementById(id).disabled=true; });
+  document.getElementById('btn-select-days').style.display = 'none';
+  document.getElementById('btn-new-game').style.display    = '';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  setEndDateMax(); validateDates();
+
+  document.getElementById('pill-asml').addEventListener('click', ()=>{
+    S.instrument='ASML'; S.currency='EUR';
+    document.getElementById('pill-asml').classList.add('active');
+    document.getElementById('pill-nvidia').classList.remove('active');
+    validateDates();
+  });
+  document.getElementById('pill-nvidia').addEventListener('click', ()=>{
+    S.instrument='NVIDIA'; S.currency='USD';
+    document.getElementById('pill-nvidia').classList.add('active');
+    document.getElementById('pill-asml').classList.remove('active');
+    validateDates();
+  });
+  document.getElementById('start-date').addEventListener('change', validateDates);
+  document.getElementById('end-date').addEventListener('change',   validateDates);
+
+  document.getElementById('btn-select-days').addEventListener('click', async ()=>{
+    document.getElementById('btn-select-days').disabled = true;
+    const start = document.getElementById('start-date').value;
+    const end   = document.getElementById('end-date').value;
+    let data;
+    try { data = await apiSelectDays(S.instrument, start, end); }
+    catch(e){ console.error(e); document.getElementById('btn-select-days').disabled=false; return; }
+
+    S.gameId          = data.game_id;
+    S.currency        = data.currency;
+    S.startingCapital = data.starting_capital ?? 5000;
+    S.warmupDays      = data.warmup_days;
+    S.gameDays        = data.game_days;
+    S.user.cash = S.user.netValue = S.startingCapital;
+    S.ai.cash   = S.ai.netValue   = S.startingCapital;
+
+    lockControls();
+    document.getElementById('selected-instrument').textContent = data.instrument;
+    document.getElementById('selected-range-text').textContent =
+      data.game_days[0].date + ' — ' + data.game_days[data.game_days.length-1].date;
+    document.getElementById('selection-label').style.display  = '';
+    document.getElementById('row-performance').style.display  = '';
+    document.getElementById('arcade-section').style.display   = '';
+    document.getElementById('game-log-section').style.display = '';
+    document.getElementById('phase-badge').textContent        = 'Playing';
+
+    renderPnL();
+    buildTrack();
+    showDay(3);
+  });
+
+  document.getElementById('btn-new-game').addEventListener('click', resetGame);
+  document.getElementById('btn-new-game-banner').addEventListener('click', resetGame);
+});
+</script>
+</body>
+</html>
