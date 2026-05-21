@@ -1,0 +1,95 @@
+{
+  "run_id": "20260520-1600",
+  "app": "ops",
+  "request": "Feature 16 Run A — All Instruments Data Refresh Command. Add yf_ticker column to instruments table (Alembic migration), new data_refresh.py service (check_gap / fetch_and_write_raw / rebuild_input / upsert_cache_delta / refresh_all), extend load_instrument_data() with companion _yf.csv merge for NIFTY/BANKNIFTY, POST /api/v1/instrument/refresh-all endpoint, .claude/commands/refresh-all-instruments-data.md slash command, project-office/scripts/run_data_refresh.py standalone script.",
+  "skill_file": "project-office/skills/skill-add-ops-feature.md",
+  "agents": [
+    {
+      "role": "pm",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 22000,
+      "actual_tokens": null,
+      "grounding_checks": {
+        "plan_status_read": true,
+        "sprint_fit_confirmed": true,
+        "risk_flags_assessed": true,
+        "approved": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "architect",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 22000,
+      "actual_tokens": null,
+      "grounding_checks": {
+        "api_contract_present": true,
+        "files_listed": true,
+        "dod_checklist_filled": true,
+        "spec_reference_valid": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "engineer",
+      "status": "pass",
+      "steps_required": 5,
+      "steps_completed": 5,
+      "adherence_score": 1.0,
+      "token_estimate": 55000,
+      "actual_tokens": { "total_tokens": 75130, "tool_uses": 64 },
+      "grounding_checks": {
+        "branch_created": true,
+        "code_changed": true,
+        "spec_updated": true,
+        "ruff_passed": true,
+        "contract_matches_architect": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "qa",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 65000,
+      "actual_tokens": { "total_tokens": 63020, "tool_uses": 21 },
+      "grounding_checks": {
+        "tests_written": true,
+        "tests_passed": true,
+        "coverage_delta_recorded": true,
+        "contract_check_done": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "techwriter",
+      "status": "pass",
+      "steps_required": 3,
+      "steps_completed": 3,
+      "adherence_score": 1.0,
+      "token_estimate": 38000,
+      "actual_tokens": { "total_tokens": 62165, "tool_uses": 22 },
+      "grounding_checks": {
+        "confluence_updated": true,
+        "spec_file_confirmed": true,
+        "branch_noted": true
+      },
+      "failure_modes": []
+    }
+  ],
+  "overall_status": "pass",
+  "total_tokens_estimated": 202000,
+  "total_actual_tokens": 200315,
+  "duration_minutes": 75,
+  "branch": "worktree-agent-ab5930e3a30d25779",
+  "merge_status": "merged",
+  "merge_commit": "945043f"
+}
