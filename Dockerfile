@@ -12,6 +12,13 @@ COPY pyproject.toml .
 # copy src/ so the editable install can find the package root.
 RUN mkdir -p src && pip install --no-cache-dir -e ".[dev]"
 
+# Pre-download sentence-transformer model so the runtime image has no HuggingFace dependency.
+# Placed after pip install but before COPY src/ so this layer is cached unless dependencies change.
+RUN /app/venv/bin/python -c "\
+from sentence_transformers import SentenceTransformer; \
+m = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2'); \
+m.save('/app/models/embed_model')"
+
 # Copy full source (overwrites the empty placeholder)
 COPY src/ src/
 COPY config/ config/
@@ -32,9 +39,10 @@ WORKDIR /app
 # Copy only the pre-built venv from the builder stage
 COPY --from=builder /app/venv /app/venv
 
-# Copy application source and config
+# Copy application source, config, and pre-built embed model
 COPY src/ /app/src/
 COPY config/ /app/config/
+COPY --from=builder /app/models /app/models
 COPY alembic/ /app/alembic/
 COPY alembic.ini /app/alembic.ini
 

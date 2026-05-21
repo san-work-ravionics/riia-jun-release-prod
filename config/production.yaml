@@ -1,5 +1,8 @@
 server:
   log_level: "warning"
 
+chat:
+  embed_model_path: "/app/models/embed_model"
+
 security:
   cors_origins: ["https://app.ravionics.nl"]
