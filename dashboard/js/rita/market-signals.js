@@ -243,7 +243,7 @@ export async function loadGeoPanels() {
               <div class="kpi geo-kpi${i.id === activeId ? ' geo-kpi-active' : ''}"
                    style="padding:5px 6px" data-id="${i.id}"
                    onclick="selectGeoInstrument('${i.id}')">
-                <div class="kpi-label" style="font-size:10px;font-weight:600">${_GEO_INST_NAMES[i.name] || i.name}</div>
+                <div class="kpi-label" style="font-size:10px;font-weight:600;line-height:1.3;min-height:2.6em">${_GEO_INST_NAMES[i.name] || i.name}</div>
                 <div class="kpi-value ${_geoKpiClass(i.signal)}" style="font-size:13px">${i.close != null ? i.close.toFixed(2) : '—'}</div>
                 <div class="kpi-delta" style="font-size:10px">${i.signal.charAt(0).toUpperCase() + i.signal.slice(1)}</div>
               </div>
