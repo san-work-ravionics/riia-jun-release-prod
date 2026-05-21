@@ -118,11 +118,12 @@ async def lifespan(app: FastAPI):
         from rita.database import SessionLocal
 
         _SEED_INSTRUMENTS = [
-            # Original 4
-            _Instrument(instrument_id="NIFTY",     name="Nifty 50",                     exchange="NSE",    country_code="IN", lot_size=75,   is_available=False, yf_ticker="^NSEI",       created_at=_dt.datetime.now(_dt.timezone.utc)),
-            _Instrument(instrument_id="BANKNIFTY", name="Bank Nifty",                   exchange="NSE",    country_code="IN", lot_size=30,   is_available=False, yf_ticker="^NSEBANK",    created_at=_dt.datetime.now(_dt.timezone.utc)),
-            _Instrument(instrument_id="NVIDIA",    name="Nvidia",                       exchange="NASDAQ", country_code="US", lot_size=None, is_available=False, yf_ticker="NVDA",        created_at=_dt.datetime.now(_dt.timezone.utc)),
-            _Instrument(instrument_id="ASML",      name="ASML",                         exchange="AMS",    country_code="NL", lot_size=None, is_available=False, yf_ticker="ASML.AS",     created_at=_dt.datetime.now(_dt.timezone.utc)),
+            # Original instruments
+            _Instrument(instrument_id="NIFTY",     name="Nifty 50",                     exchange="NSE",    country_code="IN", lot_size=75,   is_available=True,  yf_ticker="^NSEI",       created_at=_dt.datetime.now(_dt.timezone.utc)),
+            _Instrument(instrument_id="BANKNIFTY", name="Bank Nifty",                   exchange="NSE",    country_code="IN", lot_size=30,   is_available=True,  yf_ticker="^NSEBANK",    created_at=_dt.datetime.now(_dt.timezone.utc)),
+            _Instrument(instrument_id="NVIDIA",    name="Nvidia",                       exchange="NASDAQ", country_code="US", lot_size=None, is_available=True,  yf_ticker="NVDA",        created_at=_dt.datetime.now(_dt.timezone.utc)),
+            _Instrument(instrument_id="ASML",      name="ASML",                         exchange="AMS",    country_code="NL", lot_size=None, is_available=True,  yf_ticker="ASML.AS",     created_at=_dt.datetime.now(_dt.timezone.utc)),
+            _Instrument(instrument_id="TRU",       name="TransUnion",                   exchange="NYSE",   country_code="US", lot_size=None, is_available=True,  yf_ticker="TRU",         created_at=_dt.datetime.now(_dt.timezone.utc)),
             # India — added 2026-05-20
             _Instrument(instrument_id="ATHER",     name="Ather Energy",                 exchange="NSE",    country_code="IN", lot_size=None, is_available=True,  yf_ticker=None,          created_at=_dt.datetime.now(_dt.timezone.utc)),
             _Instrument(instrument_id="RELIANCE",  name="Reliance Industries",          exchange="NSE",    country_code="IN", lot_size=None, is_available=True,  yf_ticker="RELIANCE.NS", created_at=_dt.datetime.now(_dt.timezone.utc)),
@@ -168,6 +169,14 @@ async def lifespan(app: FastAPI):
             _db.commit()
             if _backfilled:
                 log.info("instruments.yf_ticker_backfilled", count=_backfilled)
+
+            # Ensure all seed instruments have is_available=True (fixes existing DBs seeded with False)
+            _available_ids = [i.instrument_id for i in _SEED_INSTRUMENTS if i.is_available]
+            _db.execute(
+                text("UPDATE instruments SET is_available = 1 WHERE instrument_id IN :ids"),
+                {"ids": tuple(_available_ids)},
+            )
+            _db.commit()
 
             # Upsert any seed instruments not yet in DB (runs on every startup, not just fresh)
             _added = 0
