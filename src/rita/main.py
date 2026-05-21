@@ -119,21 +119,21 @@ async def lifespan(app: FastAPI):
 
         _SEED_INSTRUMENTS = [
             # Original 4
-            _Instrument(instrument_id="NIFTY",     name="Nifty 50",                     exchange="NSE",    country_code="IN", lot_size=75,   is_available=False, created_at=_dt.datetime.now(_dt.timezone.utc)),
-            _Instrument(instrument_id="BANKNIFTY", name="Bank Nifty",                   exchange="NSE",    country_code="IN", lot_size=30,   is_available=False, created_at=_dt.datetime.now(_dt.timezone.utc)),
-            _Instrument(instrument_id="NVIDIA",    name="Nvidia",                       exchange="NASDAQ", country_code="US", lot_size=None, is_available=False, created_at=_dt.datetime.now(_dt.timezone.utc)),
-            _Instrument(instrument_id="ASML",      name="ASML",                         exchange="AMS",    country_code="NL", lot_size=None, is_available=False, created_at=_dt.datetime.now(_dt.timezone.utc)),
+            _Instrument(instrument_id="NIFTY",     name="Nifty 50",                     exchange="NSE",    country_code="IN", lot_size=75,   is_available=False, yf_ticker="^NSEI",       created_at=_dt.datetime.now(_dt.timezone.utc)),
+            _Instrument(instrument_id="BANKNIFTY", name="Bank Nifty",                   exchange="NSE",    country_code="IN", lot_size=30,   is_available=False, yf_ticker="^NSEBANK",    created_at=_dt.datetime.now(_dt.timezone.utc)),
+            _Instrument(instrument_id="NVIDIA",    name="Nvidia",                       exchange="NASDAQ", country_code="US", lot_size=None, is_available=False, yf_ticker="NVDA",        created_at=_dt.datetime.now(_dt.timezone.utc)),
+            _Instrument(instrument_id="ASML",      name="ASML",                         exchange="AMS",    country_code="NL", lot_size=None, is_available=False, yf_ticker="ASML.AS",     created_at=_dt.datetime.now(_dt.timezone.utc)),
             # India — added 2026-05-20
-            _Instrument(instrument_id="ATHER",     name="Ather Energy",                 exchange="NSE",    country_code="IN", lot_size=None, is_available=True, created_at=_dt.datetime.now(_dt.timezone.utc)),
-            _Instrument(instrument_id="RELIANCE",  name="Reliance Industries",          exchange="NSE",    country_code="IN", lot_size=None, is_available=True, created_at=_dt.datetime.now(_dt.timezone.utc)),
-            _Instrument(instrument_id="SBIN",      name="State Bank of India",          exchange="NSE",    country_code="IN", lot_size=None, is_available=True, created_at=_dt.datetime.now(_dt.timezone.utc)),
+            _Instrument(instrument_id="ATHER",     name="Ather Energy",                 exchange="NSE",    country_code="IN", lot_size=None, is_available=True,  yf_ticker=None,          created_at=_dt.datetime.now(_dt.timezone.utc)),
+            _Instrument(instrument_id="RELIANCE",  name="Reliance Industries",          exchange="NSE",    country_code="IN", lot_size=None, is_available=True,  yf_ticker="RELIANCE.NS", created_at=_dt.datetime.now(_dt.timezone.utc)),
+            _Instrument(instrument_id="SBIN",      name="State Bank of India",          exchange="NSE",    country_code="IN", lot_size=None, is_available=True,  yf_ticker="SBIN.NS",     created_at=_dt.datetime.now(_dt.timezone.utc)),
             # EU — added 2026-05-20
-            _Instrument(instrument_id="ASRNL",     name="ASR Nederland",                exchange="AMS",    country_code="NL", lot_size=None, is_available=True, created_at=_dt.datetime.now(_dt.timezone.utc)),
-            _Instrument(instrument_id="ATO",       name="Atos SE",                      exchange="PAR",    country_code="FR", lot_size=None, is_available=True, created_at=_dt.datetime.now(_dt.timezone.utc)),
-            _Instrument(instrument_id="AEX",       name="AEX Index",                    exchange="AMS",    country_code="NL", lot_size=None, is_available=True, created_at=_dt.datetime.now(_dt.timezone.utc)),
+            _Instrument(instrument_id="ASRNL",     name="ASR Nederland",                exchange="AMS",    country_code="NL", lot_size=None, is_available=True,  yf_ticker="ASRNL.AS",   created_at=_dt.datetime.now(_dt.timezone.utc)),
+            _Instrument(instrument_id="ATO",       name="Atos SE",                      exchange="PAR",    country_code="FR", lot_size=None, is_available=True,  yf_ticker="ATO.PA",      created_at=_dt.datetime.now(_dt.timezone.utc)),
+            _Instrument(instrument_id="AEX",       name="AEX Index",                    exchange="AMS",    country_code="NL", lot_size=None, is_available=True,  yf_ticker="^AEX",        created_at=_dt.datetime.now(_dt.timezone.utc)),
             # US — added 2026-05-20
-            _Instrument(instrument_id="DJI",       name="Dow Jones Industrial Average", exchange="DJI",    country_code="US", lot_size=None, is_available=True, created_at=_dt.datetime.now(_dt.timezone.utc)),
-            _Instrument(instrument_id="IXIC",      name="Nasdaq Composite",             exchange="NASDAQ", country_code="US", lot_size=None, is_available=True, created_at=_dt.datetime.now(_dt.timezone.utc)),
+            _Instrument(instrument_id="DJI",       name="Dow Jones Industrial Average", exchange="DJI",    country_code="US", lot_size=None, is_available=True,  yf_ticker="^DJI",        created_at=_dt.datetime.now(_dt.timezone.utc)),
+            _Instrument(instrument_id="IXIC",      name="Nasdaq Composite",             exchange="NASDAQ", country_code="US", lot_size=None, is_available=True,  yf_ticker="^IXIC",       created_at=_dt.datetime.now(_dt.timezone.utc)),
         ]
 
         _db = SessionLocal()
@@ -149,6 +149,25 @@ async def lifespan(app: FastAPI):
                 _db.commit()
                 log.info("instruments.renamed", old="NVDA", new="NVIDIA")
                 existing_ids = {("NVIDIA" if i == "NVDA" else i) for i in existing_ids}
+
+            # One-time backfill: populate yf_ticker for instruments where it is NULL
+            _YF_BACKFILL = {
+                "NIFTY": "^NSEI", "BANKNIFTY": "^NSEBANK",
+                "ASML": "ASML.AS", "NVIDIA": "NVDA",
+                "RELIANCE": "RELIANCE.NS", "SBIN": "SBIN.NS",
+                "ASRNL": "ASRNL.AS", "ATO": "ATO.PA",
+                "AEX": "^AEX", "DJI": "^DJI", "IXIC": "^IXIC",
+            }
+            _backfilled = 0
+            for _iid, _yticker in _YF_BACKFILL.items():
+                _res = _db.execute(
+                    text("UPDATE instruments SET yf_ticker = :yf WHERE instrument_id = :iid AND yf_ticker IS NULL"),
+                    {"yf": _yticker, "iid": _iid},
+                )
+                _backfilled += _res.rowcount
+            _db.commit()
+            if _backfilled:
+                log.info("instruments.yf_ticker_backfilled", count=_backfilled)
 
             # Upsert any seed instruments not yet in DB (runs on every startup, not just fresh)
             _added = 0
