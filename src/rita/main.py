@@ -10,7 +10,7 @@ from typing import Any, Optional
 from fastapi import Depends, FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -369,6 +369,11 @@ if _ops_dir.exists():
 _mobile_dir = Path(__file__).parent.parent.parent / "mobileapp"
 if _mobile_dir.exists():
     app.mount("/mobileapp", StaticFiles(directory=_mobile_dir, html=True), name="mobileapp")
+
+
+@app.get("/", include_in_schema=False)
+def root():
+    return RedirectResponse(url="/dashboard", status_code=302)
 
 
 @app.get("/onboarding", include_in_schema=False)
