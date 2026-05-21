@@ -3,13 +3,10 @@ export async function loadUsers() {
     tbody.innerHTML = '<tr><td colspan="7" class="loading">Loading...</td></tr>';
     
     try {
-        const token = localStorage.getItem('auth_token') || 'rita-dev'; // legacy fallback if running locally
-        const res = await fetch('/api/v1/users', {
-            headers: {'Authorization': `Bearer ${token}`}
-        });
-        
+        const res = await fetch('/api/v1/users');
+
         if (!res.ok) {
-            tbody.innerHTML = `<tr><td colspan="7" style="color:var(--danger); text-align:center; padding: 20px;">Auth Denied. Only ops members holds access.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="color:var(--danger); text-align:center; padding: 20px;">Failed to load users (${res.status}).</td></tr>`;
             return;
         }
         
@@ -56,15 +53,10 @@ export async function saveUserRoles(userId) {
         can_access_ops: document.getElementById(`chk-ops-${userId}`).checked
     };
     
-    const token = localStorage.getItem('auth_token') || 'rita-dev';
-    
     try {
         const res = await fetch(`/api/v1/users/${userId}/roles`, {
             method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
         

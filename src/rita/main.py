@@ -63,6 +63,7 @@ from rita.api.experience.pipeline_wizard import router as pipeline_wizard_router
 from rita.api.experience.ds import router as ds_router
 from rita.api.experience.agent_panel import router as agent_panel_router
 from rita.api.experience.invest_game import router as invest_game_router
+from rita.api.experience.users import router as users_traffic_router
 from rita.api.v1.workflow.chat import router as chat_router
 from rita.api.v1.workflow.commentary import router as commentary_router
 from rita.api.v1.portfolio import router as portfolio_router
@@ -368,6 +369,7 @@ app.include_router(pipeline_wizard_router)
 app.include_router(ds_router)
 app.include_router(agent_panel_router)
 app.include_router(invest_game_router)
+app.include_router(users_traffic_router)
 
 # -- Chat -- local intent classifier + OHLCV dispatch (no external API) -------
 app.include_router(chat_router)

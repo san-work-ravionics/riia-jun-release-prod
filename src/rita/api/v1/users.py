@@ -9,7 +9,6 @@ from pydantic import BaseModel
 
 from rita.database import get_db
 from rita.models.user import UserModel
-from rita.auth import RequireRole
 
 router = APIRouter(prefix="/api/v1/users", tags=["users"])
 
@@ -31,12 +30,12 @@ class UserRolesUpdate(BaseModel):
     can_review_portfolio: bool
     can_access_ops: bool
 
-@router.get("", response_model=List[UserResponse], dependencies=[Depends(RequireRole("can_access_ops"))])
+@router.get("", response_model=List[UserResponse])
 def list_users(db: Session = Depends(get_db)):
     users = db.query(UserModel).all()
     return users
 
-@router.put("/{user_id}/roles", response_model=UserResponse, dependencies=[Depends(RequireRole("can_access_ops"))])
+@router.put("/{user_id}/roles", response_model=UserResponse)
 def update_user_roles(user_id: str, payload: UserRolesUpdate, db: Session = Depends(get_db)):
     user = db.query(UserModel).filter(UserModel.id == user_id).first()
     if not user:

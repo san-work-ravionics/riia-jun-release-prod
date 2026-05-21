@@ -12,6 +12,7 @@ class UserModel(Base):
 
     id = Column(String, primary_key=True, index=True)
     last_login_date = Column(DateTime, default=datetime.utcnow)
+    first_login_date = Column(DateTime, nullable=True)
     
     # RBAC Access Flags
     can_assist_research = Column(Boolean, default=False)

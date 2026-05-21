@@ -3,11 +3,13 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel
 
+import uuid
 from rita.auth import create_access_token
 from rita.limiter import limiter
 from rita.config import get_settings
 from rita.database import get_db
 from rita.models.user import UserModel
+from rita.models.login_event import LoginEventModel
 
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
@@ -100,6 +102,9 @@ def google_callback(request: Request, code: str, db: Session = Depends(get_db)):
         user = UserModel(id=email)
         db.add(user)
     user.last_login_date = datetime.datetime.utcnow()
+    if user.first_login_date is None:
+        user.first_login_date = datetime.datetime.utcnow()
+    db.add(LoginEventModel(id=str(uuid.uuid4()), user_id=user.id, logged_at=datetime.datetime.utcnow()))
     db.commit()
 
     # Generate internal JWT

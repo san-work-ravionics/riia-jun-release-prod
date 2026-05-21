@@ -20,6 +20,7 @@ from .mcp_call import MCPCallModel
 from .agent_builds import AgentBuildRunModel, AgentBuildAgentModel
 from .commentary_log import CommentaryLogModel
 from .api_call_log import ApiCallLogModel
+from .login_event import LoginEventModel
 
 __all__ = [
     "PositionModel",
@@ -46,4 +47,5 @@ __all__ = [
     "AgentBuildAgentModel",
     "CommentaryLogModel",
     "ApiCallLogModel",
+    "LoginEventModel",
 ]

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RIIA — User Traffic</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500&family=Epilogue:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+:root{
+  --bg:#F5F3EE;--surface:#FFFFFF;--surface2:#F9F8F5;--border:#E4E0D8;--border2:#D0CBBC;
+  --text:#1A1814;--t2:#4A4640;--t3:#8C877A;--t4:#B8B2A6;
+  --ops:#0E7490;--ops-bg:#ECFEFF;--ops-bd:#67E8F9;
+  --sense:#0056B8;--sense-bg:#EDF4FF;--sense-bd:#AECBF5;
+  --optimize:#1A6B3C;--optimize-bg:#EDF7F2;--optimize-bd:#B6DEC9;
+  --accelerate:#6B2FA0;--accelerate-bg:#F5EFFE;--accelerate-bd:#CFADF0;
+  --reinforce:#0E7490;--reinforce-bg:#ECFEFF;--reinforce-bd:#67E8F9;
+  --data:#4338CA;--data-bg:#EEF2FF;--data-bd:#C7D2FE;
+  --chat:#BE185D;--chat-bg:#FFF0F5;--chat-bd:#FBCFE8;
+  --ok:#1A6B3C;--ok-bg:#EDF7F2;--ok-bd:#B6DEC9;
+  --warn:#92480A;--warn-bg:#FEF4EB;--warn-bd:#F5C99A;
+  --danger:#9B1C1C;--danger-bg:#FEF2F2;--danger-bd:#FCA5A5;
+  --info:#0056B8;--info-bg:#EDF4FF;--info-bd:#AECBF5;
+  --user:#5C6BC0;--user-bg:#E8EAF6;--user-bd:#9FA8DA;
+  --fd:'Epilogue',sans-serif;--fm:'IBM Plex Mono',monospace;--fs:'Instrument Serif',serif;
+  --r:6px;
+  --sh:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+  --shm:0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.05);
+}
+
+body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px;line-height:1.5;min-height:100vh;}
+.shell{display:grid;grid-template-columns:220px 1fr;grid-template-rows:52px 1fr;min-height:100vh;transition:grid-template-columns .22s cubic-bezier(.4,0,.2,1);}
+.shell.nav-collapsed{grid-template-columns:0px 1fr;}
+.shell.nav-collapsed .sidebar{overflow:hidden;border-right:none;}
+
+/* Topbar */
+.topbar{grid-column:1/-1;background:var(--surface);border-bottom:1.5px solid var(--border);display:flex;align-items:center;padding:0 20px;position:sticky;top:0;z-index:200;box-shadow:var(--sh);}
+.logo{display:flex;align-items:center;gap:9px;text-decoration:none;color:inherit;}
+.logo-icon{width:26px;height:26px;background:var(--text);border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.logo-icon svg{fill:var(--surface);}
+.logo-name{font-family:var(--fs);font-size:16px;letter-spacing:-.01em;}
+.logo-sub{color:var(--t3);font-size:10px;font-family:var(--fm);}
+.t-sep{width:1px;height:24px;background:var(--border);margin:0 14px;}
+.t-crumb{font-family:var(--fm);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;}
+.t-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.nav-toggle{background:none;border:none;cursor:pointer;color:var(--t3);padding:4px;display:flex;align-items:center;}
+.nav-toggle:hover{color:var(--text);}
+
+/* Sidebar */
+.sidebar{background:var(--surface);border-right:1.5px solid var(--border);padding:16px 0;display:flex;flex-direction:column;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto;}
+.sidebar::-webkit-scrollbar{width:3px;}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border);}
+.ns-lbl{font-family:var(--fm);font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:.14em;padding:8px 16px 4px;}
+.ni{display:flex;align-items:center;gap:8px;padding:7px 16px;cursor:pointer;font-size:12px;font-weight:500;color:var(--t3);border-left:2px solid transparent;transition:all .12s;user-select:none;text-decoration:none;}
+.ni:hover{color:var(--t2);background:var(--bg);}
+.ni.on{color:var(--text);background:var(--bg);}
+.ni.on.n-users-traffic{border-left-color:var(--user);color:var(--user);}
+.ni.on.n-users{border-left-color:var(--user);color:var(--user);}
+.ni-ic{width:14px;height:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.ng-hdr{display:flex;align-items:center;gap:7px;padding:10px 18px 4px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);}
+.ng-dot{width:7px;height:7px;border-radius:1.5px;flex-shrink:0;}
+
+/* Main */
+.main{padding:24px 28px;overflow-y:auto;background:var(--bg);}
+
+/* Page header */
+.ph{display:flex;align-items:flex-start;gap:13px;padding-bottom:17px;border-bottom:1.5px solid var(--border);margin-bottom:20px;}
+.ph-badge{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.14em;padding:4px 9px;border-radius:3px;font-weight:500;white-space:nowrap;margin-top:4px;}
+.ph-badge.ops{background:var(--ops-bg);color:var(--ops);border:1px solid var(--ops-bd);}
+.ph-t{font-weight:800;font-size:20px;line-height:1.2;margin-bottom:3px;}
+.ph-g{font-size:12px;color:var(--t3);font-style:italic;}
+
+/* KPI strip */
+.kpi-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border:1.5px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:20px;}
+.kpi{background:var(--surface);padding:14px 15px;}
+.kpi-ey{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--t4);margin-bottom:5px;}
+.kpi-val{font-weight:800;font-size:22px;line-height:1;margin-bottom:2px;}
+.kpi-sub{font-size:10px;color:var(--t3);}
+.kpi-val.ops{color:var(--ops);}
+
+/* Cards */
+.card{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:16px 17px;box-shadow:var(--sh);margin-bottom:16px;}
+.card:hover{border-color:var(--border2);}
+.sec-title{font-weight:700;font-size:13px;color:var(--text);margin-bottom:10px;}
+
+/* Chart */
+.ab-chart-wrap{position:relative;height:200px;margin-top:4px;}
+
+/* Table */
+.tbl-wrap{overflow-x:auto;overflow-y:auto;max-height:480px;border:1.5px solid var(--border);border-radius:6px;}
+.tbl-wrap table{width:100%;border-collapse:collapse;}
+.tbl-wrap thead{position:sticky;top:0;background:var(--surface2);z-index:1;}
+.tbl-wrap th{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--t4);padding:8px 11px;text-align:left;border-bottom:1.5px solid var(--border);}
+.tbl-wrap td{font-size:11.5px;padding:7px 11px;border-bottom:1px solid var(--border);color:var(--t2);}
+.tbl-wrap tr:last-child td{border-bottom:none;}
+.tbl-wrap tr:hover td{background:var(--surface2);}
+
+.loading{color:var(--t4);font-family:var(--fm);font-size:10px;padding:20px;text-align:center;text-transform:uppercase;letter-spacing:.1em;}
+</style>
+<link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+<div class="shell" id="shell">
+
+<!-- Topbar -->
+<header class="topbar">
+  <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+      <line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="14" y2="12"/>
+    </svg>
+  </button>
+  <a class="logo" href="/dashboard/">
+    <div class="logo-icon">
+      <svg width="15" height="15" viewBox="0 0 16 16"><path d="M8 1L1 5v6l7 4 7-4V5L8 1zm0 1.8L13.5 6 8 9.2 2.5 6 8 2.8zM2 7.1l5.5 3.2v3.9L2 11V7.1zm7.5 7.1v-3.9L15 7.1V11l-5.5 3.2z"/></svg>
+    </div>
+    <span class="logo-name">RIIA</span>
+    <span class="logo-sub">v1.0.0</span>
+  </a>
+  <div class="t-sep"></div>
+  <span class="t-crumb">Operations Portal</span>
+  <div class="t-right">
+    <a href="ops.html" style="font-family:var(--fm);font-size:11px;color:var(--t3);text-decoration:none;display:flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid var(--border);border-radius:var(--r)">← Ops</a>
+    <a href="index.html" style="font-family:var(--fm);font-size:11px;color:var(--t3);text-decoration:none;display:flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid var(--border);border-radius:var(--r)">← Home</a>
+  </div>
+</header>
+
+<!-- Sidebar -->
+<nav class="sidebar">
+  <div class="ns-lbl">Platform</div>
+  <a class="ni" href="ops.html">
+    <div class="ni-ic">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor" opacity=".9"/>
+        <rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor" opacity=".4"/>
+        <rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor" opacity=".4"/>
+        <rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor" opacity=".15"/>
+      </svg>
+    </div>
+    Overview
+  </a>
+
+  <div class="ng-hdr" style="margin-top:4px">
+    <div class="ng-dot" style="background:var(--sense)"></div>Monitoring
+  </div>
+  <a class="ni" href="ops.html#monitoring">
+    <div class="ni-ic">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <polyline points="1,11 4,7 6,9 9,4 13,2" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    API &amp; Metrics
+  </a>
+
+  <div class="ng-hdr" style="margin-top:4px">
+    <div class="ng-dot" style="background:var(--accelerate)"></div>Build
+  </div>
+  <a class="ni" href="ops.html#cicd">
+    <div class="ni-ic">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <polygon points="2,2 12,7 2,12" fill="currentColor" opacity=".8"/>
+      </svg>
+    </div>
+    CI / CD Pipeline
+  </a>
+  <a class="ni" href="ops.html#agent-builds">
+    <div class="ni-ic">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <circle cx="3" cy="7" r="1.8" stroke="currentColor" stroke-width="1.3" fill="none"/>
+        <circle cx="11" cy="3" r="1.8" stroke="currentColor" stroke-width="1.3" fill="none"/>
+        <circle cx="11" cy="11" r="1.8" stroke="currentColor" stroke-width="1.3" fill="none"/>
+        <path d="M4.8 6.3L9.2 3.7M4.8 7.7L9.2 10.3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    Agent Builds
+  </a>
+
+  <div class="ng-hdr" style="margin-top:4px">
+    <div class="ng-dot" style="background:var(--ok)"></div>Test
+  </div>
+  <a class="ni" href="ops.html#test">
+    <div class="ni-ic">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M2 3h10M2 7h7M2 11h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        <circle cx="11" cy="10" r="2.5" stroke="currentColor" stroke-width="1.3" fill="none"/>
+        <path d="M10.3 10l.5.5.9-.9" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    Test Results
+  </a>
+
+  <div class="ng-hdr" style="margin-top:4px">
+    <div class="ng-dot" style="background:var(--optimize)"></div>Deploy
+  </div>
+  <a class="ni" href="ops.html#deploy">
+    <div class="ni-ic">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M7 1.5c-3 0-5.5 2-5.5 5s2.5 5 5.5 5 5.5-2 5.5-5-2.5-5-5.5-5z" stroke="currentColor" stroke-width="1.3" fill="none"/>
+        <path d="M4.5 7l2 2 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+    </div>
+    Deployments
+  </a>
+
+  <div class="ng-hdr" style="margin-top:4px">
+    <div class="ng-dot" style="background:var(--data)"></div>Observe
+  </div>
+  <a class="ni" href="ops.html#observability">
+    <div class="ni-ic">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <circle cx="7" cy="7" r="2" fill="currentColor" opacity=".7"/>
+        <path d="M7 1.5C4 1.5 1.5 4 1.5 7S4 12.5 7 12.5 12.5 10 12.5 7 10 1.5 7 1.5z" stroke="currentColor" stroke-width="1.3" fill="none"/>
+        <path d="M1.5 7h2M10.5 7h2M7 1.5v2M7 10.5v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+    </div>
+    Observability
+  </a>
+
+  <div class="ng-hdr" style="margin-top:4px">
+    <div class="ng-dot" style="background:var(--user)"></div>Access
+  </div>
+  <a class="ni" href="ops.html#users">
+    <div class="ni-ic">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M7 7C8.65685 7 10 5.65685 10 4C10 2.34315 8.65685 1 7 1C5.34315 1 4 2.34315 4 4C4 5.65685 5.34315 7 7 7Z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M1 13C1 10.3 3.3 8 6 8H8C10.7 8 13 10.3 13 13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    User Management
+  </a>
+  <a class="ni n-users-traffic on" href="/dashboard/users.html">
+    <div class="ni-ic">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <rect x="1.5" y="3.5" width="11" height="7" rx="1" stroke="currentColor" stroke-width="1.3" fill="none"/>
+        <path d="M4 7h2M7.5 7h2.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+        <path d="M4 9h1.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+      </svg>
+    </div>
+    User Traffic
+  </a>
+</nav>
+
+<!-- Main content -->
+<main class="main">
+
+  <div class="ph">
+    <div>
+      <div class="ph-t">User Traffic</div>
+      <div class="ph-g">Anonymised login events &amp; activity — last 30 days</div>
+    </div>
+    <span class="ph-badge ops">Access</span>
+  </div>
+
+  <!-- KPI strip -->
+  <div class="kpi-strip">
+    <div class="kpi">
+      <div class="kpi-ey">Total Users</div>
+      <div class="kpi-val ops" id="ut-total-users">—</div>
+      <div class="kpi-sub">registered</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-ey">Active Today</div>
+      <div class="kpi-val" id="ut-active-today">—</div>
+      <div class="kpi-sub">unique logins</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-ey">Active 7 Days</div>
+      <div class="kpi-val" id="ut-active-week">—</div>
+      <div class="kpi-sub">unique users</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-ey">Active 30 Days</div>
+      <div class="kpi-val" id="ut-active-month">—</div>
+      <div class="kpi-sub">unique users</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-ey">Total Logins</div>
+      <div class="kpi-val" id="ut-total-logins">—</div>
+      <div class="kpi-sub">all time</div>
+    </div>
+  </div>
+
+  <!-- Login trend chart -->
+  <div class="card">
+    <div class="sec-title">Daily Login Activity — last 30 days</div>
+    <div class="ab-chart-wrap">
+      <canvas id="ut-logins-chart"></canvas>
+    </div>
+  </div>
+
+  <!-- Daily breakdown table -->
+  <div class="card">
+    <div class="sec-title">Daily Breakdown</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Unique Users</th>
+            <th>Total Logins</th>
+            <th>New Registrations</th>
+          </tr>
+        </thead>
+        <tbody id="ut-daily-tbody">
+          <tr><td colspan="4" class="loading">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script>
+const KEY = 'rita-nav-collapsed';
+const shell = document.getElementById('shell');
+if (window.innerWidth > 768 && localStorage.getItem(KEY) === '1') shell.classList.add('nav-collapsed');
+document.getElementById('nav-toggle').addEventListener('click', () => {
+  const c = shell.classList.toggle('nav-collapsed');
+  localStorage.setItem(KEY, c ? '1' : '0');
+});
+</script>
+<script type="module" src="/dashboard/js/users/main.js"></script>
+</body>
+</html>
