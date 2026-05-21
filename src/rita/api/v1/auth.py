@@ -90,8 +90,8 @@ def google_callback(request: Request, code: str, db: Session = Depends(get_db)):
     if not id_token:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No id_token received")
         
-    # Decode id_token securely obtained via backend TLS connection
-    payload = jwt.decode(id_token, "", options={"verify_signature": False, "verify_aud": False, "verify_exp": False})
+    # id_token was obtained via backend TLS — no local signature verification needed
+    payload = jwt.get_unverified_claims(id_token)
     email = payload.get("email")
     if not email:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email not found in Google profile")
