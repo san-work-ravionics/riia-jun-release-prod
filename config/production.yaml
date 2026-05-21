@@ -5,4 +5,4 @@ chat:
   embed_model_path: "/app/models/embed_model"
 
 security:
-  cors_origins: ["https://app.ravionics.nl"]
+  cors_origins: ["https://riia.ravionics.nl"]
