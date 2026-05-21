@@ -134,11 +134,28 @@ resource "aws_instance" "rita" {
     # 2. Install Docker (official convenience script)
     curl -fsSL https://get.docker.com | sh
     usermod -aG docker ubuntu
-
-    # 3. Log in to GHCR anonymously (public image — no credentials needed)
-    #    If the GHCR package is private, pass a token here instead.
     systemctl enable docker
     systemctl start docker
+
+    # 3. Install nginx and configure as reverse proxy to the RITA container
+    apt-get install -y nginx
+    cat > /etc/nginx/sites-available/rita << 'NGINXCONF'
+server {
+    listen 80;
+    server_name _;
+    location / {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 120s;
+    }
+}
+NGINXCONF
+    ln -sf /etc/nginx/sites-available/rita /etc/nginx/sites-enabled/rita
+    rm -f /etc/nginx/sites-enabled/default
+    systemctl enable nginx
+    systemctl start nginx
   EOF
 
   tags = {
