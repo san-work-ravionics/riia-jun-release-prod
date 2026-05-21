@@ -137,6 +137,17 @@ def load_instrument_data(instrument: str) -> "pd.DataFrame":
         df = df[~df.index.duplicated(keep="last")].sort_index()
         df = df.dropna(subset=["Close"])
 
+    # Companion yf file merge (_yf.csv for instruments with companion strategy)
+    # NIFTY and BANKNIFTY download a separate _yf.csv via the data refresh service.
+    # Loaded independently via load_ohlcv_csv() so each file's date format is
+    # handled correctly before concat. keep="last" means yfinance data wins on overlap.
+    yf_path = Path(settings.data.raw_dir) / instrument.upper() / f"{instrument.lower()}_yf.csv"
+    if yf_path.exists():
+        df_yf = load_ohlcv_csv(str(yf_path))
+        df = pd.concat([df, df_yf])
+        df = df[~df.index.duplicated(keep="last")].sort_index()
+        df = df.dropna(subset=["Close"])
+
     return df
 
 

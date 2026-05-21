@@ -14,4 +14,5 @@ class InstrumentModel(Base):
     currency      = Column(String(10), nullable=True)   # e.g. "INR", "USD", "EUR"
     lot_size      = Column(Integer, nullable=True)      # FnO only; null for equities
     is_available  = Column(Boolean, nullable=False, default=False)
+    yf_ticker     = Column(String, nullable=True)   # Yahoo Finance ticker symbol (e.g. "^NSEI", "SBIN.NS")
     created_at    = Column(DateTime, nullable=False)

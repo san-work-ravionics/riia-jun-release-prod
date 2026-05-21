@@ -13,6 +13,7 @@ class InstrumentCreate(BaseModel):
     currency:      Optional[str] = Field(None, max_length=10)
     lot_size:      Optional[int] = Field(None, ge=1)
     is_available:  bool = False
+    yf_ticker:     Optional[str] = None
 
 
 class InstrumentAvailabilityUpdate(BaseModel):

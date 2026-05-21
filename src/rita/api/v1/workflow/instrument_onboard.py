@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 
 from rita.database import get_db
 from rita.repositories.instrument import InstrumentRepository
+from rita.schemas.data_refresh import RefreshAllResponse
 from rita.schemas.instrument import Instrument
 from rita.services.instrument_onboard import (
     fetch_raw_data,
@@ -43,6 +44,7 @@ class _OnboardBody(BaseModel):
     currency: str
     country_code: str
     lot_size: Optional[int] = None
+    yf_ticker: Optional[str] = None
 
 
 # ── GET /api/v1/instrument/search ─────────────────────────────────────────────
@@ -111,6 +113,7 @@ def instrument_onboard(
         currency=body.currency,
         lot_size=body.lot_size,
         is_available=True,
+        yf_ticker=body.yf_ticker,
         created_at=datetime.now(timezone.utc),
     )
     repo.upsert(record)
@@ -127,3 +130,30 @@ def instrument_onboard(
         "raw_path": str(raw_path),
         "input_path": str(input_path),
     }
+
+
+# ── POST /api/v1/instrument/refresh-all ───────────────────────────────────────
+
+@router.post("/instrument/refresh-all", response_model=RefreshAllResponse,
+             summary="Refresh all instruments' price data from yfinance")
+def refresh_all_instruments(db: Session = Depends(get_db)) -> RefreshAllResponse:
+    """Refresh OHLCV data for all RITA instruments by fetching delta rows from yfinance.
+
+    Skips ATHER (newly listed, data gaps expected).
+    Per-instrument errors return status='error' and do not abort the entire run.
+
+    Returns a RefreshAllResponse with:
+      - refreshed: count of instruments successfully updated
+      - already_current: count of instruments with no gap
+      - results: per-instrument InstrumentRefreshResult list
+    """
+    from rita.services.data_refresh import refresh_all
+
+    results = refresh_all(db)
+    refreshed = sum(1 for r in results if r["status"] == "ok")
+    already_current = sum(1 for r in results if r["status"] == "current")
+    return RefreshAllResponse(
+        refreshed=refreshed,
+        already_current=already_current,
+        results=results,
+    )
