@@ -445,12 +445,6 @@ tr:hover td{background:var(--surface2);}
 
 <!-- ════════════════ OVERVIEW (Market Signals) ════════════════ -->
 <section class="section active" id="sec-market-signals">
-  <div id="geo-panels" class="card-row" style="margin-bottom:16px"></div>
-  <!-- AI Commentary — overview narrator box -->
-  <div id="commentary-overview-box" class="card" style="margin-bottom:12px;padding:12px 16px;display:none">
-    <div id="commentary-overview-title" style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px"></div>
-    <div id="commentary-overview-text" style="font-size:13px;color:var(--t1);line-height:1.6"></div>
-  </div>
   <div class="page-hdr">
     <div>
       <div class="page-title">Overview</div>
@@ -460,6 +454,12 @@ tr:hover td{background:var(--surface2);}
       <span id="ms-last-updated" style="font-size:0.75rem;color:var(--t3);margin-right:0.5rem">—</span>
       <button class="btn btn-ghost btn-sm" onclick="loadMarketSignals()">↺ Refresh</button>
     </div>
+  </div>
+  <div id="geo-panels" class="card-row" style="margin-bottom:16px"></div>
+  <!-- AI Commentary — overview narrator box -->
+  <div id="commentary-overview-box" class="card" style="margin-bottom:12px;padding:12px 16px;display:none">
+    <div id="commentary-overview-title" style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px"></div>
+    <div id="commentary-overview-text" style="font-size:13px;color:var(--t1);line-height:1.6"></div>
   </div>
 
   <!-- Instrument selector — populated dynamically from /experience/rita/geography-overview -->
