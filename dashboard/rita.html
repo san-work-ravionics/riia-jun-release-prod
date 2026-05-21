@@ -263,10 +263,10 @@ tr:hover td{background:var(--surface2);}
 .phase-step-badge.p6{background:var(--ds-bg);color:var(--ds);border:1px solid var(--ds-bd);}
 .phase-name{font-size:11px;font-weight:600;color:var(--t2);}
 
-/* ── Instrument buttons ──────────────────────────────────────── */
-.inst-tab{background:var(--surface);border:1.5px solid var(--border);border-radius:6px;padding:6px 14px;font-family:var(--fd);font-size:12px;font-weight:600;color:var(--t2);cursor:pointer;transition:all .12s;}
-.inst-tab:hover{border-color:var(--run);color:var(--run);}
-.inst-tab.active{background:var(--run);color:#fff;border-color:var(--run);}
+/* ── Geography KPI — selectable instrument tiles ─────────────── */
+.geo-kpi{cursor:pointer;border:1.5px solid transparent;border-radius:var(--r);transition:border-color .15s,background .15s;}
+.geo-kpi:hover{border-color:var(--border2);background:var(--surface2);}
+.geo-kpi-active{border-color:var(--run) !important;background:var(--run-bg) !important;}
 </style>
 <link rel="stylesheet" href="css/responsive.css">
 </head>
@@ -461,9 +461,6 @@ tr:hover td{background:var(--surface2);}
     <div id="commentary-overview-title" style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px"></div>
     <div id="commentary-overview-text" style="font-size:13px;color:var(--t1);line-height:1.6"></div>
   </div>
-
-  <!-- Instrument selector — populated dynamically from /experience/rita/geography-overview -->
-  <div id="inst-tabs-container" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px"></div>
 
   <!-- Timeframe tabs -->
   <div style="display:flex;align-items:center;gap:4px;margin-bottom:18px;border-bottom:1.5px solid var(--border);padding-bottom:0">

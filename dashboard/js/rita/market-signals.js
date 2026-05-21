@@ -228,6 +228,7 @@ export async function loadGeoPanels() {
       container.innerHTML = '<div class="card"><div class="empty">No geography data configured</div></div>';
       return;
     }
+    const activeId = localStorage.getItem('ritaInstrument') || 'NIFTY';
     container.innerHTML = data.regions.map(r => {
       const label = _GEO_REGION_NAMES[r.region] || r.region;
       const instruments = (r.instruments || []).filter(i => i.id !== 'ATHER');
@@ -239,7 +240,9 @@ export async function loadGeoPanels() {
           </div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px;padding:4px 0">
             ${instruments.map(i => `
-              <div class="kpi" style="padding:5px 6px">
+              <div class="kpi geo-kpi${i.id === activeId ? ' geo-kpi-active' : ''}"
+                   style="padding:5px 6px" data-id="${i.id}"
+                   onclick="selectGeoInstrument('${i.id}')">
                 <div class="kpi-label" style="font-size:10px;font-weight:600">${_GEO_INST_NAMES[i.name] || i.name}</div>
                 <div class="kpi-value ${_geoKpiClass(i.signal)}" style="font-size:13px">${i.close != null ? i.close.toFixed(2) : '—'}</div>
                 <div class="kpi-delta" style="font-size:10px">${i.signal.charAt(0).toUpperCase() + i.signal.slice(1)}</div>

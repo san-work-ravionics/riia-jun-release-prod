@@ -3,7 +3,7 @@ import { api } from './api.js';
 import { show, warmupChat, _sectionLoaders, getCurrentSection } from './nav.js';
 import { loadOverviewCommentary } from './commentary.js';
 import { loadHealth, loadPerfSummary, loadDrift, loadProgress } from './health.js';
-import { switchMsTab, loadMarketSignals, loadGoalHint, loadGeoPanels } from './market-signals.js';
+import { switchMsTab, loadMarketSignals, loadGoalHint } from './market-signals.js';
 import { loadPerformance } from './performance.js';
 import { loadExplain } from './explainability.js';
 import { loadRisk } from './risk.js';
@@ -34,10 +34,9 @@ _sectionLoaders['technical-analysis'] = loadTechnicalAnalysis;
 _sectionLoaders.learnings         = loadLearnings;
 
 // ── Expose to window for inline HTML onclick attributes ────
-window.show               = show;
-window.selectInstrumentTab = selectInstrumentTab;
-window.loadInstrumentTabs = loadInstrumentTabs;
-window.switchMsTab        = switchMsTab;
+window.show                = show;
+window.selectGeoInstrument = selectGeoInstrument;
+window.switchMsTab         = switchMsTab;
 window.runGoal            = runGoal;
 window.runMarket          = runMarket;
 window.runStrategy        = runStrategy;
@@ -60,7 +59,6 @@ window.closeChartModal    = closeChartModal;
 // Reload buttons for individual sections
 window.loadMarketSignals  = loadMarketSignals;
 window.loadGoalHint       = loadGoalHint;
-window.loadGeoPanels      = loadGeoPanels;
 window.loadOverviewCommentary = loadOverviewCommentary;
 window.loadPerformance    = loadPerformance;
 window.loadExplain        = loadExplain;
@@ -81,34 +79,10 @@ async function refresh() {
 // Expose refresh so export.js can call it via window._ritaRefresh
 window._ritaRefresh = refresh;
 
-// ── Instrument tabs — loaded dynamically from geography-overview ───────────────
-async function loadInstrumentTabs() {
-  const container = document.getElementById('inst-tabs-container');
-  if (!container) return;
-  const saved = localStorage.getItem('ritaInstrument') || 'NIFTY';
-  try {
-    const res = await fetch('/api/v1/experience/rita/geography-overview');
-    if (!res.ok) throw new Error(res.statusText);
-    const data = await res.json();
-    const instruments = (data.regions || []).flatMap(r => r.instruments || []);
-    if (!instruments.length) throw new Error('empty');
-    container.innerHTML = instruments.map(i =>
-      `<button class="inst-tab${i.id === saved ? ' active' : ''}" id="itab-${i.id}" onclick="selectInstrumentTab('${i.id}')">${i.name}</button>`
-    ).join('');
-  } catch (_) {
-    // Fallback to static tabs if API unavailable
-    container.innerHTML = [
-      ['NIFTY','NIFTY 50'],['BANKNIFTY','BANKNIFTY'],['ASML','ASML'],['NVIDIA','NVIDIA']
-    ].map(([id, label]) =>
-      `<button class="inst-tab${id === saved ? ' active' : ''}" id="itab-${id}" onclick="selectInstrumentTab('${id}')">${label}</button>`
-    ).join('');
-  }
-}
-
-async function selectInstrumentTab(id) {
+async function selectGeoInstrument(id) {
   localStorage.setItem('ritaInstrument', id);
-  document.querySelectorAll('.inst-tab').forEach(t =>
-    t.classList.toggle('active', t.id === 'itab-' + id)
+  document.querySelectorAll('.geo-kpi').forEach(el =>
+    el.classList.toggle('geo-kpi-active', el.dataset.id === id)
   );
   try { await api('/api/v1/instrument/select', 'POST', { instrument_id: id }).catch(e => console.error('[RITA] instrument select failed', e)); } catch (_) {}
   const section = getCurrentSection();
@@ -141,4 +115,4 @@ async function loadActiveInstrument() {
 
 // ── Init ───────────────────────────────────────────────────
 initI18n(); applyTranslations();
-window.addEventListener('load', () => { loadInstrumentTabs(); refresh(); loadActiveInstrument(); loadMarketSignals(); });
+window.addEventListener('load', () => { refresh(); loadActiveInstrument(); loadMarketSignals(); });
