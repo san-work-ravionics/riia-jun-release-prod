@@ -209,6 +209,7 @@ export async function loadMarketSignals() {
 }
 
 const _GEO_REGION_NAMES = { India: 'India', US: 'United States', EU: 'Europe' };
+const _GEO_INST_NAMES  = { 'Dow Jones Industrial Average': 'Dow Jones', 'Nasdaq Composite': 'Nasdaq' };
 
 function _geoKpiClass(signal) {
   if (signal === 'bullish') return 'pos';
@@ -236,10 +237,10 @@ export async function loadGeoPanels() {
           <div class="card-hdr">
             <span class="card-title">${label}</span>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;padding:4px 0">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px;padding:4px 0">
             ${instruments.map(i => `
-              <div class="kpi" style="padding:6px 8px">
-                <div class="kpi-label" style="font-size:10px">${i.name}</div>
+              <div class="kpi" style="padding:5px 6px">
+                <div class="kpi-label" style="font-size:10px;font-weight:600">${_GEO_INST_NAMES[i.name] || i.name}</div>
                 <div class="kpi-value ${_geoKpiClass(i.signal)}" style="font-size:13px">${i.close != null ? i.close.toFixed(2) : '—'}</div>
                 <div class="kpi-delta" style="font-size:10px">${i.signal.charAt(0).toUpperCase() + i.signal.slice(1)}</div>
               </div>
