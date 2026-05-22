@@ -57,7 +57,7 @@ jobs:
       - name: Sync instrument data to EC2
         run: |
           ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} \
-            "mkdir -p /opt/rita_input/raw /opt/rita_input/input /opt/rita_output && chown -R ubuntu:ubuntu /opt/rita_input /opt/rita_output"
+            "sudo mkdir -p /opt/rita_input/raw /opt/rita_input/input /opt/rita_output && sudo chown -R ubuntu:ubuntu /opt/rita_input /opt/rita_output"
           rsync -av --update \
             -e "ssh -o StrictHostKeyChecking=no" \
             data/raw/ \
