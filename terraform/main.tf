@@ -139,7 +139,7 @@ resource "aws_instance" "rita" {
 
     # 3. Install nginx and configure as reverse proxy to the RITA container
     apt-get install -y nginx
-    cat > /etc/nginx/sites-available/rita << 'NGINXCONF'
+    tee /etc/nginx/sites-available/rita > /dev/null << 'NGINXCONF'
 server {
     listen 80;
     server_name _;
