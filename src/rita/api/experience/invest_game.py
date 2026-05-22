@@ -125,7 +125,7 @@ class GameAgentState(TypedDict):
 def _load_game_data(instrument: str, start_date: str, end_date: str) -> pd.DataFrame:
     df = pd.read_csv(_CSV_PATHS[instrument])
     df.columns = [c.lower() for c in df.columns]
-    df["date"] = pd.to_datetime(df["date"])
+    df["date"] = pd.to_datetime(df["date"], utc=True).dt.tz_localize(None)
     df = df[
         (df["date"] >= pd.to_datetime(start_date))
         & (df["date"] <= pd.to_datetime(end_date))
