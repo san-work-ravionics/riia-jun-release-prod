@@ -253,16 +253,19 @@ def chat(req: ChatRequest, db: Session = Depends(get_db)) -> dict:
     latency_ms = (_time.perf_counter() - t0) * 1000
     status = "low_confidence" if result.low_confidence else "success"
 
-    _log_query(
-        query_text=req.query,
-        intent_name=result.intent.name,
-        handler=result.intent.handler,
-        confidence=result.confidence,
-        low_confidence=result.low_confidence,
-        latency_ms=latency_ms,
-        response_preview=response_text[:200],
-        status=status,
-    )
+    try:
+        _log_query(
+            query_text=req.query,
+            intent_name=result.intent.name,
+            handler=result.intent.handler,
+            confidence=result.confidence,
+            low_confidence=result.low_confidence,
+            latency_ms=latency_ms,
+            response_preview=response_text[:200],
+            status=status,
+        )
+    except Exception as _log_exc:
+        log.warning("chat.monitor_write_failed", error=str(_log_exc))
 
     log.info(
         "chat.query",

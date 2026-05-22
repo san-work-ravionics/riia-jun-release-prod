@@ -106,6 +106,9 @@ class ChatSettings(BaseSettings):
         r"\models--sentence-transformers--all-MiniLM-L6-v2"
         r"\snapshots\c9745ed1d9f207416be6d2e6f8de32d1f16199bf"
     )
+    # Directory for chat_monitor.csv. Override in production to a writable
+    # volume — data/output is mounted read-only on EC2.
+    monitor_dir: str = "data/output"
 
 
 class DatabaseSettings(BaseSettings):

@@ -3,6 +3,7 @@ server:
 
 chat:
   embed_model_path: "/app/models/embed_model"
+  monitor_dir: "rita_output"
 
 security:
   cors_origins: ["https://riia.ravionics.nl"]

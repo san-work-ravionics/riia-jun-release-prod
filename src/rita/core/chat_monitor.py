@@ -22,7 +22,7 @@ COLUMNS = [
 
 def _csv_path() -> str:
     from rita.config import get_settings
-    return os.path.join(get_settings().data.output_dir, "chat_monitor.csv")
+    return os.path.join(get_settings().chat.monitor_dir, "chat_monitor.csv")
 
 
 def _read_rows() -> list[dict]:
