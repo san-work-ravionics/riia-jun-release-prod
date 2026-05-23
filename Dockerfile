@@ -8,6 +8,9 @@ RUN python -m venv /app/venv
 ENV PATH="/app/venv/bin:$PATH"
 
 COPY pyproject.toml .
+# Pin CPU-only PyTorch before the main install so sentence-transformers
+# does not pull in the full NVIDIA CUDA stack (~7 GB of GPU libraries).
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 # Install dependencies first (layer cached when only app code changes), then
 # copy src/ so the editable install can find the package root.
 RUN mkdir -p src && pip install --no-cache-dir -e ".[dev]"
