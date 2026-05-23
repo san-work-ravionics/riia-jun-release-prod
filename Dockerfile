@@ -8,19 +8,21 @@ RUN python -m venv /app/venv
 ENV PATH="/app/venv/bin:$PATH"
 
 COPY pyproject.toml .
-# Pin CPU-only PyTorch before the main install so sentence-transformers
-# does not pull in the full NVIDIA CUDA stack (~7 GB of GPU libraries).
-RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
-# Install dependencies first (layer cached when only app code changes), then
-# copy src/ so the editable install can find the package root.
+# Use extra-index-url (not index-url) so PyPI remains available for all other packages.
+# This ensures pip finds the CPU-only torch wheel and won't pull in the 7 GB NVIDIA CUDA stack.
+ARG PIP_EXTRA_INDEX_URL=https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir torch --extra-index-url https://download.pytorch.org/whl/cpu
+# Install project deps; pip sees torch already satisfied so does not re-resolve to CUDA.
 RUN mkdir -p src && pip install --no-cache-dir -e ".[dev]"
 
 # Pre-download sentence-transformer model so the runtime image has no HuggingFace dependency.
 # Placed after pip install but before COPY src/ so this layer is cached unless dependencies change.
-RUN /app/venv/bin/python -c "\
+RUN mkdir -p /app/models && \
+    /app/venv/bin/python -c "\
 from sentence_transformers import SentenceTransformer; \
 m = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2'); \
-m.save('/app/models/embed_model')"
+m.save('/app/models/embed_model')" \
+    || (pip show torch && python -c "import torch; print(torch.__version__)" && exit 1)
 
 # Copy full source (overwrites the empty placeholder)
 COPY src/ src/
