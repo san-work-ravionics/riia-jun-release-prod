@@ -172,11 +172,13 @@ async def lifespan(app: FastAPI):
                 log.info("instruments.yf_ticker_backfilled", count=_backfilled)
 
             # Ensure all seed instruments have is_available=True (fixes existing DBs seeded with False)
+            # Note: SQLite does not support tuple binding with text() IN clause — iterate instead
             _available_ids = [i.instrument_id for i in _SEED_INSTRUMENTS if i.is_available]
-            _db.execute(
-                text("UPDATE instruments SET is_available = 1 WHERE instrument_id IN :ids"),
-                {"ids": tuple(_available_ids)},
-            )
+            for _aid in _available_ids:
+                _db.execute(
+                    text("UPDATE instruments SET is_available = 1 WHERE instrument_id = :id"),
+                    {"id": _aid},
+                )
             _db.commit()
 
             # Upsert any seed instruments not yet in DB (runs on every startup, not just fresh)
