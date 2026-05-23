@@ -67,23 +67,21 @@ jobs:
             data/input/ \
             ubuntu@${{ secrets.AWS_EC2_IP }}:/opt/rita_input/input/
 
-      - name: Deploy container on EC2
+      # Split into three short SSH calls so no single session survives
+      # long enough to be killed by the OOM spike during container swap.
+
+      - name: Pull image on EC2
         run: |
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} bash -s << ENDSSH
-            set -euxo pipefail
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} \
+            "echo '${{ secrets.GHCR_PAT }}' | docker login ghcr.io -u san-work-ravionics --password-stdin \
+             && docker pull '${{ env.IMAGE }}'"
 
-            # Authenticate to GHCR so EC2 can pull the private image
-            echo '${{ secrets.GHCR_PAT }}' | docker login ghcr.io -u san-work-ravionics --password-stdin
-
-            # Pull the new image first (fail fast if GHCR is unreachable)
-            docker pull '${{ env.IMAGE }}'
-
-            # Stop and remove the old container if running
-            docker stop rita 2>/dev/null || true
-            docker rm   rita 2>/dev/null || true
-
-            # Start the new container
-            docker run -d \
+      - name: Swap container on EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} \
+            "docker stop rita 2>/dev/null || true; docker rm rita 2>/dev/null || true"
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} \
+            "docker run -d \
               --name rita \
               --restart unless-stopped \
               -p 127.0.0.1:8000:8000 \
@@ -99,18 +97,17 @@ jobs:
               --log-opt awslogs-region=ap-south-1 \
               --log-opt awslogs-group=/rita/app \
               --log-opt awslogs-stream=rita-container \
-              '${{ env.IMAGE }}'
+              '${{ env.IMAGE }}'"
 
-            # Wait for the health endpoint to respond
-            echo "Waiting for /health..."
-            for i in \$(seq 1 20); do
-              if curl -sf http://localhost:8000/health > /dev/null; then
-                echo "RITA is up."
-                exit 0
-              fi
-              sleep 3
-            done
-            echo "Health check timed out — container logs:"
-            docker logs rita --tail 100
-            exit 1
-          ENDSSH
+      - name: Health check
+        run: |
+          echo "Waiting for /health..."
+          for i in $(seq 1 30); do
+            if curl -sf http://${{ secrets.AWS_EC2_IP }}/health > /dev/null; then
+              echo "RITA is up."
+              exit 0
+            fi
+            sleep 6
+          done
+          echo "Health check timed out."
+          exit 1
