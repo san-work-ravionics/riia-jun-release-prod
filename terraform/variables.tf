@@ -56,3 +56,17 @@ variable "instance_type" {
   type        = string
   default     = "t3.micro"
 }
+
+# ── Observability ─────────────────────────────────────────────────────────────
+
+variable "alert_email" {
+  description = "Email address for CloudWatch alarm notifications (CPU high, status check fail, errors)"
+  type        = string
+  default     = "contact@ravionics.nl"
+}
+
+variable "log_retention_days" {
+  description = "CloudWatch log retention in days. 30 days keeps costs well within the 5 GB free tier."
+  type        = number
+  default     = 30
+}

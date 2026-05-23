@@ -95,9 +95,10 @@ jobs:
               -v /opt/rita_input:/app/data:ro \
               -v /opt/rita_output:/app/rita_output \
               --memory 900m \
-              --log-driver json-file \
-              --log-opt max-size=10m \
-              --log-opt max-file=5 \
+              --log-driver awslogs \
+              --log-opt awslogs-region=ap-south-1 \
+              --log-opt awslogs-group=/rita/app \
+              --log-opt awslogs-stream=rita-container \
               '${{ env.IMAGE }}'
 
             # Wait for the health endpoint to respond

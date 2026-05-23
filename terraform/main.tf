@@ -89,6 +89,113 @@ resource "aws_security_group" "rita" {
   }
 }
 
+# ── IAM Role — EC2 → CloudWatch Logs ─────────────────────────────────────────
+
+resource "aws_iam_role" "rita_ec2" {
+  name = "${local.app_name}-ec2-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "ec2.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "rita_cw_logs" {
+  role       = aws_iam_role.rita_ec2.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+}
+
+resource "aws_iam_instance_profile" "rita_ec2" {
+  name = "${local.app_name}-ec2-profile"
+  role = aws_iam_role.rita_ec2.name
+}
+
+# ── CloudWatch Log Group ──────────────────────────────────────────────────────
+
+resource "aws_cloudwatch_log_group" "rita_app" {
+  name              = "/rita/app"
+  retention_in_days = var.log_retention_days
+  tags              = { Name = "${local.app_name}-logs" }
+}
+
+# ── Alerting: SNS topic + email subscription ──────────────────────────────────
+
+resource "aws_sns_topic" "rita_alerts" {
+  name = "${local.app_name}-alerts"
+}
+
+resource "aws_sns_topic_subscription" "rita_alerts_email" {
+  topic_arn = aws_sns_topic.rita_alerts.arn
+  protocol  = "email"
+  endpoint  = var.alert_email
+}
+
+# ── CloudWatch Alarms (all within the 10-alarm free tier) ────────────────────
+
+# 1. CPU spike — warn before OOM or runaway process
+resource "aws_cloudwatch_metric_alarm" "rita_cpu_high" {
+  alarm_name          = "${local.app_name}-cpu-high"
+  alarm_description   = "RITA EC2 CPU > 80% for 10 min — possible runaway process or OOM pressure"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = 300
+  statistic           = "Average"
+  threshold           = 80
+  alarm_actions       = [aws_sns_topic.rita_alerts.arn]
+  ok_actions          = [aws_sns_topic.rita_alerts.arn]
+  dimensions          = { InstanceId = aws_instance.rita.id }
+}
+
+# 2. Instance status check failure — triggers AWS auto-recovery + email
+resource "aws_cloudwatch_metric_alarm" "rita_status_check" {
+  alarm_name          = "${local.app_name}-status-check-failed"
+  alarm_description   = "RITA EC2 status check failed — auto-recovery triggered"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "StatusCheckFailed"
+  namespace           = "AWS/EC2"
+  period              = 60
+  statistic           = "Maximum"
+  threshold           = 0
+  alarm_actions       = [
+    "arn:aws:automate:${var.aws_region}:ec2:recover",
+    aws_sns_topic.rita_alerts.arn,
+  ]
+  dimensions          = { InstanceId = aws_instance.rita.id }
+}
+
+# 3. Application ERROR log lines — fires when the app logs an error
+resource "aws_cloudwatch_log_metric_filter" "rita_errors" {
+  name           = "${local.app_name}-error-lines"
+  log_group_name = aws_cloudwatch_log_group.rita_app.name
+  pattern        = "\"level\": \"error\""
+  metric_transformation {
+    name      = "RitaErrorCount"
+    namespace = "Rita/App"
+    value     = "1"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "rita_app_errors" {
+  alarm_name          = "${local.app_name}-app-errors"
+  alarm_description   = "RITA application logged ≥ 3 errors in 5 minutes"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "RitaErrorCount"
+  namespace           = "Rita/App"
+  period              = 300
+  statistic           = "Sum"
+  threshold           = 3
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = [aws_sns_topic.rita_alerts.arn]
+  dimensions          = {}
+}
+
 # ── SSH Key Pair ──────────────────────────────────────────────────────────────
 
 resource "tls_private_key" "rita" {
@@ -115,6 +222,7 @@ resource "aws_instance" "rita" {
   subnet_id              = aws_subnet.rita.id
   vpc_security_group_ids = [aws_security_group.rita.id]
   key_name               = aws_key_pair.rita.key_name
+  iam_instance_profile   = aws_iam_instance_profile.rita_ec2.name
 
   root_block_device {
     # 30 GB stays within the AWS free tier EBS allowance
