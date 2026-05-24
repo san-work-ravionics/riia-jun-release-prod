@@ -10,6 +10,12 @@ export async function api(path, method = 'GET', body = null) {
   if (body) opts.body = JSON.stringify(body);
   const r = await fetch(apiBase() + path, opts);
   if (!r.ok) {
+    if (r.status === 401) {
+      localStorage.removeItem('auth_token');
+      localStorage.setItem('post_login_redirect', window.location.href);
+      window.location.href = '/auth/google/login';
+      return;
+    }
     const err = await r.json().catch(() => ({ detail: r.statusText }));
     throw new Error(err.detail || r.statusText);
   }
