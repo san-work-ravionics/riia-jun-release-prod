@@ -365,6 +365,7 @@ def train_best_of_n(
     buffer_size: int = 100_000,
     exploration_fraction: float = 0.5,
     model_name: str = "rita_ddqn_model",
+    progress_fn=None,
 ) -> tuple[DQN, TrainingProgressCallback, dict]:
     """Train *n_seeds* models with different random seeds; return the winner.
 
@@ -410,6 +411,7 @@ def train_best_of_n(
             exploration_fraction=exploration_fraction,
             seed=seed,
             model_name=model_name,
+            progress_fn=progress_fn,
         )
 
         val_result = validate_agent(model, val_df)
