@@ -115,7 +115,8 @@ def _run_training_job(config: TrainingConfig) -> None:
             }
         )
         runs_repo.upsert(complete_run)
-        duration_s = round((ended_at - run.started_at).total_seconds(), 1) if run.started_at else None
+        _started = run.started_at.replace(tzinfo=timezone.utc) if run.started_at and run.started_at.tzinfo is None else run.started_at
+        duration_s = round((ended_at - _started).total_seconds(), 1) if _started else None
         log_event(log, "info", "training.complete", run_id=config.run_id, duration_s=duration_s)
 
         try:
