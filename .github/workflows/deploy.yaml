@@ -57,7 +57,7 @@ jobs:
       - name: Sync instrument data to EC2
         run: |
           ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} \
-            "sudo mkdir -p /opt/rita_input/raw /opt/rita_input/input /opt/rita_output && sudo chown -R ubuntu:ubuntu /opt/rita_input /opt/rita_output"
+            "sudo mkdir -p /opt/rita_input/raw /opt/rita_input/input /opt/rita_input/agent-ops/runs /opt/rita_output && sudo chown -R ubuntu:ubuntu /opt/rita_input /opt/rita_output"
           rsync -av --update \
             -e "ssh -o StrictHostKeyChecking=no" \
             data/raw/ \
@@ -66,6 +66,10 @@ jobs:
             -e "ssh -o StrictHostKeyChecking=no" \
             data/input/ \
             ubuntu@${{ secrets.AWS_EC2_IP }}:/opt/rita_input/input/
+          rsync -av --update \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            data/agent-ops/ \
+            ubuntu@${{ secrets.AWS_EC2_IP }}:/opt/rita_input/agent-ops/
 
       # Split into three short SSH calls so no single session survives
       # long enough to be killed by the OOM spike during container swap.
@@ -111,3 +115,67 @@ jobs:
           done
           echo "Health check timed out."
           exit 1
+
+      - name: Seed agent builds DB
+        run: |
+          cat > /tmp/rita_seed_agent_builds.py << 'PYEOF'
+          import json, sqlite3
+          from pathlib import Path
+          from datetime import datetime
+
+          RUNS_DIR = Path("/opt/rita_input/agent-ops/runs")
+          DB_PATH  = Path("/opt/rita_output/rita.db")
+
+          if not RUNS_DIR.exists():
+              print(f"SKIP: {RUNS_DIR} not found")
+              raise SystemExit(0)
+
+          con = sqlite3.connect(DB_PATH)
+          cur = con.cursor()
+          now = datetime.utcnow().isoformat()
+          existing = {row[0] for row in cur.execute("SELECT run_id FROM agent_build_runs")}
+          run_files = sorted(RUNS_DIR.glob("run-*.json"))
+          print(f"Found {len(run_files)} run files, {len(existing)} already in DB")
+
+          inserted_runs = 0
+          inserted_agents = 0
+          for path in run_files:
+              data = json.loads(path.read_text())
+              run_id = data.get("run_id")
+              if not run_id or run_id in existing:
+                  continue
+              cur.execute(
+                  "INSERT OR IGNORE INTO agent_build_runs "
+                  "(run_id,app,request,skill_file,overall_status,total_tokens_estimated,"
+                  "duration_minutes,branch,merge_status,merge_commit,recorded_at) "
+                  "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                  (run_id, data.get("app",""), data.get("request"), data.get("skill_file"),
+                   data.get("overall_status","unknown"), data.get("total_tokens_estimated"),
+                   data.get("duration_minutes"), data.get("branch"),
+                   data.get("merge_status"), data.get("merge_commit"), now))
+              inserted_runs += 1
+              for agent in data.get("agents", []):
+                  role = agent.get("role","unknown")
+                  raw = agent.get("actual_tokens")
+                  actual = raw.get("total_tokens") if isinstance(raw, dict) else (raw if isinstance(raw, int) else None)
+                  cur.execute(
+                      "INSERT OR IGNORE INTO agent_build_agents "
+                      "(agent_id,run_id,role,status,steps_required,steps_completed,"
+                      "adherence_score,token_estimate,grounding_checks,failure_modes,"
+                      "recorded_at,actual_tokens_total) "
+                      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                      (f"{run_id}-{role}", run_id, role, agent.get("status","unknown"),
+                       agent.get("steps_required"), agent.get("steps_completed"),
+                       agent.get("adherence_score"), agent.get("token_estimate"),
+                       json.dumps(agent.get("grounding_checks")),
+                       json.dumps(agent.get("failure_modes",[])), now, actual))
+                  inserted_agents += 1
+
+          con.commit()
+          con.close()
+          print(f"Seeded {inserted_runs} runs, {inserted_agents} agent rows")
+          PYEOF
+          scp -o StrictHostKeyChecking=no /tmp/rita_seed_agent_builds.py \
+            ubuntu@${{ secrets.AWS_EC2_IP }}:/tmp/rita_seed_agent_builds.py
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} \
+            "python3 /tmp/rita_seed_agent_builds.py"
