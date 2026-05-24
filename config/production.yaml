@@ -1,6 +1,14 @@
 server:
   log_level: "warning"
 
+data:
+  raw_dir: "/app/data/raw"
+  input_dir: "/app/data/input"
+  output_dir: "/app/rita_output/data_output"
+
+model:
+  path: "/app/rita_output/models"
+
 chat:
   embed_model_path: "/app/models/embed_model"
   monitor_dir: "rita_output"
