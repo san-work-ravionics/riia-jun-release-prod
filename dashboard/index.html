@@ -277,6 +277,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
   if (token) {
     localStorage.setItem('auth_token', token);
     window.history.replaceState({}, document.title, window.location.pathname);
+    const redirect = localStorage.getItem('post_login_redirect');
+    if (redirect) { localStorage.removeItem('post_login_redirect'); window.location.href = redirect; }
   }
 
   // Intercept clicks on Google Auth Protected modules

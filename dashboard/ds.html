@@ -1373,6 +1373,14 @@ tr:hover td{background:var(--surface2);}
 <!-- ── Nav toggle (desktop collapse) ─────────────────────── -->
 <script>
 (function(){
+  if (!localStorage.getItem('auth_token')) {
+    localStorage.setItem('post_login_redirect', window.location.href);
+    window.location.href = '/auth/google/login';
+  }
+})();
+</script>
+<script>
+(function(){
   var KEY='rita_nav_collapsed';
   var btn=document.getElementById('nav-toggle');
   var shell=document.querySelector('.shell');
