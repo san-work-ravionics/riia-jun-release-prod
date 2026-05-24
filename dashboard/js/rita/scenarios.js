@@ -59,8 +59,8 @@ export async function runScenarioBacktest() {
     if (polls >= MAX_POLLS) throw new Error('Backtest timed out after 3 minutes.');
 
     const [perf, daily] = await Promise.all([
-      cachedApi('/api/v1/performance-summary', 120000),
-      cachedApi('/api/v1/experience/rita/backtest-daily', 120000),
+      api('/api/v1/performance-summary'),
+      api('/api/v1/experience/rita/backtest-daily'),
     ]);
     badge.className = 'badge ok'; badge.textContent = t('status.complete');
     renderScenarioResults(perf, daily, from, to);
