@@ -1,4 +1,5 @@
 // ── Functional KPI Sparklines ─────────────────────────────────────────────────
+import { api } from './api.js';
 
 const KPI_DEFS = [
   { key: 'training_success_rate_pct', label: 'Training Success', unit: '%', sub: '24h success rate',
@@ -30,8 +31,7 @@ export async function loadFunctionalKPIs() {
   const container = document.getElementById('functional-kpis-container');
 
   try {
-    const res = await fetch('/ops/metrics/functional-kpis.json');
-    const data = res.ok ? await res.json() : null;
+    const data = await api('/api/experience/ops/functional-kpis');
 
     if (!data || !data.series) {
       if (container) container.innerHTML = '<div class="empty">KPI data unavailable</div>';

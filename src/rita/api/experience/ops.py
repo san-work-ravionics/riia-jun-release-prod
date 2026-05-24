@@ -5,9 +5,12 @@ Composes: training run history + backtest run history + recent audit log.
 Also provides Ops monitoring summaries (metrics/summary, step-log).
 """
 
+import csv
 import json
+import os
 import time
 from collections import defaultdict
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -25,6 +28,7 @@ from rita.repositories.training import TrainingRunsRepository
 from rita.repositories.backtest import BacktestRunsRepository
 from rita.repositories.api_call_log import ApiCallLogRepository
 from rita.schemas.api_metrics import ApiMetricsResponse, ApiMetricsRow
+from rita.schemas.functional_kpis import FunctionalKPIsResponse, FunctionalKPIsSeries
 from rita.schemas.agent_builds import (
     AgentBuildMetrics,
     AgentBuildRunOut,
@@ -652,3 +656,182 @@ def get_api_metrics(
     except Exception as exc:
         log_event(log, "error", "api_metrics.error", error=str(exc))
         return ApiMetricsResponse(items=[])
+
+
+# ── GET /api/experience/ops/functional-kpis ──────────────────────────────────
+
+def _zero_response(buckets: list[str], generated_at: str) -> FunctionalKPIsResponse:
+    """Return an all-zeros response for the given buckets."""
+    n = len(buckets)
+    return FunctionalKPIsResponse(
+        generated_at=generated_at,
+        buckets=buckets,
+        series=FunctionalKPIsSeries(
+            training_success_rate_pct=[0.0] * n,
+            chat_low_confidence_pct=[0.0] * n,
+            experience_error_pct=[0.0] * n,
+            error_rate_pct=[0.0] * n,
+            p95_latency_ms=[0.0] * n,
+        ),
+    )
+
+
+def _read_chat_monitor_rows() -> list[dict]:
+    """Read all rows from chat_monitor.csv; return [] if file does not exist."""
+    try:
+        from rita.config import get_settings
+        path = os.path.join(get_settings().chat.monitor_dir, "chat_monitor.csv")
+        if not os.path.exists(path):
+            return []
+        with open(path, newline="", encoding="utf-8") as f:
+            return list(csv.DictReader(f))
+    except Exception:  # noqa: BLE001
+        return []
+
+
+@router.get("/functional-kpis", response_model=FunctionalKPIsResponse)
+def get_functional_kpis(
+    hours: int = Query(default=24, ge=1, le=168),
+    db: Session = Depends(get_db),
+) -> FunctionalKPIsResponse:
+    """Return hourly KPI time-series for the last N hours.
+
+    Aggregates training success rate, chat low-confidence rate, experience
+    endpoint error rate, overall API error rate, and p95 latency per bucket.
+    Read-only — no db.commit() calls.
+    """
+    now = datetime.now(timezone.utc)
+    generated_at = now.isoformat()
+
+    # Build hourly bucket labels (oldest → newest)
+    buckets: list[str] = []
+    bucket_starts: list[datetime] = []
+    for i in range(hours - 1, -1, -1):
+        bucket_start = now.replace(minute=0, second=0, microsecond=0) - timedelta(hours=i)
+        buckets.append(bucket_start.strftime("%Y-%m-%dT%H:00"))
+        bucket_starts.append(bucket_start)
+
+    try:
+        from sqlalchemy.exc import OperationalError
+
+        train_repo = TrainingRunsRepository(db)
+
+        # Fetch all training runs and API call log rows needed
+        try:
+            all_trains = train_repo.read_all()
+        except OperationalError:
+            all_trains = []
+
+        try:
+            # Fetch rows within the time window (oldest bucket start → now).
+            # SQLite stores naive datetimes so compare against naive UTC.
+            window_start_naive = bucket_starts[0].replace(tzinfo=None)
+            from rita.models.api_call_log import ApiCallLogModel
+            api_rows = (
+                db.query(ApiCallLogModel)
+                .filter(ApiCallLogModel.called_at >= window_start_naive)
+                .all()
+            )
+        except OperationalError:
+            api_rows = []
+
+        # Chat monitor rows (CSV-based)
+        chat_rows = _read_chat_monitor_rows()
+
+        def _to_aware(dt: Any) -> Any:
+            """Convert a naive datetime to UTC-aware; return aware dt unchanged."""
+            if dt is None:
+                return None
+            if getattr(dt, "tzinfo", None) is None:
+                return dt.replace(tzinfo=timezone.utc)
+            return dt
+
+        # Build per-bucket aggregates
+        training_success: list[float] = []
+        chat_low_conf: list[float] = []
+        experience_error: list[float] = []
+        error_rate: list[float] = []
+        p95_latency: list[float] = []
+
+        for bucket_start in bucket_starts:
+            bucket_end = bucket_start + timedelta(hours=1)
+
+            # ── Training success rate ──────────────────────────────────────
+            # Use all training runs whose ended_at falls in this bucket
+            bucket_trains = [
+                r for r in all_trains
+                if r.ended_at is not None
+                and bucket_start <= _to_aware(r.ended_at) < bucket_end
+            ]
+            if bucket_trains:
+                completed = sum(1 for r in bucket_trains if r.status in ("complete", "completed"))
+                training_success.append(round(completed / len(bucket_trains) * 100, 2))
+            else:
+                training_success.append(0.0)
+
+            # ── API call log bucketing ─────────────────────────────────────
+            bucket_api = [
+                r for r in api_rows
+                if r.called_at is not None
+                and bucket_start <= _to_aware(r.called_at) < bucket_end
+            ]
+
+            if bucket_api:
+                total = len(bucket_api)
+                errors = sum(1 for r in bucket_api if r.status_code is not None and r.status_code >= 400)
+                exp_total = sum(1 for r in bucket_api if r.path.startswith("/api/experience"))
+                exp_errors = sum(
+                    1 for r in bucket_api
+                    if r.path.startswith("/api/experience")
+                    and r.status_code is not None
+                    and r.status_code >= 400
+                )
+                durations = [r.duration_ms for r in bucket_api if r.duration_ms is not None]
+                sorted_d = sorted(durations)
+                n = len(sorted_d)
+                p95 = sorted_d[min(int(n * 0.95), n - 1)] if n else 0.0
+
+                error_rate.append(round(errors / total * 100, 2))
+                experience_error.append(round(exp_errors / exp_total * 100, 2) if exp_total else 0.0)
+                p95_latency.append(round(p95, 1))
+            else:
+                error_rate.append(0.0)
+                experience_error.append(0.0)
+                p95_latency.append(0.0)
+
+            # ── Chat low-confidence rate ───────────────────────────────────
+            bucket_chat = []
+            for row in chat_rows:
+                ts_str = row.get("timestamp", "")
+                if not ts_str:
+                    continue
+                try:
+                    ts = datetime.fromisoformat(ts_str)
+                    if ts.tzinfo is None:
+                        ts = ts.replace(tzinfo=timezone.utc)
+                    if bucket_start <= ts < bucket_end:
+                        bucket_chat.append(row)
+                except (ValueError, TypeError):
+                    continue
+
+            if bucket_chat:
+                low = sum(1 for r in bucket_chat if r.get("low_confidence") == "1")
+                chat_low_conf.append(round(low / len(bucket_chat) * 100, 2))
+            else:
+                chat_low_conf.append(0.0)
+
+        return FunctionalKPIsResponse(
+            generated_at=generated_at,
+            buckets=buckets,
+            series=FunctionalKPIsSeries(
+                training_success_rate_pct=training_success,
+                chat_low_confidence_pct=chat_low_conf,
+                experience_error_pct=experience_error,
+                error_rate_pct=error_rate,
+                p95_latency_ms=p95_latency,
+            ),
+        )
+
+    except Exception as exc:  # noqa: BLE001
+        log_event(log, "error", "functional_kpis.error", error=str(exc))
+        return _zero_response(buckets, generated_at)
