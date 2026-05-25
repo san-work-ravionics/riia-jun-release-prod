@@ -1,20 +1,20 @@
-import { api } from './api.js';
+import { apiFetch } from './api.js';
 import { setEl } from './utils.js';
 
 let _lastItems = [];
 
 export async function loadApiMetrics() {
-  try {
-    const data = await api('/api/experience/ops/api-metrics');
-    _lastItems = data.items || [];
-    renderMetrics(_lastItems);
-  } catch {
+  const data = await apiFetch('/api/experience/ops/api-metrics');
+  if (!data) {
     setEl('ops-api-metrics-total', '—');
     setEl('ops-api-metrics-unique', '—');
     setEl('ops-api-metrics-error-rate', '—');
     const emptyEl = document.getElementById('ops-api-metrics-empty');
     if (emptyEl) emptyEl.style.display = '';
+    return;
   }
+  _lastItems = data.items || [];
+  renderMetrics(_lastItems);
 }
 
 export function filterApiMetrics() {

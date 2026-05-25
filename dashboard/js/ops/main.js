@@ -2,7 +2,6 @@
 import { nav, sectionLoaders, loadSection } from './nav.js';
 import { loadOverview } from './overview.js';
 import { loadMonitoring } from './monitoring.js';
-import { loadCICD } from './cicd.js';
 import { loadDeploy } from './deploy.js';
 import { loadObservability } from './observability.js';
 import { loadChat } from './chat.js';
@@ -22,7 +21,6 @@ import { initI18n, setLanguage, applyTranslations } from '../shared/i18n.js';
 // ── Populate section loader registry ─────────────────────────────────────────
 sectionLoaders['overview']             = loadOverview;
 sectionLoaders['monitoring']           = loadMonitoring;
-sectionLoaders['cicd']                 = loadCICD;
 sectionLoaders['test']                 = loadTestResults;
 sectionLoaders['deploy']               = loadDeploy;
 sectionLoaders['observability']        = loadObservability;
@@ -31,10 +29,6 @@ sectionLoaders['dailyops']             = () => { loadDailyOps(); loadInstruments
 sectionLoaders['users']                = loadUsers;
 sectionLoaders['agent-builds']         = loadAgentBuilds;
 sectionLoaders['game-compliance']      = loadGameCompliance;
-sectionLoaders['alerts']               = loadAlerts;
-sectionLoaders['source-availability']  = loadSourceAvailability;
-sectionLoaders['functional-kpis']      = loadFunctionalKPIs;
-sectionLoaders['api-metrics']          = loadApiMetrics;
 
 // ── Window bindings for inline onclick= attributes ────────────────────────────
 window.nav                    = nav;
@@ -54,15 +48,11 @@ window.toggleEstimateWidget   = toggleEstimateWidget;
 window.closeChartModal        = closeChartModal;
 window.loadGameCompliance     = loadGameCompliance;
 window.toggleGcDetail         = toggleGcDetail;
-window.loadAlerts             = loadAlerts;
-window.loadSourceAvailability = loadSourceAvailability;
-window.loadFunctionalKPIs     = loadFunctionalKPIs;
 window.runGoal                = runGoal;
 window.runMarket              = runMarket;
 window.runStrategy            = runStrategy;
 window.runFullPipeline        = runFullPipeline;
 window.doReset                = doReset;
-window.loadApiMetrics         = loadApiMetrics;
 window.filterApiMetrics       = filterApiMetrics;
 window.setLanguage            = setLanguage;
 
@@ -70,6 +60,7 @@ window.setLanguage            = setLanguage;
 initI18n(); applyTranslations();
 document.addEventListener('DOMContentLoaded', () => {
   loadOverview();
+  loadMonitoring();
   loadAlerts();
   loadSourceAvailability();
   loadFunctionalKPIs();

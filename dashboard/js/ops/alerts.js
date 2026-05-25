@@ -6,7 +6,7 @@ export async function loadAlerts() {
   const tableEl = document.getElementById('alerts-table');
 
   try {
-    const res = await fetch('/ops/alerts/active-alerts.json');
+    const res = await fetch('/api/experience/ops/aws-alerts');
     const data = res.ok ? await res.json() : null;
 
     if (!data || !Array.isArray(data.alerts)) {

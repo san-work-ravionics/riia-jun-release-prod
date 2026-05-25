@@ -1,6 +1,6 @@
 // ── Navigation ────────────────────────────────────────────────────────────────
 
-export const SECTIONS = ['overview','monitoring','cicd','agent-builds','game-compliance','test','deploy','observability','chat','dailyops','users','alerts','source-availability','functional-kpis','api-metrics'];
+export const SECTIONS = ['overview','monitoring','agent-builds','game-compliance','test','deploy','observability','chat','dailyops','users'];
 
 const loadedSections = new Set(['overview']);
 
@@ -15,7 +15,7 @@ export function nav(el, id) {
     if (sec) sec.classList.toggle('on', s === id);
   });
   // Live data sections always reload; others load once
-  const liveReload = ['chat', 'observability'];
+  const liveReload = ['chat', 'observability', 'monitoring'];
   if (liveReload.includes(id)) {
     loadSection(id);
   } else if (!loadedSections.has(id)) {

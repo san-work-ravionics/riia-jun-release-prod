@@ -328,23 +328,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
         <polyline points="1,11 4,7 6,9 9,4 13,2" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
-    <span data-i18n="nav.monitoring">API &amp; Metrics</span>
+    <span data-i18n="nav.monitoring">Monitoring</span>
   </div>
 
   <div class="ng-hdr" style="margin-top:4px">
     <div class="ng-dot" style="background:var(--accelerate)"></div>Build
   </div>
 
-  <div class="ni n-cicd" onclick="nav(this,'cicd')">
-    <div class="ni-ic">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <polygon points="2,2 12,7 2,12" fill="currentColor" opacity=".8"/>
-      </svg>
-    </div>
-    CI / CD Pipeline
-  </div>
-
-  <div class="ni n-agent-builds" onclick="nav(this,'agent-builds')">
+<div class="ni n-agent-builds" onclick="nav(this,'agent-builds')">
     <div class="ni-ic">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
         <circle cx="3" cy="7" r="1.8" stroke="currentColor" stroke-width="1.3" fill="none"/>
@@ -459,59 +450,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
     User Traffic
   </a>
 
-  <div class="ng-hdr" style="margin-top:4px">
-    <div class="ng-dot" style="background:var(--data)"></div>Observability
-  </div>
-  <div class="ni n-alerts" onclick="nav(this,'alerts')">
-    <div class="ni-ic">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path d="M7 1.5L1.5 11.5h11L7 1.5z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/>
-        <path d="M7 5.5v3M7 9.5v.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
-      </svg>
-    </div>
-    Alerts
-  </div>
-
-  <div class="ni n-source-availability" onclick="nav(this,'source-availability')">
-    <div class="ni-ic">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <rect x="1.5" y="4.5" width="11" height="5" rx="1" stroke="currentColor" stroke-width="1.3" fill="none"/>
-        <circle cx="4" cy="7" r="1" fill="currentColor"/>
-        <path d="M6.5 7h4" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
-      </svg>
-    </div>
-    Source Availability
-  </div>
-
-  <div class="ni n-functional-kpis" onclick="nav(this,'functional-kpis')">
-    <div class="ni-ic">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path d="M1.5 10.5L4.5 7l2.5 2 2.5-3.5 2.5 2" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </div>
-    Functional KPIs
-  </div>
-
-  <div class="ni n-api-metrics" onclick="nav(this,'api-metrics')">
-    <div class="ni-ic">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <rect x="1.5" y="3.5" width="11" height="7" rx="1" stroke="currentColor" stroke-width="1.3" fill="none"/>
-        <path d="M4 7h6M4 9h4" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
-      </svg>
-    </div>
-    API Metrics
-  </div>
-
-  <div class="s-foot">
-    <div class="mc">
-      <div class="mc-ey">Pipeline Status</div>
-      <div class="mc-nm" id="mc-status-text">Loading…</div>
-      <div class="mc-r"><span>Steps done</span><span class="mc-v info" id="mc-steps">—</span></div>
-      <div class="mc-r"><span>Model</span><span class="mc-v" id="mc-model">—</span></div>
-      <div class="mc-r"><span>Last run</span><span class="mc-v info" id="mc-lastrun">—</span></div>
-      <div class="mc-bar"><div class="mc-bar-fill" id="mc-bar" style="width:0%"></div></div>
-    </div>
-  </div>
 </nav>
 
 <!-- ── Main ── -->
@@ -647,42 +585,48 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
       <div class="ph-badge sense">Monitoring</div>
       <div>
         <div class="ph-t">API &amp; Metrics</div>
-        <div class="ph-g">Request statistics, error rates, and pipeline step timing</div>
+        <div class="ph-g">Request statistics, error rates, and deploy history</div>
       </div>
     </div>
 
-    <div class="g3" id="mon-stats">
-      <div class="card">
-        <div class="c-ey"><div class="ey-d" style="background:var(--sense)"></div>API Requests</div>
-        <div class="bv" id="mon-total">—</div>
-        <div class="sv">total requests logged</div>
-        <div class="sb-row" style="margin-top:10px">
-          <div class="sb"><div class="sb-l">Errors</div><div class="sb-v" id="mon-errors">—</div></div>
-          <div class="sb"><div class="sb-l">Avg Latency</div><div class="sb-v" id="mon-ips">—</div></div>
-        </div>
+    <div id="mon-stats" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+      <div class="card" style="flex:1;min-width:110px;padding:12px 14px">
+        <div class="c-ey" style="font-size:10px;margin-bottom:4px"><div class="ey-d" style="background:var(--sense)"></div>API Requests</div>
+        <div class="bv" id="mon-total" style="font-size:22px;line-height:1.2">—</div>
+        <div class="sv" style="font-size:10px">total logged</div>
       </div>
+      <div class="card" style="flex:1;min-width:110px;padding:12px 14px">
+        <div class="c-ey" style="font-size:10px;margin-bottom:4px"><div class="ey-d" style="background:#ef4444"></div>Errors</div>
+        <div class="bv" id="mon-errors" style="font-size:22px;line-height:1.2">—</div>
+        <div class="sv" style="font-size:10px">requests</div>
+      </div>
+      <div class="card" style="flex:1;min-width:110px;padding:12px 14px">
+        <div class="c-ey" style="font-size:10px;margin-bottom:4px"><div class="ey-d" style="background:var(--sense)"></div>Avg Latency</div>
+        <div class="bv" id="mon-ips" style="font-size:18px;line-height:1.2">—</div>
+        <div class="sv" style="font-size:10px">response time</div>
+      </div>
+      <div class="card" style="flex:1;min-width:110px;padding:12px 14px">
+        <div class="c-ey" style="font-size:10px;margin-bottom:4px"><div class="ey-d" style="background:var(--sense)"></div>Pipeline Runs</div>
+        <div class="bv" id="mon-completed" style="font-size:22px;line-height:1.2">—</div>
+        <div class="sv" style="font-size:10px">completed steps</div>
+      </div>
+      <div class="card" style="flex:1;min-width:110px;padding:12px 14px">
+        <div class="c-ey" style="font-size:10px;margin-bottom:4px"><div class="ey-d" style="background:#ef4444"></div>Failed</div>
+        <div class="bv" id="mon-failed" style="font-size:22px;line-height:1.2">—</div>
+        <div class="sv" style="font-size:10px">steps</div>
+      </div>
+      <div class="card" style="flex:1;min-width:110px;padding:12px 14px">
+        <div class="c-ey" style="font-size:10px;margin-bottom:4px"><div class="ey-d" style="background:var(--sense)"></div>Training Rounds</div>
+        <div class="bv" id="mon-rounds" style="font-size:22px;line-height:1.2">—</div>
+        <div class="sv" style="font-size:10px">completed</div>
+      </div>
+    </div>
+
+    <div class="g2" style="margin-bottom:14px">
       <div class="card">
         <div class="c-ey"><div class="ey-d" style="background:var(--sense)"></div>Top Endpoint</div>
         <div class="bv" style="font-size:16px;line-height:1.3;word-break:break-all" id="mon-top-ep">—</div>
         <div class="sv" id="mon-top-cnt">— requests</div>
-      </div>
-      <div class="card">
-        <div class="c-ey"><div class="ey-d" style="background:var(--sense)"></div>Pipeline Runs</div>
-        <div class="bv" id="mon-completed">—</div>
-        <div class="sv">completed steps</div>
-        <div class="sb-row" style="margin-top:10px">
-          <div class="sb"><div class="sb-l">Failed</div><div class="sb-v" id="mon-failed">—</div></div>
-          <div class="sb"><div class="sb-l">Training rounds</div><div class="sb-v" id="mon-rounds">—</div></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="g2">
-      <div class="card">
-        <div class="c-ey"><div class="ey-d" style="background:var(--sense)"></div>Step Timing Averages</div>
-        <div class="bar-wrap" id="mon-timing">
-          <div class="loading">Loading…</div>
-        </div>
       </div>
       <div class="card">
         <div class="c-ey"><div class="ey-d" style="background:var(--sense)"></div>Alerts</div>
@@ -690,86 +634,65 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
       </div>
     </div>
 
-    <div class="card">
-      <div class="c-ey"><div class="ey-d" style="background:var(--sense)"></div>Recent Step Log</div>
-      <div class="tbl-wrap" id="mon-steplog">
+    <div class="card" style="margin-bottom:14px">
+      <div class="c-ey"><div class="ey-d" style="background:var(--sense)"></div>GitHub Deploys</div>
+      <div class="tbl-wrap" id="mon-github-deploys">
         <div class="loading">Loading…</div>
       </div>
     </div>
 
     <div class="card" style="margin-top:14px">
-      <div class="c-ey"><div class="ey-d" style="background:var(--sense)"></div>Pipeline Utilities</div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px">
-        <button class="btn-sm" onclick="runGoal()">Run Goal</button>
-        <button class="btn-sm" onclick="runMarket()">Run Market</button>
-        <button class="btn-sm" onclick="runStrategy()">Run Strategy</button>
-        <button class="btn-sm" onclick="runFullPipeline()">Run Full Pipeline</button>
-        <button class="btn-sm err" onclick="doReset()">Reset</button>
-        <span id="util-status" style="font-size:12px;color:var(--t3);margin-left:8px"></span>
-      </div>
-    </div>
-  </section>
-
-  <!-- ══ CI/CD ══ -->
-  <section class="sec" id="sec-cicd">
-    <div class="ph">
-      <div class="ph-badge accelerate">CI / CD</div>
-      <div>
-        <div class="ph-t">Build Pipeline</div>
-        <div class="ph-g">GitHub Actions — lint gate + test matrix + Python 3.11 / 3.12</div>
-      </div>
+      <div class="c-ey"><div class="ey-d" style="background:var(--sense)"></div>Functional KPIs</div>
+      <div id="functional-kpis-container" style="display:flex;flex-wrap:wrap;gap:16px;"><div class="loading">Loading…</div></div>
     </div>
 
-    <div class="g3">
-      <div class="card">
-        <div class="c-ey"><div class="ey-d" style="background:var(--accelerate)"></div>Lint Gate — Job 1</div>
-        <div class="c-t">Code Quality</div>
-        <div class="al ok" style="margin-top:0;margin-bottom:10px;">
-          <svg class="al-ic" width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 7l3 3 5-5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Blocks test job — no bad code on master
-        </div>
-        <div class="ci-step"><span class="ci-num">1</span><span class="ci-name">Checkout</span><span class="badge neutral">v4</span></div>
-        <div class="ci-step"><span class="ci-num">2</span><span class="ci-name">Setup Python 3.12</span><span class="badge neutral">v5</span></div>
-        <div class="ci-step"><span class="ci-num">3</span><span class="ci-name">Install tools</span><span class="ci-cmd">ruff black</span></div>
-        <div class="ci-step"><span class="ci-num">4</span><span class="ci-name">ruff check</span><span class="ci-cmd">src/ tests/</span></div>
-        <div class="ci-step"><span class="ci-num">5</span><span class="ci-name">black --check</span><span class="ci-cmd">src/ tests/</span></div>
-      </div>
-
-      <div class="card">
-        <div class="c-ey"><div class="ey-d" style="background:var(--accelerate)"></div>Test Matrix — Job 2</div>
-        <div class="c-t">Unit Test Suite</div>
-        <div class="al ok" style="margin-top:0;margin-bottom:10px;">
-          <svg class="al-ic" width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 7l3 3 5-5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Runs after lint — Python 3.11 &amp; 3.12
-        </div>
-        <div class="ci-step"><span class="ci-num">1</span><span class="ci-name">Checkout + Setup</span><span class="badge neutral">[3.11, 3.12]</span></div>
-        <div class="ci-step"><span class="ci-num">2</span><span class="ci-name">Install project</span><span class="ci-cmd">pip install -e ".[dev]"</span></div>
-        <div class="ci-step"><span class="ci-num">3</span><span class="ci-name">Run tests</span><span class="ci-cmd">pytest -k "not APIEndpoints"</span></div>
-        <div class="al i" style="margin-top:8px;">
-          <svg class="al-ic" width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" stroke-width="1.2"/><path d="M6.5 4v3M6.5 9h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-          10 API tests run locally only
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="c-ey"><div class="ey-d" style="background:var(--accelerate)"></div>Test Coverage</div>
-        <div class="c-t">29 Unit Tests</div>
-        <div class="bar-wrap" style="margin-top:10px">
-          <div class="bar-r"><span class="bar-lbl">DataLoader</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--accelerate)"></div></div><span class="bar-pct">5</span></div>
-          <div class="bar-r"><span class="bar-lbl">TechAnalyzer</span><div class="bar-track"><div class="bar-fill" style="width:69%;background:var(--accelerate)"></div></div><span class="bar-pct">4</span></div>
-          <div class="bar-r"><span class="bar-lbl">RLAgent</span><div class="bar-track"><div class="bar-fill" style="width:86%;background:var(--accelerate)"></div></div><span class="bar-pct">5</span></div>
-          <div class="bar-r"><span class="bar-lbl">Performance</span><div class="bar-track"><div class="bar-fill" style="width:52%;background:var(--accelerate)"></div></div><span class="bar-pct">3</span></div>
-          <div class="bar-r"><span class="bar-lbl">GoalEngine</span><div class="bar-track"><div class="bar-fill" style="width:69%;background:var(--accelerate)"></div></div><span class="bar-pct">4</span></div>
-          <div class="bar-r"><span class="bar-lbl">StrategyEngine</span><div class="bar-track"><div class="bar-fill" style="width:52%;background:var(--accelerate)"></div></div><span class="bar-pct">3</span></div>
-          <div class="bar-r"><span class="bar-lbl">Session/Workflow</span><div class="bar-track"><div class="bar-fill" style="width:86%;background:var(--accelerate)"></div></div><span class="bar-pct">5</span></div>
-        </div>
+    <div class="card" style="margin-top:14px">
+      <div class="c-ey"><div class="ey-d" style="background:var(--sense)"></div>Active Alerts</div>
+      <div id="alerts-badge" style="margin-bottom:12px;font-size:14px;color:var(--t3);">Loading…</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Severity</th>
+              <th>Rule</th>
+              <th>Component</th>
+              <th>Message</th>
+              <th>Since</th>
+            </tr>
+          </thead>
+          <tbody id="alerts-table">
+            <tr><td colspan="5" class="loading">Loading…</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
-    <div class="card" style="margin-top:13px">
-      <div class="c-ey"><div class="ey-d" style="background:var(--accelerate)"></div>Recent Pipeline Step Log</div>
-      <div class="tbl-wrap" id="cicd-steplog">
-        <div class="loading">Loading…</div>
+    <div class="card" style="margin-top:14px">
+      <div class="c-ey"><div class="ey-d" style="background:var(--sense)"></div>API Metrics</div>
+      <div class="g3" style="margin-bottom:12px">
+        <div class="card">
+          <div class="c-ey">Total Calls</div>
+          <div class="bv" id="ops-api-metrics-total">—</div>
+        </div>
+        <div class="card">
+          <div class="c-ey">Unique Endpoints</div>
+          <div class="bv" id="ops-api-metrics-unique">—</div>
+        </div>
+        <div class="card">
+          <div class="c-ey">Error Rate</div>
+          <div class="bv" id="ops-api-metrics-error-rate">—</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:10px;align-items:center">
+        <label style="font-size:12px;color:var(--t2)">Method: <input id="ops-api-metrics-filter-method" type="text" placeholder="GET / POST" style="width:80px;margin-left:4px" onchange="filterApiMetrics()"></label>
+        <label style="font-size:12px;color:var(--t2)">Path prefix: <input id="ops-api-metrics-filter-prefix" type="text" placeholder="/api/v1/experience" style="width:200px;margin-left:4px" onchange="filterApiMetrics()"></label>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Path</th><th>Method</th><th>Calls</th><th>p50 (ms)</th><th>p95 (ms)</th><th>Errors</th><th>Error Rate</th><th>Last seen</th></tr></thead>
+          <tbody id="ops-api-metrics-tbody"></tbody>
+        </table>
+        <div id="ops-api-metrics-empty" class="empty" style="display:none">No API calls logged yet</div>
       </div>
     </div>
   </section>
@@ -999,6 +922,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
         <div class="loading">Loading…</div>
       </div>
     </div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="c-ey"><div class="ey-d" style="background:var(--data)"></div>Endpoint Availability (rolling window)</div>
+      <div id="source-availability-chart"><div class="loading">Loading…</div></div>
+    </div>
   </section>
 
   <!-- ═══ DAILY OPS ═══════════════════════════════════════════════════════ -->
@@ -1117,111 +1045,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
     </div>
   </section>
 
-  <!-- ══ ALERTS ══ -->
-  <section class="sec" id="sec-alerts">
-    <div class="ph">
-      <div class="ph-badge data">Observability</div>
-      <div>
-        <div class="ph-t">Active Alerts</div>
-        <div class="ph-g">Live alert feed — unresolved critical and warning conditions across the platform</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="c-ey"><div class="ey-d" style="background:var(--data)"></div>Alert Summary</div>
-      <div id="alerts-badge" style="margin-bottom:12px;font-size:14px;color:var(--t3);">Loading…</div>
-      <div class="tbl-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Severity</th>
-              <th>Rule</th>
-              <th>Component</th>
-              <th>Message</th>
-              <th>Since</th>
-            </tr>
-          </thead>
-          <tbody id="alerts-table">
-            <tr><td colspan="5" class="loading">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <!-- ══ SOURCE AVAILABILITY ══ -->
-  <section class="sec" id="sec-source-availability">
-    <div class="ph">
-      <div class="ph-badge data">Observability</div>
-      <div>
-        <div class="ph-t">Source Availability</div>
-        <div class="ph-g">Experience layer endpoint health — OK / empty / error breakdown per data source</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="c-ey"><div class="ey-d" style="background:var(--data)"></div>Endpoint Availability (rolling window)</div>
-      <div id="source-availability-chart"><div class="loading">Loading…</div></div>
-    </div>
-  </section>
-
-  <!-- ══ FUNCTIONAL KPIs ══ -->
-  <section class="sec" id="sec-functional-kpis">
-    <div class="ph">
-      <div class="ph-badge data">Observability</div>
-      <div>
-        <div class="ph-t">Functional KPIs (24h)</div>
-        <div class="ph-g">Training success rate, chat confidence, API error rate, and P95 latency sparklines</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="c-ey"><div class="ey-d" style="background:var(--data)"></div>KPI Sparklines</div>
-      <div id="functional-kpis-container" style="display:flex;flex-wrap:wrap;gap:16px;"><div class="loading">Loading…</div></div>
-    </div>
-  </section>
-
-  <section class="sec" id="sec-api-metrics">
-    <div class="ph">
-      <div class="ph-badge data">Monitoring</div>
-      <div>
-        <div class="ph-t">API Metrics</div>
-        <div class="ph-g">Per-endpoint call counts, latency percentiles, and error rates from the live request log.</div>
-      </div>
-    </div>
-
-    <div class="kpi-strip" style="grid-template-columns:repeat(3,1fr);">
-      <div class="kpi">
-        <div class="kpi-ey">Total Calls</div>
-        <div class="kpi-val ops" id="ops-api-metrics-total">—</div>
-        <div class="kpi-sub">all endpoints</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-ey">Unique Endpoints</div>
-        <div class="kpi-val ops" id="ops-api-metrics-unique">—</div>
-        <div class="kpi-sub">distinct paths</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-ey">Error Rate</div>
-        <div class="kpi-val" id="ops-api-metrics-error-rate">—</div>
-        <div class="kpi-sub">4xx / 5xx</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div style="margin-bottom:12px;">
-        <label style="font-size:11px;color:var(--t3);">Method: <input id="ops-api-metrics-filter-method" type="text" placeholder="GET / POST" style="width:80px" onchange="filterApiMetrics()"></label>
-        <label style="margin-left:16px;font-size:11px;color:var(--t3);">Path prefix: <input id="ops-api-metrics-filter-prefix" type="text" placeholder="/api/v1/experience" style="width:200px" onchange="filterApiMetrics()"></label>
-      </div>
-      <div class="tbl-wrap">
-        <table>
-          <thead><tr><th>Path</th><th>Method</th><th>Calls</th><th>p50 (ms)</th><th>p95 (ms)</th><th>Errors</th><th>Error Rate</th><th>Last seen</th></tr></thead>
-          <tbody id="ops-api-metrics-tbody"></tbody>
-        </table>
-      </div>
-      <div id="ops-api-metrics-empty" style="display:none; padding:16px; color:var(--t3);">No data available.</div>
-    </div>
-  </section>
 
 </main>
 </div>

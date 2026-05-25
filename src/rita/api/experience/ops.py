@@ -689,6 +689,101 @@ def _read_chat_monitor_rows() -> list[dict]:
         return []
 
 
+# ── GET /api/experience/ops/github-deploys ───────────────────────────────────
+
+@router.get("/github-deploys", summary="Recent GitHub Actions deploy runs", tags=["experience:ops"])
+def get_github_deploys(limit: int = Query(default=10, ge=1, le=50)) -> dict[str, Any]:
+    """Return recent GitHub Actions workflow runs for the production repo."""
+    import urllib.request as _req
+
+    pat  = os.environ.get("RITA_GITHUB_PAT", "")
+    repo = os.environ.get("RITA_GITHUB_REPO", "san-work-ravionics/riia-jun-release-prod")
+
+    if not pat:
+        return {"runs": [], "total_count": 0, "error": "RITA_GITHUB_PAT not configured"}
+
+    url = f"https://api.github.com/repos/{repo}/actions/runs?per_page={limit}"
+    try:
+        request = _req.Request(url, headers={
+            "Authorization": f"token {pat}",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+        })
+        with _req.urlopen(request, timeout=10) as resp:
+            data = json.loads(resp.read())
+
+        runs = []
+        for r in data.get("workflow_runs", []):
+            created_str = r.get("created_at", "")
+            updated_str = r.get("updated_at", "")
+            duration_sec: Optional[int] = None
+            if created_str and updated_str:
+                try:
+                    c = datetime.fromisoformat(created_str.rstrip("Z") + "+00:00")
+                    u = datetime.fromisoformat(updated_str.rstrip("Z") + "+00:00")
+                    duration_sec = max(0, int((u - c).total_seconds()))
+                except Exception:
+                    pass
+            commit_msg = r.get("head_commit", {}).get("message", "").split("\n")[0]
+            runs.append({
+                "run_id":       r.get("id"),
+                "status":       r.get("status"),
+                "conclusion":   r.get("conclusion"),
+                "created_at":   created_str,
+                "commit_message": commit_msg,
+                "commit_sha":   (r.get("head_sha") or "")[:7],
+                "actor":        (r.get("actor") or {}).get("login"),
+                "duration_sec": duration_sec,
+                "url":          r.get("html_url"),
+            })
+
+        log_event(log, "info", "github_deploys.ok", runs=len(runs))
+        return {"runs": runs, "total_count": data.get("total_count", 0)}
+
+    except Exception as exc:
+        log_event(log, "warning", "github_deploys.error", error=str(exc))
+        return {"runs": [], "total_count": 0, "error": str(exc)}
+
+
+# ── GET /api/experience/ops/aws-alerts ────────────────────────────────────────
+
+@router.get("/aws-alerts", summary="Active AWS CloudWatch alarm states", tags=["experience:ops"])
+def get_aws_alerts() -> dict[str, Any]:
+    """Return current CloudWatch alarm states as structured alert objects."""
+    try:
+        import boto3 as _boto3
+
+        region = os.environ.get("AWS_DEFAULT_REGION", "ap-south-1")
+        cw = _boto3.client("cloudwatch", region_name=region)
+        resp = cw.describe_alarms(MaxRecords=100)
+
+        alerts = []
+        for alarm in resp.get("MetricAlarms", []):
+            state = alarm.get("StateValue", "OK")
+            status   = "active" if state in ("ALARM", "INSUFFICIENT_DATA") else "ok"
+            severity = "Critical" if state == "ALARM" else ("Warning" if state == "INSUFFICIENT_DATA" else "OK")
+            ts = alarm.get("StateUpdatedTimestamp")
+            since = ts.isoformat() if ts and hasattr(ts, "isoformat") else ""
+            threshold = alarm.get("Threshold")
+            op = alarm.get("ComparisonOperator", "").replace("GreaterThanOrEqualToThreshold", "≥").replace("GreaterThanThreshold", ">").replace("LessThanThreshold", "<").replace("LessThanOrEqualToThreshold", "≤")
+            message = alarm.get("AlarmDescription") or f"{alarm.get('MetricName','')} {op} {threshold}"
+            alerts.append({
+                "status":    status,
+                "severity":  severity,
+                "rule":      alarm.get("AlarmName", ""),
+                "component": alarm.get("MetricName", "EC2"),
+                "message":   message,
+                "since":     since,
+            })
+
+        log_event(log, "info", "aws_alerts.ok", alarms=len(alerts))
+        return {"alerts": alerts, "generated_at": datetime.now(timezone.utc).isoformat()}
+
+    except Exception as exc:
+        log_event(log, "warning", "aws_alerts.error", error=str(exc))
+        return {"alerts": [], "generated_at": datetime.now(timezone.utc).isoformat(), "error": str(exc)}
+
+
 @router.get("/functional-kpis", response_model=FunctionalKPIsResponse)
 def get_functional_kpis(
     hours: int = Query(default=24, ge=1, le=168),
