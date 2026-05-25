@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-25T12:47:31",
+  "generated_at": "2026-05-25T14:54:55",
   "total_runs": 61,
   "per_role": {
     "pm": {
@@ -784,17 +784,17 @@
   },
   "api_metrics": {
     "available": true,
-    "total_calls": 1539,
+    "total_calls": 1564,
     "unique_endpoints": 66,
-    "overall_error_rate_pct": 2.34,
+    "overall_error_rate_pct": 2.3,
     "error_rate_5xx_pct": 0.0,
     "top_5_by_calls": [
       {
         "path": "/progress",
         "method": "GET",
-        "count": 509,
-        "p50_ms": 5.1,
-        "p95_ms": 62.3,
+        "count": 511,
+        "p50_ms": 5.2,
+        "p95_ms": 66.7,
         "error_count": 0
       },
       {
@@ -808,8 +808,8 @@
       {
         "path": "/api/experience/ops/functional-kpis",
         "method": "GET",
-        "count": 100,
-        "p50_ms": 11.2,
+        "count": 102,
+        "p50_ms": 11.7,
         "p95_ms": 252.1,
         "error_count": 6
       },
@@ -824,12 +824,12 @@
       {
         "path": "/api/experience/ops/metrics/summary",
         "method": "GET",
-        "count": 89,
-        "p50_ms": 34.1,
-        "p95_ms": 160.0,
+        "count": 94,
+        "p50_ms": 36.1,
+        "p95_ms": 161.5,
         "error_count": 0
       }
     ],
-    "generated_at": "2026-05-25T10:47:31.726336+00:00"
+    "generated_at": "2026-05-25T12:54:55.499738+00:00"
   }
 }
