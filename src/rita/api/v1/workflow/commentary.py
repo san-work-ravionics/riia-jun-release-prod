@@ -312,11 +312,29 @@ def _handle_strategy(req: CommentaryRequest) -> dict[str, Any]:
     return {"commentary": commentary, "instruments_analyzed": [inst]}
 
 
+def _handle_strategy_comparison(req: CommentaryRequest) -> dict[str, Any]:
+    """Short conceptual narrative comparing the 5 rule-based strategies."""
+    inst = (req.instrument or "NIFTY").upper()
+
+    commentary = (
+        f"{inst} — five strategies, one year.\n\n"
+        "B&H captures the full move at zero cost. "
+        "RSI Value buys oversold, sells overbought — precise but slow. "
+        "SMA-20 Momentum rides trends; whipsaws in ranges. "
+        "Swing targets 5-day extremes — most trades. "
+        "52-Week S/R fires once or twice, targets structural turns.\n\n"
+        "Use Sharpe + Max DD to compare, not raw returns."
+    )
+
+    return {"commentary": commentary, "instruments_analyzed": [inst]}
+
+
 # ── Dispatch table ────────────────────────────────────────────────────────────
 
 _DISPATCH: dict[tuple[str, str], Callable] = {
     ("rita", "overview"): _handle_overview,
     ("rita", "strategy"): _handle_strategy,
+    ("rita", "strategy-comparison"): _handle_strategy_comparison,
 }
 
 

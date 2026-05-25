@@ -9,6 +9,7 @@ from __future__ import annotations
 import math as _math
 import statistics as _stats
 import time
+from functools import lru_cache as _lru_cache
 from typing import Any, Optional
 
 import structlog
@@ -29,6 +30,11 @@ from rita.core.performance import (
     simulate_stress_scenarios,
 )
 from rita.schemas.geography import GeographyOverviewResponse, GeoInstrument, GeoRegion
+from rita.schemas.strategy_comparison import (
+    StrategyComparisonResponse,
+    StrategyResult,
+    StrategySummaryRow,
+)
 
 log = structlog.get_logger()
 
@@ -1557,4 +1563,347 @@ def experience_training_history(
             "notes": "",
         })
     result.reverse()
+    return result
+
+
+# ── GET /api/v1/experience/rita/strategy-comparison ──────────────────────────
+
+# ─ Strategy runner helpers ───────────────────────────────────────────────────
+
+_INITIAL_CAPITAL = 10_000.0
+_STRATEGY_COLORS = {
+    "Buy and Hold":        "#0056B8",
+    "Value Investing":     "#1A6B3C",
+    "Momentum Investing":  "#92480A",
+    "Swing Trading":       "#6B2FA0",
+    "Support-Resistance":  "#9B1C1C",
+}
+
+
+def _sanitize(v: float) -> float:
+    """Replace NaN/inf with 0.0."""
+    import math
+    if v is None or math.isnan(v) or math.isinf(v):
+        return 0.0
+    return round(v, 4)
+
+
+def _compute_metrics(equity: list[float], n_trades: int, wins: int) -> StrategySummaryRow:
+    """Derive aggregate metrics from an equity curve."""
+    import statistics as _stats_mod
+
+    final_value = equity[-1] if equity else _INITIAL_CAPITAL
+    total_return_pct = _sanitize((final_value - _INITIAL_CAPITAL) / _INITIAL_CAPITAL * 100)
+
+    # Daily returns for Sharpe
+    daily_ret: list[float] = []
+    for i in range(1, len(equity)):
+        r = (equity[i] - equity[i - 1]) / max(equity[i - 1], 1e-9)
+        daily_ret.append(r)
+
+    if len(daily_ret) >= 2:
+        mu = _stats_mod.mean(daily_ret)
+        sd = _stats_mod.stdev(daily_ret)
+        sharpe = _sanitize((mu / sd) * (252 ** 0.5) if sd > 1e-12 else 0.0)
+    else:
+        sharpe = 0.0
+
+    # Max drawdown
+    peak = equity[0] if equity else _INITIAL_CAPITAL
+    mdd = 0.0
+    for v in equity:
+        if v > peak:
+            peak = v
+        dd = (peak - v) / max(peak, 1e-9) * 100
+        if dd > mdd:
+            mdd = dd
+    max_drawdown_pct = _sanitize(mdd)
+
+    win_rate_pct = _sanitize((wins / n_trades * 100) if n_trades > 0 else 0.0)
+    return StrategySummaryRow(
+        name="",  # filled by caller
+        total_return_pct=total_return_pct,
+        sharpe=sharpe,
+        max_drawdown_pct=max_drawdown_pct,
+        n_trades=n_trades,
+        win_rate_pct=win_rate_pct,
+        final_value=_sanitize(final_value),
+    )
+
+
+def _run_buy_and_hold(close: "list[float]") -> tuple[list[float], int, int]:
+    capital = _INITIAL_CAPITAL
+    shares = capital / close[0] if close[0] > 0 else 0
+    equity = [shares * p for p in close]
+    return equity, 1, 1 if equity[-1] > _INITIAL_CAPITAL else 0
+
+
+def _run_value_investing(close: "list[float]") -> tuple[list[float], int, int]:
+    import math
+    n = len(close)
+    # RSI-14 with 50-day warmup
+    rsi: list[float] = [float("nan")] * n
+    period = 14
+    gains = [0.0] * n
+    losses = [0.0] * n
+    for i in range(1, n):
+        d = close[i] - close[i - 1]
+        gains[i] = max(d, 0.0)
+        losses[i] = max(-d, 0.0)
+    if n > period:
+        avg_g = sum(gains[1:period + 1]) / period
+        avg_l = sum(losses[1:period + 1]) / period
+        for i in range(period, n):
+            avg_g = (avg_g * (period - 1) + gains[i]) / period
+            avg_l = (avg_l * (period - 1) + losses[i]) / period
+            rs = avg_g / avg_l if avg_l > 1e-12 else 100.0
+            rsi[i] = 100.0 - 100.0 / (1.0 + rs)
+
+    capital = _INITIAL_CAPITAL
+    shares = 0.0
+    equity = []
+    n_trades = 0
+    wins = 0
+    entry_price = 0.0
+    in_pos = False
+    for i, p in enumerate(close):
+        r = rsi[i]
+        if not math.isnan(r):
+            if not in_pos and r < 30:
+                shares = capital / p if p > 0 else 0
+                capital = 0.0
+                in_pos = True
+                entry_price = p
+            elif in_pos and r > 70:
+                capital = shares * p
+                n_trades += 1
+                if p > entry_price:
+                    wins += 1
+                shares = 0.0
+                in_pos = False
+        pv = capital + shares * p
+        equity.append(pv)
+    return equity, n_trades, wins
+
+
+def _run_momentum(close: "list[float]") -> tuple[list[float], int, int]:
+    n = len(close)
+    sma: list[float] = [float("nan")] * n
+    period = 20
+    for i in range(period - 1, n):
+        sma[i] = sum(close[i - period + 1:i + 1]) / period
+
+    import math
+    capital = _INITIAL_CAPITAL
+    shares = 0.0
+    equity = []
+    n_trades = 0
+    wins = 0
+    entry_price = 0.0
+    in_pos = False
+    for i, p in enumerate(close):
+        s = sma[i]
+        if not math.isnan(s) and i > 0 and not math.isnan(sma[i - 1]):
+            prev_above = close[i - 1] > sma[i - 1]
+            curr_above = p > s
+            if not in_pos and not prev_above and curr_above:
+                shares = capital / p if p > 0 else 0
+                capital = 0.0
+                in_pos = True
+                entry_price = p
+            elif in_pos and prev_above and not curr_above:
+                capital = shares * p
+                n_trades += 1
+                if p > entry_price:
+                    wins += 1
+                shares = 0.0
+                in_pos = False
+        pv = capital + shares * p
+        equity.append(pv)
+    return equity, n_trades, wins
+
+
+def _run_swing_trading(close: "list[float]") -> tuple[list[float], int, int]:
+    window = 5
+    capital = _INITIAL_CAPITAL
+    shares = 0.0
+    equity = []
+    n_trades = 0
+    wins = 0
+    entry_price = 0.0
+    in_pos = False
+    for i, p in enumerate(close):
+        if i >= window:
+            local_low  = min(close[i - window:i])
+            local_high = max(close[i - window:i])
+            if not in_pos and p <= local_low:
+                shares = capital / p if p > 0 else 0
+                capital = 0.0
+                in_pos = True
+                entry_price = p
+            elif in_pos and p >= local_high:
+                capital = shares * p
+                n_trades += 1
+                if p > entry_price:
+                    wins += 1
+                shares = 0.0
+                in_pos = False
+        pv = capital + shares * p
+        equity.append(pv)
+    return equity, n_trades, wins
+
+
+def _run_support_resistance(close: "list[float]") -> tuple[list[float], int, int]:
+    period = 252
+    capital = _INITIAL_CAPITAL
+    shares = 0.0
+    equity = []
+    n_trades = 0
+    wins = 0
+    entry_price = 0.0
+    in_pos = False
+    for i, p in enumerate(close):
+        if i >= period:
+            window = close[i - period:i]
+            low_252  = min(window)
+            high_252 = max(window)
+            if not in_pos and p <= low_252 * 1.05:
+                shares = capital / p if p > 0 else 0
+                capital = 0.0
+                in_pos = True
+                entry_price = p
+            elif in_pos and p >= high_252 * 0.95:
+                capital = shares * p
+                n_trades += 1
+                if p > entry_price:
+                    wins += 1
+                shares = 0.0
+                in_pos = False
+        pv = capital + shares * p
+        equity.append(pv)
+    return equity, n_trades, wins
+
+
+@_lru_cache(maxsize=64)
+def _run_strategies_cached(instrument: str, year: int) -> StrategyComparisonResponse:
+    """Compute all 5 strategies. LRU-cached on (instrument, year)."""
+    import pandas as pd
+    from rita.core.data_loader import load_instrument_data
+
+    try:
+        df = load_instrument_data(instrument)
+    except FileNotFoundError:
+        return StrategyComparisonResponse(
+            instrument=instrument,
+            year=year,
+            error=f"No OHLCV data found for instrument '{instrument}'",
+        )
+    except Exception as exc:
+        return StrategyComparisonResponse(
+            instrument=instrument,
+            year=year,
+            error=f"Data load error: {exc}",
+        )
+
+    # Filter to requested year with 50-day prior warmup window
+    year_start = pd.Timestamp(f"{year}-01-01")
+    year_end   = pd.Timestamp(f"{year}-12-31")
+
+    df_year = df.loc[year_start:year_end]
+    if df_year.empty:
+        return StrategyComparisonResponse(
+            instrument=instrument,
+            year=year,
+            error=f"No data available for {instrument} in {year}",
+        )
+
+    # Build warmup slice (up to 252 prior trading days)
+    warmup_start = df.index[max(0, df.index.get_loc(df_year.index[0]) - 252)] if len(df_year) > 0 else year_start
+    df_warm = df.loc[warmup_start:year_end]
+    close_all: list[float] = df_warm["Close"].tolist()
+
+    # Trim index alignment — strategy runners return equity of same length as close_all
+    # We then slice to the year-only portion for the response
+    n_warmup = len(df_warm.loc[warmup_start:year_start]) - 1
+    year_slice = slice(n_warmup, None)
+
+    dates_all = [str(d.date()) for d in df_warm.index]
+    dates = dates_all[year_slice]
+
+    runners = [
+        ("Buy and Hold",       _run_buy_and_hold),
+        ("Value Investing",    _run_value_investing),
+        ("Momentum Investing", _run_momentum),
+        ("Swing Trading",      _run_swing_trading),
+        ("Support-Resistance", _run_support_resistance),
+    ]
+
+    strategies: list[StrategyResult] = []
+    summary: list[StrategySummaryRow] = []
+
+    for name, runner in runners:
+        try:
+            eq_full, n_trades, wins = runner(close_all)
+            eq = eq_full[year_slice]
+            # Normalise equity so all strategies start at INITIAL_CAPITAL on day 1 of the year
+            if eq and eq[0] > 0:
+                scale = _INITIAL_CAPITAL / eq[0]
+                eq = [v * scale for v in eq]
+        except Exception as exc:
+            log.warning("strategy_comparison.runner_error", strategy=name, error=str(exc))
+            eq = [_INITIAL_CAPITAL] * len(dates)
+            n_trades = 0
+            wins = 0
+
+        eq_safe = [_sanitize(v) for v in eq]
+        metrics = _compute_metrics(eq_safe, n_trades, wins)
+        metrics.name = name
+
+        strategies.append(StrategyResult(
+            name=name,
+            equity=eq_safe,
+            color=_STRATEGY_COLORS.get(name, "#666666"),
+        ))
+        summary.append(metrics)
+
+    return StrategyComparisonResponse(
+        instrument=instrument,
+        year=year,
+        dates=dates,
+        strategies=strategies,
+        summary=summary,
+    )
+
+
+@router.get(
+    "/experience/rita/strategy-comparison",
+    response_model=StrategyComparisonResponse,
+    summary="Strategy Comparison — 5-strategy OHLCV performance (experience tier)",
+)
+def experience_strategy_comparison(
+    instrument: Optional[str] = None,
+    year: int = 2025,
+    db: Session = Depends(get_db),
+) -> StrategyComparisonResponse:
+    """Run 5 rule-based strategies on OHLCV data and return equity curves + metrics.
+
+    Experience tier — read-only. No db.commit().
+    LRU-cached per (instrument, year).
+    """
+    if year not in (2025, 2026):
+        year = 2025
+
+    inst = (instrument or _get_active_instrument_id(db)).upper()
+
+    _start = time.monotonic()
+    result = _run_strategies_cached(inst, year)
+    log_event(
+        log, "info", "experience.compose",
+        handler="experience_strategy_comparison",
+        instrument=inst,
+        year=year,
+        duration_ms=int((time.monotonic() - _start) * 1000),
+        response_keys=["strategies", "summary", "dates"],
+        sources={"csv": {"status": "ok" if not result.error else "error"}},
+    )
     return result
