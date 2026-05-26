@@ -75,7 +75,7 @@ def auth_token(base_url: str) -> str:
     """
     r = requests.post(
         f"{base_url}/auth/token",
-        json={"username": "test", "password": "rita-dev"},
+        json={"username": "rita-dev", "password": "rita-dev"},
         timeout=10,
     )
     assert r.status_code == 200, f"Auth token request failed: {r.status_code} — {r.text}"

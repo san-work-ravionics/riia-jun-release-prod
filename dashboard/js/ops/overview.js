@@ -49,19 +49,26 @@ export async function loadOverview() {
     document.getElementById('kpi-pipeline').textContent = completedCount;
     document.getElementById('kpi-pipeline-sub').textContent = `of ${total} complete (${pctComplete}%)`;
 
-    // Sidebar footer
+    // Sidebar footer (elements are optional — ops.html may not include them)
     const allDone = completedCount >= total;
-    document.getElementById('mc-status-text').textContent = allDone ? 'Pipeline Complete' : `${completedCount}/${total} Steps Done`;
-    document.getElementById('mc-steps').textContent = `${completedCount} / ${total}`;
-    document.getElementById('mc-bar').style.width = pctComplete + '%';
+    const mcStatus = document.getElementById('mc-status-text');
+    const mcSteps = document.getElementById('mc-steps');
+    const mcBar = document.getElementById('mc-bar');
+    if (mcStatus) mcStatus.textContent = allDone ? 'Pipeline Complete' : `${completedCount}/${total} Steps Done`;
+    if (mcSteps) mcSteps.textContent = `${completedCount} / ${total}`;
+    if (mcBar) mcBar.style.width = pctComplete + '%';
   }
 
   if (health) {
-    document.getElementById('mc-model').textContent = health.model_exists
-      ? (health.model_age_days != null ? `${health.model_age_days}d old` : 'exists')
-      : 'not trained';
-    document.getElementById('mc-model').className = 'mc-v ' + (health.model_exists ? 'ok' : 'warn');
-    document.getElementById('mc-lastrun').textContent = health.last_pipeline_run
+    const mcModel = document.getElementById('mc-model');
+    const mcLastrun = document.getElementById('mc-lastrun');
+    if (mcModel) {
+      mcModel.textContent = health.model_exists
+        ? (health.model_age_days != null ? `${health.model_age_days}d old` : 'exists')
+        : 'not trained';
+      mcModel.className = 'mc-v ' + (health.model_exists ? 'ok' : 'warn');
+    }
+    if (mcLastrun) mcLastrun.textContent = health.last_pipeline_run
       ? health.last_pipeline_run.slice(0, 16) : 'never';
   }
 

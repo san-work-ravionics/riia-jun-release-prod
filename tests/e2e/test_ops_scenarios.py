@@ -51,8 +51,8 @@ def test_ops_overview_metrics(base_url):
 
 
 def test_ops_overview_step_log(base_url):
-    """overview.js: GET /api/v1/step-log — pipeline step list on Overview."""
-    r = requests.get(f"{base_url}/api/v1/step-log", timeout=TIMEOUT)
+    """overview.js: GET /api/experience/ops/step-log — pipeline step list on Overview."""
+    r = requests.get(f"{base_url}/api/experience/ops/step-log", timeout=TIMEOUT)
     assert r.status_code == 200
     assert isinstance(r.json(), list)
 
@@ -81,8 +81,8 @@ def test_ops_overview_progress(base_url):
 # ---------------------------------------------------------------------------
 
 def test_ops_monitoring_metrics_summary(base_url):
-    """monitoring.js: GET /api/v1/metrics/summary — API counters panel."""
-    r = requests.get(f"{base_url}/api/v1/metrics/summary", timeout=TIMEOUT)
+    """monitoring.js: GET /api/experience/ops/metrics/summary — API counters panel."""
+    r = requests.get(f"{base_url}/api/experience/ops/metrics/summary", timeout=TIMEOUT)
     assert r.status_code == 200
     body = r.json()
     assert "api_requests" in body
@@ -90,8 +90,8 @@ def test_ops_monitoring_metrics_summary(base_url):
 
 
 def test_ops_monitoring_step_log(base_url):
-    """monitoring.js: GET /api/v1/step-log — step timing table."""
-    r = requests.get(f"{base_url}/api/v1/step-log", timeout=TIMEOUT)
+    """monitoring.js: GET /api/experience/ops/step-log — step timing table."""
+    r = requests.get(f"{base_url}/api/experience/ops/step-log", timeout=TIMEOUT)
     assert r.status_code == 200
     assert isinstance(r.json(), list)
 
@@ -101,8 +101,8 @@ def test_ops_monitoring_step_log(base_url):
 # ---------------------------------------------------------------------------
 
 def test_ops_cicd_step_log(base_url):
-    """cicd.js: GET /api/v1/step-log — CI/CD pipeline step log."""
-    r = requests.get(f"{base_url}/api/v1/step-log", timeout=TIMEOUT)
+    """cicd.js: GET /api/experience/ops/step-log — CI/CD pipeline step log."""
+    r = requests.get(f"{base_url}/api/experience/ops/step-log", timeout=TIMEOUT)
     assert r.status_code == 200
     assert isinstance(r.json(), list)
 

@@ -224,6 +224,22 @@ class Settings(BaseSettings):
 
         # Merge YAML into any explicitly passed values (passed values win).
         merged = _deep_merge(yaml_cfg, values)
+
+        # Explicitly inject security env vars — pydantic-settings doesn't re-read
+        # env when a nested BaseSettings is constructed via model_validate from a
+        # parent dict (the normal path when Settings() is called).
+        # Keys must match validation_alias (not the Python field name) because
+        # SecuritySettings uses validation_alias without populate_by_name=True.
+        _SEC_ENV_VARS = [
+            "RITA_JWT_SECRET",
+            "RITA_GOOGLE_CLIENT_ID",
+            "RITA_GOOGLE_CLIENT_SECRET",
+            "RITA_BASE_URL",
+        ]
+        sec_overrides = {e: os.environ[e] for e in _SEC_ENV_VARS if e in os.environ}
+        if sec_overrides:
+            merged.setdefault("security", {}).update(sec_overrides)
+
         return merged
 
     @model_validator(mode="after")

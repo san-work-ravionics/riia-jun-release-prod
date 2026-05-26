@@ -603,7 +603,8 @@ class TestFCImpImportCheck:
         )
         assert utils_path.exists(), f"utils.js not found at {utils_path}"
         content = utils_path.read_text(encoding="utf-8")
-        assert "export function setEl(" in content, (
+        # Accept either a local definition or a named re-export from shared/utils.js
+        assert ("export function setEl(" in content or "export {" in content and "setEl" in content), (
             "setEl is not exported from dashboard/js/ops/utils.js — FC-IMP FAIL"
         )
 

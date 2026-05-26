@@ -260,8 +260,8 @@ class TestNoCrossContamination:
     def test_shared_api_js_has_no_window_bindings(self):
         """Architect: no new window bindings in shared modules."""
         src = _read(API_JS)
-        assert "window." not in src.replace("window.RITA_API_BASE", "").replace("window.SESSION_TRACE_ID", ""), \
-            "shared/api.js must only access window.RITA_API_BASE and window.SESSION_TRACE_ID"
+        assert "window." not in src.replace("window.RITA_API_BASE", "").replace("window.SESSION_TRACE_ID", "").replace("window.location.href", ""), \
+            "shared/api.js must only access window.RITA_API_BASE, window.SESSION_TRACE_ID, and window.location.href (OAuth redirect)"
 
     def test_shared_utils_js_no_fetch_calls(self):
         """utils.js is DOM helpers only — must not call fetch()."""

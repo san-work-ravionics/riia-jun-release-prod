@@ -57,8 +57,8 @@ def test_overview_readiness(base_url):
 
 
 def test_overview_metrics(base_url):
-    """health.js: GET /api/v1/metrics/summary — API counters on Model Overview."""
-    r = requests.get(f"{base_url}/api/v1/metrics/summary", timeout=TIMEOUT)
+    """health.js: GET /api/experience/ops/metrics/summary — API counters on Model Overview."""
+    r = requests.get(f"{base_url}/api/experience/ops/metrics/summary", timeout=TIMEOUT)
     assert r.status_code == 200
     body = r.json()
     assert "api_requests" in body
@@ -202,8 +202,8 @@ def test_observability_drift(base_url):
 
 
 def test_observability_step_log(base_url):
-    """observability.js: GET /api/v1/step-log — pipeline step table."""
-    r = requests.get(f"{base_url}/api/v1/step-log", timeout=TIMEOUT)
+    """observability.js: GET /api/experience/ops/step-log — pipeline step table."""
+    r = requests.get(f"{base_url}/api/experience/ops/step-log", timeout=TIMEOUT)
     assert r.status_code == 200
     assert isinstance(r.json(), list)
 
@@ -230,7 +230,7 @@ def test_audit_training_history(base_url):
 
 
 def test_audit_step_log(base_url):
-    """audit.js: GET /api/v1/step-log — step log in audit view."""
-    r = requests.get(f"{base_url}/api/v1/step-log", timeout=TIMEOUT)
+    """audit.js: GET /api/experience/ops/step-log — step log in audit view."""
+    r = requests.get(f"{base_url}/api/experience/ops/step-log", timeout=TIMEOUT)
     assert r.status_code == 200
     assert isinstance(r.json(), list)

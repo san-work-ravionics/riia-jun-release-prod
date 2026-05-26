@@ -91,7 +91,7 @@ class TestGatewayHtmlRequiredIds:
 
     @pytest.mark.parametrize("element_id", [
         "card-rita",
-        "card-invest",
+        "card-onboarding",
         "card-fno",
         "card-ops",
         "card-ds",

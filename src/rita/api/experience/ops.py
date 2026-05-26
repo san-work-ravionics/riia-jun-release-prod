@@ -41,6 +41,7 @@ from rita.schemas.agent_builds import (
 )
 from rita.schemas.audit import AuditLog
 from rita.schemas.backtest import BacktestRun
+from rita.auth import get_current_user
 from rita.schemas.token_forecast import TokenForecastResponse
 from rita.schemas.training import TrainingRun
 from rita.services.backtest_service import BacktestService
@@ -572,6 +573,7 @@ def get_token_forecast(
     new_endpoint_or_model: str,
     frontend_scope: str,
     integration_type: str,
+    _current_user: str = Depends(get_current_user),
 ) -> TokenForecastResponse:
     """Return a pre-run token budget forecast based on 4 complexity signals."""
     # Resolve metrics.json path at call time — never at module level
