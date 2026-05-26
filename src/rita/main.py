@@ -50,6 +50,7 @@ from rita.api.v1.system.training_runs import router as training_runs_router
 from rita.api.v1.system.drift import router as drift_router
 from rita.api.v1.system.data_prep import router as data_prep_router
 from rita.api.v1.system.mcp_calls import router as mcp_calls_router
+from rita.interfaces.mcp_sse_app import handle_sse, sse_transport
 from rita.api.v1.system.client_errors import router as client_errors_router
 from rita.api.v1.workflow.train import router as train_router
 from rita.api.v1.workflow.backtest import router as backtest_router
@@ -357,6 +358,10 @@ app.include_router(drift_router)
 app.include_router(data_prep_router)
 app.include_router(mcp_calls_router)
 app.include_router(client_errors_router)
+
+# -- MCP SSE transport -- remote Claude Desktop access via mcp-remote ----------
+app.add_api_route("/mcp/sse", handle_sse, methods=["GET"], include_in_schema=False)
+app.mount("/mcp/messages", sse_transport.handle_post_message)
 
 # -- Workflow tier -- JWT-protected business process routers ------------------
 app.include_router(train_router, dependencies=[Depends(get_current_user)])

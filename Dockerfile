@@ -13,7 +13,7 @@ COPY pyproject.toml .
 ARG PIP_EXTRA_INDEX_URL=https://download.pytorch.org/whl/cpu
 RUN pip install --no-cache-dir torch --extra-index-url https://download.pytorch.org/whl/cpu
 # Install project deps; pip sees torch already satisfied so does not re-resolve to CUDA.
-RUN mkdir -p src && pip install --no-cache-dir -e ".[dev]"
+RUN mkdir -p src && pip install --no-cache-dir -e ".[dev,interfaces]"
 
 # Pre-download sentence-transformer model so the runtime image has no HuggingFace dependency.
 # Placed after pip install but before COPY src/ so this layer is cached unless dependencies change.
