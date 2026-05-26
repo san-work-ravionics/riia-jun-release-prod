@@ -501,9 +501,9 @@
 
   /* ── Slider stop definitions per investor type ── */
   var SLIDER_STOPS = {
-    short: [{v:0.25,l:'Q1'},{v:0.5,l:'Q2'},{v:0.75,l:'Q3'},{v:1,l:'Q4'}],
+    short: [{v:0.25,l:'3m'},{v:0.5,l:'6m'},{v:0.75,l:'9m'},{v:1,l:'12m'}],
     goal:  [{v:1,l:'1y'},{v:2,l:'2y'},{v:3,l:'3y'},{v:4,l:'4y'},{v:5,l:'5y'}],
-    long:  [{v:5,l:'5y'},{v:10,l:'10y'},{v:15,l:'15y'},{v:20,l:'20y'}]
+    long:  [{v:3,l:'3y'},{v:6,l:'6y'},{v:9,l:'9y'},{v:12,l:'12y'},{v:15,l:'15y'}]
   };
   var currentStops = SLIDER_STOPS.goal;
 
@@ -580,7 +580,18 @@
     onSlide();
   })();
 
-  /* ── Card 1 investor type → applies stop set to Card 3 slider ── */
+  /* ── Card 1 investor type → applies stop set to Card 3 slider + auto-selects Card 2 goal ── */
+  var INVESTOR_TO_GOAL = { short: 'purchase', goal: 'edu', long: 'retire' };
+
+  function selectGoal(choice) {
+    var goalGroup = document.querySelector('#card-2 [data-choice-group="goal"]');
+    if (!goalGroup) return;
+    goalGroup.querySelectorAll('[data-choice]').forEach(function(t) {
+      if (t.dataset.choice === choice) t.classList.add('selected');
+      else t.classList.remove('selected');
+    });
+  }
+
   (function () {
     var investorGroup = document.querySelector('#card-1 [data-choice-group="investor"]');
     if (!investorGroup) return;
@@ -592,6 +603,7 @@
       applyStops(SLIDER_STOPS[choice]);
       var targetInp = document.getElementById('c3-target');
       if (targetInp) delete targetInp.dataset.userEdited;
+      if (INVESTOR_TO_GOAL[choice]) selectGoal(INVESTOR_TO_GOAL[choice]);
     });
   })();
 
