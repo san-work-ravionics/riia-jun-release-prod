@@ -1,47 +1,47 @@
 {
-  "generated_at": "2026-05-25T14:54:55",
-  "total_runs": 61,
+  "generated_at": "2026-05-26T08:43:04",
+  "total_runs": 62,
   "per_role": {
     "pm": {
-      "run_count": 26,
+      "run_count": 27,
       "avg_adherence_score": 1.0,
       "first_pass_rate": 1.0,
       "recent_first_pass_rate": 1.0,
-      "avg_token_cost": 11444
+      "avg_token_cost": 11020
     },
     "architect": {
-      "run_count": 26,
-      "avg_adherence_score": 0.99,
-      "first_pass_rate": 0.962,
+      "run_count": 27,
+      "avg_adherence_score": 0.991,
+      "first_pass_rate": 0.963,
       "recent_first_pass_rate": 1.0,
-      "avg_token_cost": 11869
+      "avg_token_cost": 11430
     },
     "engineer": {
-      "run_count": 26,
-      "avg_adherence_score": 0.907,
-      "first_pass_rate": 0.654,
-      "recent_first_pass_rate": 0.6,
-      "avg_token_cost": 33247
+      "run_count": 27,
+      "avg_adherence_score": 0.91,
+      "first_pass_rate": 0.667,
+      "recent_first_pass_rate": 0.8,
+      "avg_token_cost": 32016
     },
     "qa": {
-      "run_count": 26,
-      "avg_adherence_score": 0.99,
-      "first_pass_rate": 0.923,
+      "run_count": 27,
+      "avg_adherence_score": 0.991,
+      "first_pass_rate": 0.926,
       "recent_first_pass_rate": 1.0,
-      "avg_token_cost": 28674
+      "avg_token_cost": 30019
     },
     "techwriter": {
-      "run_count": 26,
-      "avg_adherence_score": 0.949,
-      "first_pass_rate": 0.885,
+      "run_count": 27,
+      "avg_adherence_score": 0.939,
+      "first_pass_rate": 0.889,
       "recent_first_pass_rate": 1.0,
-      "avg_token_cost": 17435
+      "avg_token_cost": 16789
     }
   },
   "per_app": {
     "rita": {
-      "run_count": 9,
-      "pass": 6,
+      "run_count": 10,
+      "pass": 7,
       "pass_with_warnings": 3,
       "fail": 0
     },
@@ -258,6 +258,13 @@
       "grounding_score": 1.0,
       "checks_passed": 20,
       "checks_total": 20
+    },
+    {
+      "run_id": "20260525-1559",
+      "app": "rita",
+      "grounding_score": 0.95,
+      "checks_passed": 19,
+      "checks_total": 20
     }
   ],
   "failure_modes": {
@@ -321,14 +328,14 @@
     },
     "FC-TIER-12-system-api-calls": {
       "total": 1,
-      "recent_fires": 1,
+      "recent_fires": 0,
       "by_role": {
         "engineer": 1
       }
     },
     "FC-API-SIG-post-signature": {
       "total": 1,
-      "recent_fires": 1,
+      "recent_fires": 0,
       "by_role": {
         "engineer": 1
       }
@@ -344,8 +351,12 @@
   "skill_version_history": [
     {
       "skill_file": "project-office/skills/skill-add-rita-feature.md",
-      "last_updated": "8419a21",
+      "last_updated": "07a6aab",
       "recent_commits": [
+        {
+          "hash": "07a6aab",
+          "message": "feat(ops): Feature 18 complete \u2014 skill-based approach revision + drift API tier gap close"
+        },
         {
           "hash": "8419a21",
           "message": "fix(agent-ops): extend FC-TIER + FC-API-SIG gates to rita/fno/ops skills; add mobile relocation gate"
@@ -361,10 +372,6 @@
         {
           "hash": "9f306e4",
           "message": "chore(skills): add FC-MERGE gate to all 3 dashboard skill DoDs"
-        },
-        {
-          "hash": "68ae873",
-          "message": "chore(skills): add FC-IMP gate to all 3 dashboard skill files"
         }
       ],
       "improvement_applied": "FC-001 v4: self-verify grep added to spec-update step. FC-IMP v3: path-depth verification added. FC-TIER v1 + FC-API-SIG v1: system-tier banned-endpoint grep gate and api() POST positional-signature gate added before git add (matches ds skill). Root cause: FC-TIER and FC-API-SIG were ds-only; extended to all 3 dashboard skills.",
@@ -373,8 +380,12 @@
     },
     {
       "skill_file": "project-office/skills/skill-add-fno-feature.md",
-      "last_updated": "8419a21",
+      "last_updated": "07a6aab",
       "recent_commits": [
+        {
+          "hash": "07a6aab",
+          "message": "feat(ops): Feature 18 complete \u2014 skill-based approach revision + drift API tier gap close"
+        },
         {
           "hash": "8419a21",
           "message": "fix(agent-ops): extend FC-TIER + FC-API-SIG gates to rita/fno/ops skills; add mobile relocation gate"
@@ -390,10 +401,6 @@
         {
           "hash": "9f306e4",
           "message": "chore(skills): add FC-MERGE gate to all 3 dashboard skill DoDs"
-        },
-        {
-          "hash": "68ae873",
-          "message": "chore(skills): add FC-IMP gate to all 3 dashboard skill files"
         }
       ],
       "improvement_applied": "FC-001 v4: self-verify grep. FC-IMP v3: path-depth check. FC-TIER v1 + FC-API-SIG v1: banned system-tier endpoint grep gate + api() POST signature gate added (matches ds skill).",
@@ -402,8 +409,12 @@
     },
     {
       "skill_file": "project-office/skills/skill-add-ops-feature.md",
-      "last_updated": "8419a21",
+      "last_updated": "07a6aab",
       "recent_commits": [
+        {
+          "hash": "07a6aab",
+          "message": "feat(ops): Feature 18 complete \u2014 skill-based approach revision + drift API tier gap close"
+        },
         {
           "hash": "8419a21",
           "message": "fix(agent-ops): extend FC-TIER + FC-API-SIG gates to rita/fno/ops skills; add mobile relocation gate"
@@ -419,10 +430,6 @@
         {
           "hash": "9f306e4",
           "message": "chore(skills): add FC-MERGE gate to all 3 dashboard skill DoDs"
-        },
-        {
-          "hash": "68ae873",
-          "message": "chore(skills): add FC-IMP gate to all 3 dashboard skill files"
         }
       ],
       "improvement_applied": "FC-001 v4: self-verify grep. FC-IMP v3: path-depth check. FC-TIER v1 + FC-API-SIG v1: banned system-tier endpoint grep gate + api() POST signature gate added (matches ds skill).",
@@ -707,23 +714,23 @@
     }
   ],
   "task_completion": {
-    "tsr": 0.836,
-    "first_attempt_success_rate": 0.836,
-    "partial_completion_rate": 0.148,
+    "tsr": 0.839,
+    "first_attempt_success_rate": 0.839,
+    "partial_completion_rate": 0.145,
     "abandonment_rate": 0.0
   },
   "quality": {
-    "avg_accuracy_score": 2.92,
+    "avg_accuracy_score": 3.0,
     "avg_relevance_score": 4.0,
-    "avg_csat": 2.92,
-    "recent_avg_csat": 2.33,
-    "csat_count": 12,
-    "planning_accuracy_rate": 0.75,
+    "avg_csat": 3.0,
+    "recent_avg_csat": 2.67,
+    "csat_count": 13,
+    "planning_accuracy_rate": 0.769,
     "recent_planning_accuracy_rate": 1.0,
-    "grounding_pass_rate": 0.872
+    "grounding_pass_rate": 0.873
   },
   "token_forecasting": {
-    "avg_forecast_error_pct": 17.7,
+    "avg_forecast_error_pct": 17.0,
     "by_complexity": {
       "small": {
         "avg_actual": 8673,
@@ -740,8 +747,8 @@
     },
     "by_feature_type": {
       "rita": {
-        "run_count": 9,
-        "avg_tokens": 103704,
+        "run_count": 10,
+        "avg_tokens": 99233,
         "modifier": 1.0
       },
       "ops": {
@@ -763,9 +770,9 @@
   },
   "efficiency": {
     "avg_duration_minutes": 28,
-    "avg_tokens_per_run": 46779,
+    "avg_tokens_per_run": 46976,
     "avg_retry_count": 0.03,
-    "avg_time_saved_hours": 8.8
+    "avg_time_saved_hours": 8.7
   },
   "reliability": {
     "error_recovery_rate": 0.8,
@@ -784,15 +791,15 @@
   },
   "api_metrics": {
     "available": true,
-    "total_calls": 1564,
+    "total_calls": 1625,
     "unique_endpoints": 66,
-    "overall_error_rate_pct": 2.3,
+    "overall_error_rate_pct": 2.22,
     "error_rate_5xx_pct": 0.0,
     "top_5_by_calls": [
       {
         "path": "/progress",
         "method": "GET",
-        "count": 511,
+        "count": 516,
         "p50_ms": 5.2,
         "p95_ms": 66.7,
         "error_count": 0
@@ -808,10 +815,18 @@
       {
         "path": "/api/experience/ops/functional-kpis",
         "method": "GET",
-        "count": 102,
-        "p50_ms": 11.7,
-        "p95_ms": 252.1,
+        "count": 107,
+        "p50_ms": 13.2,
+        "p95_ms": 343.8,
         "error_count": 6
+      },
+      {
+        "path": "/api/experience/ops/metrics/summary",
+        "method": "GET",
+        "count": 104,
+        "p50_ms": 38.2,
+        "p95_ms": 160.0,
+        "error_count": 0
       },
       {
         "path": "/api/v1/commentary",
@@ -820,16 +835,8 @@
         "p50_ms": 290.5,
         "p95_ms": 1757.6,
         "error_count": 0
-      },
-      {
-        "path": "/api/experience/ops/metrics/summary",
-        "method": "GET",
-        "count": 94,
-        "p50_ms": 36.1,
-        "p95_ms": 161.5,
-        "error_count": 0
       }
     ],
-    "generated_at": "2026-05-25T12:54:55.499738+00:00"
+    "generated_at": "2026-05-26T06:43:04.476957+00:00"
   }
 }

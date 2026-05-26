@@ -930,3 +930,29 @@ def get_functional_kpis(
     except Exception as exc:  # noqa: BLE001
         log_event(log, "error", "functional_kpis.error", error=str(exc))
         return _zero_response(buckets, generated_at)
+
+
+@router.get("/drift", summary="Model health and drift checks", tags=["experience:ops"])
+def get_drift(db: Session = Depends(get_db)) -> dict[str, Any]:
+    """Experience-tier wrapper for DriftDetector.
+
+    ADR-001: Experience tier — read-only composition, no side effects.
+    Replaces the direct JS call to the System-tier /api/v1/drift endpoint.
+
+    Response shape (identical to system tier for zero JS changes):
+    {
+      "summary": { "overall": "ok|warn|alert" },
+      "checks": {
+        "sharpe_drift":       { "status": "ok|warn|alert", "message": str },
+        "return_degradation": { "status": str, "message": str },
+        "data_freshness":     { "status": str, "message": str, "days_old": int, "latest_date": str },
+        "pipeline_health":    { "status": str, "message": str },
+        "constraint_breach":  { "status": str, "message": str }
+      }
+    }
+    """
+    from rita.core.drift_detector import DriftDetector
+    detector = DriftDetector(db)
+    report = detector.full_report()
+    summary = detector.health_summary(report)
+    return {"summary": summary, "checks": report}

@@ -408,6 +408,12 @@ def root():
     return RedirectResponse(url="/dashboard", status_code=302)
 
 
+@app.get("/mobile", include_in_schema=False)
+def mobile():
+    _path = Path(__file__).parent.parent.parent / "mobileapp" / "gateway.html"
+    return FileResponse(_path)
+
+
 @app.get("/onboarding", include_in_schema=False)
 def onboarding():
     _path = Path(__file__).parent.parent.parent / "mobileapp" / "investor-flow" / "v2" / "invest-dashboard.html"

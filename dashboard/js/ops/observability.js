@@ -4,7 +4,7 @@ import { fmt, badge } from './utils.js';
 
 export async function loadObservability() {
   const [drift, mcp, health] = await Promise.all([
-    apiFetch('/api/v1/drift'),
+    apiFetch('/api/experience/ops/drift'),
     apiFetch('/api/v1/mcp-calls'),
     apiFetch('/health'),
   ]);
