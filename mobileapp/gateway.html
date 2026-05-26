@@ -3,120 +3,194 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RITA — Choose your app</title>
+<title>RIIA — Choose your Path</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500;600&family=Epilogue:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500&family=Epilogue:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
 :root{
-  --bg:#F5F3EE;--surface:#FFFFFF;--surface2:#F9F8F5;
-  --border:#E4E0D8;--border2:#D0CBBC;
+  --bg:#F5F3EE;--surface:#FFFFFF;--surface2:#F9F8F5;--border:#E4E0D8;--border2:#D0CBBC;
   --text:#1A1814;--t2:#4A4640;--t3:#8C877A;--t4:#B8B2A6;
   --build:#1A6B3C;--build-bg:#EDF7F2;--build-bd:#B6DEC9;
+  --run:#0056B8;--run-bg:#EDF4FF;--run-bd:#AECBF5;
+  --mon:#6B2FA0;--mon-bg:#F5EFFE;--mon-bd:#CFADF0;
   --warn:#92480A;--warn-bg:#FEF4EB;--warn-bd:#F5C99A;
-  --fd:'Epilogue',system-ui,sans-serif;
-  --fm:'IBM Plex Mono','SF Mono',monospace;
-  --fs:'Instrument Serif',Georgia,serif;
+  --fd:'Epilogue',sans-serif;--fm:'IBM Plex Mono',monospace;--fs:'Instrument Serif',serif;
+  --r:6px;--sh:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+  --shm:0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.05);
+  --shl:0 8px 24px rgba(0,0,0,.10),0 4px 8px rgba(0,0,0,.06);
 }
-html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--fd);font-size:14px;line-height:1.5;}
-.page-shell{max-width:600px;margin:0 auto;padding:0 16px 48px;}
-/* Topbar */
-.topbar{display:flex;align-items:center;gap:10px;padding:18px 0 14px;border-bottom:1px solid var(--border);margin-bottom:24px;}
-.logo-icon{width:28px;height:28px;background:var(--text);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.logo-icon svg{fill:#fff;}
-.logo-name{font-family:var(--fs);font-size:17px;letter-spacing:-.01em;}
-.topbar-sub{margin-left:auto;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);}
-/* Hero */
-.gateway-hero{margin-bottom:20px;}
-.gateway-hero h1{font-family:var(--fs);font-size:26px;letter-spacing:-.02em;margin-bottom:4px;}
-.gateway-hero p{font-size:13px;color:var(--t2);}
-/* Card grid */
-.card-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-@media(max-width:399px){.card-grid{grid-template-columns:1fr;}}
-.app-card{display:flex;flex-direction:column;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:18px 16px 16px;text-decoration:none;color:inherit;position:relative;overflow:hidden;transition:box-shadow .15s,transform .15s;}
-.app-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.09);transform:translateY(-2px);}
-.card-desktop{background:var(--surface2);}
-.card-full{grid-column:1/-1;}
-.card-accent{position:absolute;top:0;left:0;right:0;height:3px;}
-.accent-green{background:var(--build);}
-.accent-amber{background:var(--warn);}
-.card-badge{font-family:var(--fm);font-size:9px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;border-radius:4px;padding:2px 7px;display:inline-block;margin-bottom:10px;border:1px solid;}
-.badge-ready{color:var(--build);background:var(--build-bg);border-color:var(--build-bd);}
-.badge-desktop{color:var(--warn);background:var(--warn-bg);border-color:var(--warn-bd);}
-.card-title{font-size:15px;font-weight:700;margin-bottom:6px;line-height:1.3;}
-.card-desc{font-size:12px;color:var(--t2);flex:1;margin-bottom:14px;line-height:1.55;}
-.card-desktop .card-desc{color:var(--t3);}
-.btn-ready{display:inline-block;background:var(--build);color:#fff;font-family:var(--fm);font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;padding:8px 14px;border-radius:6px;margin-top:auto;}
-.link-desktop{font-family:var(--fm);font-size:11px;color:var(--warn);font-weight:600;margin-top:auto;}
-/* Footer */
-.gateway-footer{margin-top:32px;padding-top:16px;border-top:1px solid var(--border);text-align:center;}
-.footer-link{font-family:var(--fm);font-size:11px;color:var(--t3);text-decoration:none;letter-spacing:.04em;}
-.footer-link:hover{color:var(--t2);}
+body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px;line-height:1.5;min-height:100vh;display:flex;flex-direction:column;}
+
+/* ── Topbar ──────────────────────────────────────────────── */
+.topbar{background:var(--surface);border-bottom:1.5px solid var(--border);display:flex;align-items:center;padding:0 20px;height:52px;position:sticky;top:0;z-index:200;box-shadow:var(--sh);}
+.logo{display:flex;align-items:center;gap:9px;text-decoration:none;color:inherit;}
+.logo-icon{width:26px;height:26px;background:var(--text);border-radius:5px;display:flex;align-items:center;justify-content:center;}
+.logo-icon svg{fill:var(--surface);}
+.logo-name{font-family:var(--fs);font-size:16px;letter-spacing:-.01em;}
+.logo-ver{font-family:var(--fm);font-size:10px;color:var(--t3);margin-left:2px;}
+.topbar-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--fm);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);pointer-events:none;white-space:nowrap;}
+
+/* ── Main ────────────────────────────────────────────────── */
+.main{flex:1;display:flex;flex-direction:column;align-items:center;padding:24px 20px 40px;}
+
+/* ── Hero ────────────────────────────────────────────────── */
+.hero{text-align:center;max-width:560px;margin-bottom:28px;}
+.hero-title{font-family:var(--fs);font-size:32px;letter-spacing:-.02em;line-height:1.15;margin-bottom:0;}
+.hero-title em{font-style:italic;color:var(--t3);}
+
+/* ── Tiles ───────────────────────────────────────────────── */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;width:100%;max-width:640px;}
+.tile{background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:22px 20px 18px;box-shadow:var(--sh);cursor:pointer;text-decoration:none;color:inherit;display:flex;flex-direction:column;transition:box-shadow .18s,transform .18s,border-color .18s;position:relative;overflow:hidden;}
+.tile:hover{box-shadow:var(--shl);transform:translateY(-3px);}
+.tile-accent{position:absolute;top:0;left:0;right:0;height:3px;border-radius:10px 10px 0 0;}
+.tile.research .tile-accent{background:var(--build);}
+.tile.build    .tile-accent{background:var(--run);}
+.tile.review   .tile-accent{background:var(--mon);}
+.tile.ops      .tile-accent{background:var(--warn);}
+.tile:hover.research{border-color:var(--build-bd);}
+.tile:hover.build   {border-color:var(--run-bd);}
+.tile:hover.review  {border-color:var(--mon-bd);}
+.tile:hover.ops     {border-color:var(--warn-bd);}
+.tile-icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;}
+.tile.research .tile-icon{background:var(--build-bg);color:var(--build);}
+.tile.build    .tile-icon{background:var(--run-bg);color:var(--run);}
+.tile.review   .tile-icon{background:var(--mon-bg);color:var(--mon);}
+.tile.ops      .tile-icon{background:var(--warn-bg);color:var(--warn);}
+.tile-tag{font-family:var(--fm);font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:8px;}
+.tile.research .tile-tag{background:var(--build-bg);color:var(--build);border:1px solid var(--build-bd);}
+.tile.build    .tile-tag{background:var(--run-bg);color:var(--run);border:1px solid var(--run-bd);}
+.tile.review   .tile-tag{background:var(--mon-bg);color:var(--mon);border:1px solid var(--mon-bd);}
+.tile.ops      .tile-tag{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-bd);}
+.tile-title{font-family:var(--fs);font-size:18px;letter-spacing:-.01em;margin-bottom:6px;line-height:1.25;}
+.tile-desc{font-size:12px;color:var(--t2);line-height:1.65;flex:1;}
+.tile-cta{display:inline-flex;align-items:center;gap:6px;margin-top:18px;font-size:12px;font-weight:600;padding:7px 14px;border-radius:var(--r);border:1.5px solid transparent;transition:opacity .12s;}
+.tile.research .tile-cta{background:var(--build);color:#fff;border-color:var(--build);}
+.tile.build    .tile-cta{background:var(--run);color:#fff;border-color:var(--run);}
+.tile.review   .tile-cta{background:var(--mon);color:#fff;border-color:var(--mon);}
+.tile.ops      .tile-cta{background:var(--warn);color:#fff;border-color:var(--warn);}
+.tile-cta:hover{opacity:.85;}
+.tile-arrow{font-size:14px;transition:transform .15s;}
+.tile:hover .tile-arrow{transform:translateX(3px);}
+
+/* ── Footer ──────────────────────────────────────────────── */
+.footer{padding:10px 20px;text-align:center;font-family:var(--fm);font-size:10px;color:var(--t4);border-top:1px solid var(--border);}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media(max-width:440px){
+  .tiles{grid-template-columns:1fr;}
+  .hero-title{font-size:26px;}
+  .main{padding:20px 16px 32px;}
+}
 </style>
 </head>
 <body>
-<div class="page-shell">
-  <header class="topbar">
+
+<!-- Topbar -->
+<header class="topbar">
+  <a class="logo" href="/dashboard">
     <div class="logo-icon">
-      <svg width="14" height="14" viewBox="0 0 14 14"><rect x="1" y="1" width="5" height="5"/><rect x="8" y="1" width="5" height="5"/><rect x="1" y="8" width="5" height="5"/><rect x="8" y="8" width="5" height="5"/></svg>
+      <svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 2h4v4H2zM8 2h4v4H8zM2 8h4v4H2zM8 8h4v4H8z"/></svg>
     </div>
     <span class="logo-name">RITA</span>
-    <span class="topbar-sub">RIIA Platform</span>
-  </header>
+    <span class="logo-ver">v1.0</span>
+  </a>
+  <div class="topbar-center">Risk Informed Investment Approach</div>
+</header>
 
-  <div class="gateway-hero">
-    <h1>Choose your app</h1>
-    <p>Optimised views for your device</p>
+<!-- Main -->
+<main class="main">
+
+  <!-- Hero -->
+  <div class="hero">
+    <h1 class="hero-title">Choose your <em>Path</em></h1>
   </div>
 
-  <main class="card-grid">
+  <!-- Tiles -->
+  <div class="tiles">
 
-    <a id="card-rita" class="app-card" href="/mobileapp">
-      <div class="card-accent accent-green"></div>
-      <span class="card-badge badge-ready">Mobile Ready</span>
-      <h2 class="card-title">RITA Trading</h2>
-      <p class="card-desc">RL-powered Nifty 50 signals, portfolio tracker &amp; regime overview</p>
-      <span class="btn-ready">Open App →</span>
+    <!-- RITA Trading -->
+    <a id="card-rita" class="tile build" href="/mobileapp">
+      <div class="tile-accent"></div>
+      <div class="tile-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+          <line x1="12" y1="12" x2="12" y2="17"/><line x1="9" y1="14.5" x2="15" y2="14.5"/>
+        </svg>
+      </div>
+      <span class="tile-tag">Portfolio Builder</span>
+      <div class="tile-title">Create a Portfolio</div>
+      <p class="tile-desc">Train and evaluate the Double DQN model on Nifty 50 data. Build and track your portfolio natively.</p>
+      <span class="tile-cta">Start Building <span class="tile-arrow">→</span></span>
     </a>
 
-    <a id="card-invest" class="app-card" href="/onboarding">
-      <div class="card-accent accent-green"></div>
-      <span class="card-badge badge-ready">Mobile Ready</span>
-      <h2 class="card-title">Invest Game</h2>
-      <p class="card-desc">Paper-trade ASML &amp; NVIDIA. Learn to invest alongside the AI.</p>
-      <span class="btn-ready">Open App →</span>
+    <!-- Invest Game -->
+    <a id="card-invest" class="tile research" href="/onboarding">
+      <div class="tile-accent"></div>
+      <div class="tile-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
+        </svg>
+      </div>
+      <span class="tile-tag">Invest Game</span>
+      <div class="tile-title">Paper Trade &amp; Learn</div>
+      <p class="tile-desc">Paper-trade ASML &amp; NVIDIA alongside the AI. Build investment conviction with zero risk.</p>
+      <span class="tile-cta">Play Game <span class="tile-arrow">→</span></span>
     </a>
 
-    <a id="card-fno" class="app-card card-desktop" href="/dashboard/fno.html?desktop=1">
-      <div class="card-accent accent-amber"></div>
-      <span class="card-badge badge-desktop">Desktop Only</span>
-      <h2 class="card-title">FnO Portfolio</h2>
-      <p class="card-desc">Options Greeks, position management &amp; P&amp;L analysis. Best on a large screen.</p>
-      <span class="link-desktop">Open anyway ↗</span>
+    <!-- FnO Portfolio -->
+    <a id="card-fno" class="tile review" href="/dashboard/fno.html?desktop=1">
+      <div class="tile-accent"></div>
+      <div class="tile-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+      </div>
+      <span class="tile-tag">Portfolio Review</span>
+      <div class="tile-title">Review Portfolio</div>
+      <p class="tile-desc">Check live Greeks, P&amp;L, risk exposure, and manoeuvre recommendations. Monitor margin utilisation.</p>
+      <span class="tile-cta">View Portfolio <span class="tile-arrow">→</span></span>
     </a>
 
-    <a id="card-ops" class="app-card card-desktop" href="/dashboard/ops.html?desktop=1">
-      <div class="card-accent accent-amber"></div>
-      <span class="card-badge badge-desktop">Desktop Only</span>
-      <h2 class="card-title">Ops Dashboard</h2>
-      <p class="card-desc">Agent build runs, system health &amp; API metrics. Best on a large screen.</p>
-      <span class="link-desktop">Open anyway ↗</span>
+    <!-- Data Science -->
+    <a id="card-ds" class="tile research" href="/dashboard/ds.html?desktop=1">
+      <div class="tile-accent"></div>
+      <div class="tile-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+        </svg>
+      </div>
+      <span class="tile-tag">Research</span>
+      <div class="tile-title">Assist in Research</div>
+      <p class="tile-desc">Explore AI signals, backtests, and market insights to inform your own investment thesis.</p>
+      <span class="tile-cta">Open Research <span class="tile-arrow">→</span></span>
     </a>
 
-    <a id="card-ds" class="app-card card-desktop card-full" href="/dashboard/ds.html?desktop=1">
-      <div class="card-accent accent-amber"></div>
-      <span class="card-badge badge-desktop">Desktop Only</span>
-      <h2 class="card-title">Data Science</h2>
-      <p class="card-desc">Model training metrics, SHAP explainability &amp; drift detection. Best on a large screen.</p>
-      <span class="link-desktop">Open anyway ↗</span>
+    <!-- Ops Dashboard -->
+    <a id="card-ops" class="tile ops" href="/dashboard/ops.html?desktop=1">
+      <div class="tile-accent"></div>
+      <div class="tile-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+      </div>
+      <span class="tile-tag">Operations</span>
+      <div class="tile-title">Ops Console</div>
+      <p class="tile-desc">Monitor system health, deployment pipelines, CI/CD status, and active users across the platform.</p>
+      <span class="tile-cta">Open Ops <span class="tile-arrow">→</span></span>
     </a>
 
-  </main>
+  </div>
 
-  <footer class="gateway-footer">
-    <a id="footer-desktop-link" class="footer-link" href="/dashboard">View full desktop site ↗</a>
-  </footer>
-</div>
+</main>
+
+<!-- Footer -->
+<footer class="footer" id="footer-desktop-link">
+  <a href="/dashboard" style="color:inherit;text-decoration:none;">Risk Informed Investment Approach &nbsp;·&nbsp; riia.ravionics.nl</a>
+</footer>
+
 </body>
 </html>
