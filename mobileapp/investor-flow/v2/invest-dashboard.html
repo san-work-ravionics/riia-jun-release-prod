@@ -71,6 +71,7 @@ body{
   padding:32px 0;
 }
 
+
 /* ────────────────────────────────────────────────────────────
    CARD STAGE — token-mapped from invest-flow styles.css
    Tokens remapped:  --ink → --text  |  --ink-2 → --t2
@@ -1177,7 +1178,7 @@ body{
 
   // Wire invest-game links using server URL
   (function() {
-    var gameUrl = window.location.origin + '/dashboard/investgame.html';
+    var gameUrl = window.location.origin + '/dashboard/investgame.html?desktop=1';
     var topbarLink = document.getElementById('topbar-game-link');
     var card7Link  = document.getElementById('card7-game-link');
     if (topbarLink) topbarLink.href = gameUrl;
