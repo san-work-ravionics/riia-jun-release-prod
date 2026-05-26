@@ -309,7 +309,7 @@ class TestTokenForecastEndpoint:
 
             file_mock = MagicMock()
             file_mock.parents = [None] * 10
-            file_mock.parents[5] = parent_mock
+            file_mock.parents[4] = parent_mock  # ops.py uses .parents[4] (riia-jun-release/)
             MockPath.return_value = file_mock
 
             # Chain: repo_root / "riia-ai-org" / "agent-ops" / "metrics.json"

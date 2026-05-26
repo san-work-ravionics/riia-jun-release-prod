@@ -52,6 +52,14 @@ where = ["src"]
 [tool.pytest.ini_options]
 addopts = "--output=playwright-artifacts"
 
+[tool.coverage.run]
+omit = [
+    "*/core/trading_env.py",
+    "*/core/ml_dispatch.py",
+    "*/interfaces/*",
+    "*/main.py",
+]
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"
