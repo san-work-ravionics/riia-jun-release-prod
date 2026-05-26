@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-05-26T13:30:42",
-  "total_runs": 63,
+  "generated_at": "2026-05-26T21:43:46",
+  "total_runs": 64,
   "per_role": {
     "pm": {
       "run_count": 28,
@@ -17,11 +17,11 @@
       "avg_token_cost": 11807
     },
     "engineer": {
-      "run_count": 28,
-      "avg_adherence_score": 0.913,
-      "first_pass_rate": 0.679,
+      "run_count": 29,
+      "avg_adherence_score": 0.916,
+      "first_pass_rate": 0.69,
       "recent_first_pass_rate": 0.8,
-      "avg_token_cost": 32836
+      "avg_token_cost": 31735
     },
     "qa": {
       "run_count": 28,
@@ -70,6 +70,12 @@
       "fail": 0
     },
     "fno": {
+      "run_count": 1,
+      "pass": 1,
+      "pass_with_warnings": 0,
+      "fail": 0
+    },
+    "ds+investor-flow": {
       "run_count": 1,
       "pass": 1,
       "pass_with_warnings": 0,
@@ -272,6 +278,13 @@
       "grounding_score": 1.0,
       "checks_passed": 20,
       "checks_total": 20
+    },
+    {
+      "run_id": "20260526-1900",
+      "app": "ds+investor-flow",
+      "grounding_score": 0.6,
+      "checks_passed": 3,
+      "checks_total": 5
     }
   ],
   "failure_modes": {
@@ -721,20 +734,20 @@
     }
   ],
   "task_completion": {
-    "tsr": 0.841,
-    "first_attempt_success_rate": 0.841,
-    "partial_completion_rate": 0.143,
+    "tsr": 0.844,
+    "first_attempt_success_rate": 0.844,
+    "partial_completion_rate": 0.141,
     "abandonment_rate": 0.0
   },
   "quality": {
-    "avg_accuracy_score": 3.0,
+    "avg_accuracy_score": 2.93,
     "avg_relevance_score": 4.0,
-    "avg_csat": 3.0,
+    "avg_csat": 2.93,
     "recent_avg_csat": 2.67,
-    "csat_count": 13,
-    "planning_accuracy_rate": 0.769,
+    "csat_count": 14,
+    "planning_accuracy_rate": 0.786,
     "recent_planning_accuracy_rate": 1.0,
-    "grounding_pass_rate": 0.875
+    "grounding_pass_rate": 0.874
   },
   "token_forecasting": {
     "avg_forecast_error_pct": 16.2,
@@ -777,9 +790,9 @@
   },
   "efficiency": {
     "avg_duration_minutes": 28,
-    "avg_tokens_per_run": 49193,
+    "avg_tokens_per_run": 48439,
     "avg_retry_count": 0.03,
-    "avg_time_saved_hours": 8.7
+    "avg_time_saved_hours": 8.6
   },
   "reliability": {
     "error_recovery_rate": 0.8,
@@ -798,52 +811,52 @@
   },
   "api_metrics": {
     "available": true,
-    "total_calls": 1631,
-    "unique_endpoints": 67,
-    "overall_error_rate_pct": 2.21,
-    "error_rate_5xx_pct": 0.0,
+    "total_calls": 3734,
+    "unique_endpoints": 135,
+    "overall_error_rate_pct": 8.73,
+    "error_rate_5xx_pct": 0.19,
     "top_5_by_calls": [
       {
         "path": "/progress",
         "method": "GET",
-        "count": 516,
-        "p50_ms": 5.2,
-        "p95_ms": 66.7,
+        "count": 528,
+        "p50_ms": 5.3,
+        "p95_ms": 73.8,
         "error_count": 0
       },
       {
         "path": "/api/v1/experience/rita/strategy-comparison",
         "method": "GET",
-        "count": 119,
-        "p50_ms": 4.9,
-        "p95_ms": 88.6,
-        "error_count": 0
-      },
-      {
-        "path": "/api/experience/ops/functional-kpis",
-        "method": "GET",
-        "count": 107,
-        "p50_ms": 13.2,
-        "p95_ms": 343.8,
-        "error_count": 6
-      },
-      {
-        "path": "/api/experience/ops/metrics/summary",
-        "method": "GET",
-        "count": 104,
-        "p50_ms": 38.2,
-        "p95_ms": 160.0,
+        "count": 294,
+        "p50_ms": 6.3,
+        "p95_ms": 46.3,
         "error_count": 0
       },
       {
         "path": "/api/v1/commentary",
         "method": "POST",
-        "count": 94,
-        "p50_ms": 290.5,
-        "p95_ms": 1757.6,
+        "count": 262,
+        "p50_ms": 100.4,
+        "p95_ms": 728.6,
+        "error_count": 42
+      },
+      {
+        "path": "/api/v1/experience/rita/geography-overview",
+        "method": "GET",
+        "count": 252,
+        "p50_ms": 8.4,
+        "p95_ms": 671.9,
         "error_count": 0
+      },
+      {
+        "path": "/api/experience/ops/functional-kpis",
+        "method": "GET",
+        "count": 236,
+        "p50_ms": 8.2,
+        "p95_ms": 293.9,
+        "error_count": 20
       }
     ],
-    "generated_at": "2026-05-26T11:30:42.171771+00:00"
+    "generated_at": "2026-05-26T19:43:46.370305+00:00"
   }
 }
