@@ -31,10 +31,6 @@ COPY config/ config/
 # Lint gate — fail the build if ruff finds issues
 RUN ruff check src/
 
-# Test gate disabled — re-enable once test suite is stable
-# COPY tests/ tests/
-# RUN pytest tests/ --tb=short -q --cov=rita --cov-report=term-missing --cov-fail-under=80
-
 
 # ── Stage 2: runtime ────────────────────────────────────────────────────────
 FROM python:3.11-slim AS runtime
@@ -55,6 +51,7 @@ COPY alembic.ini /app/alembic.ini
 COPY dashboard/ /app/dashboard/
 COPY mobileapp/ /app/mobileapp/
 COPY ops/ /app/ops/
+COPY test-results/ /app/test-results/
 
 ENV PATH="/app/venv/bin:$PATH"
 ENV PYTHONPATH="/app/src"
