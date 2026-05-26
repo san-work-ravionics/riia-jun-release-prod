@@ -29,12 +29,11 @@ dependencies = [
     "matplotlib>=3.8",
     "yfinance>=0.2",
     "boto3>=1.34",
+    "mcp>=1.0",
 ]
 
 [project.optional-dependencies]
-interfaces = [
-    "mcp>=1.0",
-]
+interfaces = []
 dev = [
     "pytest>=8",
     "pytest-asyncio>=0.23",
