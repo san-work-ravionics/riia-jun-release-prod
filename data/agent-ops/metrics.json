@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-26T12:24:52",
+  "generated_at": "2026-05-26T13:30:42",
   "total_runs": 63,
   "per_role": {
     "pm": {
@@ -416,8 +416,12 @@
     },
     {
       "skill_file": "project-office/skills/skill-add-ops-feature.md",
-      "last_updated": "07a6aab",
+      "last_updated": "7b2b215",
       "recent_commits": [
+        {
+          "hash": "7b2b215",
+          "message": "fix(agent-ops): FC-HTML-CSS gates in ops skill \u2014 design system class ref + SECTIONS array + no-display-none"
+        },
         {
           "hash": "07a6aab",
           "message": "feat(ops): Feature 18 complete \u2014 skill-based approach revision + drift API tier gap close"
@@ -433,10 +437,6 @@
         {
           "hash": "2f09e2c",
           "message": "fix(agent-ops): improve skill rules for FC-001, engineer first-pass, CSAT"
-        },
-        {
-          "hash": "9f306e4",
-          "message": "chore(skills): add FC-MERGE gate to all 3 dashboard skill DoDs"
         }
       ],
       "improvement_applied": "FC-HTML-CSS v1: Step 4b added with ops design system CSS class table (kpi-strip/kpi/kpi-ey/kpi-val/tbl-wrap), banned class list (kpi-row/kpi-card/data-table), no-display-none rule, SECTIONS array grep gate. 3 new DoD checklist items. Root cause: run-20260524-1517 engineer generated non-existent CSS classes; section invisible due to display:none; SECTIONS array not updated.",
@@ -844,6 +844,6 @@
         "error_count": 0
       }
     ],
-    "generated_at": "2026-05-26T10:24:52.806724+00:00"
+    "generated_at": "2026-05-26T11:30:42.171771+00:00"
   }
 }

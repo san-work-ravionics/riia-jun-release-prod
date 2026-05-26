@@ -1,5 +1,5 @@
 import { api } from './api.js';
-import { DS_C, mkTbl, fmtPctRaw } from './utils.js';
+import { DS_C, mkTbl, fmtPctRaw, fmtDT } from './utils.js';
 import { mkChart } from '../shared/charts.js';
 
 const C = DS_C;
@@ -39,7 +39,7 @@ export async function loadMCP() {
     ]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{font:{family:"'IBM Plex Mono'",size:10},color:C.t2}}},scales:{x:{grid:{color:C.grid},ticks:{font:{family:"'IBM Plex Mono'",size:9},color:C.t3}},y:{grid:{color:C.grid},ticks:{font:{family:"'IBM Plex Mono'",size:9},color:C.t3}}}}});
 
     e('mcp-tbl').innerHTML=mkTbl(calls.slice().reverse().slice(0,100),[
-      {key:'timestamp',label:'Time',mono:true},{key:'tool_name',label:'Tool'},
+      {key:'timestamp',label:'Time',mono:true,fmt:fmtDT},{key:'tool_name',label:'Tool'},
       {key:'status',label:'Status',badge:true},{key:'latency_ms',label:'Latency(ms)',mono:true,right:true},{key:'error',label:'Error'}
     ]);
   } catch(e){ console.warn('MCP:',e); }

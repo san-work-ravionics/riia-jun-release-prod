@@ -44,7 +44,20 @@
       "Bash(dir *)",
       "Bash(pip install *)",
       "Bash(del _fetch_page_temp.py _fetch_page_temp2.py _fetch_page_temp3.py)",
-      "Bash(findstr /v \"__pycache__\")"
+      "Bash(findstr /v \"__pycache__\")",
+      "Bash(terraform show *)",
+      "Bash(Get-Item \"C:\\\\Users\\\\Sandeep\\\\Documents\\\\Work\\\\code\\\\riia-cowork-jun\\\\riia-jun-release\\\\terraform\\\\generated-key.pem\")",
+      "Bash(Select-Object LastWriteTime)",
+      "PowerShell(Get-Item *)",
+      "Bash(curl -s http://34.239.207.17/api/experience/ds/instruments)",
+      "Bash(curl -s http://34.239.207.17/api/v1/experience/rita/geography-overview)",
+      "Bash(curl -s http://34.239.207.17/api/experience/ds/)",
+      "Bash(curl -s http://34.239.207.17/api/v1/system/instruments)",
+      "Bash(chmod +x *)",
+      "Bash(python3.11 --version)",
+      "Bash(python3.12 --version)",
+      "Bash(curl -s http://localhost:8000/health)",
+      "Bash(curl -s -X POST http://localhost:8000/api/v1/instrument/refresh-all)"
     ]
   }
 }

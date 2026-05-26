@@ -17,7 +17,8 @@ export function mkTbl(rows, cols) {
   const ths = cols.map(c=>`<th${c.right?' style="text-align:right"':''}>${c.label}</th>`).join('');
   const trs = rows.map(r=>{
     const tds = cols.map(c=>{
-      const v = r[c.key]??'—';
+      const raw = r[c.key]??'—';
+      const v = c.fmt ? c.fmt(raw) : raw;
       if (c.badge) {
         const s = String(v).toLowerCase();
         const cls = s==='ok'?'ok':s==='warn'||s==='warning'?'warn':s==='err'||s==='error'||s==='fail'||s==='failed'?'err':'neu';
@@ -28,6 +29,24 @@ export function mkTbl(rows, cols) {
     return `<tr>${tds}</tr>`;
   }).join('');
   return `<table><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`;
+}
+
+// ── fmtDT — EU datetime: DD-MMM-YYYY HH:MM:SS AM/PM ────────────────────────
+export function fmtDT(v) {
+  if (!v || v === '—') return '—';
+  const d = new Date(String(v).replace(' ', 'T'));
+  if (isNaN(d)) return String(v).slice(0, 19);
+  const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dd  = String(d.getDate()).padStart(2,'0');
+  const mmm = MON[d.getMonth()];
+  const yyyy = d.getFullYear();
+  let h = d.getHours();
+  const ap = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  const hh = String(h).padStart(2,'0');
+  const mm = String(d.getMinutes()).padStart(2,'0');
+  const ss = String(d.getSeconds()).padStart(2,'0');
+  return `${dd}-${mmm}-${yyyy} ${hh}:${mm}:${ss} ${ap}`;
 }
 
 // ── fmtPctRaw — verbatim from ds.html ──────────────────────────────────────
