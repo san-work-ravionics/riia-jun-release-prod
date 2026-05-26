@@ -67,6 +67,7 @@ window.switchTrainTab         = switchTrainTab;
 window.runPortfolioScenario   = runPortfolioScenario;
 window.downloadExperimentResults = downloadExperimentResults;
 window.setLanguage               = setLanguage;
+window.loadMCP                   = loadMCP;
 
 // ── Keyboard escape handlers (replicate inline listeners from ds.html) ────────
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeChartModal(); });
