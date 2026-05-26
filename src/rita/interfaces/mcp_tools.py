@@ -142,8 +142,9 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             duration_ms=duration_ms,
             status=status,
         )
-    except Exception:  # noqa: BLE001
-        pass
+    except Exception as _log_exc:  # noqa: BLE001
+        import logging as _logging
+        _logging.getLogger(__name__).warning("mcp_log_failed tool=%s err=%s", name, _log_exc)
 
     return [TextContent(type="text", text=result_text)]
 
