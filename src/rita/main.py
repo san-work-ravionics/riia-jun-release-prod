@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from contextlib import asynccontextmanager
 from datetime import date, datetime, timezone
 
@@ -7,7 +8,7 @@ import structlog
 from pathlib import Path
 from typing import Any, Optional
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
@@ -67,6 +68,8 @@ from rita.api.experience.users import router as users_traffic_router
 from rita.api.v1.workflow.chat import router as chat_router
 from rita.api.v1.workflow.commentary import router as commentary_router
 from rita.api.v1.portfolio import router as portfolio_router
+
+_MOBILE_UA_RE = re.compile(r"Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini", re.IGNORECASE)
 
 settings = get_settings()
 log = structlog.get_logger()
@@ -404,7 +407,10 @@ if _mobile_dir.exists():
 
 
 @app.get("/", include_in_schema=False)
-def root():
+def root(request: Request):
+    ua = request.headers.get("user-agent", "")
+    if _MOBILE_UA_RE.search(ua):
+        return RedirectResponse(url="/mobile", status_code=302)
     return RedirectResponse(url="/dashboard", status_code=302)
 
 

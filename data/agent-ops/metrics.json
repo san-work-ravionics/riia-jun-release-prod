@@ -1,47 +1,47 @@
 {
-  "generated_at": "2026-05-26T08:43:04",
-  "total_runs": 62,
+  "generated_at": "2026-05-26T12:24:52",
+  "total_runs": 63,
   "per_role": {
     "pm": {
-      "run_count": 27,
+      "run_count": 28,
       "avg_adherence_score": 1.0,
       "first_pass_rate": 1.0,
       "recent_first_pass_rate": 1.0,
-      "avg_token_cost": 11020
+      "avg_token_cost": 11412
     },
     "architect": {
-      "run_count": 27,
+      "run_count": 28,
       "avg_adherence_score": 0.991,
-      "first_pass_rate": 0.963,
+      "first_pass_rate": 0.964,
       "recent_first_pass_rate": 1.0,
-      "avg_token_cost": 11430
+      "avg_token_cost": 11807
     },
     "engineer": {
-      "run_count": 27,
-      "avg_adherence_score": 0.91,
-      "first_pass_rate": 0.667,
+      "run_count": 28,
+      "avg_adherence_score": 0.913,
+      "first_pass_rate": 0.679,
       "recent_first_pass_rate": 0.8,
-      "avg_token_cost": 32016
+      "avg_token_cost": 32836
     },
     "qa": {
-      "run_count": 27,
+      "run_count": 28,
       "avg_adherence_score": 0.991,
-      "first_pass_rate": 0.926,
+      "first_pass_rate": 0.929,
       "recent_first_pass_rate": 1.0,
-      "avg_token_cost": 30019
+      "avg_token_cost": 31268
     },
     "techwriter": {
-      "run_count": 27,
-      "avg_adherence_score": 0.939,
-      "first_pass_rate": 0.889,
+      "run_count": 28,
+      "avg_adherence_score": 0.941,
+      "first_pass_rate": 0.893,
       "recent_first_pass_rate": 1.0,
-      "avg_token_cost": 16789
+      "avg_token_cost": 17547
     }
   },
   "per_app": {
     "rita": {
-      "run_count": 10,
-      "pass": 7,
+      "run_count": 11,
+      "pass": 8,
       "pass_with_warnings": 3,
       "fail": 0
     },
@@ -265,6 +265,13 @@
       "grounding_score": 0.95,
       "checks_passed": 19,
       "checks_total": 20
+    },
+    {
+      "run_id": "20260526-0929",
+      "app": "rita",
+      "grounding_score": 1.0,
+      "checks_passed": 20,
+      "checks_total": 20
     }
   ],
   "failure_modes": {
@@ -432,9 +439,9 @@
           "message": "chore(skills): add FC-MERGE gate to all 3 dashboard skill DoDs"
         }
       ],
-      "improvement_applied": "FC-001 v4: self-verify grep. FC-IMP v3: path-depth check. FC-TIER v1 + FC-API-SIG v1: banned system-tier endpoint grep gate + api() POST signature gate added (matches ds skill).",
-      "before_first_pass_rate": 0.562,
-      "after_first_pass_rate": 1.0
+      "improvement_applied": "FC-HTML-CSS v1: Step 4b added with ops design system CSS class table (kpi-strip/kpi/kpi-ey/kpi-val/tbl-wrap), banned class list (kpi-row/kpi-card/data-table), no-display-none rule, SECTIONS array grep gate. 3 new DoD checklist items. Root cause: run-20260524-1517 engineer generated non-existent CSS classes; section invisible due to display:none; SECTIONS array not updated.",
+      "before_first_pass_rate": 0.679,
+      "after_first_pass_rate": null
     },
     {
       "skill_file": ".claude/commands/enhance.md",
@@ -714,9 +721,9 @@
     }
   ],
   "task_completion": {
-    "tsr": 0.839,
-    "first_attempt_success_rate": 0.839,
-    "partial_completion_rate": 0.145,
+    "tsr": 0.841,
+    "first_attempt_success_rate": 0.841,
+    "partial_completion_rate": 0.143,
     "abandonment_rate": 0.0
   },
   "quality": {
@@ -727,10 +734,10 @@
     "csat_count": 13,
     "planning_accuracy_rate": 0.769,
     "recent_planning_accuracy_rate": 1.0,
-    "grounding_pass_rate": 0.873
+    "grounding_pass_rate": 0.875
   },
   "token_forecasting": {
-    "avg_forecast_error_pct": 17.0,
+    "avg_forecast_error_pct": 16.2,
     "by_complexity": {
       "small": {
         "avg_actual": 8673,
@@ -747,8 +754,8 @@
     },
     "by_feature_type": {
       "rita": {
-        "run_count": 10,
-        "avg_tokens": 99233,
+        "run_count": 11,
+        "avg_tokens": 107178,
         "modifier": 1.0
       },
       "ops": {
@@ -770,7 +777,7 @@
   },
   "efficiency": {
     "avg_duration_minutes": 28,
-    "avg_tokens_per_run": 46976,
+    "avg_tokens_per_run": 49193,
     "avg_retry_count": 0.03,
     "avg_time_saved_hours": 8.7
   },
@@ -791,9 +798,9 @@
   },
   "api_metrics": {
     "available": true,
-    "total_calls": 1625,
-    "unique_endpoints": 66,
-    "overall_error_rate_pct": 2.22,
+    "total_calls": 1631,
+    "unique_endpoints": 67,
+    "overall_error_rate_pct": 2.21,
     "error_rate_5xx_pct": 0.0,
     "top_5_by_calls": [
       {
@@ -837,6 +844,6 @@
         "error_count": 0
       }
     ],
-    "generated_at": "2026-05-26T06:43:04.476957+00:00"
+    "generated_at": "2026-05-26T10:24:52.806724+00:00"
   }
 }

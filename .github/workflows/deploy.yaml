@@ -93,8 +93,16 @@ jobs:
             data/agent-ops/ \
             ubuntu@${{ secrets.AWS_EC2_IP }}:/opt/rita_input/agent-ops/
 
-      # Split into three short SSH calls so no single session survives
-      # long enough to be killed by the OOM spike during container swap.
+      # Split into short SSH calls so no single session is killed by OOM.
+      # Stop + prune BEFORE pull so old image layers are freed first.
+
+      - name: Free EC2 disk space
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} \
+            "docker stop rita 2>/dev/null || true \
+             && docker rm rita 2>/dev/null || true \
+             && docker image prune -af \
+             && df -h"
 
       - name: Pull image on EC2
         run: |
@@ -104,8 +112,6 @@ jobs:
 
       - name: Swap container on EC2
         run: |
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} \
-            "docker stop rita 2>/dev/null || true; docker rm rita 2>/dev/null || true"
           ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} \
             "docker run -d \
               --name rita \
