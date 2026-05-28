@@ -18,6 +18,7 @@ export const state = {
   hedgeQuality: {},
   hedgeHistory: {},
   hedgeHistoryLoaded: false,
+  equityHedgeData: null,
 
   // UI state
   currentUnd: 'ALL',

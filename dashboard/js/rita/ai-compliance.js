@@ -2,6 +2,7 @@
 // Reads simulation history written by agent-panel.js (localStorage key:
 // 'riia_agent_history') and renders three sub-tabs: Governance, Guardrails,
 // and Trace Inspector.
+import { t } from '../shared/i18n.js';
 
 let _acHistory = [];
 
@@ -52,7 +53,7 @@ function _renderGovernance() {
   container.innerHTML = '';
 
   if (history.length === 0) {
-    container.innerHTML = '<div style="color:var(--t3);font-size:12px;padding:12px">Run the Agent Panel simulation first to populate compliance data.</div>';
+    container.innerHTML = `<div style="color:var(--t3);font-size:12px;padding:12px">${t('compliance.no_data_prompt')}</div>`;
     return;
   }
 

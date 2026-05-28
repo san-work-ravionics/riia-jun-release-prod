@@ -1,4 +1,5 @@
 // ── Hedge History + Hedge Radar ────────────────────────────────────────────────
+import { t } from '../shared/i18n.js';
 import { state } from './state.js';
 import { fmt, fmtPnl, pnlClass } from './utils.js';
 import { apiBase } from './api.js';
@@ -35,24 +36,24 @@ export function renderHedgeHistory() {
   const reactClass = reactPct >= 60 ? 'neg' : reactPct >= 30 ? 'warn' : 'pos';
   document.getElementById('hist-kpis').innerHTML = `
     <div class="kpi">
-      <div class="kpi-label">Days Analysed</div>
+      <div class="kpi-label">${t('hedge.days_analysed')}</div>
       <div class="kpi-value">${days.length}</div>
       <div class="kpi-sub">${days.length > 0 ? days[0].date + ' → ' + days[days.length-1].date : '—'}</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">Reactive Score</div>
+      <div class="kpi-label">${t('hedge.reactive_score')}</div>
       <div class="kpi-value ${reactClass}">${reactPct}%</div>
       <div class="kpi-sub ${reactClass}">${rs.label || '—'} · ${rs.reactive_opts||0}/${rs.total_new_opts||0} new opts</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">Budget Peak</div>
+      <div class="kpi-label">${t('hedge.budget_peak')}</div>
       <div class="kpi-value ${budget.max_pct > 5 ? 'neg' : budget.max_pct > 3 ? 'warn' : 'pos'}">${budget.max_pct}%</div>
       <div class="kpi-sub">on ${budget.max_date} · avg ${budget.avg_pct}%</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">Anchor Positions</div>
+      <div class="kpi-label">${t('hedge.anchor_positions')}</div>
       <div class="kpi-value ${anchors.length > 0 ? 'warn' : 'pos'}">${anchors.length}</div>
-      <div class="kpi-sub">${anchors.length > 0 ? 'Held 4+ days, declining quality' : 'None detected'}</div>
+      <div class="kpi-sub">${anchors.length > 0 ? t('hedge.anchor_sub') : t('hedge.none_detected')}</div>
     </div>`;
 
   // ── Timeline chart ─────────────────────────────────────────────────────────
@@ -74,17 +75,17 @@ export function renderHedgeHistory() {
         labels,
         datasets: [
           {
-            type: 'bar', label: 'Near-ATM (≤5%)', data: nearData,
+            type: 'bar', label: t('hedge.near_atm'), data: nearData,
             backgroundColor: 'rgba(26,107,60,0.70)', stack: 'prem',
             borderColor: barBorder, borderWidth: barBorderW, borderRadius: 2,
           },
           {
-            type: 'bar', label: 'Mid-OTM (5–10%)', data: midData,
+            type: 'bar', label: t('hedge.mid_otm'), data: midData,
             backgroundColor: 'rgba(146,72,10,0.65)', stack: 'prem',
             borderColor: barBorder, borderWidth: barBorderW,
           },
           {
-            type: 'bar', label: 'Far-OTM (>10%)', data: farData,
+            type: 'bar', label: t('hedge.far_otm'), data: farData,
             backgroundColor: 'rgba(155,28,28,0.75)', stack: 'prem',
             borderColor: barBorder, borderWidth: barBorderW,
           },
@@ -135,7 +136,7 @@ export function renderHedgeHistory() {
     rSumEl.innerHTML = `
       <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;">
         <span style="font-family:var(--fm);font-size:26px;font-weight:600;color:${labelColor}">${reactPct}%</span>
-        <span style="font-family:var(--fm);font-size:11px;color:var(--t3);">of new positions added reactively (on NIFTY down days)</span>
+        <span style="font-family:var(--fm);font-size:11px;color:var(--t3);">${t('hedge.reactive_desc')}</span>
       </div>
       <div style="background:var(--surface2);border-radius:100px;height:8px;overflow:hidden;margin-bottom:6px;">
         <div style="width:${barW}%;height:100%;background:${labelColor};border-radius:100px;transition:width .5s;"></div>
@@ -149,10 +150,10 @@ export function renderHedgeHistory() {
       const chgClass = d.nifty_chg_pct < 0 ? 'neg' : 'pos';
       const isDown   = d.is_down_day;
       const ctx      = isDown
-        ? `<span style="color:var(--neg);font-weight:600;">↓ Down day — hedges added reactively</span>`
+        ? `<span style="color:var(--neg);font-weight:600;">${t('hedge.down_day_ctx')}</span>`
         : d.new_opts_count > 0
-          ? `<span style="color:var(--p01);">↑ Calm — proactive additions</span>`
-          : `<span style="color:var(--t4);">No new positions</span>`;
+          ? `<span style="color:var(--p01);">${t('hedge.calm_ctx')}</span>`
+          : `<span style="color:var(--t4);">${t('hedge.no_new_pos')}</span>`;
       return `<tr style="${isDown ? 'background:rgba(155,28,28,0.04)' : ''}">
         <td class="val">${d.date}</td>
         <td class="val ${chgClass}">${d.nifty_chg_pct >= 0 ? '+' : ''}${d.nifty_chg_pct.toFixed(1)}%</td>
@@ -171,15 +172,15 @@ export function renderHedgeHistory() {
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
         <div style="text-align:center;background:var(--surface2);padding:10px;border-radius:var(--r);">
           <div style="font-family:var(--fm);font-size:18px;font-weight:600;">${budget.avg_pct}%</div>
-          <div style="font-family:var(--fm);font-size:10px;color:var(--t3);margin-top:2px;">Avg Budget</div>
+          <div style="font-family:var(--fm);font-size:10px;color:var(--t3);margin-top:2px;">${t('hedge.avg_budget')}</div>
         </div>
         <div style="text-align:center;background:var(--surface2);padding:10px;border-radius:var(--r);">
           <div style="font-family:var(--fm);font-size:18px;font-weight:600;color:${budget.max_pct>5?'var(--neg)':budget.max_pct>3?'var(--p03)':'var(--p01)'}">${budget.max_pct}%</div>
-          <div style="font-family:var(--fm);font-size:10px;color:var(--t3);margin-top:2px;">Peak (${budget.max_date})</div>
+          <div style="font-family:var(--fm);font-size:10px;color:var(--t3);margin-top:2px;">${t('hedge.peak_label')}${budget.max_date})</div>
         </div>
         <div style="text-align:center;background:var(--surface2);padding:10px;border-radius:var(--r);">
           <div style="font-family:var(--fm);font-size:18px;font-weight:600;color:${overDays>0?'var(--neg)':'var(--p01)'}">${overDays}</div>
-          <div style="font-family:var(--fm);font-size:10px;color:var(--t3);margin-top:2px;">Days over 5%</div>
+          <div style="font-family:var(--fm);font-size:10px;color:var(--t3);margin-top:2px;">${t('hedge.days_over_5pct')}</div>
         </div>
       </div>`;
   }
@@ -205,12 +206,12 @@ export function renderHedgeHistory() {
 
   // ── Anchor positions ───────────────────────────────────────────────────────
   document.getElementById('anchor-sub').textContent =
-    `${anchors.length} position${anchors.length !== 1 ? 's' : ''} held 4+ days with below-par hedge quality`;
+    `${anchors.length} ${t('hedge.anchor_held_sub')}`;
 
   const aTbody = document.getElementById('anchor-tbody');
   if (aTbody) {
     if (anchors.length === 0) {
-      aTbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--t3);padding:20px;font-family:var(--fm);font-size:12px;">No anchor positions detected.</td></tr>';
+      aTbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--t3);padding:20px;font-family:var(--fm);font-size:12px;">${t('hedge.no_anchor')}</td></tr>`;
     } else {
       aTbody.innerHTML = anchors.map(a => {
         const decayClass  = a.pct_decay < -60 ? 'neg' : a.pct_decay < -30 ? 'warn' : '';
@@ -286,22 +287,22 @@ export function renderHedgeRadar() {
     const deltaWarn = parseFloat(avgDelta) < 0.15;
     kpisEl.innerHTML = `
       <div class="kpi">
-        <div class="kpi-label">Premium Deployed</div>
+        <div class="kpi-label">${t('hedge.premium_deployed')}</div>
         <div class="kpi-value">₹${(totalPrem/100000).toFixed(2)}L</div>
         <div class="kpi-sub">${allPos.length} long option${allPos.length!==1?'s':''}</div>
       </div>
       <div class="kpi">
-        <div class="kpi-label">Lottery Ticket %</div>
+        <div class="kpi-label">${t('hedge.lottery_pct')}</div>
         <div class="kpi-value ${redPos.length>0?'neg':'pos'}">${redPremPct}%</div>
         <div class="kpi-sub ${redPos.length>0?'neg':''}">${redPos.length} position${redPos.length!==1?'s':''} flagged 🔴</div>
       </div>
       <div class="kpi">
-        <div class="kpi-label">Avg Delta</div>
+        <div class="kpi-label">${t('hedge.avg_delta')}</div>
         <div class="kpi-value ${deltaWarn?'warn':'pos'}">${avgDelta}</div>
-        <div class="kpi-sub">${deltaWarn?'Low — high decay risk':'Acceptable range'}</div>
+        <div class="kpi-sub">${deltaWarn?t('hedge.low_delta_warn'):t('hedge.acceptable_range')}</div>
       </div>
       <div class="kpi">
-        <div class="kpi-label">Hedge P&amp;L</div>
+        <div class="kpi-label">${t('hedge.hedge_pnl')}</div>
         <div class="kpi-value ${pnlClass(totalPnl)}">${fmtPnl(totalPnl)}</div>
         <div class="kpi-sub">${greenPos.length}🟢 ${yellowPos.length}🟡 ${redPos.length}🔴</div>
       </div>`;
@@ -314,20 +315,20 @@ export function renderHedgeRadar() {
       const redPnl = redPos.reduce((s,p) => s + p.pnl, 0);
       bannerEl.innerHTML = `<div class="alert-bar red">
         <span style="font-size:16px;">⚠</span>
-        <span><strong>${redPos.length} Lottery Ticket position${redPos.length!==1?'s':''}</strong>
+        <span><strong>${redPos.length} ${t('hedge.alert_lottery_positions')}${redPos.length!==1?'s':''}</strong>
         — currently down ${fmtPnl(Math.abs(redPnl))} with high theta decay.
         Consider closing or rolling before further decay.</span>
       </div>`;
     } else if (yellowPos.length > 0) {
       bannerEl.innerHTML = `<div class="alert-bar yellow">
         <span style="font-size:16px;">◈</span>
-        <span><strong>${yellowPos.length} Watch position${yellowPos.length!==1?'s':''}</strong>
+        <span><strong>${yellowPos.length} ${t('hedge.alert_watch_positions')}${yellowPos.length!==1?'s':''}</strong>
         — monitor DTE and strike distance. Roll if approaching the danger zone.</span>
       </div>`;
     } else if (allPos.length > 0) {
       bannerEl.innerHTML = `<div class="alert-bar green">
         <span style="font-size:16px;">✓</span>
-        <span>All long option positions are within acceptable hedge quality parameters.</span>
+        <span>${t('hedge.alert_all_ok')}</span>
       </div>`;
     } else {
       bannerEl.innerHTML = '';
@@ -342,24 +343,24 @@ export function renderHedgeRadar() {
     const greenPct  = 100 - redPct - yellowPct;
     tierCard.innerHTML = `
       <div class="card-hdr">
-        <span class="card-title">Portfolio Hedge Quality Distribution</span>
+        <span class="card-title">${t('hedge.quality_distribution')}</span>
         <span class="card-sub">${allPos.length} long options scored</span>
       </div>
       <div class="card-body">
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:14px;">
           <div style="text-align:center;">
             <div style="font-family:var(--fm);font-size:22px;font-weight:600;color:var(--neg);">${redPos.length}</div>
-            <div style="font-family:var(--fm);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;">🔴 Lottery Ticket</div>
+            <div style="font-family:var(--fm);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;">${t('hedge.tier_lottery')}</div>
             <div style="font-family:var(--fm);font-size:11px;color:var(--neg);margin-top:4px;">₹${fmt(redPrem)} premium</div>
           </div>
           <div style="text-align:center;">
             <div style="font-family:var(--fm);font-size:22px;font-weight:600;color:var(--p03);">${yellowPos.length}</div>
-            <div style="font-family:var(--fm);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;">🟡 Watch</div>
+            <div style="font-family:var(--fm);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;">${t('hedge.tier_watch')}</div>
             <div style="font-family:var(--fm);font-size:11px;color:var(--p03);margin-top:4px;">₹${fmt(yellowPos.reduce((s,p)=>s+p.premium_total,0))} premium</div>
           </div>
           <div style="text-align:center;">
             <div style="font-family:var(--fm);font-size:22px;font-weight:600;color:var(--p01);">${greenPos.length}</div>
-            <div style="font-family:var(--fm);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;">🟢 Good Hedge</div>
+            <div style="font-family:var(--fm);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;">${t('hedge.tier_good')}</div>
             <div style="font-family:var(--fm);font-size:11px;color:var(--p01);margin-top:4px;">₹${fmt(greenPos.reduce((s,p)=>s+p.premium_total,0))} premium</div>
           </div>
         </div>
@@ -369,9 +370,9 @@ export function renderHedgeRadar() {
           <div class="hqs-tier-seg green"  style="width:${Math.max(0,greenPct)}%"></div>
         </div>
         <div style="display:flex;justify-content:space-between;font-family:var(--fm);font-size:10px;color:var(--t3);margin-top:6px;">
-          <span>${redPct}% Lottery Ticket</span>
-          <span>${yellowPct}% Watch</span>
-          <span>${100-redPct-yellowPct}% Good</span>
+          <span>${redPct}% ${t('hedge.tier_lottery_pct')}</span>
+          <span>${yellowPct}% ${t('hedge.tier_watch_pct')}</span>
+          <span>${100-redPct-yellowPct}% ${t('hedge.tier_good_pct')}</span>
         </div>
       </div>`;
   }
@@ -402,11 +403,11 @@ export function renderHedgeRadar() {
   const footerEl = document.getElementById('hqs-footer');
   if (footerEl) {
     footerEl.innerHTML = `
-      <span class="lbl">Total Premium Deployed:</span>
+      <span class="lbl">${t('hedge.total_premium_deployed')}</span>
       <span class="val">₹${fmt(totalPrem)}</span>
-      <span class="lbl" style="margin-left:20px;">Lottery Ticket Premium:</span>
+      <span class="lbl" style="margin-left:20px;">${t('hedge.lottery_premium')}</span>
       <span class="val neg">₹${fmt(redPrem)}</span>
-      <span class="lbl" style="margin-left:20px;">Net Hedge P&amp;L:</span>
+      <span class="lbl" style="margin-left:20px;">${t('hedge.net_hedge_pnl')}</span>
       <span class="val ${pnlClass(totalPnl)}">${fmtPnl(totalPnl)}</span>`;
   }
 

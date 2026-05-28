@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-26T21:43:46",
+  "generated_at": "2026-05-27T15:44:22",
   "total_runs": 64,
   "per_role": {
     "pm": {
@@ -457,6 +457,12 @@
       "after_first_pass_rate": null
     },
     {
+      "skill_file": "project-office/skills/skill-fix-js-bug.md",
+      "improvement_applied": "CSAT v1: browser cache reminder added to DoD \u2014 after committing static JS/HTML changes engineer must tell user to hard-refresh (Cmd+Shift+R / Ctrl+Shift+R). Root cause: run-20260526-1900 csat=2, fix was correct on disk but user saw stale cached version and reported it as broken.",
+      "before_first_pass_rate": null,
+      "after_first_pass_rate": null
+    },
+    {
       "skill_file": ".claude/commands/enhance.md",
       "improvement_applied": "CSAT v4: step 7d copy-vs-move gate added to Engineer prompt \u2014 move/relocate tasks must delete old path (git rm) after copying; leaving original in place = FC-PARTIAL-IMPL. Root cause: run-20260519-1500 csat=2, engineer copied instead of moved, user had to clarify twice. Previous CSAT v3 still active: QA file-path gate + PM continuation-run detection.",
       "before_first_pass_rate": 0.667,
@@ -811,17 +817,17 @@
   },
   "api_metrics": {
     "available": true,
-    "total_calls": 3734,
-    "unique_endpoints": 135,
-    "overall_error_rate_pct": 8.73,
-    "error_rate_5xx_pct": 0.19,
+    "total_calls": 3880,
+    "unique_endpoints": 137,
+    "overall_error_rate_pct": 8.4,
+    "error_rate_5xx_pct": 0.18,
     "top_5_by_calls": [
       {
         "path": "/progress",
         "method": "GET",
-        "count": 528,
-        "p50_ms": 5.3,
-        "p95_ms": 73.8,
+        "count": 537,
+        "p50_ms": 5.5,
+        "p95_ms": 109.3,
         "error_count": 0
       },
       {
@@ -835,28 +841,28 @@
       {
         "path": "/api/v1/commentary",
         "method": "POST",
-        "count": 262,
-        "p50_ms": 100.4,
-        "p95_ms": 728.6,
+        "count": 277,
+        "p50_ms": 103.5,
+        "p95_ms": 819.1,
         "error_count": 42
       },
       {
         "path": "/api/v1/experience/rita/geography-overview",
         "method": "GET",
-        "count": 252,
-        "p50_ms": 8.4,
-        "p95_ms": 671.9,
+        "count": 267,
+        "p50_ms": 8.7,
+        "p95_ms": 694.3,
         "error_count": 0
       },
       {
         "path": "/api/experience/ops/functional-kpis",
         "method": "GET",
-        "count": 236,
+        "count": 238,
         "p50_ms": 8.2,
-        "p95_ms": 293.9,
+        "p95_ms": 315.8,
         "error_count": 20
       }
     ],
-    "generated_at": "2026-05-26T19:43:46.370305+00:00"
+    "generated_at": "2026-05-27T13:44:22.225032+00:00"
   }
 }

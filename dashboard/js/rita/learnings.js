@@ -1,4 +1,5 @@
 // ── Learnings ───────────────────────────────────────────────
+import { t } from '../shared/i18n.js';
 import { api } from './api.js';
 import { mkChart, C } from './charts.js';
 
@@ -20,7 +21,7 @@ export async function loadLearnings() {
     const rows = await api('/api/v1/market-signals?timeframe=daily&periods=252&instrument=NIFTY');
     if (!rows || !rows.length) {
       const c4 = document.getElementById('learn-body-trends');
-      if (c4) c4.innerHTML = '<div class="empty">No market data available</div>';
+      if (c4) c4.innerHTML = `<div class="empty">${t('learnings.no_data')}</div>`;
       return;
     }
     const dates = rows.map(r => r.date);
@@ -31,7 +32,7 @@ export async function loadLearnings() {
       data: {
         labels: dates,
         datasets: [{
-          label: 'NIFTY Close', data: rows.map(r => r.Close),
+          label: t('learnings.label_nifty_close'), data: rows.map(r => r.Close),
           borderColor: C.run, backgroundColor: 'rgba(0,86,184,0.07)',
           fill: true, tension: 0.2, pointRadius: 0, borderWidth: 2
         }]
@@ -57,12 +58,12 @@ export async function loadLearnings() {
             fill: false, tension: 0.2, pointRadius: 0, borderWidth: 2
           },
           {
-            label: 'Overbought (60)', data: rows.map(() => 60),
+            label: t('learnings.label_overbought'), data: rows.map(() => 60),
             borderColor: 'rgba(155,28,28,0.35)', borderDash: [4, 3],
             fill: false, pointRadius: 0, borderWidth: 1
           },
           {
-            label: 'Oversold (30)', data: rows.map(() => 30),
+            label: t('learnings.label_oversold'), data: rows.map(() => 30),
             borderColor: 'rgba(0,128,0,0.35)', borderDash: [4, 3],
             fill: false, pointRadius: 0, borderWidth: 1
           }

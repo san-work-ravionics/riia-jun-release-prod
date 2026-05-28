@@ -14,6 +14,7 @@ import { renderPayoffChart } from './payoff.js';
 import { renderScenarios } from './rr.js';
 import { renderHedgeRadar, loadHedgeHistory } from './hedge.js';
 import { initManoeuvre, renderMonthTiles } from './manoeuvre.js';
+import { loadEquityHedge } from './equity_hedge.js';
 
 export function initNav() {
   document.querySelectorAll('.nav-item').forEach(item => {
@@ -23,6 +24,7 @@ export function initNav() {
       document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
       document.getElementById('page-' + item.dataset.page).classList.add('active');
       if (item.dataset.page === 'history') loadHedgeHistory();
+      if (item.dataset.page === 'equity-hedge') loadEquityHedge();
     });
   });
 }

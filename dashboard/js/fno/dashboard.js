@@ -6,10 +6,28 @@ import { t } from '../shared/i18n.js';
 
 export function renderDashboard() {
   renderDashKpis();
+  renderInstrumentCapsule();
   renderMarketSnapshot();
   renderSegmentChart();
   renderDailyProgress();
   renderMovers();
+}
+
+export function renderInstrumentCapsule() {
+  const el = document.getElementById('fno-inst-capsule');
+  if (!el) return;
+  const d = state.marketData['ASML'];
+  if (!d) { el.innerHTML = ''; return; }
+  const chg = parseFloat(d.chgFromOpen);
+  const signal = chg > 0.3 ? 'Bullish' : chg < -0.3 ? 'Bearish' : 'Neutral';
+  const cls = chg > 0.3 ? 'pos' : chg < -0.3 ? 'neg' : '';
+  el.innerHTML = `
+    <div class="kpi inst-geo">
+      <div class="kpi-label">ASML · Equity · ${d.date || ''}</div>
+      <div class="kpi-value ${cls}" style="font-size:18px">€${Number(d.close).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+      <div class="kpi-delta ${cls}">${signal} · ${chg >= 0 ? '+' : ''}${chg.toFixed(2)}% period</div>
+    </div>
+  `;
 }
 
 export function renderDashKpis() {
@@ -22,7 +40,9 @@ export function renderDashKpis() {
     : (state.portDelta[state.currentUnd] || 0);
   const nCnt = state.positions.filter(p => p.und === 'NIFTY' && (state.currentExpiry === 'ALL' || p.exp === state.currentExpiry)).length;
   const bCnt = state.positions.filter(p => p.und === 'BANKNIFTY' && (state.currentExpiry === 'ALL' || p.exp === state.currentExpiry)).length;
-  const subLine = state.currentUnd === 'ALL' ? `${nCnt} NIFTY · ${bCnt} BANKNIFTY`
+  const aCnt = state.positions.filter(p => p._from_eq_hedge && (state.currentExpiry === 'ALL' || p.exp === state.currentExpiry)).length;
+  const asmlPart = aCnt > 0 ? ` · ${aCnt} ASML` : '';
+  const subLine = state.currentUnd === 'ALL' ? `${nCnt} NIFTY · ${bCnt} BANKNIFTY${asmlPart}`
                 : `${filtered.length} ${state.currentUnd} positions`;
   const closedCnt = state.closedPositions.filter(p => state.currentUnd === 'ALL' || p.underlying === state.currentUnd).length;
 
@@ -35,16 +55,43 @@ export function renderDashKpis() {
   `;
 }
 
+function _fmtEur(v) {
+  return '€' + Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function _renderEquityCard(u, d) {
+  const retChg   = parseFloat(d.chgFromOpen);
+  const retClass = retChg >= 0 ? 'pos' : 'neg';
+  return `<div class="kpi" style="border-left:3px solid var(--p03)">
+    <div class="kpi-label">${u} · Equity · ${d.date}</div>
+    <div class="kpi-value ${retClass}" style="font-size:18px">${_fmtEur(d.close)}</div>
+    <div class="kpi-delta ${retClass}">${retChg >= 0 ? '▲ +' : '▼ '}${Math.abs(retChg).toFixed(2)}% · from ${_fmtEur(d.prevClose)}</div>
+    <div class="kpi-sub" style="margin-top:5px;line-height:1.6">
+      H ${_fmtEur(d.high)} · L ${_fmtEur(d.low)}<br>
+      Vol 30d: ${d.vol_30d != null ? d.vol_30d.toFixed(1) + '%' : '—'} · ${d.shares}
+    </div>
+  </div>`;
+}
+
 export function renderMarketSnapshot() {
   const grid = document.getElementById('mkt-grid');
-  const underlyings = state.currentUnd === 'ALL'
-    ? ['NIFTY', 'BANKNIFTY']
-    : state.marketData[state.currentUnd] ? [state.currentUnd] : [];
+  if (!grid || grid.style.display === 'none') return;
+  let underlyings;
+  if (state.currentUnd === 'ALL') {
+    underlyings = state.marketData['ASML']?._from_eq_hedge ? ['ASML'] : [];
+  } else {
+    underlyings = state.marketData[state.currentUnd] ? [state.currentUnd] : [];
+  }
   if (!underlyings.length) { grid.innerHTML = ''; return; }
-  grid.className = `mkt-grid ${underlyings.length === 1 ? 'c1' : 'c2'}`;
+  const cols = underlyings.length >= 3 ? 'c3' : underlyings.length === 2 ? 'c2' : 'c1';
+  grid.className = `mkt-grid ${cols}`;
 
   grid.innerHTML = underlyings.map(u => {
-    const d        = state.marketData[u];
+    const d = state.marketData[u];
+    if (!d) return '';
+
+    if (d._from_eq_hedge) return _renderEquityCard(u, d);
+
     const dayChg   = parseFloat(d.chgFromOpen);
     const prevChg  = d.chgFromPrev != null ? parseFloat(d.chgFromPrev) : null;
     const range    = d.high - d.low;
@@ -130,22 +177,17 @@ export function renderDailyProgress() {
   if (!canvas) return;
   if (state.dpChart) { state.dpChart.destroy(); state.dpChart = null; }
 
-  const history = loadHistory().filter(h => h.nifty && h.banknifty);
+  const history = loadHistory().filter(h => h.asml);
   if (!history.length) {
     document.getElementById('daily-progress-wrap').innerHTML =
       '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--t3);font-family:var(--fm);font-size:12px;">No history yet — data accumulates automatically each day you open this page.</div>';
     return;
   }
 
-  const labels  = history.map(h => h.date);
-  const netPnl  = history.map(h => (h.niftyPnl || 0) + (h.bnknPnl || 0));
-
-  const base0N = history[0].nifty;
-  const base0B = history[0].banknifty;
-  const base0A = history.find(h => h.asml)?.asml || null;
-  const niftyPct = history.map(h => +((h.nifty  / base0N - 1) * 100).toFixed(2));
-  const bnknPct  = history.map(h => +((h.banknifty / base0B - 1) * 100).toFixed(2));
-  const asmlPct  = base0A ? history.map(h => h.asml ? +((h.asml / base0A - 1) * 100).toFixed(2) : null) : null;
+  const labels = history.map(h => h.date);
+  const netPnl = history.map(h => (h.niftyPnl || 0) + (h.bnknPnl || 0));
+  const base0A = history[0].asml;
+  const asmlPct = history.map(h => +((h.asml / base0A - 1) * 100).toFixed(2));
 
   const pnlColors  = netPnl.map(v => v >= 0 ? 'rgba(26,107,60,0.75)'  : 'rgba(155,28,28,0.75)');
   const pnlBorders = netPnl.map(v => v >= 0 ? '#1A6B3C' : '#9B1C1C');
@@ -160,21 +202,11 @@ export function renderDailyProgress() {
           borderWidth: 1.5, borderRadius: 3, yAxisID: 'yPnl', order: 2,
         },
         {
-          type: 'line', label: 'NIFTY %', data: niftyPct,
-          borderColor: '#0056B8', backgroundColor: 'transparent',
-          borderWidth: 2, pointRadius: 3, pointHoverRadius: 5, tension: 0.3, yAxisID: 'yIdx', order: 1,
-        },
-        {
-          type: 'line', label: 'BANKNIFTY %', data: bnknPct,
-          borderColor: '#6B2FA0', backgroundColor: 'transparent',
-          borderWidth: 2, pointRadius: 3, pointHoverRadius: 5, tension: 0.3, yAxisID: 'yIdx', order: 1,
-        },
-        ...(asmlPct ? [{
           type: 'line', label: 'ASML %', data: asmlPct,
           borderColor: '#92480A', backgroundColor: 'transparent',
           borderWidth: 2, pointRadius: 3, pointHoverRadius: 5, tension: 0.3, yAxisID: 'yIdx', order: 1,
           spanGaps: true,
-        }] : []),
+        },
       ]
     },
     options: {

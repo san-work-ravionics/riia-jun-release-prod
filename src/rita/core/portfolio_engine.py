@@ -28,6 +28,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from scipy.stats import norm
 import structlog
 
 from rita.config import get_settings
@@ -363,4 +364,147 @@ def portfolio_backtest(
         "instruments":                inst_results,
         "daily":                      daily_out,
         "instrument_series":          instrument_series,
+    }
+
+
+# ── Equity Hedge Scenarios ─────────────────────────────────────────────────────
+
+def equity_hedge_scenarios(
+    instrument: str,
+    n_shares: int,
+    start_date: str,
+    end_date: str,
+) -> dict[str, Any]:
+    """Compute equity portfolio performance + Black-Scholes hedge scenarios.
+
+    Returns a dict with:
+      portfolio  — period stats + daily value series
+      hedge_scenarios — mild_bearish (covered call) + strong_bearish (protective put)
+                        + payoff_curves over a price grid
+    """
+    df = _load_with_indicators(instrument.upper())
+    df_f = df[(df.index >= pd.Timestamp(start_date)) & (df.index <= pd.Timestamp(end_date))].copy()
+
+    if len(df_f) < 5:
+        raise ValueError(
+            f"Insufficient data: need at least 5 trading days, got {len(df_f)}"
+        )
+
+    start_price = float(df_f["Close"].iloc[0])
+    end_price   = float(df_f["Close"].iloc[-1])
+    return_pct  = round((end_price - start_price) / start_price * 100, 4) if start_price else 0.0
+
+    # 30-day annualised volatility
+    n_vol = min(30, len(df_f))
+    close_series = df_f["Close"].iloc[-n_vol:]
+    vol_30d = float(
+        np.log(close_series / close_series.shift(1)).dropna().std() * math.sqrt(252)
+    )
+    if not math.isfinite(vol_30d) or vol_30d == 0:
+        vol_30d = 0.25
+
+    # Black-Scholes params
+    S       = end_price
+    K_call  = round(S * 1.05, 2)   # covered call strike (5% OTM)
+    K_put   = round(S, 2)          # protective put strike (at-the-money)
+    T       = 30 / 252             # 30 calendar days to expiry
+    r       = 0.03
+    sigma   = vol_30d
+
+    def _bs_call(s: float, k: float, t: float, rv: float, rate: float) -> float:
+        if rv <= 0 or t <= 0 or k <= 0:
+            return 0.0
+        d1 = (math.log(s / k) + (rate + 0.5 * rv ** 2) * t) / (rv * math.sqrt(t))
+        d2 = d1 - rv * math.sqrt(t)
+        return float(s * norm.cdf(d1) - k * math.exp(-rate * t) * norm.cdf(d2))
+
+    def _bs_put(s: float, k: float, t: float, rv: float, rate: float) -> float:
+        if rv <= 0 or t <= 0 or k <= 0:
+            return 0.0
+        # Put via put-call parity
+        call = _bs_call(s, k, t, rv, rate)
+        return float(call - s + k * math.exp(-rate * t))
+
+    premium_call_per_share = _bs_call(S, K_call, T, sigma, r)
+    premium_put_per_share  = _bs_put(S, K_put,  T, sigma, r)
+
+    total_premium_call = round(premium_call_per_share * n_shares, 2)
+    total_premium_put  = round(premium_put_per_share  * n_shares, 2)
+    portfolio_value    = round(S * n_shares, 2)
+
+    # Payoff grid
+    price_range = list(np.linspace(max(100.0, S * 0.75), S * 1.25, 33).round(2))
+
+    def _unhedged_pnl(p: float) -> float:
+        return round((p - S) * n_shares, 2)
+
+    def _covered_call_pnl(p: float) -> float:
+        # Long stock + short call (premium received)
+        stock_pnl = (p - S) * n_shares
+        call_pnl  = -(max(p - K_call, 0) - premium_call_per_share) * n_shares
+        return round(stock_pnl + call_pnl, 2)
+
+    def _protective_put_pnl(p: float) -> float:
+        # Long stock + long put (premium paid)
+        stock_pnl = (p - S) * n_shares
+        put_pnl   = (max(K_put - p, 0) - premium_put_per_share) * n_shares
+        return round(stock_pnl + put_pnl, 2)
+
+    payoff_curves = {
+        "price_range":     [round(float(p), 2) for p in price_range],
+        "unhedged":        [_unhedged_pnl(p) for p in price_range],
+        "covered_call":    [_covered_call_pnl(p) for p in price_range],
+        "protective_put":  [_protective_put_pnl(p) for p in price_range],
+    }
+
+    # Daily portfolio series
+    daily = [
+        {
+            "date":  str(d.date()),
+            "price": round(float(p), 2),
+            "value": round(float(p) * n_shares, 2),
+        }
+        for d, p in zip(df_f.index, df_f["Close"])
+    ]
+
+    return {
+        "portfolio": {
+            "instrument":     instrument.upper(),
+            "n_shares":       n_shares,
+            "start_price":    round(start_price, 2),
+            "end_price":      round(end_price, 2),
+            "return_pct":     return_pct,
+            "vol_30d_pct":    round(vol_30d * 100, 4),
+            "portfolio_value": portfolio_value,
+            "daily":          daily,
+        },
+        "hedge_scenarios": {
+            "mild_bearish": {
+                "strategy":         "covered_call",
+                "strike_label":     f"€{K_call:.2f}",
+                "premium_per_share": round(premium_call_per_share, 4),
+                "total_premium_eur": total_premium_call,
+                "max_value_eur":    round(K_call * n_shares + total_premium_call, 2),
+                "breakeven_price":  round(S - premium_call_per_share, 2),
+                "description": (
+                    f"Sell {n_shares}× {instrument.upper()} calls @ €{K_call:.2f} "
+                    f"(5% OTM). Collect €{total_premium_call:.2f} premium. "
+                    f"Upside capped at €{K_call:.2f}/share."
+                ),
+            },
+            "strong_bearish": {
+                "strategy":         "protective_put",
+                "strike_label":     f"€{K_put:.2f}",
+                "premium_per_share": round(premium_put_per_share, 4),
+                "total_premium_eur": total_premium_put,
+                "floor_value_eur":  round(K_put * n_shares - total_premium_put, 2),
+                "breakeven_price":  round(S + premium_put_per_share, 2),
+                "description": (
+                    f"Buy {n_shares}× {instrument.upper()} puts @ €{K_put:.2f} (ATM). "
+                    f"Pay €{total_premium_put:.2f} premium. "
+                    f"Portfolio floor at €{round(K_put * n_shares - total_premium_put, 2):.2f}."
+                ),
+            },
+            "payoff_curves": payoff_curves,
+        },
     }

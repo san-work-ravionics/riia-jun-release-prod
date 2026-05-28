@@ -1,3 +1,4 @@
+import { t } from '../shared/i18n.js';
 import { api } from './api.js';
 import { mkChart, C } from './charts.js';
 import { randomUUID } from '../shared/utils.js';
@@ -40,7 +41,7 @@ export async function agentPanelStep() {
   if (apState.dayIndex >= TOTAL_DAYS) return;
 
   btn.disabled = true;
-  btn.textContent = '⏳ Processing…';
+  btn.textContent = t('agent.processing');
   if (status) { status.className = 'badge run'; status.textContent = 'Running'; }
 
   try {
@@ -62,21 +63,21 @@ export async function agentPanelStep() {
 
     if (apState.dayIndex >= TOTAL_DAYS) {
       _showFinalSummary(result);
-      btn.textContent = '✓ Simulation Complete';
+      btn.textContent = t('agent.sim_complete');
       if (status) { status.className = 'badge ok'; status.textContent = 'Done'; }
     } else if (result.proposal && result.proposal.action === 'BUY') {
       // Pause for human approval before the next day runs
       _showHitl(result);
-      if (status) { status.className = 'badge warn'; status.textContent = 'Awaiting Decision'; }
+      if (status) { status.className = 'badge warn'; status.textContent = t('agent.awaiting_decision'); }
     } else {
       btn.disabled = false;
-      btn.textContent = `▶ Run Day ${apState.dayIndex + 1}`;
-      if (status) { status.className = 'badge neu'; status.textContent = `Day ${apState.dayIndex} / ${TOTAL_DAYS}`; }
+      btn.textContent = `${t('agent.run_day_btn')} ${apState.dayIndex + 1}`;
+      if (status) { status.className = 'badge neu'; status.textContent = `${t('agent.day_label')} ${apState.dayIndex} / ${TOTAL_DAYS}`; }
     }
   } catch (err) {
     console.error('Agent Panel error:', err);
     btn.disabled = false;
-    btn.textContent = '▶ Run Day';
+    btn.textContent = t('agent.run_day_btn');
     if (status) { status.className = 'badge err'; status.textContent = 'Error'; }
   }
 }
@@ -86,8 +87,8 @@ export function approveAgentProposal() {
   _appendHitlAuditNote('Human approved the BUY proposal. Execution confirmed.');
   const btn = document.getElementById('ap-run-btn');
   const status = document.getElementById('agent-panel-status');
-  if (btn) { btn.disabled = false; btn.textContent = `▶ Run Day ${apState.dayIndex + 1}`; }
-  if (status) { status.className = 'badge neu'; status.textContent = `Day ${apState.dayIndex} / ${TOTAL_DAYS}`; }
+  if (btn) { btn.disabled = false; btn.textContent = `${t('agent.run_day_btn')} ${apState.dayIndex + 1}`; }
+  if (status) { status.className = 'badge neu'; status.textContent = `${t('agent.day_label')} ${apState.dayIndex} / ${TOTAL_DAYS}`; }
 }
 
 export function rejectAgentProposal() {
@@ -95,8 +96,8 @@ export function rejectAgentProposal() {
   _appendHitlAuditNote('Human rejected the BUY proposal. Position not taken.');
   const btn = document.getElementById('ap-run-btn');
   const status = document.getElementById('agent-panel-status');
-  if (btn) { btn.disabled = false; btn.textContent = `▶ Run Day ${apState.dayIndex + 1}`; }
-  if (status) { status.className = 'badge neu'; status.textContent = `Day ${apState.dayIndex} / ${TOTAL_DAYS}`; }
+  if (btn) { btn.disabled = false; btn.textContent = `${t('agent.run_day_btn')} ${apState.dayIndex + 1}`; }
+  if (status) { status.className = 'badge neu'; status.textContent = `${t('agent.day_label')} ${apState.dayIndex} / ${TOTAL_DAYS}`; }
 }
 
 export function resetAgentPanel() {
@@ -106,10 +107,10 @@ export function resetAgentPanel() {
   apState = { dayIndex: 0, threadId: randomUUID(), loaded: true };
 
   const status = document.getElementById('agent-panel-status');
-  if (status) { status.className = 'badge neu'; status.textContent = 'Ready'; }
+  if (status) { status.className = 'badge neu'; status.textContent = t('agent.ready'); }
 
   const btn = document.getElementById('ap-run-btn');
-  if (btn) { btn.disabled = false; btn.textContent = '▶ Run Day'; }
+  if (btn) { btn.disabled = false; btn.textContent = t('agent.run_day_btn'); }
 
   _setEl('ap-regime', '—');
   _setEl('ap-policy', '—');

@@ -59,9 +59,11 @@ window.manToggleView    = manToggleView;
 window.manSaveCsv       = manSaveCsv;
 window.manSaveSnapshot  = manSaveSnapshot;
 
+import { loadEquityHedge } from './equity_hedge.js';
 import { initI18n, setLanguage, applyTranslations } from '../shared/i18n.js';
 
 window.setLanguage = setLanguage;
+window.loadEquityHedge = loadEquityHedge;
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 initI18n(); applyTranslations();

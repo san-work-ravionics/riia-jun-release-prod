@@ -1,4 +1,5 @@
 // ── Payoff chart ──────────────────────────────────────────────────────────────
+import { t } from '../shared/i18n.js';
 import { state } from './state.js';
 import { fmtPnl } from './utils.js';
 
@@ -20,7 +21,7 @@ export function _buildPayoffChart(canvasId, pd, label, lineColor, spotLabel) {
           tension: 0.3, fill: true
         },
         {
-          label: 'Break-even', data: Array(labels.length).fill(0),
+          label: t('payoff.break_even'), data: Array(labels.length).fill(0),
           borderColor: 'rgba(0,0,0,0.2)', borderWidth: 1, borderDash: [5, 4],
           pointRadius: 0, fill: false
         }
@@ -45,6 +46,6 @@ export function renderPayoffChart() {
   if (state.payoffChartBnkn) { state.payoffChartBnkn.destroy(); state.payoffChartBnkn = null; }
   const niftyPd = state.payoffData.NIFTY     || (state.payoffData.labels ? state.payoffData : {});
   const bnknPd  = state.payoffData.BANKNIFTY || {};
-  state.payoffChart     = _buildPayoffChart('payoff-chart',      niftyPd, 'Est. NIFTY P&L (₹)',     'rgb(0,86,184)',   'NIFTY Level');
-  state.payoffChartBnkn = _buildPayoffChart('payoff-chart-bnkn', bnknPd,  'Est. BANKNIFTY P&L (₹)', 'rgb(107,47,160)', 'BANKNIFTY Level');
+  state.payoffChart     = _buildPayoffChart('payoff-chart',      niftyPd, t('payoff.nifty_pnl_label'),     'rgb(0,86,184)',   t('payoff.nifty_level'));
+  state.payoffChartBnkn = _buildPayoffChart('payoff-chart-bnkn', bnknPd,  t('payoff.bnkn_pnl_label'), 'rgb(107,47,160)', t('payoff.bnkn_level'));
 }

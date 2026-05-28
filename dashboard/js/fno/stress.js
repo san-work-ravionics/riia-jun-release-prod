@@ -1,4 +1,5 @@
 // ── Stress scenarios ──────────────────────────────────────────────────────────
+import { t } from '../shared/i18n.js';
 import { state } from './state.js';
 import { fmtPnl, pnlClass } from './utils.js';
 
@@ -29,7 +30,7 @@ export function renderStressScenarios() {
     const isFlat = s.move_pct === 0;
     const niftyLbl = s.nifty_level ? `~${s.nifty_level.toLocaleString('en-IN')}` : '—';
     return `<div class="scenario-card${isFlat ? ' flat' : ''}">
-      <div class="scenario-move">${isFlat ? 'Flat' : s.move_label}</div>
+      <div class="scenario-move">${isFlat ? t('stress.flat') : s.move_label}</div>
       <div class="scenario-nifty">${niftyLbl}</div>
       <div class="scenario-pnl ${pnlClass(s.pnl)}">${fmtPnl(s.pnl)}</div>
     </div>`;

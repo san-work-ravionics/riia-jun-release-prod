@@ -1,4 +1,5 @@
 // ── Greeks + Risk sections ────────────────────────────────────────────────────
+import { t } from '../shared/i18n.js';
 import { state } from './state.js';
 import { fmtPnl, pnlClass } from './utils.js';
 
@@ -19,26 +20,26 @@ export function renderGreeksCards() {
     return `
       <div class="greek-card">${lbl}<div class="greek-symbol">Δ</div><div class="greek-name">Net Delta</div>
         <div class="greek-val ${delta < 0 ? 'neg' : 'pos'}">${delta >= 0 ? '+' : ''}${delta}</div>
-        <div class="greek-sub">Per 100pt move: ~${delta < 0 ? '−' : ''}₹${Math.abs(ptMove).toLocaleString('en-IN')}</div>
+        <div class="greek-sub">${t('greeks.per_100pt')}${delta < 0 ? '−' : ''}₹${Math.abs(ptMove).toLocaleString('en-IN')}</div>
       </div>
-      <div class="greek-card">${lbl}<div class="greek-symbol">Γ</div><div class="greek-name">Gamma</div>
+      <div class="greek-card">${lbl}<div class="greek-symbol">Γ</div><div class="greek-name">${t('greeks.gamma')}</div>
         <div class="greek-val ${gamma < 0 ? 'neg' : 'pos'}">${gamma >= 0 ? '+' : ''}${gamma.toFixed(4)}</div>
-        <div class="greek-sub">${gamma < 0 ? 'Short options' : 'Long options'} drive ${gamma < 0 ? 'negative' : 'positive'} gamma</div>
+        <div class="greek-sub">${gamma < 0 ? t('greeks.short_options') : t('greeks.long_options')} drive ${gamma < 0 ? t('greeks.negative_gamma') : t('greeks.positive_gamma')} gamma</div>
       </div>
-      <div class="greek-card">${lbl}<div class="greek-symbol">Θ</div><div class="greek-name">Theta / day</div>
+      <div class="greek-card">${lbl}<div class="greek-symbol">Θ</div><div class="greek-name">${t('greeks.theta_day')}</div>
         <div class="greek-val ${theta >= 0 ? 'pos' : 'neg'}">${theta >= 0 ? '+₹' : '−₹'}${Math.abs(theta).toLocaleString('en-IN')}</div>
-        <div class="greek-sub">Daily time decay ${theta >= 0 ? 'earned' : 'paid'}</div>
+        <div class="greek-sub">${t('greeks.daily_decay')} ${theta >= 0 ? t('greeks.decay_earned') : t('greeks.decay_paid')}</div>
       </div>
-      <div class="greek-card">${lbl}<div class="greek-symbol">V</div><div class="greek-name">Vega</div>
+      <div class="greek-card">${lbl}<div class="greek-symbol">V</div><div class="greek-name">${t('greeks.vega')}</div>
         <div class="greek-val ${vega >= 0 ? 'pos' : 'neg'}">${vega >= 0 ? '+₹' : '−₹'}${Math.abs(vega).toLocaleString('en-IN')}</div>
-        <div class="greek-sub">Per 1% IV rise, ${und} ${vega >= 0 ? 'gains' : 'loses'} ₹${Math.abs(vega).toLocaleString('en-IN')}</div>
+        <div class="greek-sub">${t('greeks.per_1pct_iv')}${und} ${vega >= 0 ? t('greeks.gains') : t('greeks.loses')} ₹${Math.abs(vega).toLocaleString('en-IN')}</div>
       </div>`;
   }).join('');
 }
 
 export function renderGreeksTable() {
   const filtered = state.greeksData.filter(g => (state.currentUnd === 'ALL' || g.und === state.currentUnd) && (state.currentExpiry === 'ALL' || g.exp === state.currentExpiry));
-  document.getElementById('greeks-table-sub').textContent = state.currentUnd === 'ALL' ? 'All positions' : state.currentUnd + ' positions';
+  document.getElementById('greeks-table-sub').textContent = state.currentUnd === 'ALL' ? t('greeks.all_positions') : state.currentUnd + t('greeks.positions_suffix');
   document.getElementById('greeks-tbody').innerHTML = filtered.map(g => {
     const dStr = g.delta >= 0 ? `+${g.delta}` : String(g.delta);
     const tStr = g.theta > 0 ? `+₹${g.theta}` : g.theta === 0 ? '₹0' : `−₹${Math.abs(g.theta)}`;
@@ -59,9 +60,9 @@ export function renderGreeksTable() {
   const totTheta = filtered.reduce((s, g) => s + g.theta, 0);
   const totVega  = filtered.reduce((s, g) => s + g.vega,  0);
   document.getElementById('greeks-footer').innerHTML = `
-    <span class="lbl">Net Delta:</span><span class="val ${pnlClass(totDelta)}">${totDelta >= 0 ? '+' : ''}${totDelta}</span>
-    <span class="lbl">Net Theta:</span><span class="val ${pnlClass(totTheta)}">${totTheta >= 0 ? '+₹' : '−₹'}${Math.abs(totTheta)}/day</span>
-    <span class="lbl">Net Vega:</span><span class="val ${pnlClass(totVega)}">${totVega >= 0 ? '+₹' : '−₹'}${Math.abs(totVega)}</span>`;
+    <span class="lbl">${t('greeks.net_delta_lbl')}</span><span class="val ${pnlClass(totDelta)}">${totDelta >= 0 ? '+' : ''}${totDelta}</span>
+    <span class="lbl">${t('greeks.net_theta_lbl')}</span><span class="val ${pnlClass(totTheta)}">${totTheta >= 0 ? '+₹' : '−₹'}${Math.abs(totTheta)}${t('greeks.per_day')}</span>
+    <span class="lbl">${t('greeks.net_vega_lbl')}</span><span class="val ${pnlClass(totVega)}">${totVega >= 0 ? '+₹' : '−₹'}${Math.abs(totVega)}</span>`;
 }
 
 export function updateRiskSections() {
@@ -79,5 +80,5 @@ export function updateRiskSections() {
   if (showNifty && nSpot) subParts.push(`NIFTY ~${nSpot.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`);
   if (showBnkn  && bSpot) subParts.push(`BANKNIFTY ~${bSpot.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`);
   document.getElementById('stress-card-sub').textContent =
-    `Estimated portfolio P&L for index moves · ${subParts.join(' · ')}`;
+    `${t('greeks.stress_sub')}${subParts.join(' · ')}`;
 }

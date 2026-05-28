@@ -15,6 +15,7 @@ dependencies = [
     "python-jose[cryptography]>=3.3",
     "pandas>=2.2",
     "numpy>=1.26",
+    "scipy>=1.12",
     "stable-baselines3>=2.3",
     "sqlalchemy>=2.0",
     "alembic>=1.13",

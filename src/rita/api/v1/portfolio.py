@@ -473,6 +473,13 @@ class _DailySnapshotRequest(BaseModel):
     notes: str = ""
 
 
+class EquityHedgeRequest(BaseModel):
+    instrument: str = Field(default="ASML", description="Instrument ticker (e.g. ASML).")
+    n_shares: int = Field(default=10, ge=1, description="Number of shares held.")
+    start_date: str = Field(description="Period start date, YYYY-MM-DD.")
+    end_date: str = Field(description="Period end date, YYYY-MM-DD.")
+
+
 @router.post("/man-daily-snapshot")
 def man_daily_snapshot(
     req: _DailySnapshotRequest = _DailySnapshotRequest(),
@@ -487,3 +494,28 @@ def man_daily_snapshot(
         "date": _date.today().isoformat(),
         "notes": req.notes,
     }
+
+
+@router.post("/equity-hedge-scenarios")
+def equity_hedge_scenarios_endpoint(
+    req: EquityHedgeRequest,
+) -> dict[str, Any]:
+    """Compute ASML equity portfolio performance and Black-Scholes hedge scenarios.
+
+    Returns portfolio period stats, covered call and protective put scenario details,
+    and payoff curves over a price grid at option expiry.
+    """
+    from rita.core.portfolio_engine import equity_hedge_scenarios  # lazy import
+
+    try:
+        return equity_hedge_scenarios(
+            instrument=req.instrument,
+            n_shares=req.n_shares,
+            start_date=req.start_date,
+            end_date=req.end_date,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        log.error("equity_hedge_scenarios failed", error=str(exc))
+        raise HTTPException(status_code=500, detail="Computation error — check server logs.") from exc

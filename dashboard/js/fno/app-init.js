@@ -17,6 +17,7 @@
 import { apiBase, RITA_API_KEY } from './api.js';
 import { state } from './state.js';
 import { buildExpiryPills } from './nav.js';
+import { loadEquityHedge } from './equity_hedge.js';
 import {
   renderDashboard,
   renderDailyProgress,
@@ -78,16 +79,6 @@ export async function initApp() {
     // Update sidebar
     const asOf = d.last_date || d.as_of || '';
     document.getElementById('sidebar-as-of').textContent = asOf ? `As of ${asOf}` : '';
-    const sidePrices = [
-      ['sideprice-nifty',     d.nifty_spot,    'en-IN'],
-      ['sideprice-banknifty', d.banknifty_spot, 'en-IN'],
-      ['sideprice-asml',      d.asml_close,     'en-US'],
-      ['sideprice-nvidia',    d.nvidia_close,   'en-US'],
-    ];
-    for (const [id, val, locale] of sidePrices) {
-      const el = document.getElementById(id);
-      if (el && val != null) el.textContent = val.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
 
   } catch (e) {
     console.error('Portfolio API error:', e);
@@ -115,6 +106,21 @@ export async function initApp() {
   renderPayoffChart();
   renderHedgeRadar();
   initManoeuvre();
+
+  // Re-render all pages when ASML equity hedge data is injected into state
+  document.addEventListener('rita:asml-state-updated', () => {
+    buildExpiryPills();
+    renderDashboard();
+    renderPositionsKpis();
+    renderPositionsTable();
+    renderClosedPositions();
+    renderMarginKpis();
+    updateMarginSections();
+    renderMarginTables();
+  });
+
+  // Auto-load equity hedge in background so ASML data flows to all pages
+  loadEquityHedge(false).catch(() => {});
 }
 
 export async function checkStatus() {

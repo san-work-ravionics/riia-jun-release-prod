@@ -1,4 +1,5 @@
 // ── Risk-Reward section ───────────────────────────────────────────────────────
+import { t } from '../shared/i18n.js';
 import { state } from './state.js';
 import { fmtPnl, pnlClass } from './utils.js';
 import { apiBase } from './api.js';
@@ -68,6 +69,7 @@ export async function syncPriceHistory() {
 export function getProgressDir(und, mode) {
   const history = loadHistory();
   if (history.length < 2) return 'neutral';
+  if (!state.scenarioLevels?.[und]?.[mode]) return 'neutral';
   const key = und === 'NIFTY' ? 'nifty' : 'banknifty';
   const todayC = history[history.length - 1][key];
   const yestC  = history[history.length - 2][key];
@@ -92,6 +94,7 @@ export function computeScen(sl, target, current, delta) {
 }
 
 export function renderScenCard(und, mode) {
+  if (!_hasScenLevels(und)) return '';
   const current = state.marketData[und].close;
   const isBull  = mode === 'bull';
   const { sl, target } = state.scenarioLevels[und][mode];
@@ -99,18 +102,18 @@ export function renderScenCard(und, mode) {
   const dir = getProgressDir(und, mode);
   const pct = sc.pct.toFixed(1);
   const rrColor    = sc.rr >= 1 ? 'var(--pos)' : 'var(--neg)';
-  const dirLabel   = dir === 'toward' ? '↑ Moving toward target' : dir === 'away' ? '↓ Moving away from target' : '— No prior data (opens daily)';
+  const dirLabel   = dir === 'toward' ? t('rr.dir_toward') : dir === 'away' ? t('rr.dir_away') : t('rr.dir_neutral');
   const dirColor   = dir === 'toward' ? 'var(--pos)' : dir === 'away' ? 'var(--p03)' : 'var(--t3)';
   const groupPnl   = state.positions.filter(p => p.und === und && getBullBear(p) === mode).reduce((s, p) => s + p.pnl, 0);
   const cls        = isBull ? 'bull' : 'bear';
   return `<div class="scen-card ${cls}">
     <div class="scen-hdr">
-      <div class="scen-title">${isBull ? 'Bull View' : 'Bear View'}</div>
-      <span class="scen-badge ${cls}">${isBull ? 'BULLISH' : 'BEARISH'}</span>
+      <div class="scen-title">${isBull ? t('rr.bull_view') : t('rr.bear_view')}</div>
+      <span class="scen-badge ${cls}">${isBull ? t('rr.badge_bullish') : t('rr.badge_bearish')}</span>
     </div>
     <div class="scen-bar-labels">
-      <span>SL: ${sl.toLocaleString('en-IN')}</span>
-      <span>Target: ${target.toLocaleString('en-IN')}</span>
+      <span>${t('rr.sl_label')}${sl.toLocaleString('en-IN')}</span>
+      <span>${t('rr.target_label')}${target.toLocaleString('en-IN')}</span>
     </div>
     <div class="scen-bar-wrap">
       <div class="scen-bar-outer">
@@ -121,22 +124,22 @@ export function renderScenCard(und, mode) {
     </div>
     <div class="scen-progress" style="color:${dirColor}">${dirLabel} &nbsp;·&nbsp; ${pct}%</div>
     <div class="scen-stats">
-      <div class="scen-stat"><div class="scen-stat-lbl">Risk (pts)</div><div class="scen-stat-val neg">${sc.risk.toFixed(0)}</div></div>
-      <div class="scen-stat"><div class="scen-stat-lbl">Reward (pts)</div><div class="scen-stat-val pos">${sc.reward.toFixed(0)}</div></div>
-      <div class="scen-stat"><div class="scen-stat-lbl">R : R</div><div class="scen-stat-val" style="color:${rrColor}">1 : ${sc.rr.toFixed(2)}</div></div>
-      <div class="scen-stat"><div class="scen-stat-lbl">Progress</div><div class="scen-stat-val" style="color:${dirColor}">${pct}%</div></div>
+      <div class="scen-stat"><div class="scen-stat-lbl">${t('rr.risk_pts')}</div><div class="scen-stat-val neg">${sc.risk.toFixed(0)}</div></div>
+      <div class="scen-stat"><div class="scen-stat-lbl">${t('rr.reward_pts')}</div><div class="scen-stat-val pos">${sc.reward.toFixed(0)}</div></div>
+      <div class="scen-stat"><div class="scen-stat-lbl">${t('rr.rr_label')}</div><div class="scen-stat-val" style="color:${rrColor}">1 : ${sc.rr.toFixed(2)}</div></div>
+      <div class="scen-stat"><div class="scen-stat-lbl">${t('rr.progress')}</div><div class="scen-stat-val" style="color:${dirColor}">${pct}%</div></div>
     </div>
     <div class="scen-impact">
       <div class="scen-impact-row">
-        <span class="scen-impact-lbl">Current ${isBull ? 'bull' : 'bear'} bets P&amp;L:</span>
+        <span class="scen-impact-lbl">${isBull ? t('rr.current_bull_bets') : t('rr.current_bear_bets')}</span>
         <span class="${groupPnl >= 0 ? 'pos' : 'neg'}" style="font-family:var(--fm);font-size:12px;font-weight:600">${fmtPnl(groupPnl)}</span>
       </div>
       <div class="scen-impact-row">
-        <span class="scen-impact-lbl">Portfolio Δ at Target (${target.toLocaleString('en-IN')}):</span>
+        <span class="scen-impact-lbl">${t('rr.portfolio_at_target')} (${target.toLocaleString('en-IN')}):</span>
         <span class="${sc.pnlTgt >= 0 ? 'pos' : 'neg'}" style="font-family:var(--fm);font-size:12px;font-weight:600">${fmtPnl(sc.pnlTgt)}</span>
       </div>
       <div class="scen-impact-row">
-        <span class="scen-impact-lbl">Portfolio Δ at Stop Loss (${sl.toLocaleString('en-IN')}):</span>
+        <span class="scen-impact-lbl">${t('rr.portfolio_at_sl')} (${sl.toLocaleString('en-IN')}):</span>
         <span class="${sc.pnlSL >= 0 ? 'pos' : 'neg'}" style="font-family:var(--fm);font-size:12px;font-weight:600">${fmtPnl(sc.pnlSL)}</span>
       </div>
     </div>
@@ -146,7 +149,7 @@ export function renderScenCard(und, mode) {
 export function renderView(und, mode) {
   const isBull = mode === 'bull';
   const tagCls = isBull ? 'bull' : 'bear';
-  const label  = isBull ? '▲ Bull View' : '▼ Bear View';
+  const label  = isBull ? t('rr.bull_view_tag') : t('rr.bear_view_tag');
   return `
     <div class="rr-view-hdr">
       <span class="rr-view-tag ${tagCls}">${label}</span>
@@ -159,6 +162,7 @@ export function renderView(und, mode) {
 }
 
 export function renderBullBearKpis(und) {
+  if (!_hasScenLevels(und)) return '';
   const exp = p => state.currentExpiry === 'ALL' || p.exp === state.currentExpiry;
   const bullPnl = state.positions.filter(p => p.und === und && exp(p) && getBullBear(p) === 'bull').reduce((s, p) => s + p.pnl, 0);
   const bearPnl = state.positions.filter(p => p.und === und && exp(p) && getBullBear(p) === 'bear').reduce((s, p) => s + p.pnl, 0);
@@ -166,9 +170,9 @@ export function renderBullBearKpis(und) {
   const bearCnt = state.positions.filter(p => p.und === und && exp(p) && getBullBear(p) === 'bear').length;
   const spot    = state.marketData[und].close;
   return `<div class="kpi-row c4" style="margin-bottom:16px;">
-    <div class="kpi"><div class="kpi-label">Current P&amp;L</div><div class="kpi-value ${pnlClass(bullPnl + bearPnl)}">${fmtPnl(bullPnl + bearPnl)}</div><div class="kpi-sub">Bull + Bear combined</div></div>
-    <div class="kpi"><div class="kpi-label">Bull Bets P&amp;L</div><div class="kpi-value ${pnlClass(bullPnl)}">${fmtPnl(bullPnl)}</div><div class="kpi-sub">${bullCnt} pos · FUT Long · CE Long · PE Short</div></div>
-    <div class="kpi"><div class="kpi-label">Bear Bets P&amp;L</div><div class="kpi-value ${pnlClass(bearPnl)}">${fmtPnl(bearPnl)}</div><div class="kpi-sub">${bearCnt} pos · FUT Short · CE Short · PE Long</div></div>
+    <div class="kpi"><div class="kpi-label">${t('rr.current_pnl')}</div><div class="kpi-value ${pnlClass(bullPnl + bearPnl)}">${fmtPnl(bullPnl + bearPnl)}</div><div class="kpi-sub">${t('rr.bull_bear_combined')}</div></div>
+    <div class="kpi"><div class="kpi-label">${t('rr.bull_bets_pnl')}</div><div class="kpi-value ${pnlClass(bullPnl)}">${fmtPnl(bullPnl)}</div><div class="kpi-sub">${bullCnt} pos · FUT Long · CE Long · PE Short</div></div>
+    <div class="kpi"><div class="kpi-label">${t('rr.bear_bets_pnl')}</div><div class="kpi-value ${pnlClass(bearPnl)}">${fmtPnl(bearPnl)}</div><div class="kpi-sub">${bearCnt} pos · FUT Short · CE Short · PE Long</div></div>
     <div class="kpi"><div class="kpi-label">${und === 'BANKNIFTY' ? 'BANKNIFTY' : 'NIFTY'} Spot</div><div class="kpi-value" style="font-family:var(--fm)">${spot.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div><div class="kpi-sub">${state.marketData[und].date}</div></div>
   </div>`;
 }
@@ -179,13 +183,13 @@ export function renderBullBearTable(und, mode) {
   const total  = grp.reduce((s, p) => s + p.pnl, 0);
   return `<div class="card" style="margin-bottom:14px;">
     <div class="card-hdr">
-      <span class="card-title" style="color:${isBull ? 'var(--p01)' : 'var(--neg)'}">${isBull ? '▲' : '▼'} ${und} ${isBull ? 'Bull' : 'Bear'} Positions</span>
+      <span class="card-title" style="color:${isBull ? 'var(--p01)' : 'var(--neg)'}">${isBull ? '▲' : '▼'} ${und} ${isBull ? t('rr.bull_positions') : t('rr.bear_positions')}</span>
       <span class="card-sub">${grp.length} pos · ${fmtPnl(total)} · ${isBull ? 'FUT Long · CE Long · PE Short' : 'FUT Short · CE Short · PE Long'}</span>
     </div>
     <div class="card-body" style="padding:0">
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>Instrument</th><th>Exp</th><th>Type</th><th>Side</th><th>Qty</th><th>Avg</th><th>LTP</th><th>P&amp;L</th></tr></thead>
+          <thead><tr><th>Instrument</th><th>Exp</th><th>${t('rr.col_type')}</th><th>Side</th><th>Qty</th><th>${t('rr.col_avg')}</th><th>${t('rr.col_ltp')}</th><th>${t('rr.col_pnl')}</th></tr></thead>
           <tbody>${grp.map(p => `<tr>
             <td>${p.full}</td>
             <td><span class="exp-badge ${p.exp.toLowerCase()}">${p.exp}</span></td>
@@ -208,9 +212,10 @@ export function renderBullBearTable(und, mode) {
 
 export function renderRRHistory() {
   const history = loadHistory();
-  if (!history.length) return `<div class="info-note" style="margin-top:18px;">Daily history will appear here after you open the page on a second day. Data is saved automatically in browser localStorage.</div>`;
+  if (!history.length) return `<div class="info-note" style="margin-top:18px;">${t('rr.no_history_hint')}</div>`;
+  if (!_hasScenLevels('NIFTY') || !_hasScenLevels('BANKNIFTY')) return '';
   const rows = [...history].reverse().map((h, i) => {
-    const isToday = h.date === state.marketData.NIFTY.date;
+    const isToday = h.date === state.marketData.NIFTY?.date;
     const nBull = computeScen(state.scenarioLevels.NIFTY.bull.sl,     state.scenarioLevels.NIFTY.bull.target,     h.nifty,     state.portDelta.NIFTY).pct;
     const nBear = computeScen(state.scenarioLevels.NIFTY.bear.sl,     state.scenarioLevels.NIFTY.bear.target,     h.nifty,     state.portDelta.NIFTY).pct;
     const bBull = computeScen(state.scenarioLevels.BANKNIFTY.bull.sl, state.scenarioLevels.BANKNIFTY.bull.target, h.banknifty, state.portDelta.BANKNIFTY).pct;
@@ -248,13 +253,13 @@ export function renderRRHistory() {
   }).join('');
   return `<div class="card" style="margin-top:18px;">
     <div class="card-hdr">
-      <span class="card-title">Daily Progress History</span>
-      <span class="card-sub">Unrealized P&amp;L = open positions MTM · Realized P&amp;L = closed positions that day · Progress % = SL→Target distance</span>
+      <span class="card-title">${t('rr.daily_history')}</span>
+      <span class="card-sub">${t('rr.history_sub')}</span>
     </div>
     <div class="card-body" style="padding:0">
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>Date</th><th>NIFTY</th><th>BANKNIFTY</th><th>N Unreal</th><th>BN Unreal</th><th>Total Unreal</th><th>Realized</th><th>N-Bull%</th><th>N-Bear%</th><th>BN-Bull%</th><th>BN-Bear%</th></tr></thead>
+          <thead><tr><th>${t('rr.col_date')}</th><th>NIFTY</th><th>BANKNIFTY</th><th>${t('rr.col_n_unreal')}</th><th>${t('rr.col_bn_unreal')}</th><th>${t('rr.col_total_unreal')}</th><th>${t('rr.col_realized')}</th><th>${t('rr.col_nbull')}</th><th>${t('rr.col_nbear')}</th><th>${t('rr.col_bnbull')}</th><th>${t('rr.col_bnbear')}</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>
@@ -262,26 +267,41 @@ export function renderRRHistory() {
   </div>`;
 }
 
+function _hasScenLevels(und) {
+  return state.scenarioLevels?.[und]?.bull && state.scenarioLevels?.[und]?.bear
+      && state.marketData?.[und];
+}
+
 export function renderScenarios() {
   document.getElementById('nifty-scen-section').style.display     = state.currentUnd === 'BANKNIFTY' ? 'none' : '';
   document.getElementById('banknifty-scen-section').style.display = state.currentUnd === 'NIFTY'     ? 'none' : '';
 
   if (state.currentUnd !== 'BANKNIFTY') {
-    document.getElementById('nifty-rr-kpis').innerHTML  = renderBullBearKpis('NIFTY');
-    document.getElementById('nifty-rr-views').innerHTML = renderView('NIFTY', 'bull') + renderView('NIFTY', 'bear');
+    if (_hasScenLevels('NIFTY')) {
+      document.getElementById('nifty-rr-kpis').innerHTML  = renderBullBearKpis('NIFTY');
+      document.getElementById('nifty-rr-views').innerHTML = renderView('NIFTY', 'bull') + renderView('NIFTY', 'bear');
+    } else {
+      document.getElementById('nifty-rr-views').innerHTML = '<div style="padding:20px;font-family:var(--fm);font-size:12px;color:var(--t3);">No scenario levels available for NIFTY.</div>';
+    }
   }
   if (state.currentUnd !== 'NIFTY') {
-    document.getElementById('banknifty-rr-kpis').innerHTML  = renderBullBearKpis('BANKNIFTY');
-    document.getElementById('banknifty-rr-views').innerHTML = renderView('BANKNIFTY', 'bull') + renderView('BANKNIFTY', 'bear');
+    if (_hasScenLevels('BANKNIFTY')) {
+      document.getElementById('banknifty-rr-kpis').innerHTML  = renderBullBearKpis('BANKNIFTY');
+      document.getElementById('banknifty-rr-views').innerHTML = renderView('BANKNIFTY', 'bull') + renderView('BANKNIFTY', 'bear');
+    } else {
+      document.getElementById('banknifty-rr-views').innerHTML = '<div style="padding:20px;font-family:var(--fm);font-size:12px;color:var(--t3);">No scenario levels available for BANKNIFTY.</div>';
+    }
   }
 
-  const summaryDefs = ['NIFTY', 'BANKNIFTY'].flatMap(und => ['bull', 'bear'].map(mode => ({
-    und, mode: mode.charAt(0).toUpperCase() + mode.slice(1),
-    sl:     state.scenarioLevels[und][mode].sl,
-    target: state.scenarioLevels[und][mode].target,
-    cur:    state.marketData[und].close,
-    delta:  state.portDelta[und]
-  }))).filter(r => state.currentUnd === 'ALL' || r.und === state.currentUnd);
+  const summaryDefs = ['NIFTY', 'BANKNIFTY']
+    .filter(und => _hasScenLevels(und))
+    .flatMap(und => ['bull', 'bear'].map(mode => ({
+      und, mode: mode.charAt(0).toUpperCase() + mode.slice(1),
+      sl:     state.scenarioLevels[und][mode].sl,
+      target: state.scenarioLevels[und][mode].target,
+      cur:    state.marketData[und].close,
+      delta:  state.portDelta[und]
+    }))).filter(r => state.currentUnd === 'ALL' || r.und === state.currentUnd);
 
   const summaryRows = summaryDefs.map(r => {
     const sc      = computeScen(r.sl, r.target, r.cur, r.delta);
@@ -309,15 +329,15 @@ export function renderScenarios() {
 
   document.getElementById('scen-summary-card').innerHTML = `
     <div class="card-hdr">
-      <span class="card-title">Risk-Reward Summary</span>
-      <span class="card-sub">Net Δ: NIFTY ${state.portDelta.NIFTY} · BANKNIFTY ${state.portDelta.BANKNIFTY} · ↑ = moving toward target</span>
+      <span class="card-title">${t('rr.rr_summary')}</span>
+      <span class="card-sub">Net Δ: NIFTY ${state.portDelta.NIFTY ?? '—'} · BANKNIFTY ${state.portDelta.BANKNIFTY ?? '—'} · ↑ = moving toward target</span>
     </div>
     <div class="card-body" style="padding:0">
       <div class="tbl-wrap">
         <table>
           <thead><tr>
-            <th>Scenario</th><th>Stop Loss</th><th>Current</th><th>Target</th>
-            <th>Progress</th><th>R:R</th><th>Current P&amp;L</th><th>At Target</th><th>At Stop</th>
+            <th>${t('rr.col_scenario')}</th><th>${t('rr.col_stop_loss')}</th><th>${t('rr.col_current')}</th><th>${t('rr.col_target')}</th>
+            <th>${t('rr.col_progress')}</th><th>${t('rr.col_rr')}</th><th>${t('rr.col_current_pnl')}</th><th>${t('rr.col_at_target')}</th><th>${t('rr.col_at_stop')}</th>
           </tr></thead>
           <tbody>${summaryRows}</tbody>
         </table>
