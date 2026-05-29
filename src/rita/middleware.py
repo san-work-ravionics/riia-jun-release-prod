@@ -71,8 +71,15 @@ class ApiCallLogMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         start = time.monotonic()
-        response = await call_next(request)
+        response = None
+        unhandled_exc = None
+        try:
+            response = await call_next(request)
+        except Exception as exc:
+            unhandled_exc = exc
+
         duration_ms = (time.monotonic() - start) * 1000
+        status_code = response.status_code if response is not None else 500
 
         try:
             from rita.database import SessionLocal
@@ -84,7 +91,7 @@ class ApiCallLogMiddleware(BaseHTTPMiddleware):
                     call_id=str(uuid.uuid4()),
                     path=path,
                     method=request.method,
-                    status_code=response.status_code,
+                    status_code=status_code,
                     duration_ms=round(duration_ms, 2),
                     called_at=datetime.now(timezone.utc).replace(tzinfo=None),
                     recorded_at=datetime.now(timezone.utc).replace(tzinfo=None),
@@ -96,4 +103,6 @@ class ApiCallLogMiddleware(BaseHTTPMiddleware):
         except Exception as exc:
             structlog.get_logger().warning("api_call_log.write_failed", error=str(exc))
 
+        if unhandled_exc is not None:
+            raise unhandled_exc
         return response

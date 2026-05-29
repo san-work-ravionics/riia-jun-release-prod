@@ -166,6 +166,14 @@ jobs:
       # Split into short SSH calls so no single session is killed by OOM.
       # Stop + prune BEFORE pull so old image layers are freed first.
 
+      - name: Backup models from EC2
+        run: |
+          mkdir -p /tmp/rita_models_backup
+          rsync -av --ignore-missing-args \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            ubuntu@${{ secrets.AWS_EC2_IP }}:/opt/rita_output/models/ \
+            /tmp/rita_models_backup/ || echo "No models to backup (first deploy or empty)"
+
       - name: Free EC2 disk space
         run: |
           ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} \
@@ -192,7 +200,7 @@ jobs:
               -e RITA_GOOGLE_CLIENT_ID='${{ secrets.GOOGLE_CLIENT_ID }}' \
               -e RITA_GOOGLE_CLIENT_SECRET='${{ secrets.GOOGLE_CLIENT_SECRET }}' \
               -e RITA_BASE_URL='${{ secrets.RITA_BASE_URL }}' \
-              -v /opt/rita_input:/app/data:ro \
+              -v /opt/rita_input:/app/data \
               -v /opt/rita_output:/app/rita_output \
               --memory 900m \
               --log-driver awslogs \
@@ -213,6 +221,20 @@ jobs:
           done
           echo "Health check timed out."
           exit 1
+
+      - name: Restore models to EC2
+        run: |
+          if [ -n "$(ls -A /tmp/rita_models_backup 2>/dev/null)" ]; then
+            ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} \
+              "mkdir -p /opt/rita_output/models"
+            rsync -av \
+              -e "ssh -o StrictHostKeyChecking=no" \
+              /tmp/rita_models_backup/ \
+              ubuntu@${{ secrets.AWS_EC2_IP }}:/opt/rita_output/models/
+            echo "Models restored."
+          else
+            echo "No models to restore."
+          fi
 
       - name: Seed agent builds DB
         run: |
