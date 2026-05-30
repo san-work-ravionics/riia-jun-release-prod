@@ -446,6 +446,9 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       <span class="nav-icon">⟳</span> Manoeuvre
     </div>
     <div class="nav-item p00" data-page="my-portfolio">My Portfolio</div>
+    <div class="nav-item p04" data-page="portfolio-hedge">
+      <span class="nav-icon">🛡</span> Portfolio Hedge
+    </div>
   </div>
 
   <div class="sidebar-footer">
@@ -1101,6 +1104,41 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       <div id="fno-mp-tiles"></div>
       <div class="fno-mp-chart-label">Portfolio Performance 2025</div>
       <div id="fno-mp-perf-chart-wrap"><canvas id="fno-mp-perf-chart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       PORTFOLIO HEDGE  (Feature 27)
+  ════════════════════════════════════════════════ -->
+  <div class="section" id="page-portfolio-hedge">
+    <div class="page-hdr">
+      <div><div class="page-title">Portfolio Hedge</div></div>
+      <span class="phase-tag p04">Hedge Analysis</span>
+    </div>
+
+    <div id="ph-loading" style="padding:1rem;font-size:12px;color:var(--t3);font-family:var(--fm);">Loading hedge analysis…</div>
+
+    <div id="ph-empty" style="display:none;padding:1rem;font-size:12px;color:var(--t3);">
+      <span id="ph-empty-msg">No portfolio saved yet. <a href="/dashboard/" style="color:var(--p02);text-decoration:none;font-weight:600;">Build one in RITA →</a></span>
+    </div>
+
+    <div id="ph-error" style="display:none;padding:0.5rem 0;">
+      <span id="ph-error-msg" style="color:var(--neg);font-size:12px;"></span>
+    </div>
+
+    <div id="ph-content" style="display:none;">
+      <div class="fno-mp-saved-header" style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+        <span class="fno-mp-saved-title" id="ph-name"></span>
+        <span class="fno-mp-saved-ts" id="ph-total-pct"></span>
+        <span id="ph-risk-badge" style="display:none;margin-left:auto;background:var(--neg);color:#fff;font-family:var(--fm);font-size:9px;font-weight:600;padding:2px 8px;border-radius:100px;"></span>
+      </div>
+
+      <div id="ph-items"></div>
+
+      <div style="margin-top:16px;padding:12px 14px;background:var(--surface2);border-radius:var(--r);border:1px solid var(--border);">
+        <div style="font-family:var(--fm);font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Disclaimer</div>
+        <div style="font-size:11px;color:var(--t3);line-height:1.5;">Hedge recommendations are illustrative and based on portfolio allocation weights only. Actual decisions should factor in market conditions, live option pricing, and individual risk tolerance. Not financial advice.</div>
+      </div>
     </div>
   </div>
 

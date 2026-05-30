@@ -31,6 +31,7 @@ async function apiFetch(url, opts = {}) {
 import { state } from './state.js';
 import { initNav, setUnderlying, setExpiry, _sectionLoaders } from './nav.js';
 import { loadFnoMyPortfolio } from './my-portfolio.js';
+import { loadPortfolioHedge } from './portfolio-hedge.js';
 import { filterPos } from './positions.js';
 import {
   manSelectTile,
@@ -80,6 +81,10 @@ window.loadEquityHedge = loadEquityHedge;
 // My Portfolio section loader
 _sectionLoaders['my-portfolio'] = loadFnoMyPortfolio;
 window.loadFnoMyPortfolio = loadFnoMyPortfolio;
+
+// Portfolio Hedge section loader (Feature 27)
+_sectionLoaders['portfolio-hedge'] = loadPortfolioHedge;
+window.loadPortfolioHedge = loadPortfolioHedge;
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 initI18n(); applyTranslations();
