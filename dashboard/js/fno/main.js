@@ -1,4 +1,15 @@
 // ── FnO Dashboard — Entry Point ───────────────────────────────────────────────
+
+// ingest ?token= from OAuth callback
+(function() {
+  const p = new URLSearchParams(window.location.search);
+  const t = p.get('token');
+  if (t) {
+    sessionStorage.setItem('rita_token', t);
+    history.replaceState({}, '', window.location.pathname);
+  }
+})();
+
 import { initApp, checkStatus, fetchPositions } from './app-init.js';
 import { randomUUID } from '../shared/utils.js';
 
@@ -18,7 +29,8 @@ async function apiFetch(url, opts = {}) {
     }
 }
 import { state } from './state.js';
-import { initNav, setUnderlying, setExpiry } from './nav.js';
+import { initNav, setUnderlying, setExpiry, _sectionLoaders } from './nav.js';
+import { loadFnoMyPortfolio } from './my-portfolio.js';
 import { filterPos } from './positions.js';
 import {
   manSelectTile,
@@ -64,6 +76,10 @@ import { initI18n, setLanguage, applyTranslations } from '../shared/i18n.js';
 
 window.setLanguage = setLanguage;
 window.loadEquityHedge = loadEquityHedge;
+
+// My Portfolio section loader
+_sectionLoaders['my-portfolio'] = loadFnoMyPortfolio;
+window.loadFnoMyPortfolio = loadFnoMyPortfolio;
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 initI18n(); applyTranslations();

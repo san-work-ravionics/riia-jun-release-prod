@@ -1,5 +1,8 @@
 // ── Navigation + underlying/expiry selectors ──────────────────────────────────
 import { state } from './state.js';
+
+// Section loaders registry — modules register themselves in main.js
+export const _sectionLoaders = {};
 import { renderDashboard } from './dashboard.js';
 import { renderPositionsKpis, renderPositionsTable } from './positions.js';
 import {
@@ -25,6 +28,7 @@ export function initNav() {
       document.getElementById('page-' + item.dataset.page).classList.add('active');
       if (item.dataset.page === 'history') loadHedgeHistory();
       if (item.dataset.page === 'equity-hedge') loadEquityHedge();
+      if (_sectionLoaders[item.dataset.page]) { _sectionLoaders[item.dataset.page](); }
     });
   });
 }
