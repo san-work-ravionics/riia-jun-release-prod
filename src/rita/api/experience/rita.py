@@ -1907,3 +1907,74 @@ def experience_strategy_comparison(
         sources={"csv": {"status": "ok" if not result.error else "error"}},
     )
     return result
+
+
+# ── GET /api/v1/experience/rita/portfolio-performance ─────────────────────────
+
+@router.get(
+    "/experience/rita/portfolio-performance",
+    summary="Custom portfolio 2025 daily performance index (base=100)",
+)
+def portfolio_performance(
+    holdings: str = "",
+    year: int = 2025,
+) -> dict[str, Any]:
+    """Compute a daily portfolio value index for user-defined allocations.
+
+    holdings: comma-separated pairs, e.g. "NIFTY:40,NVIDIA:30,ASML:30"
+    Returns {dates, values} where values start at 100 on the first trading day.
+    """
+    import pandas as pd
+    from rita.core.data_loader import load_instrument_data
+
+    if not holdings.strip():
+        return {"dates": [], "values": [], "instruments": []}
+
+    parsed: dict[str, float] = {}
+    for part in holdings.split(","):
+        part = part.strip()
+        if ":" not in part:
+            continue
+        inst_raw, pct_s = part.split(":", 1)
+        try:
+            parsed[inst_raw.strip().upper()] = float(pct_s.strip()) / 100.0
+        except ValueError:
+            pass
+
+    if not parsed:
+        return {"dates": [], "values": [], "instruments": []}
+
+    year_start = pd.Timestamp(f"{year}-01-01")
+    year_end   = pd.Timestamp(f"{year}-12-31")
+
+    series: dict[str, pd.Series] = {}
+    for inst in parsed:
+        try:
+            df = load_instrument_data(inst)
+            s = df.loc[year_start:year_end, "Close"].dropna()
+            if len(s) >= 2:
+                series[inst] = s
+        except Exception:
+            pass
+
+    if not series:
+        return {"dates": [], "values": [], "instruments": list(parsed.keys())}
+
+    all_dates = pd.DatetimeIndex(
+        sorted(set().union(*[set(s.index) for s in series.values()]))
+    )
+
+    portfolio = pd.Series(0.0, index=all_dates)
+    for inst, weight in parsed.items():
+        if inst not in series:
+            continue
+        s = series[inst].reindex(all_dates).ffill().bfill()
+        base = float(s.iloc[0])
+        if base > 0:
+            portfolio += (s / base) * 100.0 * weight
+
+    return {
+        "dates":       [str(d.date()) for d in portfolio.index],
+        "values":      [round(float(v), 2) for v in portfolio],
+        "instruments": list(series.keys()),
+    }
