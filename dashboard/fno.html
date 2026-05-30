@@ -29,6 +29,7 @@ html{scroll-behavior:smooth}
   --p03:#92480A;--p03-bg:#FEF4EB;--p03-bd:#F5C99A;
   --p04:#6B2FA0;--p04-bg:#F5EFFE;--p04-bd:#CFADF0;
   --pos:#1A6B3C;--neg:#9B1C1C;--neg-bg:#FEF2F2;--neg-bd:#FCA5A5;
+  --chat:#BE185D;--chat-bg:#FFF0F5;--chat-bd:#FBCFE8;
   --fd:'Epilogue',sans-serif;--fm:'IBM Plex Mono',monospace;--fs:'Instrument Serif',serif;
   --r:6px;--sh:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
   --shm:0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.05);
@@ -121,6 +122,17 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
 .kpi-delta{font-size:11px;color:var(--t3);margin-top:3px;}
 .kpi-delta.pos{color:var(--pos);}
 .kpi-delta.neg{color:var(--neg);}
+.kpi-sm{padding:7px 10px;}
+.kpi-sm .kpi-value{font-size:13px;}
+/* ── FnO Portfolio ───────────────────────────────────────────── */
+#fno-mp-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-bottom:16px;}
+.fno-mp-saved-header{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;}
+.fno-mp-saved-title{font-size:13px;font-weight:700;color:var(--text);margin:0;}
+.fno-mp-saved-ts{font-family:var(--fm);font-size:10px;color:var(--t3);margin:0;}
+.fno-mp-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
+.fno-mp-chip{font-family:var(--fm);font-size:10px;background:var(--chat-bg);border:1px solid var(--chat-bd);border-radius:100px;padding:2px 8px;color:var(--chat);}
+.fno-mp-chart-label{font-family:var(--fm);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+#fno-mp-perf-chart-wrap{height:160px;position:relative;}
 .inst-geo{border:1.5px solid var(--p03-bd) !important;background:var(--p03-bg) !important;max-width:200px;}
 
 /* Market snapshot */
@@ -1076,19 +1088,20 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
        MY PORTFOLIO
   ════════════════════════════════════════════════ -->
   <div class="section" id="page-my-portfolio">
-    <div class="section-header"><h2>My Portfolio</h2></div>
-    <div id="fno-mp-empty" style="display:none;color:#8b949e;padding:1rem;">No portfolio saved. Visit the RITA dashboard to create one.</div>
-    <div id="fno-mp-error" style="display:none;color:#f85149;padding:1rem;"></div>
-    <div id="fno-mp-meta" style="padding:0.5rem 0;">
-      <span style="color:#8b949e;">Name: </span><span id="fno-mp-name">—</span>
-      &nbsp;&nbsp;
-      <span style="color:#8b949e;">Last saved: </span><span id="fno-mp-updated">—</span>
+    <div class="section-header"><h2>Portfolio</h2></div>
+    <div id="fno-mp-empty" style="display:none;padding:1rem;font-size:12px;color:var(--t3);">
+      No portfolio saved yet. <a href="/dashboard/" style="color:var(--p02);text-decoration:none;font-weight:600;">Build one in RITA →</a>
     </div>
-    <table class="data-table" id="fno-mp-table">
-      <thead><tr><th>Instrument</th><th>Allocation %</th></tr></thead>
-      <tbody id="fno-mp-holdings-body"></tbody>
-      <tfoot><tr><td style="color:#8b949e;">Total</td><td id="fno-mp-total">—</td></tr></tfoot>
-    </table>
+    <div id="fno-mp-error" style="display:none;color:var(--neg);font-size:12px;padding:0.5rem 0;"></div>
+    <div id="fno-mp-loaded" style="display:none">
+      <div class="fno-mp-saved-header">
+        <span class="fno-mp-saved-title" id="fno-mp-name"></span>
+        <span class="fno-mp-saved-ts" id="fno-mp-updated"></span>
+      </div>
+      <div id="fno-mp-tiles"></div>
+      <div class="fno-mp-chart-label">Portfolio Performance 2025</div>
+      <div id="fno-mp-perf-chart-wrap"><canvas id="fno-mp-perf-chart"></canvas></div>
+    </div>
   </div>
 
 </div><!-- /main -->
