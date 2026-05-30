@@ -1,5 +1,5 @@
 // ── My Portfolio — allocation builder ──────────────────────
-import { api } from './api.js';
+import { api, apiBase } from '../shared/api.js';
 import { setEl } from './utils.js';
 
 let _instrumentIds = [];
@@ -79,20 +79,21 @@ export async function loadMyPortfolio() {
   setEl('mp-status-msg', '');
 
   try {
-    const portfolio = await api('/api/v1/experience/user-portfolio');
-    // 200 — pre-fill inputs
-    for (const h of (portfolio.holdings || [])) {
-      const inp = document.getElementById(`mp-input-${h.instrument_id}`);
-      if (inp) inp.value = h.allocation_pct;
+    // Use raw fetch so 401 (not logged in) is handled silently — auth prompt
+    // only happens when the user explicitly clicks Save.
+    const token = sessionStorage.getItem('auth_token');
+    const headers = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+    const resp = await fetch(apiBase() + '/api/v1/experience/user-portfolio', { headers });
+    if (resp.ok) {
+      const portfolio = await resp.json();
+      for (const h of (portfolio.holdings || [])) {
+        const inp = document.getElementById(`mp-input-${h.instrument_id}`);
+        if (inp) inp.value = h.allocation_pct;
+      }
+      _renderSavedDisplay(portfolio);
     }
-    _renderSavedDisplay(portfolio);
-  } catch (err) {
-    if (err.message === 'No active portfolio found' || err.message.includes('No active portfolio')) {
-      // 404 — first time user, leave inputs at 0, keep saved display hidden
-    } else if (err.message) {
-      setEl('mp-status-msg', `<span class="mp-err">${err.message}</span>`);
-    }
-  }
+    // 401 = not logged in; 404 = no portfolio yet — both fine, show empty builder
+  } catch (_) {}
 
   _updateTotal();
 }
