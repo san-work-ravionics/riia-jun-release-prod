@@ -81,7 +81,7 @@ export async function loadMyPortfolio() {
   try {
     // Use raw fetch so 401 (not logged in) is handled silently — auth prompt
     // only happens when the user explicitly clicks Save.
-    const token = sessionStorage.getItem('auth_token');
+    const token = sessionStorage.getItem('rita_token');
     const headers = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
     const resp = await fetch(apiBase() + '/api/v1/experience/user-portfolio', { headers });
     if (resp.ok) {
@@ -100,7 +100,7 @@ export async function loadMyPortfolio() {
 
 export async function savePortfolio() {
   // ── Auth gate ──────────────────────────────────────────────
-  const token = sessionStorage.getItem('auth_token');
+  const token = sessionStorage.getItem('rita_token');
   if (!token) {
     sessionStorage.setItem('post_login_redirect', window.location.href);
     window.location.href = '/auth/google/login?state=rita';
@@ -119,7 +119,7 @@ export async function savePortfolio() {
   setEl('mp-status-msg', '');
 
   try {
-    const result = await api('/api/v1/user-portfolio', 'POST', { name, holdings });
+    const result = await api('/api/v1/user-portfolio/', 'POST', { name, holdings });
     if (result) {
       setEl('mp-status-msg', '<span class="mp-ok">Portfolio saved successfully.</span>');
       _renderSavedDisplay(result);
