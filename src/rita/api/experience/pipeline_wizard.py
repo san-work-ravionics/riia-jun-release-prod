@@ -173,6 +173,7 @@ class GoalRequest(BaseModel):
     target_return_pct: float
     time_horizon_days: int
     risk_tolerance: str  # "low" | "medium" | "high"
+    instrument: str = "NIFTY"
 
 
 # ---------------------------------------------------------------------------
@@ -196,17 +197,17 @@ def wizard_goal(req: GoalRequest, db: Session = Depends(get_db)) -> dict[str, An
         feasibility = "unrealistic"
 
     records = MarketDataCacheRepository(db).read_all()
-    nifty   = sorted([r for r in records if r.underlying == "NIFTY"], key=lambda r: r.date)
+    nifty   = sorted([r for r in records if r.underlying == req.instrument.upper()], key=lambda r: r.date)
 
     last_12m_return = None
-    yearly_returns: list[float] = []
+    yearly_returns: list[dict] = []
     if nifty:
         import pandas as pd
         closes     = pd.Series([r.close for r in nifty], dtype=float)
         dates_idx  = pd.to_datetime([str(r.date) for r in nifty])
         s          = pd.Series(closes.values, index=dates_idx)
         annual     = s.resample("YE").last().pct_change().dropna() * 100
-        yearly_returns = [round(float(v), 2) for v in annual.values]
+        yearly_returns = [{"year": str(idx.year), "return_pct": round(float(v), 2)} for idx, v in zip(annual.index, annual.values)]
 
         cutoff = dates_idx[-1] - pd.DateOffset(months=12)
         past   = s[s.index >= cutoff]
@@ -220,10 +221,11 @@ def wizard_goal(req: GoalRequest, db: Session = Depends(get_db)) -> dict[str, An
             "target_return_pct":  req.target_return_pct,
             "time_horizon_days":  req.time_horizon_days,
             "risk_tolerance":     req.risk_tolerance,
+            "instrument":         req.instrument.upper(),
             "annualised_target":  round(annualised_target, 2),
             "required_monthly":   round(required_monthly, 2),
             "feasibility":        feasibility,
-            "nifty_yearly_returns": yearly_returns,
+            "yearly_returns":     yearly_returns,
             "last_12m_return":    last_12m_return,
         },
     }

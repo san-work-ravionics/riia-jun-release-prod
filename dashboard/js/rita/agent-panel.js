@@ -112,6 +112,7 @@ export function resetAgentPanel() {
   const btn = document.getElementById('ap-run-btn');
   if (btn) { btn.disabled = false; btn.textContent = t('agent.run_day_btn'); }
 
+  _setEl('ap-run-date', '—');
   _setEl('ap-regime', '—');
   _setEl('ap-policy', '—');
   _setEl('ap-probability', '—');
@@ -241,6 +242,7 @@ function _updateApChart(result) {
 }
 
 function _updateApWidgets(result) {
+  _setEl('ap-run-date', result.date || '—');
   _setEl('ap-regime', result.regime || '—');
   _setEl('ap-policy', result.policy || '—');
   _setEl('ap-probability', result.probability != null ? `${(result.probability * 100).toFixed(0)}%` : '—');

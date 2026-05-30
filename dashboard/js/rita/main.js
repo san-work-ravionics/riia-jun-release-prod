@@ -20,7 +20,7 @@ import { openChartModal, closeChartModal } from './chart-modal.js';
 import { initI18n, setLanguage, applyTranslations } from '../shared/i18n.js';
 
 // ── Populate section loaders map ───────────────────────────
-_sectionLoaders.market            = async () => { refreshChatChips(); clearChat(); const data = await warmupChat(); if (data) { updateChips(data.chips); showAlerts(data.alerts); } };
+_sectionLoaders.market            = async () => { refreshChatChips(); clearChat(); runMarket(); const data = await warmupChat(); if (data) { updateChips(data.chips); showAlerts(data.alerts); } };
 _sectionLoaders['market-signals'] = loadMarketSignals;
 _sectionLoaders.goal              = loadGoalHint;
 _sectionLoaders.scenarios         = loadScenarios;

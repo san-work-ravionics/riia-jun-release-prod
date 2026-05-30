@@ -47,18 +47,15 @@ export async function runGoal() {
 }
 
 export async function runMarket() {
-  const btn = document.getElementById('btn-market');
-  btn.disabled = true; btn.textContent = 'Analyzing...';
   const bdg = document.getElementById('market-status-badge');
-  bdg.className = 'badge run'; bdg.textContent = 'Running';
+  if (bdg) { bdg.className = 'badge run'; bdg.textContent = 'Loading'; }
   try {
     const d = await api('/api/v1/market', 'POST', { instrument: _inst() });
-    bdg.className = 'badge ok'; bdg.textContent = 'Done';
+    if (bdg) { bdg.className = 'badge ok'; bdg.textContent = 'Done'; }
     renderMarketResult(d);
   } catch (e) {
-    bdg.className = 'badge err'; bdg.textContent = `Error: ${e.message}`;
+    if (bdg) { bdg.className = 'badge err'; bdg.textContent = 'Error'; }
   } finally {
-    btn.disabled = false; btn.textContent = 'Analyse Market';
     loadProgress();
   }
 }
