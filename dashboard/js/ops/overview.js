@@ -1,6 +1,7 @@
 // ── Overview ──────────────────────────────────────────────────────────────────
 import { apiFetch } from './api.js';
 import { fmt, badge, stepName } from './utils.js';
+import { t } from '../shared/i18n.js';
 
 export async function loadOverview() {
   const [health, metrics, progress] = await Promise.all([
@@ -14,17 +15,17 @@ export async function loadOverview() {
   const txt = document.getElementById('api-text');
   if (health && health.status === 'ok') {
     dot.className = 'status-dot ok';
-    txt.textContent = health.model_exists ? 'Model loaded' : 'API online';
+    txt.textContent = health.model_exists ? t('health.model_loaded') : t('health.api_online');
   } else {
     dot.className = 'status-dot danger';
-    txt.textContent = 'API offline';
+    txt.textContent = t('health.api_offline');
   }
 
   // KPI strip
   const apiOk = health && health.status === 'ok';
-  document.getElementById('kpi-status').textContent = apiOk ? 'Online' : 'Offline';
+  document.getElementById('kpi-status').textContent = apiOk ? t('status.active') : t('status.failed');
   document.getElementById('kpi-status').className = 'kpi-val ' + (apiOk ? 'ok' : 'danger');
-  document.getElementById('kpi-status-sub').textContent = apiOk ? 'All systems nominal' : 'API unreachable';
+  document.getElementById('kpi-status-sub').textContent = apiOk ? t('ops.all_systems_nominal') : t('ops.api_unreachable');
 
   if (metrics) {
     const req = metrics.api_requests || {};
@@ -54,7 +55,7 @@ export async function loadOverview() {
     const mcStatus = document.getElementById('mc-status-text');
     const mcSteps = document.getElementById('mc-steps');
     const mcBar = document.getElementById('mc-bar');
-    if (mcStatus) mcStatus.textContent = allDone ? 'Pipeline Complete' : `${completedCount}/${total} Steps Done`;
+    if (mcStatus) mcStatus.textContent = allDone ? t('ops.pipeline_complete') : `${completedCount}/${total} Steps Done`;
     if (mcSteps) mcSteps.textContent = `${completedCount} / ${total}`;
     if (mcBar) mcBar.style.width = pctComplete + '%';
   }
@@ -65,7 +66,7 @@ export async function loadOverview() {
     if (mcModel) {
       mcModel.textContent = health.model_exists
         ? (health.model_age_days != null ? `${health.model_age_days}d old` : 'exists')
-        : 'not trained';
+        : t('ops.model_not_trained');
       mcModel.className = 'mc-v ' + (health.model_exists ? 'ok' : 'warn');
     }
     if (mcLastrun) mcLastrun.textContent = health.last_pipeline_run
@@ -74,21 +75,21 @@ export async function loadOverview() {
 
   // Model card
   if (metrics && metrics.training && Object.keys(metrics.training).length) {
-    const t = metrics.training;
-    document.getElementById('mdl-sharpe').textContent = fmt(t.latest_backtest_sharpe);
-    document.getElementById('mdl-mdd').textContent = fmt(t.latest_backtest_mdd_pct) + '%';
-    document.getElementById('mdl-cagr').textContent = fmt(t.latest_backtest_cagr_pct) + '%';
-    if (t.backtest_start_date && t.backtest_end_date) {
-      document.getElementById('mdl-bt-range').textContent = `${t.backtest_start_date} → ${t.backtest_end_date}`;
+    const tr = metrics.training;
+    document.getElementById('mdl-sharpe').textContent = fmt(tr.latest_backtest_sharpe);
+    document.getElementById('mdl-mdd').textContent = fmt(tr.latest_backtest_mdd_pct) + '%';
+    document.getElementById('mdl-cagr').textContent = fmt(tr.latest_backtest_cagr_pct) + '%';
+    if (tr.backtest_start_date && tr.backtest_end_date) {
+      document.getElementById('mdl-bt-range').textContent = `${tr.backtest_start_date} → ${tr.backtest_end_date}`;
     }
 
-    const sharpePct = Math.min(100, (t.latest_backtest_sharpe / 1.5) * 100);
+    const sharpePct = Math.min(100, (tr.latest_backtest_sharpe / 1.5) * 100);
     document.getElementById('bar-sharpe').style.width = sharpePct + '%';
-    document.getElementById('bar-sharpe-pct').textContent = fmt(t.latest_backtest_sharpe, 3);
+    document.getElementById('bar-sharpe-pct').textContent = fmt(tr.latest_backtest_sharpe, 3);
 
-    const mddPct = Math.max(0, 100 - (Math.abs(t.latest_backtest_mdd_pct) / 10) * 100);
+    const mddPct = Math.max(0, 100 - (Math.abs(tr.latest_backtest_mdd_pct) / 10) * 100);
     document.getElementById('bar-mdd').style.width = mddPct + '%';
-    document.getElementById('bar-mdd-pct').textContent = fmt(t.latest_backtest_mdd_pct) + '%';
+    document.getElementById('bar-mdd-pct').textContent = fmt(tr.latest_backtest_mdd_pct) + '%';
   }
   if (health) {
     document.getElementById('mdl-age').textContent = health.model_age_days != null
@@ -109,9 +110,9 @@ export async function loadOverview() {
 
     const extAl = document.getElementById('ds-extended-al');
     if (health.csv_loaded) {
-      extAl.innerHTML = `<div class="al ok" style="margin-top:0"><svg class="al-ic" width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 7l3 3 5-5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>CSV data loaded — rita_input/ has source files</div>`;
+      extAl.innerHTML = `<div class="al ok" style="margin-top:0"><svg class="al-ic" width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 7l3 3 5-5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>${t('ops.csv_loaded_msg')}</div>`;
     } else {
-      extAl.innerHTML = `<div class="al i" style="margin-top:0"><svg class="al-ic" width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" stroke-width="1.2"/><path d="M6.5 4v3M6.5 9h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>No CSV files found in rita_input/ — add NSE data files to enable</div>`;
+      extAl.innerHTML = `<div class="al i" style="margin-top:0"><svg class="al-ic" width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" stroke-width="1.2"/><path d="M6.5 4v3M6.5 9h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>${t('ops.csv_missing_msg')}</div>`;
     }
   }
 
@@ -137,6 +138,6 @@ export async function loadOverview() {
       </div>`;
     }).join('');
   } else {
-    actEl.innerHTML = '<div class="empty">No pipeline steps logged yet</div>';
+    actEl.innerHTML = `<div class="empty">${t('ops.no_steps_logged')}</div>`;
   }
 }

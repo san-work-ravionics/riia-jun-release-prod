@@ -5,7 +5,7 @@ Provides five functions:
   fetch_and_write_raw()— download delta rows from yfinance, write/append raw CSV
   rebuild_input()      — re-run load_instrument_data() and write normalized input CSV
   upsert_cache_delta() — insert new (instrument, date) rows into market_data_cache
-  refresh_all()        — orchestrate full pipeline for all 11 instruments (skips ATHER)
+  refresh_all()        — orchestrate full pipeline for all 11 instruments
 
 Rules:
 - Use structlog — no print() statements
@@ -50,10 +50,6 @@ YF_TICKER_MAP: dict[str, str] = {
 # NIFTY and BANKNIFTY use a companion _yf.csv file (full overwrite strategy)
 # All other instruments append new rows to the existing _daily.csv
 COMPANION_FILE_INSTRUMENTS: set[str] = {"NIFTY", "BANKNIFTY"}
-
-# Skip ATHER — newly listed, data gaps are expected and normal
-SKIP_INSTRUMENTS: set[str] = {"ATHER"}
-
 
 # ── check_gap ─────────────────────────────────────────────────────────────────
 
@@ -327,7 +323,7 @@ def upsert_cache_delta(db: Session, instrument_id: str) -> int:
 def refresh_all(db: Session) -> list[dict[str, Any]]:
     """Orchestrate full data refresh pipeline for all RITA instruments.
 
-    Iterates over all instruments in YF_TICKER_MAP (skips ATHER).
+    Iterates over all instruments in YF_TICKER_MAP.
     Per-instrument errors are caught and recorded as status='error' —
     they do NOT abort the loop.
 
@@ -336,10 +332,6 @@ def refresh_all(db: Session) -> list[dict[str, Any]]:
     results: list[dict[str, Any]] = []
 
     for instrument_id in sorted(YF_TICKER_MAP.keys()):
-        if instrument_id in SKIP_INSTRUMENTS:
-            log.info("data_refresh.skip", instrument=instrument_id, reason="excluded")
-            continue
-
         log.info("data_refresh.start", instrument=instrument_id)
         try:
             gap_info = check_gap(instrument_id, db)

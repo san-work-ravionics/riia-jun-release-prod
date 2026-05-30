@@ -1,5 +1,6 @@
 // ── Active Alerts ─────────────────────────────────────────────────────────────
 import { badge } from './utils.js';
+import { t } from '../shared/i18n.js';
 
 export async function loadAlerts() {
   const badgeEl = document.getElementById('alerts-badge');
@@ -11,7 +12,7 @@ export async function loadAlerts() {
 
     if (!data || !Array.isArray(data.alerts)) {
       if (badgeEl) badgeEl.innerHTML = '<span style="color:var(--t3)">Unavailable</span>';
-      if (tableEl) tableEl.innerHTML = '<tr><td colspan="5" class="empty">Alert data unavailable</td></tr>';
+      if (tableEl) tableEl.innerHTML = `<tr><td colspan="5" class="empty">${t('ops.alert_unavailable')}</td></tr>`;
       return;
     }
 
@@ -33,7 +34,7 @@ export async function loadAlerts() {
 
     if (tableEl) {
       if (active.length === 0) {
-        tableEl.innerHTML = '<tr><td colspan="5" class="empty">All systems nominal</td></tr>';
+        tableEl.innerHTML = `<tr><td colspan="5" class="empty">${t('ops.all_systems_nominal')}</td></tr>`;
       } else {
         tableEl.innerHTML = active.map(a => {
           const sev = (a.severity || 'unknown').toLowerCase();
@@ -53,6 +54,6 @@ export async function loadAlerts() {
   } catch (e) {
     console.error('[RITA] loadAlerts failed', e);
     if (badgeEl) badgeEl.innerHTML = '<span style="color:var(--t3)">Unavailable</span>';
-    if (tableEl) tableEl.innerHTML = '<tr><td colspan="5" class="empty">Alert data unavailable</td></tr>';
+    if (tableEl) tableEl.innerHTML = `<tr><td colspan="5" class="empty">${t('ops.alert_unavailable')}</td></tr>`;
   }
 }

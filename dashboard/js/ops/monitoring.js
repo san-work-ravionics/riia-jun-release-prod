@@ -2,6 +2,7 @@
 import { apiFetch } from './api.js';
 import { fmt, badge } from './utils.js';
 import { loadApiMetrics } from './api-metrics.js';
+import { t } from '../shared/i18n.js';
 
 export async function loadMonitoring() {
   const [metrics, deploys] = await Promise.all([
@@ -42,7 +43,7 @@ export async function loadMonitoring() {
         alerts.push({cls:'w', msg: `${pipe.failed_steps} pipeline step(s) failed`});
       }
       if (alerts.length === 0) {
-        alerts.push({cls:'ok', msg: 'All metrics within normal ranges'});
+        alerts.push({cls:'ok', msg: t('ops.all_metrics_ok')});
       }
       alertEl.innerHTML = alerts.map(a => {
         const icon = a.cls === 'ok'
@@ -77,7 +78,7 @@ export async function loadMonitoring() {
     } else if (deploys && deploys.error) {
       ghEl.innerHTML = `<div class="empty">GitHub API unavailable — ${deploys.error}</div>`;
     } else {
-      ghEl.innerHTML = '<div class="empty">No deploy runs found</div>';
+      ghEl.innerHTML = `<div class="empty">${t('ops.no_deploy_runs')}</div>`;
     }
   }
 

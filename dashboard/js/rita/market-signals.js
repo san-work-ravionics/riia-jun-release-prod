@@ -231,7 +231,7 @@ export async function loadGeoPanels() {
     const activeId = localStorage.getItem('ritaInstrument') || 'NIFTY';
     container.innerHTML = data.regions.map(r => {
       const label = _GEO_REGION_NAMES[r.region] || r.region;
-      const instruments = (r.instruments || []).filter(i => i.id !== 'ATHER');
+      const instruments = r.instruments || [];
       if (!instruments.length) return '';
       return `
         <div class="card">
