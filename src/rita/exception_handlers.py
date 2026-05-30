@@ -46,9 +46,13 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException) 
 
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    errors = []
+    for e in exc.errors():
+        sanitized = {k: (str(v) if not isinstance(v, (str, int, float, bool, list, dict, type(None))) else v) for k, v in e.items()}
+        errors.append(sanitized)
     return JSONResponse(
         status_code=422,
-        content={"detail": exc.errors(), "trace_id": _tid()},
+        content={"detail": errors, "trace_id": _tid()},
         headers=_headers(),
     )
 

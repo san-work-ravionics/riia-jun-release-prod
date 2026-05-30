@@ -108,10 +108,12 @@ export async function savePortfolio() {
   }
 
   // ── Build payload ─────────────────────────────────────────
-  const holdings = _instrumentIds.map(id => {
-    const el = document.getElementById(`mp-input-${id}`);
-    return { instrument_id: id, allocation_pct: parseInt(el ? el.value || '0' : '0', 10) };
-  });
+  const holdings = _instrumentIds
+    .map(id => {
+      const el = document.getElementById(`mp-input-${id}`);
+      return { instrument_id: id, allocation_pct: parseInt(el ? el.value || '0' : '0', 10) };
+    })
+    .filter(h => h.allocation_pct > 0);
 
   const nameEl = document.getElementById('mp-portfolio-name');
   const name   = (nameEl && nameEl.value.trim()) ? nameEl.value.trim() : 'My Portfolio';
