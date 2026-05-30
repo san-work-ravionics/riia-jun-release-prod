@@ -9,10 +9,7 @@ export async function loadFnoMyPortfolio() {
 
     if (resp.status === 401) {
       sessionStorage.removeItem('rita_token');
-      const overlay = document.getElementById('fno-auth-overlay');
-      if (overlay) overlay.style.display = 'flex';
-      const shell = document.querySelector('.shell');
-      if (shell) shell.style.display = 'none';
+      window.location.href = '/';
       return;
     }
 
