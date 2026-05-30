@@ -71,6 +71,8 @@ _load_rita_config_with_correct_path()
 
 from rita.database import Base  # noqa: E402
 import rita.models  # noqa: E402, F401 — registers all ORM models with Base.metadata
+from rita.models.user_portfolio_key import UserPortfolioKeyModel  # noqa: E402, F401
+from rita.models.user_portfolio import UserPortfolioModel  # noqa: E402, F401
 from rita.config import get_settings  # noqa: E402
 
 # this is the Alembic Config object, which provides

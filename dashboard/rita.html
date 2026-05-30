@@ -390,6 +390,16 @@ tr:hover td{background:var(--surface2);}
     </div>
   </div>
 
+  <div class="nav-section">
+    <div class="nav-label" style="color:var(--t3)">Learn</div>
+    <div class="nav-item p00" data-s="learnings" onclick="show('learnings',this)">
+      <span class="nav-icon">◎</span> Learnings
+    </div>
+    <div class="nav-item p00" data-s="strategy-compare" onclick="show('strategy-compare',this)">
+      <span class="nav-icon">⊞</span> Strategy Compare
+    </div>
+    <div class="nav-item p00" data-s="my-portfolio" onclick="show('my-portfolio',this)"><span class="nav-icon">◉</span> My Portfolio</div>
+  </div>
 
   <div class="sidebar-footer">
     <div class="lbl" id="sb-data-info">Nifty 50 · 1999–2025</div>
@@ -1235,6 +1245,21 @@ tr:hover td{background:var(--surface2);}
     </div>
   </div>
 
+</section>
+
+<section class="section" id="sec-my-portfolio">
+  <h2 class="section-title">My Portfolio</h2>
+  <div id="mp-builder">
+    <div id="mp-instruments"></div>
+    <div class="mp-controls">
+      <input type="text" id="mp-portfolio-name" placeholder="Portfolio name (optional)">
+      <div id="mp-total-display">Total: 0%</div>
+      <progress id="mp-alloc-bar" max="100" value="0"></progress>
+      <button id="mp-save-btn" disabled onclick="savePortfolio()">Save Portfolio</button>
+    </div>
+    <div id="mp-status-msg"></div>
+  </div>
+  <div id="mp-saved-display" style="display:none"></div>
 </section>
 
 </main><!-- /main -->

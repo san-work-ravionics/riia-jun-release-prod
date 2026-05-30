@@ -68,7 +68,9 @@ from rita.api.experience.invest_game import router as invest_game_router
 from rita.api.experience.users import router as users_traffic_router
 from rita.api.v1.workflow.chat import router as chat_router
 from rita.api.v1.workflow.commentary import router as commentary_router
+from rita.api.v1.workflow.user_portfolio import router as user_portfolio_workflow_router
 from rita.api.v1.portfolio import router as portfolio_router
+from rita.api.experience.user_portfolio import router as user_portfolio_experience_router
 
 _MOBILE_UA_RE = re.compile(r"Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini", re.IGNORECASE)
 
@@ -372,6 +374,7 @@ app.include_router(backtest_router, dependencies=[Depends(get_current_user)])
 app.include_router(evaluate_router, dependencies=[Depends(get_current_user)])
 app.include_router(pipeline_router)
 app.include_router(instrument_onboard_router)
+app.include_router(user_portfolio_workflow_router, dependencies=[Depends(get_current_user)])
 
 # -- Experience Layer -- UI-shaped aggregation routers (read-only) -------------
 app.include_router(dashboard_router)
@@ -383,6 +386,7 @@ app.include_router(ds_router)
 app.include_router(agent_panel_router)
 app.include_router(invest_game_router)
 app.include_router(users_traffic_router)
+app.include_router(user_portfolio_experience_router)
 
 # -- Chat -- local intent classifier + OHLCV dispatch (no external API) -------
 app.include_router(chat_router)
