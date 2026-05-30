@@ -364,7 +364,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
 <body>
 <script>
   if (!sessionStorage.getItem('rita_token') && !new URLSearchParams(location.search).get('token')) {
-    window.location.href = '/';
+    window.location.href = '/auth/google/login?state=fno';
   }
 </script>
 <div class="shell">
