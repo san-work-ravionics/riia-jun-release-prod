@@ -355,7 +355,7 @@ tr:hover td{background:var(--surface2);}
   <div class="nav-section">
     <div class="nav-label" style="color:var(--t3)">Study</div>
     <div class="nav-item p00" data-s="learnings" onclick="show('learnings',this)">
-      <span class="nav-icon">◎</span> Learnings
+      <span class="nav-icon">◎</span> References
     </div>
     <div class="nav-item p00" data-s="strategy-compare" onclick="show('strategy-compare',this)">
       <span class="nav-icon">⊞</span> Strategy Compare
@@ -1124,52 +1124,95 @@ tr:hover td{background:var(--surface2);}
   </div>
 </section>
 
-<!-- ════════════════ LEARNINGS ════════════════ -->
+<!-- ════════════════ REFERENCES ════════════════ -->
 <section class="section" id="sec-learnings">
   <div class="page-hdr">
     <div>
-      <div class="page-title">Learnings</div>
+      <div class="page-title">References</div>
       <div class="page-sub">Concepts, model architecture, and market analysis</div>
     </div>
   </div>
 
-  <!-- Card 1: Technical Indicators -->
-  <div class="card" style="margin-bottom:12px">
-    <div class="card-hdr" style="cursor:pointer" onclick="toggleLearnCard('indicators')">
-      <span class="card-title">Technical Indicators</span>
-      <span id="learn-chevron-indicators">▼</span>
+  <!-- Cards 1–4: 2×2 grid, collapsed by default -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+
+    <!-- Card 1: Investment Philosophies -->
+    <div class="card">
+      <div class="card-hdr" style="cursor:pointer" onclick="toggleLearnCard('philosophies')">
+        <span class="card-title">Investment Philosophies</span>
+        <span id="learn-chevron-philosophies">▶</span>
+      </div>
+      <div id="learn-body-philosophies" class="card-body" style="display:none;font-size:13px;line-height:1.7;color:var(--t2)">
+        <p>Investing is not a single strategy but a spectrum of philosophies, each built on a different theory of where value comes from and how price and value eventually converge. Value investors, in the tradition of Benjamin Graham and Warren Buffett, seek assets trading below their intrinsic worth and hold patiently for the market to correct the mispricing. Growth investors are willing to pay premium valuations today in exchange for the compounding power of above-average earnings expansion tomorrow.</p>
+        <p>Momentum investors take a different view entirely — they follow price itself, buying strength and selling weakness on the premise that trends persist longer than intuition suggests. Quantitative investing elevates any of these philosophies into a rules-based system, using data and models to generate signals free from emotional interference. What unifies the best practitioners across all schools is a shared commitment to risk-adjusted thinking: the goal is never maximum return in isolation, but the highest possible return per unit of risk accepted. Diversification across uncorrelated assets is the one free lunch that lets an investor improve that ratio without sacrificing expected gain.</p>
+      </div>
     </div>
-    <div id="learn-body-indicators" class="card-body" style="font-size:13px;line-height:1.7;color:var(--t2)">
-      <p style="color:var(--t3);font-style:italic">Content coming soon.</p>
+
+    <!-- Card 2: Why Retail Investors Lose Money -->
+    <div class="card">
+      <div class="card-hdr" style="cursor:pointer" onclick="toggleLearnCard('retail-loss')">
+        <span class="card-title">Why Retail Investors Lose Money</span>
+        <span id="learn-chevron-retail-loss">▶</span>
+      </div>
+      <div id="learn-body-retail-loss" class="card-body" style="display:none;font-size:13px;line-height:1.7;color:var(--t2)">
+        <p>Most retail investors do not lose because markets are unfair — they lose because human psychology is systematically mismatched with what markets demand. At emotional extremes, fear and greed take over: investors buy enthusiastically near peaks and sell in panic near troughs, locking in the exact pattern that destroys wealth over time. Overtrading compounds the problem, as each unnecessary transaction extracts a small cost in commissions, taxes, and slippage that accumulates quietly until it consumes a meaningful share of returns.</p>
+        <p>Recency bias keeps retail investors perpetually a step behind: treating whatever happened recently as representative of what will happen next is a reliable recipe for buying tops and selling bottoms. Without a systematic edge, trades entered on headlines or emotion compete directly against institutional algorithms that execute with speed and consistency no individual can match. Position sizing is rarely taught yet equally important — risking too large a fraction on any single trade means one bad outcome can erase months of discipline. And the most universal failure is simply having no exit plan: entering a trade with conviction but no clear answer to the question of when to leave.</p>
+      </div>
     </div>
+
+    <!-- Card 3: Technical Indicators -->
+    <div class="card">
+      <div class="card-hdr" style="cursor:pointer" onclick="toggleLearnCard('indicators')">
+        <span class="card-title">Technical Indicators</span>
+        <span id="learn-chevron-indicators">▶</span>
+      </div>
+      <div id="learn-body-indicators" class="card-body" style="display:none;font-size:13px;line-height:1.7;color:var(--t2)">
+        <p>Technical Analysis (TA) is the study of historical price and volume data to forecast future price movement. Rather than asking what an asset is fundamentally worth, TA asks how it is moving and what that movement reveals about the real-time balance between buyers and sellers. It operates on the premise that all known information is already reflected in the price, and that crowd behaviour creates recognisable, repeatable patterns. RITA uses a curated set of TA features as the input state for its Double DQN model, chosen for their complementary coverage of momentum, trend, volatility, and mean-reversion signals:</p>
+        <ol style="padding-left:18px;margin-top:8px">
+          <li><strong>RSI (Relative Strength Index):</strong> Momentum oscillator 0–100; RITA flags above 60 as overbought and below 30 as oversold.</li>
+          <li><strong>MACD:</strong> Difference between two EMAs, normalised as % of price for scale-invariance across instruments and price regimes.</li>
+          <li><strong>Bollinger Bands (bb_pct_b):</strong> Measures price position within ±2σ band; extreme readings signal potential mean-reversion points.</li>
+          <li><strong>EMA Ratio:</strong> Short-to-long EMA ratio captures trend direction; it is the optional 9th input feature in the model state.</li>
+          <li><strong>ATR (Average True Range):</strong> Normalised volatility measure; a drawdown past 10% triggers a −0.005 per-step reward penalty.</li>
+          <li><strong>Trend Score:</strong> Composite directional signal derived from multiple indicators and fed directly into the model observation vector.</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- Card 4: Sharpe Ratio -->
+    <div class="card">
+      <div class="card-hdr" style="cursor:pointer" onclick="toggleLearnCard('sharpe')">
+        <span class="card-title">Sharpe Ratio &amp; Why It Matters</span>
+        <span id="learn-chevron-sharpe">▶</span>
+      </div>
+      <div id="learn-body-sharpe" class="card-body" style="display:none;font-size:13px;line-height:1.7;color:var(--t2)">
+        <p>The Sharpe Ratio answers the question that raw returns cannot: how much reward did you earn for each unit of risk you accepted? It is calculated as the portfolio return minus the risk-free rate, divided by the standard deviation of returns. A Sharpe above 1.0 is generally considered acceptable for an active strategy; above 1.5 is good; and above 2.0 is regarded as excellent and difficult to sustain at scale.</p>
+        <p>The reason it matters so much is that two strategies can produce identical returns while carrying very different risks — only the Sharpe reveals which one was skillful and which was simply lucky in a forgiving environment. RITA embeds this thinking directly into its training loop: multiple model seeds are evaluated, and the one with the highest validation Sharpe is selected and saved via <code>train_best_of_n</code>, rather than the one with the highest raw return. A related measure, the Sortino Ratio, refines this further by penalising only downside volatility, acknowledging that large upside swings are not actually a problem for investors.</p>
+      </div>
+    </div>
+
   </div>
 
-  <!-- Card 2: Model Building -->
+  <!-- Card 5: Model Building — Double DQN -->
   <div class="card" style="margin-bottom:12px">
     <div class="card-hdr" style="cursor:pointer" onclick="toggleLearnCard('model')">
       <span class="card-title">Model Building — Double DQN</span>
       <span id="learn-chevron-model">▼</span>
     </div>
     <div id="learn-body-model" class="card-body" style="font-size:13px;line-height:1.7;color:var(--t2)">
-      <p style="color:var(--t3);font-style:italic">Content coming soon.</p>
+      <p><strong>Framework:</strong> Stable-Baselines3 DQN with Double-Q target correction, implemented in <code>core/trading_env.py</code>.</p>
+      <p><strong>State Space:</strong> 8–9 features — daily_return, rsi_14, macd, bb_pct_b, trend_score, allocation, days_remaining, atr_ratio, ema_ratio.</p>
+      <p><strong>Action Space:</strong> Discrete(3) — Cash (0%), Half (50%), Full (100%) invested; the agent learns when to scale in and out.</p>
+      <p><strong>Network:</strong> MlpPolicy with two hidden layers of 256 units; replay buffer holds 100,000 transitions for stable off-policy learning.</p>
+      <p><strong>Seed Search:</strong> <code>train_best_of_n</code> in <code>core/ml_dispatch.py</code> runs N seeds, validates each on a held-out period, keeps the best Sharpe winner.</p>
+      <p><strong>Persistence:</strong> The winning model is serialised as <code>{model_name}.zip</code> via SB3's <code>model.save()</code> and reloaded for inference via <code>load_agent()</code>.</p>
     </div>
   </div>
 
-  <!-- Card 3: Sharpe Ratio -->
-  <div class="card" style="margin-bottom:12px">
-    <div class="card-hdr" style="cursor:pointer" onclick="toggleLearnCard('sharpe')">
-      <span class="card-title">Sharpe Ratio</span>
-      <span id="learn-chevron-sharpe">▼</span>
-    </div>
-    <div id="learn-body-sharpe" class="card-body" style="font-size:13px;line-height:1.7;color:var(--t2)">
-      <p style="color:var(--t3);font-style:italic">Content coming soon.</p>
-    </div>
-  </div>
-
-  <!-- Card 4: Market Trends (live charts) -->
+  <!-- Card 6: Market Trends — ASML (live charts) -->
   <div class="card" style="margin-bottom:12px">
     <div class="card-hdr" style="cursor:pointer" onclick="toggleLearnCard('trends')">
-      <span class="card-title">Market Trends</span>
+      <span class="card-title">Market Trends — ASML</span>
       <span id="learn-chevron-trends">▼</span>
     </div>
     <div id="learn-body-trends" class="card-body">

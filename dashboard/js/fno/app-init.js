@@ -1,7 +1,6 @@
 // ── FnO App Initialisation — extracted from fno/api.js god module ─────────────
 // FC-IMP verified exports:
 //   apiBase       — fno/api.js re-exports from shared/api.js ✓
-//   RITA_API_KEY  — declared in fno/api.js ✓
 //   state         — fno/state.js export const state ✓
 //   buildExpiryPills — fno/nav.js export function buildExpiryPills ✓
 //   renderDashboard, renderDailyProgress — fno/dashboard.js ✓
@@ -14,7 +13,7 @@
 //   renderHedgeRadar — fno/hedge.js ✓
 //   initManoeuvre — fno/manoeuvre.js ✓
 
-import { apiBase, RITA_API_KEY } from './api.js';
+import { apiBase } from './api.js';
 import { state } from './state.js';
 import { buildExpiryPills } from './nav.js';
 import { loadEquityHedge } from './equity_hedge.js';
@@ -39,8 +38,7 @@ import { initManoeuvre } from './manoeuvre.js';
 export async function fetchPositions() {
   const mode = state.paperMode ? 'paper' : 'live';
   try {
-    const resp = await fetch(apiBase() + `/api/v1/portfolio/positions?mode=${mode}`,
-      RITA_API_KEY ? { headers: { 'X-API-Key': RITA_API_KEY } } : {});
+    const resp = await fetch(apiBase() + `/api/v1/portfolio/positions?mode=${mode}`);
     if (!resp.ok) throw new Error(`API ${resp.status}`);
     state.positions = await resp.json();
   } catch (e) {
@@ -57,8 +55,7 @@ export async function fetchPositions() {
 
 export async function initApp() {
   try {
-    const resp = await fetch(apiBase() + '/api/v1/portfolio/summary',
-      RITA_API_KEY ? { headers: { 'X-API-Key': RITA_API_KEY } } : {});
+    const resp = await fetch(apiBase() + '/api/v1/portfolio/summary');
     if (!resp.ok) throw new Error(`API ${resp.status}`);
     const d = await resp.json();
 
