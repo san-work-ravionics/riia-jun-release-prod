@@ -375,9 +375,13 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
 </head>
 <body>
 <script>
-  if (!sessionStorage.getItem('rita_token') && !new URLSearchParams(location.search).get('token')) {
-    window.location.href = '/auth/google/login?state=fno';
-  }
+  (function(){
+    // Local dev: skip the auth gate (token is auto-seeded by main.js).
+    if (['localhost','127.0.0.1','0.0.0.0'].includes(location.hostname)) return;
+    if (!sessionStorage.getItem('rita_token') && !new URLSearchParams(location.search).get('token')) {
+      window.location.href = '/auth/google/login?state=fno';
+    }
+  })();
 </script>
 <div class="shell">
 

@@ -274,8 +274,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
   // Save JWT token if arriving from Google Callback
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get('token');
+  const LOCAL_DEV = ['localhost', '127.0.0.1', '0.0.0.0'].includes(location.hostname);
   if (token) {
-    sessionStorage.setItem('auth_token', token);
+    sessionStorage.setItem('rita_token', token);
     window.history.replaceState({}, document.title, window.location.pathname);
     const redirect = sessionStorage.getItem('post_login_redirect');
     if (redirect) { sessionStorage.removeItem('post_login_redirect'); window.location.href = redirect; }
@@ -292,8 +293,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
     protectedTiles.forEach(tile => {
       tile.addEventListener('click', function(e) {
 
-        // Return immediately if enforcer is switched off (Sandbox mode)
-        if (!enforcerToggle || !enforcerToggle.checked) {
+        // Local dev, or Sandbox mode (enforcer off): skip the auth gate entirely.
+        if (LOCAL_DEV || !enforcerToggle || !enforcerToggle.checked) {
           return;
         }
 
@@ -301,10 +302,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
         const targetUrl = this.getAttribute('href');
 
         // Check if user holds a token, otherwise boot them to Google SSO
-        const authToken = sessionStorage.getItem('auth_token');
+        const authToken = sessionStorage.getItem('rita_token');
         if (!authToken || authToken === 'null') {
-          // Stash the destination so we can route back to it eventually if desired (optional)
-          sessionStorage.setItem('return_url', targetUrl);
+          // Stash the destination so the post-callback handler routes back to it
+          sessionStorage.setItem('post_login_redirect', targetUrl);
           window.location.href = "/auth/google/login";
         } else {
           // Permitted routing

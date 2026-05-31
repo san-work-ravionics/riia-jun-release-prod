@@ -3,9 +3,13 @@
 const _urlParams = new URLSearchParams(window.location.search);
 const _urlToken = _urlParams.get('token');
 if (_urlToken) {
-  sessionStorage.setItem('auth_token', _urlToken);
+  sessionStorage.setItem('rita_token', _urlToken);
   history.replaceState({}, document.title, window.location.pathname);
 }
+
+// Local dev: seed a rita-dev token so testing skips Google OAuth (no-op in prod).
+import { ensureDevToken } from '../shared/dev-auth.js';
+await ensureDevToken();
 
 import { api } from './api.js';
 import { show, warmupChat, _sectionLoaders, getCurrentSection } from './nav.js';
