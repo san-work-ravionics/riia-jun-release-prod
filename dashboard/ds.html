@@ -363,18 +363,6 @@ tr:hover td{background:var(--surface2);}
     </div>
   </div>
   <div class="nav-section">
-    <div class="nav-label">Ops</div>
-    <div class="nav-item c-mon" data-s="observability" onclick="show('observability',this)">
-      <span class="nav-icon">🔭</span> Observability
-    </div>
-    <div class="nav-item c-mon" data-s="mcp" onclick="show('mcp',this)">
-      <span class="nav-icon">🔌</span> MCP Calls
-    </div>
-    <div class="nav-item c-warn" data-s="export" onclick="show('export',this)">
-      <span class="nav-icon">📥</span> Export &amp; DevOps
-    </div>
-  </div>
-  <div class="nav-section">
     <div class="nav-label">Analyse</div>
     <div class="nav-item c-build" data-s="experiment-results" onclick="show('experiment-results',this)">
       <span class="nav-icon">📋</span> Experiment Results
@@ -384,15 +372,21 @@ tr:hover td{background:var(--surface2);}
     </div>
   </div>
   <div class="nav-section">
-    <div class="nav-label">Monitor</div>
+    <div class="nav-label">Ops &amp; Monitor</div>
+    <div class="nav-item c-mon" data-s="observability" onclick="show('observability',this)">
+      <span class="nav-icon">🔭</span> Observability
+    </div>
+    <div class="nav-item c-mon" data-s="mcp" onclick="show('mcp',this)">
+      <span class="nav-icon">🔌</span> MCP Calls
+    </div>
+    <div class="nav-item c-warn" data-s="export" onclick="show('export',this)">
+      <span class="nav-icon">📥</span> Export &amp; DevOps
+    </div>
     <div class="nav-item c-run" data-s="model-train-progress" onclick="show('model-train-progress',this)">
       <span class="nav-icon">📉</span> Training Progress
     </div>
     <div class="nav-item c-mon" data-s="model-observability" onclick="show('model-observability',this)">
-      <span class="nav-icon">🔭</span> Observability
-    </div>
-    <div class="nav-item c-mon" data-s="model-mcp" onclick="show('model-mcp',this)">
-      <span class="nav-icon">🔌</span> MCP Calls
+      <span class="nav-icon">🔭</span> Model Observability
     </div>
     <div class="nav-item c-warn" data-s="model-audit" onclick="show('model-audit',this)">
       <span class="nav-icon">📋</span> Audit
@@ -915,7 +909,7 @@ tr:hover td{background:var(--surface2);}
      ════════════════════════════════════════════════ -->
 <div id="s-mcp" class="section">
   <div class="page-hdr">
-    <div><div class="page-title">MCP Calls</div><div class="page-sub">Live log of Claude Desktop → RITA MCP tool invocations</div></div>
+    <div><div class="page-title">MCP Calls</div><div class="page-sub">Claude Desktop tool invocations via Model Context Protocol</div></div>
     <div class="hdr-actions"><button class="btn btn-ghost btn-sm" onclick="loadMCP()">↻ Refresh</button></div>
   </div>
 
@@ -928,20 +922,24 @@ tr:hover td{background:var(--surface2);}
     <div class="kpi"><div class="kpi-label">Last Call</div><div class="kpi-value" id="mc-last">—</div></div>
   </div>
 
-  <div class="card-row">
+  <div class="card-row" style="margin-bottom:14px">
     <div class="chart-wrap">
-      <div class="chart-title">Tool Usage (total calls per tool)</div>
-      <div class="chart-box h260"><canvas id="ch-mc-usage"></canvas></div>
+      <div class="chart-title">Calls by Tool</div>
+      <div class="chart-box h220"><canvas id="ch-mmcp-tools"></canvas></div>
     </div>
     <div class="chart-wrap">
-      <div class="chart-title">Avg Latency per Tool (ms)</div>
-      <div class="chart-box h260"><canvas id="ch-mc-latency"></canvas></div>
+      <div class="chart-title">Avg Duration by Tool (ms)</div>
+      <div class="chart-box h220"><canvas id="ch-mmcp-duration"></canvas></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Share of MCP Function Calls</div>
+      <div class="chart-box h220"><canvas id="ch-mmcp-share"></canvas></div>
     </div>
   </div>
 
   <div class="card">
-    <div class="card-hdr"><span class="card-title">Recent MCP Calls (newest first)</span></div>
-    <div class="tbl-wrap" id="mcp-tbl"><div class="empty">No MCP calls logged yet. Connect Claude Desktop and invoke a RITA tool.</div></div>
+    <div class="card-hdr"><span class="card-title">Recent MCP Calls</span></div>
+    <div class="tbl-wrap" id="mmcp-table-wrap"><div class="empty">No MCP calls logged yet. Connect Claude Desktop and invoke a RITA tool.</div></div>
   </div>
 </div>
 
@@ -1299,32 +1297,6 @@ tr:hover td{background:var(--surface2);}
 <!-- ════════════════════════════════════════════════
      MODEL — MCP CALLS
      ════════════════════════════════════════════════ -->
-<div id="s-model-mcp" class="section">
-  <div class="page-hdr">
-    <div><div class="page-title">MCP Calls</div><div class="page-sub">Claude Desktop tool invocations via Model Context Protocol</div></div>
-    <div class="hdr-actions"><button class="btn btn-ghost btn-sm" onclick="loadModelMcp()">↻ Refresh</button></div>
-  </div>
-
-  <div class="card-row" style="margin-bottom:14px">
-    <div class="chart-wrap">
-      <div class="chart-title">Calls by Tool</div>
-      <div class="chart-box h220"><canvas id="ch-mmcp-tools"></canvas></div>
-    </div>
-    <div class="chart-wrap">
-      <div class="chart-title">Avg Duration by Tool (ms)</div>
-      <div class="chart-box h220"><canvas id="ch-mmcp-duration"></canvas></div>
-    </div>
-    <div class="chart-wrap">
-      <div class="chart-title">Count of MCP Function Calls</div>
-      <div class="chart-box h220"><canvas id="ch-mmcp-share"></canvas></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-hdr"><span class="card-title">Recent MCP Calls</span></div>
-    <div class="tbl-wrap" id="mmcp-table-wrap"><div class="empty">No MCP call log entries found.</div></div>
-  </div>
-</div>
 
 <!-- ════════════════════════════════════════════════
      MODEL — AUDIT
