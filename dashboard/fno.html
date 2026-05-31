@@ -135,6 +135,19 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
 #fno-mp-perf-chart-wrap{height:160px;position:relative;}
 .inst-geo{border:1.5px solid var(--p03-bd) !important;background:var(--p03-bg) !important;max-width:200px;}
 
+/* ── Portfolio Hedge (Feature 27) ─────────────────────────────── */
+.ph-item{padding:14px 16px;margin-bottom:10px;}
+.ph-item-hdr{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+.ph-item-inst{font-family:var(--fm);font-size:13px;font-weight:600;}
+.ph-item-alloc{font-family:var(--fm);font-size:11px;color:var(--t3);}
+.ph-item-rec{font-size:12px;color:var(--t2);line-height:1.5;}
+.ph-item-cost{margin-top:6px;font-family:var(--fm);font-size:10px;color:var(--t3);}
+.ph-risk-badge{display:inline-block;padding:2px 8px;border-radius:100px;color:#fff;font-family:var(--fm);font-size:9px;font-weight:600;}
+.ph-risk-badge.high{background:var(--neg);}
+.ph-risk-badge.medium{background:var(--p03);}
+.ph-risk-badge.low{background:var(--p01);}
+.ph-noeq-tag{font-family:var(--fm);font-size:9px;color:var(--t3);border:1px solid var(--border);border-radius:100px;padding:1px 7px;margin-left:4px;}
+
 /* Market snapshot */
 .mkt-grid{display:grid;gap:14px;margin-bottom:20px;}
 .mkt-grid.c2{grid-template-columns:repeat(2,1fr);}
@@ -378,7 +391,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
   (function(){
     // Local dev: skip the auth gate (token is auto-seeded by main.js).
     if (['localhost','127.0.0.1','0.0.0.0'].includes(location.hostname)) return;
-    if (!sessionStorage.getItem('rita_token') && !new URLSearchParams(location.search).get('token')) {
+    if (!localStorage.getItem('rita_token') && !new URLSearchParams(location.search).get('token')) {
       window.location.href = '/auth/google/login?state=fno';
     }
   })();
@@ -414,7 +427,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       <span id="inst-pill-name"></span>
       <span id="inst-pill-exch" style="color:var(--t4)"></span>
       <span style="color:var(--border2)">·</span>
-      <a href="index.html" style="color:var(--run);text-decoration:none;font-size:10px;font-weight:600;letter-spacing:.04em">SWITCH ↗</a>
+      <a href="index.html" style="color:var(--p02);text-decoration:none;font-size:10px;font-weight:600;letter-spacing:.04em">SWITCH ↗</a>
     </div>
     <div class="status-pill">
       <span class="status-dot ok" id="sdot"></span>
@@ -426,32 +439,46 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
 <!-- ── Sidebar ─────────────────────────────────────────────── -->
 <div class="sidebar">
   <div class="nav-section">
-    <div class="nav-label">Pages</div>
+    <div class="nav-label">Portfolio</div>
     <div class="nav-item p01 active" data-page="overview">
       <span class="nav-icon">◈</span> <span data-i18n="nav.overview">Dashboard</span>
     </div>
-    <div class="nav-item p04" data-page="equity-hedge">
-      <span class="nav-icon">⬗</span> <span data-i18n="nav.equity_hedge">Equity Hedge</span>
+    <div class="nav-item p00" data-page="my-portfolio">
+      <span class="nav-icon">◧</span> <span data-i18n="nav.fno_my_portfolio">My Portfolio</span>
     </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Hedging</div>
+    <div class="nav-item p04" data-page="portfolio-hedge">
+      <span class="nav-icon">🛡</span> <span data-i18n="nav.fno_recommendations">Recommendations</span>
+    </div>
+    <div class="nav-item p03" data-page="hedge" id="nav-hedge">
+      <span class="nav-icon">⚠</span> <span data-i18n="nav.hedge">Quality</span>
+      <span id="nav-hedge-badge" style="display:none;margin-left:auto;background:var(--neg);color:#fff;font-family:var(--fm);font-size:9px;font-weight:600;padding:1px 6px;border-radius:100px;"></span>
+    </div>
+    <div class="nav-item p02" data-page="history">
+      <span class="nav-icon">⏱</span> <span data-i18n="nav.fno_history">History</span>
+    </div>
+    <div class="nav-item p04" data-page="equity-hedge">
+      <span class="nav-icon">⬗</span> <span data-i18n="nav.equity_hedge">Equity Scenarios</span>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Risk</div>
     <div class="nav-item p04" data-page="risk">
-      <span class="nav-icon">⬡</span> <span data-i18n="nav.risk">Risk &amp; Greeks</span>
+      <span class="nav-icon">⬡</span> <span data-i18n="nav.greeks">Greeks</span>
     </div>
     <div class="nav-item p01" data-page="scenarios">
       <span class="nav-icon">↔</span> <span data-i18n="nav.scenarios">Risk-Reward</span>
     </div>
-    <div class="nav-item p03" data-page="hedge" id="nav-hedge">
-      <span class="nav-icon">⚠</span> <span data-i18n="nav.hedge">Hedge Radar</span>
-      <span id="nav-hedge-badge" style="display:none;margin-left:auto;background:var(--neg);color:#fff;font-family:var(--fm);font-size:9px;font-weight:600;padding:1px 6px;border-radius:100px;"></span>
-    </div>
-    <div class="nav-item p02" data-page="history">
-      <span class="nav-icon">⏱</span> Hedge History
-    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Manage</div>
     <div class="nav-item p03" data-page="manoeuvre">
-      <span class="nav-icon">⟳</span> Manoeuvre
-    </div>
-    <div class="nav-item p00" data-page="my-portfolio">My Portfolio</div>
-    <div class="nav-item p04" data-page="portfolio-hedge">
-      <span class="nav-icon">🛡</span> Portfolio Hedge
+      <span class="nav-icon">⟳</span> <span data-i18n="nav.manoeuvre">Manoeuvre</span>
     </div>
   </div>
 

@@ -166,7 +166,7 @@ export async function loadMyPortfolio() {
   setEl('mp-status-msg', '');
 
   try {
-    const token = sessionStorage.getItem('rita_token');
+    const token = localStorage.getItem('rita_token');
     const headers = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
     const resp = await fetch(apiBase() + '/api/v1/experience/user-portfolio', { headers });
     if (resp.ok) {
@@ -183,7 +183,7 @@ export async function loadMyPortfolio() {
 }
 
 export async function savePortfolio() {
-  const token = sessionStorage.getItem('rita_token');
+  const token = localStorage.getItem('rita_token');
   if (!token) {
     sessionStorage.setItem('post_login_redirect', window.location.href);
     window.location.href = '/auth/google/login?state=rita';

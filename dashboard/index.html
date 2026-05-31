@@ -129,6 +129,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
   <div class="topbar-center">Risk Informed Investment Approach</div>
   <div class="topbar-right">
     <a id="nav-onboarding" href="#" class="t-nav-link">Onboarding</a>
+    <a id="nav-logout" href="#" class="t-nav-link" style="display:none">Logout</a>
     <div class="status-pill">
       <span class="status-dot"></span>
       <span>System ready</span>
@@ -248,7 +249,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
 
   <!-- Disclaimer -->
   <div class="disclaimer-strip">
-    <strong>Disclaimer:</strong> This platform is intended solely for research and informational purposes. It should not be considered financial, investment, or trading advice or recommendations. Sign-in is handled via Google OAuth 2.0; no passwords are stored on this platform. We do not use tracking or advertising cookies. Session authentication is stored in your browser's session storage and is cleared automatically when you close the tab.
+    <strong>Disclaimer:</strong> This platform is intended solely for research and informational purposes. It should not be considered financial, investment, or trading advice or recommendations. Sign-in is handled via Google OAuth 2.0; no passwords are stored on this platform. We do not use tracking or advertising cookies. Session authentication is stored in your browser's local storage (not cookies) so a single sign-in works across all RITA apps, and is cleared when you log out or when the session expires.
   </div>
 
 </main>
@@ -276,7 +277,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
   const token = urlParams.get('token');
   const LOCAL_DEV = ['localhost', '127.0.0.1', '0.0.0.0'].includes(location.hostname);
   if (token) {
-    sessionStorage.setItem('rita_token', token);
+    localStorage.setItem('rita_token', token);
     window.history.replaceState({}, document.title, window.location.pathname);
     const redirect = sessionStorage.getItem('post_login_redirect');
     if (redirect) { sessionStorage.removeItem('post_login_redirect'); window.location.href = redirect; }
@@ -290,6 +291,19 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
     const protectedTiles = document.querySelectorAll('.protected-route');
     const enforcerToggle = document.getElementById('auth-enforcer-toggle');
 
+    // Logout — token now lives in localStorage (shared across apps/tabs), so it must
+    // be cleared explicitly. Show the link only when signed in.
+    const logoutLink = document.getElementById('nav-logout');
+    if (logoutLink) {
+      if (localStorage.getItem('rita_token')) logoutLink.style.display = '';
+      logoutLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        localStorage.removeItem('rita_token');
+        sessionStorage.removeItem('post_login_redirect');
+        window.location.href = '/dashboard/';
+      });
+    }
+
     protectedTiles.forEach(tile => {
       tile.addEventListener('click', function(e) {
 
@@ -302,7 +316,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
         const targetUrl = this.getAttribute('href');
 
         // Check if user holds a token, otherwise boot them to Google SSO
-        const authToken = sessionStorage.getItem('rita_token');
+        const authToken = localStorage.getItem('rita_token');
         if (!authToken || authToken === 'null') {
           // Stash the destination so the post-callback handler routes back to it
           sessionStorage.setItem('post_login_redirect', targetUrl);

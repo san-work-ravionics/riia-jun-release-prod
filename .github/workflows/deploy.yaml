@@ -200,6 +200,7 @@ jobs:
               -e RITA_GOOGLE_CLIENT_ID='${{ secrets.GOOGLE_CLIENT_ID }}' \
               -e RITA_GOOGLE_CLIENT_SECRET='${{ secrets.GOOGLE_CLIENT_SECRET }}' \
               -e RITA_BASE_URL='${{ secrets.RITA_BASE_URL }}' \
+              -e RITA_GITHUB_PAT='${{ secrets.RITA_GITHUB_PAT }}' \
               -v /opt/rita_input:/app/data \
               -v /opt/rita_output:/app/rita_output \
               --memory 900m \

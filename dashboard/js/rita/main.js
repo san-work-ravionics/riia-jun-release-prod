@@ -3,7 +3,7 @@
 const _urlParams = new URLSearchParams(window.location.search);
 const _urlToken = _urlParams.get('token');
 if (_urlToken) {
-  sessionStorage.setItem('rita_token', _urlToken);
+  localStorage.setItem('rita_token', _urlToken);
   history.replaceState({}, document.title, window.location.pathname);
 }
 

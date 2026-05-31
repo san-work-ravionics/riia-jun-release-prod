@@ -17,7 +17,7 @@ const _apiBase = () => (window.RITA_API_BASE || '').replace(/\/$/, '');
 // Returns true if a usable token exists afterwards, false otherwise.
 export async function ensureDevToken() {
   if (!isLocalDev()) return false;
-  if (sessionStorage.getItem('rita_token')) return true;
+  if (localStorage.getItem('rita_token')) return true;
   try {
     const r = await fetch(_apiBase() + '/auth/token', {
       method: 'POST',
@@ -27,7 +27,7 @@ export async function ensureDevToken() {
     if (!r.ok) return false;
     const data = await r.json();
     if (!data.access_token) return false;
-    sessionStorage.setItem('rita_token', data.access_token);
+    localStorage.setItem('rita_token', data.access_token);
     return true;
   } catch {
     return false;

@@ -1386,11 +1386,11 @@ tr:hover td{background:var(--surface2);}
   (function(){
     // Local dev: skip the auth gate.
     if (['localhost','127.0.0.1','0.0.0.0'].includes(location.hostname)) return;
-    var t = sessionStorage.getItem('rita_token');
+    var t = localStorage.getItem('rita_token');
     var expired = false;
     if (t) { try { var p = JSON.parse(atob(t.split('.')[1])); expired = p.exp && (Date.now()/1000 > p.exp); } catch(e){} }
     if (!t || expired) {
-      sessionStorage.removeItem('rita_token');
+      localStorage.removeItem('rita_token');
       sessionStorage.setItem('post_login_redirect', window.location.href);
       window.location.href = '/auth/google/login';
     }

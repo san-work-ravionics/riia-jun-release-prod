@@ -5,7 +5,7 @@
   const p = new URLSearchParams(window.location.search);
   const t = p.get('token');
   if (t) {
-    sessionStorage.setItem('rita_token', t);
+    localStorage.setItem('rita_token', t);
     history.replaceState({}, '', window.location.pathname);
   }
 })();

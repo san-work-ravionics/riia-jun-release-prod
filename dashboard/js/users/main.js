@@ -1,7 +1,7 @@
 const API = window.RITA_API_BASE || "";
 
 async function loadUserTraffic() {
-    const token = sessionStorage.getItem("rita_token") || "";
+    const token = localStorage.getItem("rita_token") || "";
 
     try {
         const headers = token ? { "Authorization": `Bearer ${token}` } : {};

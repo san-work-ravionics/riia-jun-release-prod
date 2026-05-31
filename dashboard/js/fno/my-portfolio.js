@@ -82,12 +82,12 @@ export async function loadFnoMyPortfolio() {
   hide(emptyEl); hide(errorEl); hide(loadedEl);
 
   try {
-    const token = sessionStorage.getItem('rita_token');
+    const token = localStorage.getItem('rita_token');
     const headers = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
     const resp = await fetch(apiBase() + '/api/v1/experience/user-portfolio', { headers });
 
     if (resp.status === 401) {
-      sessionStorage.removeItem('rita_token');
+      localStorage.removeItem('rita_token');
       window.location.href = '/';
       return;
     }

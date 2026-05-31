@@ -1,7 +1,6 @@
 // ── Portfolio Hedge (Feature 27) — hedge recommendations for saved portfolio ──
 import { apiBase } from './api.js';
 
-const _RISK_COLOR = { high: 'var(--neg)', medium: 'var(--warn)', low: 'var(--ok)' };
 const _RISK_LABEL = { high: 'HIGH', medium: 'MEDIUM', low: 'LOW' };
 const _TYPE_LABEL = {
   index_put:       'ATM Put',
@@ -11,8 +10,8 @@ const _TYPE_LABEL = {
 };
 
 function _badge(risk) {
-  const col = _RISK_COLOR[risk] || 'var(--t3)';
-  return `<span style="display:inline-block;padding:2px 8px;border-radius:100px;background:${col};color:#fff;font-family:var(--fm);font-size:9px;font-weight:600;">${_RISK_LABEL[risk] || risk}</span>`;
+  const cls = ['high', 'medium', 'low'].includes(risk) ? risk : 'low';
+  return `<span class="ph-risk-badge ${cls}">${_RISK_LABEL[risk] || risk}</span>`;
 }
 
 function _renderItems(items) {
@@ -21,21 +20,19 @@ function _renderItems(items) {
   wrap.innerHTML = items.map(item => {
     const typeLabel = _TYPE_LABEL[item.hedge_type] || item.hedge_type;
     const costLine = item.eligible && item.cost_estimate_pct > 0
-      ? `<div style="margin-top:6px;font-family:var(--fm);font-size:10px;color:var(--t3);">
-           Hedge type: <strong>${typeLabel}</strong> · Est. cost: <strong>${item.cost_estimate_pct.toFixed(1)}%</strong>/month of notional
-         </div>`
+      ? `<div class="ph-item-cost">Hedge type: <strong>${typeLabel}</strong> · Est. cost: <strong>${item.cost_estimate_pct.toFixed(1)}%</strong>/month of notional</div>`
       : '';
     const equityTag = !item.eligible
-      ? `<span style="font-family:var(--fm);font-size:9px;color:var(--t3);border:1px solid var(--border);border-radius:100px;padding:1px 7px;margin-left:4px;">No F&O</span>`
+      ? `<span class="ph-noeq-tag">No F&amp;O</span>`
       : '';
     return `
-    <div class="card" style="margin-bottom:10px;padding:14px 16px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
-        <span style="font-family:var(--fm);font-size:13px;font-weight:600;">${item.instrument_id}</span>
-        <span style="font-family:var(--fm);font-size:11px;color:var(--t3);">${item.allocation_pct.toFixed(0)}%</span>
+    <div class="card ph-item">
+      <div class="ph-item-hdr">
+        <span class="ph-item-inst">${item.instrument_id}</span>
+        <span class="ph-item-alloc">${item.allocation_pct.toFixed(0)}%</span>
         ${_badge(item.risk_level)}${equityTag}
       </div>
-      <div style="font-size:12px;color:var(--t2);line-height:1.5;">${item.recommendation}</div>
+      <div class="ph-item-rec">${item.recommendation}</div>
       ${costLine}
     </div>`;
   }).join('');
@@ -54,7 +51,7 @@ export async function loadPortfolioHedge() {
   _show(loadingEl);
 
   try {
-    const token = sessionStorage.getItem('rita_token');
+    const token = localStorage.getItem('rita_token');
     if (!token) {
       _hide(loadingEl); _show(emptyEl);
       const msg = document.getElementById('ph-empty-msg');
@@ -68,7 +65,7 @@ export async function loadPortfolioHedge() {
     _hide(loadingEl);
 
     if (resp.status === 401) {
-      sessionStorage.removeItem('rita_token');
+      localStorage.removeItem('rita_token');
       window.location.href = '/';
       return;
     }
