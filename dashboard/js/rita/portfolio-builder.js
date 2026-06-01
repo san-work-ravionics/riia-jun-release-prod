@@ -692,8 +692,8 @@ export async function pbBuildPortfolio() {
   }
   const token = sessionStorage.getItem('auth_token');
   if (!token) {
-    const msg = document.getElementById('pb-status-msg');
-    if (msg) { msg.textContent = 'Login required to build a portfolio. Please sign in.'; msg.style.color = '#dc2626'; msg.style.display = ''; }
+    sessionStorage.setItem('post_login_redirect', window.location.href);
+    window.location.href = '/auth/google/login?state=rita';
     return;
   }
   const name = `My Portfolio ${new Date().toLocaleDateString('en-IN')}`;

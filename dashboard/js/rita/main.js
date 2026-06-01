@@ -27,7 +27,7 @@ import { useChip, sendChatMsg, clearChat, updateChips, showAlerts, refreshChatCh
 import { openChartModal, closeChartModal } from './chart-modal.js';
 import { initI18n, setLanguage, applyTranslations } from '../shared/i18n.js';
 import { loadMyPortfolio, savePortfolio } from './my-portfolio.js';
-import { loadPortfolioBuilder, pbToggleInstrument, pbSelectAllRegion, pbClearAllRegion, pbSortTable, pbApplyGoalPreset, pbToggleDraftItem, pbBuildFromDraft, pbClearBasket, pbBuildPortfolio, pbSetAlloc } from './portfolio-builder.js?v=3';
+import { loadPortfolioBuilder, pbToggleInstrument, pbSelectAllRegion, pbClearAllRegion, pbSortTable, pbApplyGoalPreset, pbToggleDraftItem, pbBuildFromDraft, pbClearBasket, pbBuildPortfolio, pbSetAlloc } from './portfolio-builder.js?v=4';
 
 // ── Populate section loaders map ───────────────────────────
 _sectionLoaders.market            = async () => { refreshChatChips(); clearChat(); runMarket(); const data = await warmupChat(); if (data) { updateChips(data.chips); showAlerts(data.alerts); } };
