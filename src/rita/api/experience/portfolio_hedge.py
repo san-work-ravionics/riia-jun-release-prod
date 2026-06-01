@@ -84,10 +84,14 @@ def _bs_put_pct(vol_annual_pct: float, strike_pct: float, r: float = 0.065, t_mo
 
 def _risk_score(ann_vol_pct: float) -> int:
     """Bucket annualized vol % into 1–5 (eng-context C1)."""
-    if ann_vol_pct < 15: return 1
-    if ann_vol_pct < 25: return 2
-    if ann_vol_pct < 35: return 3
-    if ann_vol_pct < 50: return 4
+    if ann_vol_pct < 15:
+        return 1
+    if ann_vol_pct < 25:
+        return 2
+    if ann_vol_pct < 35:
+        return 3
+    if ann_vol_pct < 50:
+        return 4
     return 5
 
 
@@ -100,7 +104,6 @@ def _coverage_params(
 ) -> tuple[float, str, float, int]:
     """Return (strike_pct, strike_label, cost_pct, protected_pct)."""
     c = coverage / 100.0
-    is_proxy = hedge_type in ("ndx_proxy", "nifty_proxy")
     is_spread = hedge_type == "put_spread"
 
     # Strike: lerp -15% OTM (c=0) → -2% OTM (c=1)  [eng-context C4]

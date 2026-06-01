@@ -1126,10 +1126,14 @@ _SECTOR_MAP: dict[str, str] = {
 
 def _risk_score_from_vol(annualized_vol_pct: float) -> int:
     """Bucket annualized volatility % into risk score 1–5 (eng-context C1)."""
-    if annualized_vol_pct < 15: return 1
-    if annualized_vol_pct < 25: return 2
-    if annualized_vol_pct < 35: return 3
-    if annualized_vol_pct < 50: return 4
+    if annualized_vol_pct < 15:
+        return 1
+    if annualized_vol_pct < 25:
+        return 2
+    if annualized_vol_pct < 35:
+        return 3
+    if annualized_vol_pct < 50:
+        return 4
     return 5
 
 _EU_COUNTRY_CODES = frozenset({"NL", "DE", "FR", "GB", "BE", "CH", "SE", "ES", "IT", "AT", "FI", "DK", "IE", "PL", "PT"})
