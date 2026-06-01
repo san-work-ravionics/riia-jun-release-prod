@@ -2,24 +2,16 @@
 // api()      → throws on error — use for writes/actions
 // apiFetch() → returns null on error — use for reads
 
-import { isLocalDev, ensureDevToken } from './dev-auth.js';
-
 export const apiBase = () => (window.RITA_API_BASE || '').replace(/\/$/, '');
 
-export async function api(path, method = 'GET', body = null, _retry = true) {
-  const token = localStorage.getItem('rita_token');
+export async function api(path, method = 'GET', body = null) {
+  const token = sessionStorage.getItem('auth_token');
   const opts = { method, headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) } };
   if (body) opts.body = JSON.stringify(body);
   const r = await fetch(apiBase() + path, opts);
   if (!r.ok) {
     if (r.status === 401) {
-      if (isLocalDev()) {
-        // Local dev: re-seed a dev token once and retry instead of bouncing to Google OAuth.
-        localStorage.removeItem('rita_token');
-        if (_retry && await ensureDevToken()) return api(path, method, body, false);
-        throw new Error('Local dev auth failed — is env=development and POST /auth/token reachable?');
-      }
-      localStorage.removeItem('rita_token');
+      sessionStorage.removeItem('auth_token');
       sessionStorage.setItem('post_login_redirect', window.location.href);
       window.location.href = '/auth/google/login';
       return;

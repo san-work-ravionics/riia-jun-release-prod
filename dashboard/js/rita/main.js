@@ -3,13 +3,9 @@
 const _urlParams = new URLSearchParams(window.location.search);
 const _urlToken = _urlParams.get('token');
 if (_urlToken) {
-  localStorage.setItem('rita_token', _urlToken);
+  sessionStorage.setItem('auth_token', _urlToken);
   history.replaceState({}, document.title, window.location.pathname);
 }
-
-// Local dev: seed a rita-dev token so testing skips Google OAuth (no-op in prod).
-import { ensureDevToken } from '../shared/dev-auth.js';
-await ensureDevToken();
 
 import { api } from './api.js';
 import { show, warmupChat, _sectionLoaders, getCurrentSection } from './nav.js';
@@ -31,6 +27,7 @@ import { useChip, sendChatMsg, clearChat, updateChips, showAlerts, refreshChatCh
 import { openChartModal, closeChartModal } from './chart-modal.js';
 import { initI18n, setLanguage, applyTranslations } from '../shared/i18n.js';
 import { loadMyPortfolio, savePortfolio } from './my-portfolio.js';
+import { loadPortfolioBuilder, pbToggleInstrument, pbSelectAllRegion, pbClearAllRegion, pbSortTable, pbApplyGoalPreset, pbToggleDraftItem, pbBuildFromDraft, pbClearBasket, pbBuildPortfolio, pbSetAlloc } from './portfolio-builder.js?v=3';
 
 // ── Populate section loaders map ───────────────────────────
 _sectionLoaders.market            = async () => { refreshChatChips(); clearChat(); runMarket(); const data = await warmupChat(); if (data) { updateChips(data.chips); showAlerts(data.alerts); } };
@@ -48,6 +45,7 @@ _sectionLoaders['technical-analysis'] = loadTechnicalAnalysis;
 _sectionLoaders.learnings             = loadLearnings;
 _sectionLoaders['strategy-compare']    = loadStrategyComparison;
 _sectionLoaders['my-portfolio']        = loadMyPortfolio;
+_sectionLoaders['portfolio-builder']   = loadPortfolioBuilder;
 
 // ── Expose to window for inline HTML onclick attributes ────
 window.show                = show;
@@ -89,6 +87,17 @@ window.scSelectYear             = scSelectYear;
 window.setLanguage        = setLanguage;
 window.loadMyPortfolio    = loadMyPortfolio;
 window.savePortfolio      = savePortfolio;
+window.loadPortfolioBuilder = loadPortfolioBuilder;
+window.pbToggleInstrument   = pbToggleInstrument;
+window.pbSelectAllRegion    = pbSelectAllRegion;
+window.pbClearAllRegion     = pbClearAllRegion;
+window.pbSortTable          = pbSortTable;
+window.pbApplyGoalPreset    = pbApplyGoalPreset;
+window.pbToggleDraftItem    = pbToggleDraftItem;
+window.pbBuildFromDraft     = pbBuildFromDraft;
+window.pbClearBasket        = pbClearBasket;
+window.pbBuildPortfolio     = pbBuildPortfolio;
+window.pbSetAlloc           = pbSetAlloc;
 
 // ── Refresh all home KPIs & active section ─────────────────
 async function refresh() {

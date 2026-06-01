@@ -29,7 +29,6 @@ html{scroll-behavior:smooth}
   --p03:#92480A;--p03-bg:#FEF4EB;--p03-bd:#F5C99A;
   --p04:#6B2FA0;--p04-bg:#F5EFFE;--p04-bd:#CFADF0;
   --pos:#1A6B3C;--neg:#9B1C1C;--neg-bg:#FEF2F2;--neg-bd:#FCA5A5;
-  --chat:#BE185D;--chat-bg:#FFF0F5;--chat-bd:#FBCFE8;
   --fd:'Epilogue',sans-serif;--fm:'IBM Plex Mono',monospace;--fs:'Instrument Serif',serif;
   --r:6px;--sh:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
   --shm:0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.05);
@@ -122,31 +121,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
 .kpi-delta{font-size:11px;color:var(--t3);margin-top:3px;}
 .kpi-delta.pos{color:var(--pos);}
 .kpi-delta.neg{color:var(--neg);}
-.kpi-sm{padding:7px 10px;}
-.kpi-sm .kpi-value{font-size:13px;}
-/* ── FnO Portfolio ───────────────────────────────────────────── */
-#fno-mp-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-bottom:16px;}
-.fno-mp-saved-header{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;}
-.fno-mp-saved-title{font-size:13px;font-weight:700;color:var(--text);margin:0;}
-.fno-mp-saved-ts{font-family:var(--fm);font-size:10px;color:var(--t3);margin:0;}
-.fno-mp-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
-.fno-mp-chip{font-family:var(--fm);font-size:10px;background:var(--chat-bg);border:1px solid var(--chat-bd);border-radius:100px;padding:2px 8px;color:var(--chat);}
-.fno-mp-chart-label{font-family:var(--fm);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
-#fno-mp-perf-chart-wrap{height:160px;position:relative;}
 .inst-geo{border:1.5px solid var(--p03-bd) !important;background:var(--p03-bg) !important;max-width:200px;}
-
-/* ── Portfolio Hedge (Feature 27) ─────────────────────────────── */
-.ph-item{padding:14px 16px;margin-bottom:10px;}
-.ph-item-hdr{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
-.ph-item-inst{font-family:var(--fm);font-size:13px;font-weight:600;}
-.ph-item-alloc{font-family:var(--fm);font-size:11px;color:var(--t3);}
-.ph-item-rec{font-size:12px;color:var(--t2);line-height:1.5;}
-.ph-item-cost{margin-top:6px;font-family:var(--fm);font-size:10px;color:var(--t3);}
-.ph-risk-badge{display:inline-block;padding:2px 8px;border-radius:100px;color:#fff;font-family:var(--fm);font-size:9px;font-weight:600;}
-.ph-risk-badge.high{background:var(--neg);}
-.ph-risk-badge.medium{background:var(--p03);}
-.ph-risk-badge.low{background:var(--p01);}
-.ph-noeq-tag{font-family:var(--fm);font-size:9px;color:var(--t3);border:1px solid var(--border);border-radius:100px;padding:1px 7px;margin-left:4px;}
 
 /* Market snapshot */
 .mkt-grid{display:grid;gap:14px;margin-bottom:20px;}
@@ -388,10 +363,9 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
 </head>
 <body>
 <script>
-  (function(){
-    // Local dev: skip the auth gate (token is auto-seeded by main.js).
-    if (['localhost','127.0.0.1','0.0.0.0'].includes(location.hostname)) return;
-    if (!localStorage.getItem('rita_token') && !new URLSearchParams(location.search).get('token')) {
+  (function() {
+    if (['localhost', '127.0.0.1', '0.0.0.0'].includes(location.hostname)) return;
+    if (!sessionStorage.getItem('auth_token') && !new URLSearchParams(location.search).get('token')) {
       window.location.href = '/auth/google/login?state=fno';
     }
   })();
@@ -427,7 +401,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       <span id="inst-pill-name"></span>
       <span id="inst-pill-exch" style="color:var(--t4)"></span>
       <span style="color:var(--border2)">·</span>
-      <a href="index.html" style="color:var(--p02);text-decoration:none;font-size:10px;font-weight:600;letter-spacing:.04em">SWITCH ↗</a>
+      <a href="index.html" style="color:var(--run);text-decoration:none;font-size:10px;font-weight:600;letter-spacing:.04em">SWITCH ↗</a>
     </div>
     <div class="status-pill">
       <span class="status-dot ok" id="sdot"></span>
@@ -439,46 +413,32 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
 <!-- ── Sidebar ─────────────────────────────────────────────── -->
 <div class="sidebar">
   <div class="nav-section">
-    <div class="nav-label">Portfolio</div>
+    <div class="nav-label">Pages</div>
     <div class="nav-item p01 active" data-page="overview">
       <span class="nav-icon">◈</span> <span data-i18n="nav.overview">Dashboard</span>
     </div>
-    <div class="nav-item p00" data-page="my-portfolio">
-      <span class="nav-icon">◧</span> <span data-i18n="nav.fno_my_portfolio">My Portfolio</span>
-    </div>
-  </div>
-
-  <div class="nav-section">
-    <div class="nav-label">Hedging</div>
-    <div class="nav-item p04" data-page="portfolio-hedge">
-      <span class="nav-icon">🛡</span> <span data-i18n="nav.fno_recommendations">Recommendations</span>
-    </div>
-    <div class="nav-item p03" data-page="hedge" id="nav-hedge">
-      <span class="nav-icon">⚠</span> <span data-i18n="nav.hedge">Quality</span>
-      <span id="nav-hedge-badge" style="display:none;margin-left:auto;background:var(--neg);color:#fff;font-family:var(--fm);font-size:9px;font-weight:600;padding:1px 6px;border-radius:100px;"></span>
-    </div>
-    <div class="nav-item p02" data-page="history">
-      <span class="nav-icon">⏱</span> <span data-i18n="nav.fno_history">History</span>
-    </div>
     <div class="nav-item p04" data-page="equity-hedge">
-      <span class="nav-icon">⬗</span> <span data-i18n="nav.equity_hedge">Equity Scenarios</span>
+      <span class="nav-icon">⬗</span> <span data-i18n="nav.equity_hedge">Equity Hedge</span>
     </div>
-  </div>
-
-  <div class="nav-section">
-    <div class="nav-label">Risk</div>
     <div class="nav-item p04" data-page="risk">
-      <span class="nav-icon">⬡</span> <span data-i18n="nav.greeks">Greeks</span>
+      <span class="nav-icon">⬡</span> <span data-i18n="nav.risk">Risk &amp; Greeks</span>
     </div>
     <div class="nav-item p01" data-page="scenarios">
       <span class="nav-icon">↔</span> <span data-i18n="nav.scenarios">Risk-Reward</span>
     </div>
-  </div>
-
-  <div class="nav-section">
-    <div class="nav-label">Manage</div>
+    <div class="nav-item p03" data-page="hedge" id="nav-hedge">
+      <span class="nav-icon">⚠</span> <span data-i18n="nav.hedge">Hedge Radar</span>
+      <span id="nav-hedge-badge" style="display:none;margin-left:auto;background:var(--neg);color:#fff;font-family:var(--fm);font-size:9px;font-weight:600;padding:1px 6px;border-radius:100px;"></span>
+    </div>
+    <div class="nav-item p02" data-page="history">
+      <span class="nav-icon">⏱</span> Hedge History
+    </div>
     <div class="nav-item p03" data-page="manoeuvre">
-      <span class="nav-icon">⟳</span> <span data-i18n="nav.manoeuvre">Manoeuvre</span>
+      <span class="nav-icon">⟳</span> Manoeuvre
+    </div>
+    <div class="nav-item p00" data-page="my-portfolio">My Portfolio</div>
+    <div class="nav-item p03" data-page="portfolio-hedge">
+      <span class="nav-icon">⬡</span> Portfolio Hedge
     </div>
   </div>
 
@@ -965,6 +925,9 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
   </div>
 
   <!-- ═══════════════════════════════════════════════
+       PORTFOLIO BUILDER — Feature 28 Phase 1
+  ════════════════════════════════════════════════ -->
+  <!-- ═══════════════════════════════════════════════
        EQUITY HEDGE SCENARIOS
   ════════════════════════════════════════════════ -->
   <div class="section" id="page-equity-hedge">
@@ -1122,56 +1085,206 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
        MY PORTFOLIO
   ════════════════════════════════════════════════ -->
   <div class="section" id="page-my-portfolio">
-    <div class="section-header"><h2>Portfolio</h2></div>
-    <div id="fno-mp-empty" style="display:none;padding:1rem;font-size:12px;color:var(--t3);">
-      No portfolio saved yet. <a href="/dashboard/" style="color:var(--p02);text-decoration:none;font-weight:600;">Build one in RITA →</a>
+    <div class="section-header"><h2>My Portfolio</h2></div>
+    <div id="fno-mp-empty" style="display:none;color:#8b949e;padding:1rem;">No portfolio saved. Visit the RITA dashboard to create one.</div>
+    <div id="fno-mp-error" style="display:none;color:#f85149;padding:1rem;"></div>
+    <div id="fno-mp-meta" style="padding:0.5rem 0;">
+      <span style="color:#8b949e;">Name: </span><span id="fno-mp-name">—</span>
+      &nbsp;&nbsp;
+      <span style="color:#8b949e;">Last saved: </span><span id="fno-mp-updated">—</span>
     </div>
-    <div id="fno-mp-error" style="display:none;color:var(--neg);font-size:12px;padding:0.5rem 0;"></div>
-    <div id="fno-mp-loaded" style="display:none">
-      <div class="fno-mp-saved-header">
-        <span class="fno-mp-saved-title" id="fno-mp-name"></span>
-        <span class="fno-mp-saved-ts" id="fno-mp-updated"></span>
-      </div>
-      <div id="fno-mp-tiles"></div>
-      <div class="fno-mp-chart-label">Portfolio Performance 2025</div>
-      <div id="fno-mp-perf-chart-wrap"><canvas id="fno-mp-perf-chart"></canvas></div>
-    </div>
+    <table class="data-table" id="fno-mp-table">
+      <thead><tr><th>Instrument</th><th>Allocation %</th></tr></thead>
+      <tbody id="fno-mp-holdings-body"></tbody>
+      <tfoot><tr><td style="color:#8b949e;">Total</td><td id="fno-mp-total">—</td></tr></tfoot>
+    </table>
   </div>
 
   <!-- ═══════════════════════════════════════════════
-       PORTFOLIO HEDGE  (Feature 27)
+       PORTFOLIO HEDGE (Feature 28 Phase 3)
   ════════════════════════════════════════════════ -->
   <div class="section" id="page-portfolio-hedge">
-    <div class="page-hdr">
-      <div><div class="page-title">Portfolio Hedge</div></div>
-      <span class="phase-tag p04">Hedge Analysis</span>
+
+    <!-- Step navigator -->
+    <div style="margin-bottom:2px">
+      <span style="font-size:10px;font-weight:700;color:#BE185D;text-transform:uppercase;letter-spacing:.1em;font-family:var(--fm)">PAGE 2 · HEDGING</span>
+    </div>
+    <h2 class="page-title" style="margin-bottom:8px">Hedge the portfolio</h2>
+    <div style="display:flex;gap:0;margin-bottom:28px;border-bottom:1px solid var(--border)">
+      <span style="padding:8px 18px;font-size:12px;color:var(--t3);font-family:var(--fm)">Discover</span>
+      <span style="padding:8px 18px;font-size:12px;color:var(--t3);font-family:var(--fm)">Selection</span>
+      <span style="padding:8px 18px;font-size:12px;color:var(--t3);font-family:var(--fm)">Allocation</span>
+      <span style="padding:8px 18px;font-size:12px;font-weight:700;color:#BE185D;border-bottom:2px solid #BE185D;font-family:var(--fm)">Hedge</span>
     </div>
 
-    <div id="ph-loading" style="padding:1rem;font-size:12px;color:var(--t3);font-family:var(--fm);">Loading hedge analysis…</div>
-
-    <div id="ph-empty" style="display:none;padding:1rem;font-size:12px;color:var(--t3);">
-      <span id="ph-empty-msg">No portfolio saved yet. <a href="/dashboard/" style="color:var(--p02);text-decoration:none;font-weight:600;">Build one in RITA →</a></span>
+    <!-- State banners -->
+    <div id="ph-loading" style="display:none;color:var(--t3);font-size:13px;padding:12px 0;font-family:var(--fm)">Loading hedge plan…</div>
+    <div id="ph-error"   style="display:none;font-size:13px;padding:10px 14px;border-radius:6px;background:rgba(220,38,38,.08);color:#dc2626;margin-bottom:16px">
+      Error: <span id="ph-error-msg"></span>
+    </div>
+    <div id="ph-empty" style="display:none;padding:16px 0">
+      <span id="ph-empty-msg" style="font-size:13px;color:var(--t3);font-family:var(--fm)">No portfolio found.</span>
     </div>
 
-    <div id="ph-error" style="display:none;padding:0.5rem 0;">
-      <span id="ph-error-msg" style="color:var(--neg);font-size:12px;"></span>
-    </div>
+    <!-- Main content (revealed after load) -->
+    <div id="ph-content" style="display:none">
 
-    <div id="ph-content" style="display:none;">
-      <div class="fno-mp-saved-header" style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-        <span class="fno-mp-saved-title" id="ph-name"></span>
-        <span class="fno-mp-saved-ts" id="ph-total-pct"></span>
-        <span id="ph-risk-badge" style="display:none;margin-left:auto;background:var(--neg);color:#fff;font-family:var(--fm);font-size:9px;font-weight:600;padding:2px 8px;border-radius:100px;"></span>
+      <!-- Portfolio name badge -->
+      <div style="margin-bottom:20px;font-size:12px;color:var(--t2);font-family:var(--fm)">
+        Portfolio: <strong id="ph-portfolio-name">—</strong>
       </div>
 
-      <div id="ph-items"></div>
-
-      <div style="margin-top:16px;padding:12px 14px;background:var(--surface2);border-radius:var(--r);border:1px solid var(--border);">
-        <div style="font-family:var(--fm);font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Disclaimer</div>
-        <div style="font-size:11px;color:var(--t3);line-height:1.5;">Hedge recommendations are illustrative and based on portfolio allocation weights only. Actual decisions should factor in market conditions, live option pricing, and individual risk tolerance. Not financial advice.</div>
+      <!-- ── Section 1: Hedge table + coverage dial ── -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px;background:#BE185D;color:#fff;font-weight:700;font-size:14px;flex-shrink:0">1</span>
+        <h3 style="font-size:17px;font-weight:700;color:var(--text);margin:0">Hedge table + coverage dial</h3>
       </div>
-    </div>
-  </div>
+      <div style="font-size:13px;color:var(--t2);margin-bottom:18px;padding:10px 14px;border:1px dashed rgba(190,24,93,.3);border-radius:6px;background:rgba(190,24,93,.03);font-family:var(--fm)">
+        Your holdings as a sortable table; one coverage dial picks the strike and cost for every row at once. No-F&amp;O names fall back to a correlated index proxy.
+      </div>
+
+      <!-- Hedge table -->
+      <div class="card" style="padding:0;overflow:hidden;margin-bottom:16px">
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead>
+              <tr style="font-size:11px;color:#64748b;border-bottom:2px solid rgba(0,0,0,.1);text-transform:uppercase;letter-spacing:.04em;background:rgba(0,0,0,.02)">
+                <th style="padding:10px 10px;text-align:left;font-weight:700">Ticker</th>
+                <th style="padding:10px 10px;text-align:right;font-weight:700">Weight</th>
+                <th style="padding:10px 10px;text-align:right;font-weight:700">Return</th>
+                <th style="padding:10px 10px;text-align:left;font-weight:700">Risk</th>
+                <th style="padding:10px 10px;text-align:left;font-weight:700">Hedge (auto)</th>
+                <th style="padding:10px 10px;text-align:left;font-weight:700">Strike</th>
+                <th style="padding:10px 10px;text-align:right;font-weight:700">Cost</th>
+                <th style="padding:10px 10px;text-align:left;font-weight:700">Protected</th>
+              </tr>
+            </thead>
+            <tbody id="ph-table-body"></tbody>
+          </table>
+        </div>
+        <div id="ph-no-fno-note" style="display:none;padding:10px 14px;font-size:11px;color:#BE185D;background:rgba(190,24,93,.04);border-top:1px solid rgba(190,24,93,.15);font-family:var(--fm);font-weight:600;letter-spacing:.03em">
+          NO-F&amp;O NAMES &nbsp;are hedged via a correlated index proxy — highlighted above.
+        </div>
+      </div>
+
+      <!-- Coverage band -->
+      <div class="card" style="margin-bottom:8px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:24px;align-items:center">
+
+          <!-- Dial -->
+          <div>
+            <div style="font-size:10px;font-weight:700;color:#BE185D;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:4px">Coverage Level</div>
+            <div style="font-size:15px;font-weight:700;margin-bottom:12px">One dial sets every strike</div>
+            <input type="range" id="ph-coverage-slider" min="0" max="100" value="50"
+                   oninput="phSetCoverage(this.value)"
+                   style="width:100%;accent-color:#BE185D;cursor:pointer">
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);font-family:var(--fm);margin-top:4px">
+              <span>Unhedged</span>
+              <span id="ph-coverage-label" style="font-weight:700;color:#BE185D">Lightly hedged</span>
+              <span>Fully protected</span>
+            </div>
+          </div>
+
+          <!-- Max drawdown -->
+          <div style="text-align:center">
+            <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:6px">Max Drawdown Protected</div>
+            <div id="ph-max-dd-hedged" style="font-size:28px;font-weight:700;font-family:var(--fm);color:#BE185D">—</div>
+            <div id="ph-max-dd-unhedged" style="font-size:12px;color:var(--t2);font-family:var(--fm);margin-top:2px">vs — unhedged</div>
+          </div>
+
+          <!-- Monthly cost -->
+          <div style="text-align:center">
+            <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:6px">Monthly Cost</div>
+            <div id="ph-monthly-cost" style="font-size:28px;font-weight:700;font-family:var(--fm);color:var(--text)">—</div>
+            <div id="ph-monthly-cost-sub" style="font-size:12px;color:var(--t2);font-family:var(--fm);margin-top:2px">premium drag</div>
+          </div>
+
+          <!-- CTA -->
+          <div>
+            <button style="padding:12px 20px;border:none;border-radius:8px;background:#BE185D;color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">
+              Place hedge orders
+            </button>
+            <div style="font-size:11px;color:var(--t3);font-family:var(--fm);margin-top:6px;max-width:160px">
+              Drag the dial — strikes, costs &amp; the table all update together.
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /coverage band -->
+
+      <!-- Divider -->
+      <div style="display:flex;align-items:center;gap:16px;margin:32px 0 24px">
+        <span style="flex:1;height:1px;background:var(--border)"></span>
+        <span style="font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--t3);font-family:var(--fm);white-space:nowrap">THEN PRESSURE-TEST IT</span>
+        <span style="flex:1;height:1px;background:var(--border)"></span>
+      </div>
+
+      <!-- ── Section 2: Payoff & scenario simulator ── -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px;background:#BE185D;color:#fff;font-weight:700;font-size:14px;flex-shrink:0">2</span>
+        <h3 style="font-size:17px;font-weight:700;color:var(--text);margin:0">Payoff &amp; scenario simulator</h3>
+      </div>
+      <div style="font-size:13px;color:var(--t2);margin-bottom:18px;padding:10px 14px;border:1px dashed rgba(190,24,93,.3);border-radius:6px;background:rgba(190,24,93,.03);font-family:var(--fm)">
+        See the downside flatten before committing. The kinked curve makes 'what a hedge does' tangible.
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+
+        <!-- Payoff chart -->
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title">Portfolio P&amp;L — hedged vs unhedged</span>
+            <span id="ph-chart-coverage-badge" class="card-sub">at 50% coverage</span>
+          </div>
+          <div style="height:280px;position:relative">
+            <canvas id="ph-payoff-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- Scenario P&L -->
+        <div class="card" style="padding:0;overflow:hidden">
+          <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+            <span style="font-weight:700;font-size:14px">Scenario P&amp;L</span>
+            <div style="display:flex;gap:4px">
+              <button id="ph-tab-pp"     onclick="phSetScenarioTab('pp')"
+                      style="padding:4px 10px;border-radius:4px;border:1px solid rgba(0,0,0,.12);background:#BE185D;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--fm)">
+                Protective put
+              </button>
+              <button id="ph-tab-ps"     onclick="phSetScenarioTab('ps')"
+                      style="padding:4px 10px;border-radius:4px;border:1px solid rgba(0,0,0,.12);background:transparent;color:#64748b;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--fm)">
+                Put spread
+              </button>
+              <button id="ph-tab-collar" onclick="phSetScenarioTab('collar')"
+                      style="padding:4px 10px;border-radius:4px;border:1px solid rgba(0,0,0,.12);background:transparent;color:#64748b;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--fm)">
+                Collar
+              </button>
+            </div>
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead>
+              <tr style="font-size:11px;color:#64748b;border-bottom:2px solid rgba(0,0,0,.08);text-transform:uppercase;letter-spacing:.04em">
+                <th style="padding:10px 12px;text-align:left;font-weight:700">Market</th>
+                <th style="padding:10px 12px;text-align:right;font-weight:700">Unhedged</th>
+                <th style="padding:10px 12px;text-align:right;font-weight:700">Hedged</th>
+              </tr>
+            </thead>
+            <tbody id="ph-scenario-body"></tbody>
+          </table>
+          <div style="padding:12px 14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:12px;color:var(--t2)">
+              Cost of this hedge &nbsp;<strong id="ph-cost-display" style="font-family:var(--fm)">—</strong>
+            </div>
+            <button style="padding:8px 18px;border:none;border-radius:6px;background:#BE185D;color:#fff;font-size:13px;font-weight:700;cursor:pointer">
+              Apply this hedge
+            </button>
+          </div>
+        </div>
+
+      </div><!-- /simulator grid -->
+
+    </div><!-- /ph-content -->
+
+  </div><!-- /page-portfolio-hedge -->
 
 </div><!-- /main -->
 </div><!-- /shell -->

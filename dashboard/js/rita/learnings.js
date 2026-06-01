@@ -18,7 +18,7 @@ export async function loadLearnings() {
 
   // Card 4: Market Trends — live charts
   try {
-    const rows = await api('/api/v1/market-signals?timeframe=daily&periods=252&instrument=ASML');
+    const rows = await api('/api/v1/market-signals?timeframe=daily&periods=252&instrument=NIFTY');
     if (!rows || !rows.length) {
       const c4 = document.getElementById('learn-body-trends');
       if (c4) c4.innerHTML = `<div class="empty">${t('learnings.no_data')}</div>`;

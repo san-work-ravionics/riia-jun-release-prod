@@ -71,6 +71,7 @@ from rita.api.v1.workflow.commentary import router as commentary_router
 from rita.api.v1.workflow.user_portfolio import router as user_portfolio_workflow_router
 from rita.api.v1.portfolio import router as portfolio_router
 from rita.api.experience.user_portfolio import router as user_portfolio_experience_router
+from rita.api.experience.portfolio_hedge import router as portfolio_hedge_router
 
 _MOBILE_UA_RE = re.compile(r"Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini", re.IGNORECASE)
 
@@ -387,6 +388,7 @@ app.include_router(agent_panel_router)
 app.include_router(invest_game_router)
 app.include_router(users_traffic_router)
 app.include_router(user_portfolio_experience_router)
+app.include_router(portfolio_hedge_router)
 
 # -- Chat -- local intent classifier + OHLCV dispatch (no external API) -------
 app.include_router(chat_router)

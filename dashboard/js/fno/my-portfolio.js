@@ -1,127 +1,94 @@
-// ── FnO Portfolio — read-only kpi tile display + 2025 performance chart ──
+// ── FnO My Portfolio — read-only allocation display ──────────────────────────
 import { apiBase } from './api.js';
 
-let _perfChart = null;
-
-function _renderTiles(holdings) {
-  const wrap = document.getElementById('fno-mp-tiles');
-  if (!wrap) return;
-  wrap.innerHTML = holdings.map(h => `
-    <div class="kpi kpi-sm">
-      <div class="kpi-label">${h.instrument_id}</div>
-      <div class="kpi-value" style="color:var(--chat);text-align:center">${h.allocation_pct}%</div>
-      <div class="kpi-delta" style="text-align:center">of portfolio</div>
-    </div>`).join('');
-}
-
-async function _fetchAndRenderChart(holdings) {
-  const holdingsParam = holdings
-    .filter(h => h.allocation_pct > 0)
-    .map(h => `${h.instrument_id}:${h.allocation_pct}`)
-    .join(',');
-  if (!holdingsParam) return;
-
-  let dates = [], values = [];
-  try {
-    const resp = await fetch(
-      apiBase() + `/api/v1/experience/rita/portfolio-performance?holdings=${encodeURIComponent(holdingsParam)}&year=2025`
-    );
-    if (resp.ok) { const d = await resp.json(); dates = d.dates || []; values = d.values || []; }
-  } catch (_) {}
-
-  if (!dates.length) return;
-
-  const step = Math.max(1, Math.floor(dates.length / 60));
-  const xLabels = dates.filter((_, i) => i % step === 0);
-  const yValues = values.filter((_, i) => i % step === 0);
-
-  const canvas = document.getElementById('fno-mp-perf-chart');
-  if (!canvas) return;
-  if (_perfChart) { _perfChart.destroy(); _perfChart = null; }
-
-  _perfChart = new Chart(canvas.getContext('2d'), {
-    type: 'line',
-    data: {
-      labels: xLabels,
-      datasets: [{
-        data: yValues,
-        borderColor: '#BE185D',
-        backgroundColor: 'rgba(190,24,93,0.08)',
-        borderWidth: 1.5,
-        pointRadius: 0,
-        fill: true,
-        tension: 0.3,
-      }],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: {
-        callbacks: { label: ctx => `${ctx.parsed.y.toFixed(1)} (base 100)` },
-      }},
-      scales: {
-        x: {
-          ticks: { font: { family: "'IBM Plex Mono', monospace", size: 9 }, color: '#8C877A', maxTicksLimit: 6, maxRotation: 0 },
-          grid: { display: false },
-        },
-        y: {
-          ticks: { font: { family: "'IBM Plex Mono', monospace", size: 9 }, color: '#8C877A', maxTicksLimit: 4 },
-          grid: { color: 'rgba(0,0,0,0.05)' },
-        },
-      },
-    },
-  });
-}
-
 export async function loadFnoMyPortfolio() {
-  const emptyEl  = document.getElementById('fno-mp-empty');
-  const errorEl  = document.getElementById('fno-mp-error');
-  const loadedEl = document.getElementById('fno-mp-loaded');
-
-  const hide = el => { if (el) el.style.display = 'none'; };
-  hide(emptyEl); hide(errorEl); hide(loadedEl);
-
   try {
-    const token = localStorage.getItem('rita_token');
+    const token = sessionStorage.getItem('auth_token');
     const headers = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
     const resp = await fetch(apiBase() + '/api/v1/experience/user-portfolio', { headers });
 
     if (resp.status === 401) {
-      localStorage.removeItem('rita_token');
-      window.location.href = '/';
+      sessionStorage.removeItem('auth_token');
+      const overlay = document.getElementById('fno-auth-overlay');
+      if (overlay) overlay.style.display = 'flex';
+      const shell = document.querySelector('.shell');
+      if (shell) shell.style.display = 'none';
       return;
     }
 
     if (resp.status === 404) {
-      if (emptyEl) emptyEl.style.display = '';
+      const empty = document.getElementById('fno-mp-empty');
+      if (empty) empty.style.display = '';
+      const table = document.getElementById('fno-mp-table');
+      if (table) table.style.display = 'none';
+      const total = document.getElementById('fno-mp-total');
+      if (total) total.textContent = '—';
       return;
     }
 
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({ detail: resp.statusText }));
-      if (errorEl) { errorEl.style.display = ''; errorEl.textContent = 'Unable to load portfolio — ' + (err.detail || resp.statusText); }
+      const errEl = document.getElementById('fno-mp-error');
+      if (errEl) {
+        errEl.style.display = '';
+        errEl.textContent = 'Unable to load portfolio — ' + (err.detail || resp.statusText);
+      }
+      const name = document.getElementById('fno-mp-name');
+      if (name) name.textContent = '—';
+      const updated = document.getElementById('fno-mp-updated');
+      if (updated) updated.textContent = '—';
+      const total = document.getElementById('fno-mp-total');
+      if (total) total.textContent = '—';
       return;
     }
 
     const data = await resp.json();
-    const holdings = data.holdings || [];
 
-    if (!holdings.length) {
-      if (emptyEl) emptyEl.style.display = '';
-      return;
+    // Hide error/empty, show meta
+    const errEl = document.getElementById('fno-mp-error');
+    if (errEl) errEl.style.display = 'none';
+    const emptyEl = document.getElementById('fno-mp-empty');
+    if (emptyEl) emptyEl.style.display = 'none';
+    const table = document.getElementById('fno-mp-table');
+    if (table) table.style.display = '';
+
+    // Populate name and updated_at
+    const nameEl = document.getElementById('fno-mp-name');
+    if (nameEl) nameEl.textContent = data.name || '—';
+    const updatedEl = document.getElementById('fno-mp-updated');
+    if (updatedEl) updatedEl.textContent = data.updated_at ? new Date(data.updated_at).toLocaleString() : '—';
+
+    // Populate holdings rows
+    const holdings = data.holdings || [];
+    if (holdings.length === 0) {
+      const emptyEl2 = document.getElementById('fno-mp-empty');
+      if (emptyEl2) emptyEl2.style.display = '';
+      if (table) table.style.display = 'none';
+    } else {
+      const tbody = document.getElementById('fno-mp-holdings-body');
+      if (tbody) {
+        tbody.innerHTML = holdings.map(h =>
+          `<tr><td>${h.instrument_id}</td><td>${h.allocation_pct}%</td></tr>`
+        ).join('');
+      }
+      // Compute total
+      const totalPct = holdings.reduce((sum, h) => sum + (h.allocation_pct || 0), 0);
+      const totalEl = document.getElementById('fno-mp-total');
+      if (totalEl) totalEl.textContent = totalPct + '%';
     }
 
-    const nameEl    = document.getElementById('fno-mp-name');
-    const updatedEl = document.getElementById('fno-mp-updated');
-    if (nameEl)    nameEl.textContent    = data.name || 'Portfolio';
-    if (updatedEl) updatedEl.textContent = data.updated_at ? 'Last saved: ' + new Date(data.updated_at).toLocaleString() : '';
-
-    _renderTiles(holdings);
-    if (loadedEl) loadedEl.style.display = '';
-    _fetchAndRenderChart(holdings);
-
   } catch (e) {
-    if (errorEl) { errorEl.style.display = ''; errorEl.textContent = 'Unable to load portfolio — ' + (e.message || 'unexpected error'); }
+    const errEl = document.getElementById('fno-mp-error');
+    if (errEl) {
+      errEl.style.display = '';
+      errEl.textContent = 'Unable to load portfolio — ' + (e.message || 'unexpected error');
+    }
+    const name = document.getElementById('fno-mp-name');
+    if (name) name.textContent = '—';
+    const updated = document.getElementById('fno-mp-updated');
+    if (updated) updated.textContent = '—';
+    const total = document.getElementById('fno-mp-total');
+    if (total) total.textContent = '—';
   }
 }
 

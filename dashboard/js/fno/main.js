@@ -1,11 +1,20 @@
 // ── FnO Dashboard — Entry Point ───────────────────────────────────────────────
 
+// migrate legacy rita_token → auth_token (one-time, silent)
+(function() {
+  const legacy = sessionStorage.getItem('rita_token');
+  if (legacy && !sessionStorage.getItem('auth_token')) {
+    sessionStorage.setItem('auth_token', legacy);
+    sessionStorage.removeItem('rita_token');
+  }
+})();
+
 // ingest ?token= from OAuth callback
 (function() {
   const p = new URLSearchParams(window.location.search);
   const t = p.get('token');
   if (t) {
-    localStorage.setItem('rita_token', t);
+    sessionStorage.setItem('auth_token', t);
     history.replaceState({}, '', window.location.pathname);
   }
 })();
@@ -32,7 +41,6 @@ async function apiFetch(url, opts = {}) {
 import { state } from './state.js';
 import { initNav, setUnderlying, setExpiry, _sectionLoaders } from './nav.js';
 import { loadFnoMyPortfolio } from './my-portfolio.js';
-import { loadPortfolioHedge } from './portfolio-hedge.js';
 import { filterPos } from './positions.js';
 import {
   manSelectTile,
@@ -75,22 +83,25 @@ window.manSaveSnapshot  = manSaveSnapshot;
 
 import { loadEquityHedge } from './equity_hedge.js';
 import { initI18n, setLanguage, applyTranslations } from '../shared/i18n.js';
+import { loadPortfolioHedge, phSetCoverage, phSetScenarioTab } from './portfolio-hedge.js';
 
 window.setLanguage = setLanguage;
 window.loadEquityHedge = loadEquityHedge;
 
 // My Portfolio section loader
-_sectionLoaders['my-portfolio'] = loadFnoMyPortfolio;
+_sectionLoaders['my-portfolio']      = loadFnoMyPortfolio;
 window.loadFnoMyPortfolio = loadFnoMyPortfolio;
 
-// Portfolio Hedge section loader (Feature 27)
-_sectionLoaders['portfolio-hedge'] = loadPortfolioHedge;
+// Portfolio Hedge section loader
+_sectionLoaders['portfolio-hedge']   = loadPortfolioHedge;
 window.loadPortfolioHedge = loadPortfolioHedge;
+window.phSetCoverage      = phSetCoverage;
+window.phSetScenarioTab   = phSetScenarioTab;
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 initI18n(); applyTranslations();
 window.addEventListener('load', async () => {
-  await ensureDevToken();   // local dev only — no-op in prod
+  await ensureDevToken();
   initNav();
   initApp();
   checkStatus();

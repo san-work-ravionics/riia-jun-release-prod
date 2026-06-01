@@ -2,6 +2,8 @@
 import { state } from './state.js';
 import { apiBase } from './api.js';
 
+const RITA_API_KEY = '';
+
 let _portfolioChart = null;
 let _payoffChart = null;
 
@@ -106,7 +108,7 @@ export async function loadEquityHedge(forceRefresh = false) {
   const endDate    = document.getElementById('eh-end-date')?.value   || '2025-01-31';
 
   try {
-    const headers = { 'Content-Type': 'application/json' };
+    const headers = { 'Content-Type': 'application/json', ...(RITA_API_KEY ? { 'X-API-Key': RITA_API_KEY } : {}) };
     const resp = await fetch(apiBase() + '/api/v1/portfolio/equity-hedge-scenarios', {
       method: 'POST',
       headers,

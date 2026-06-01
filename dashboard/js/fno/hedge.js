@@ -4,10 +4,15 @@ import { state } from './state.js';
 import { fmt, fmtPnl, pnlClass } from './utils.js';
 import { apiBase } from './api.js';
 
+// Mirror of RITA_API_KEY from api.js — same default empty string.
+// Declared here to avoid a circular import (api.js imports hedge.js).
+const RITA_API_KEY = '';
+
 export async function loadHedgeHistory() {
   if (state.hedgeHistoryLoaded) return;
   try {
-    const resp = await fetch(apiBase() + '/api/v1/portfolio/hedge-history');
+    const resp = await fetch(apiBase() + '/api/v1/portfolio/hedge-history',
+      RITA_API_KEY ? { headers: { 'X-API-Key': RITA_API_KEY } } : {});
     if (!resp.ok) throw new Error(`API ${resp.status}`);
     state.hedgeHistory = await resp.json();
     state.hedgeHistoryLoaded = true;
