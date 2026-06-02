@@ -139,10 +139,14 @@ class TestGatewayHtmlDesktopLinks:
         """card-ops anchor href must link to /mobileapp/ops.html (Mobile Ready card)."""
         card_ops_idx = html_text.find('id="card-ops"')
         assert card_ops_idx != -1, "card-ops id not found"
-        card_ops_block = html_text[card_ops_idx: card_ops_idx + 500]
+        card_ops_block = html_text[card_ops_idx: card_ops_idx + 600]
         assert "/mobileapp/ops.html" in card_ops_block, (
             "card-ops block does not contain /mobileapp/ops.html — "
             "Ops card is now Mobile Ready and must link to /mobileapp/ops.html"
+        )
+        assert "tile build" in card_ops_block or "tile research" in card_ops_block, (
+            "card-ops must use a mobile-ready tile class (tile build or tile research) — "
+            "not the amber tile ops class"
         )
 
     def test_card_ds_href_contains_desktop_param(self, html_text):
