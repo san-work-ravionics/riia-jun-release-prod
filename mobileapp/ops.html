@@ -237,14 +237,14 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
     <div class="carousel-track" id="track">
 
 
-      <!-- ══ SCREEN 0: STATUS ═══════════════════════════════════════════ -->
+      <!-- ══ SCREEN 0: OVERVIEW ════════════════════════════════════════ -->
       <div class="screen" id="s0">
         <div class="screen-inner">
 
           <div class="scr-hdr">
             <div>
               <div class="scr-eye">RITA OPS</div>
-              <div class="scr-title">System Status</div>
+              <div class="scr-title">Overview</div>
               <div class="scr-sub" id="s0-updated">Loading…</div>
             </div>
             <button class="refresh-btn" onclick="initData()">
@@ -311,14 +311,14 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
       </div>
 
 
-      <!-- ══ SCREEN 1: MONITOR ══════════════════════════════════════════ -->
+      <!-- ══ SCREEN 1: MONITORING ══════════════════════════════════════ -->
       <div class="screen" id="s1">
         <div class="screen-inner">
 
           <div class="scr-hdr">
             <div>
               <div class="scr-eye">RITA OPS</div>
-              <div class="scr-title">API Monitor</div>
+              <div class="scr-title">Monitoring</div>
             </div>
           </div>
 
@@ -361,14 +361,14 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
       </div>
 
 
-      <!-- ══ SCREEN 2: DEPLOYS ══════════════════════════════════════════ -->
+      <!-- ══ SCREEN 2: DEPLOYMENTS ═════════════════════════════════════ -->
       <div class="screen" id="s2">
         <div class="screen-inner">
 
           <div class="scr-hdr">
             <div>
               <div class="scr-eye">RITA OPS</div>
-              <div class="scr-title">GitHub Deploys</div>
+              <div class="scr-title">Deployments</div>
             </div>
           </div>
 
@@ -378,7 +378,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
       </div>
 
 
-      <!-- ══ SCREEN 3: BUILDS ═══════════════════════════════════════════ -->
+      <!-- ══ SCREEN 3: AGENT BUILDS ════════════════════════════════════ -->
       <div class="screen" id="s3">
         <div class="screen-inner">
 
@@ -457,23 +457,23 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
     <div class="tab-pill">
 
       <div class="tab-item" data-active="true" data-idx="0" onclick="goTo(0)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-        <span class="tab-lbl">Status</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        <span class="tab-lbl">Overview</span>
       </div>
 
       <div class="tab-item" data-idx="1" onclick="goTo(1)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-        <span class="tab-lbl">Monitor</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        <span class="tab-lbl">Monitoring</span>
       </div>
 
       <div class="tab-item" data-idx="2" onclick="goTo(2)">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
-        <span class="tab-lbl">Deploys</span>
+        <span class="tab-lbl">Deploy</span>
       </div>
 
       <div class="tab-item" data-idx="3" onclick="goTo(3)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-        <span class="tab-lbl">Builds</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="19" cy="19" r="2"/><path d="M7 12h6M17 5.7l-6 4.6M17 18.3l-6-4.6"/></svg>
+        <span class="tab-lbl">Agents</span>
       </div>
 
       <div class="tab-item" data-idx="4" onclick="goTo(4)">
