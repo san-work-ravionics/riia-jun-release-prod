@@ -83,7 +83,7 @@ window.manSaveSnapshot  = manSaveSnapshot;
 
 import { loadEquityHedge } from './equity_hedge.js';
 import { initI18n, setLanguage, applyTranslations } from '../shared/i18n.js';
-import { loadPortfolioHedge, phSetCoverage, phSetScenarioTab } from './portfolio-hedge.js';
+import { loadPortfolioHedge, phSetCoverage, phSetDuration, phGoNext, phGoBack, phGoToTab, phPickStrategy, phSetScenarioTab } from './portfolio-hedge.js';
 
 window.setLanguage = setLanguage;
 window.loadEquityHedge = loadEquityHedge;
@@ -92,10 +92,15 @@ window.loadEquityHedge = loadEquityHedge;
 _sectionLoaders['my-portfolio']      = loadFnoMyPortfolio;
 window.loadFnoMyPortfolio = loadFnoMyPortfolio;
 
-// Portfolio Hedge section loader
-_sectionLoaders['portfolio-hedge']   = loadPortfolioHedge;
+// Portfolio Hedge wizard
+_sectionLoaders['portfolio-hedge'] = loadPortfolioHedge;
 window.loadPortfolioHedge = loadPortfolioHedge;
 window.phSetCoverage      = phSetCoverage;
+window.phSetDuration      = phSetDuration;
+window.phGoNext           = phGoNext;
+window.phGoBack           = phGoBack;
+window.phGoToTab          = phGoToTab;
+window.phPickStrategy     = phPickStrategy;
 window.phSetScenarioTab   = phSetScenarioTab;
 
 // ── Boot ──────────────────────────────────────────────────────────────────────

@@ -1111,10 +1111,10 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     </div>
     <h2 class="page-title" style="margin-bottom:8px">Hedge the portfolio</h2>
     <div style="display:flex;gap:0;margin-bottom:28px;border-bottom:1px solid var(--border)">
-      <span style="padding:8px 18px;font-size:12px;color:var(--t3);font-family:var(--fm)">Discover</span>
-      <span style="padding:8px 18px;font-size:12px;color:var(--t3);font-family:var(--fm)">Selection</span>
-      <span style="padding:8px 18px;font-size:12px;color:var(--t3);font-family:var(--fm)">Allocation</span>
-      <span style="padding:8px 18px;font-size:12px;font-weight:700;color:#BE185D;border-bottom:2px solid #BE185D;font-family:var(--fm)">Hedge</span>
+      <button id="ph-tab-btn-discover"   onclick="phGoToTab('discover')"   style="padding:8px 18px;font-size:12px;background:none;border:none;border-bottom:2px solid transparent;font-family:var(--fm);cursor:default;color:#BE185D;font-weight:700;border-bottom-color:#BE185D">Discover</button>
+      <button id="ph-tab-btn-selection"  onclick="phGoToTab('selection')"  style="padding:8px 18px;font-size:12px;background:none;border:none;border-bottom:2px solid transparent;font-family:var(--fm);cursor:default;color:var(--t3);font-weight:500">Selection</button>
+      <button id="ph-tab-btn-allocation" onclick="phGoToTab('allocation')" style="padding:8px 18px;font-size:12px;background:none;border:none;border-bottom:2px solid transparent;font-family:var(--fm);cursor:default;color:var(--t3);font-weight:500">Allocation</button>
+      <button id="ph-tab-btn-hedge"      onclick="phGoToTab('hedge')"      style="padding:8px 18px;font-size:12px;background:none;border:none;border-bottom:2px solid transparent;font-family:var(--fm);cursor:default;color:var(--t3);font-weight:500">Hedge</button>
     </div>
 
     <!-- State banners -->
@@ -1129,158 +1129,329 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     <!-- Main content (revealed after load) -->
     <div id="ph-content" style="display:none">
 
-      <!-- Portfolio name badge -->
-      <div style="margin-bottom:20px;font-size:12px;color:var(--t2);font-family:var(--fm)">
-        Portfolio: <strong id="ph-portfolio-name">—</strong>
-      </div>
+      <!-- ── Panel: Discover ─────────────────────────────────────────── -->
+      <div id="ph-panel-discover">
 
-      <!-- ── Section 1: Hedge table + coverage dial ── -->
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
-        <span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px;background:#BE185D;color:#fff;font-weight:700;font-size:14px;flex-shrink:0">1</span>
-        <h3 style="font-size:17px;font-weight:700;color:var(--text);margin:0">Hedge table + coverage dial</h3>
-      </div>
-      <div style="font-size:13px;color:var(--t2);margin-bottom:18px;padding:10px 14px;border:1px dashed rgba(190,24,93,.3);border-radius:6px;background:rgba(190,24,93,.03);font-family:var(--fm)">
-        Your holdings as a sortable table; one coverage dial picks the strike and cost for every row at once. No-F&amp;O names fall back to a correlated index proxy.
-      </div>
-
-      <!-- Hedge table -->
-      <div class="card" style="padding:0;overflow:hidden;margin-bottom:16px">
-        <div style="overflow-x:auto">
-          <table style="width:100%;border-collapse:collapse;font-size:13px">
-            <thead>
-              <tr style="font-size:11px;color:#64748b;border-bottom:2px solid rgba(0,0,0,.1);text-transform:uppercase;letter-spacing:.04em;background:rgba(0,0,0,.02)">
-                <th style="padding:10px 10px;text-align:left;font-weight:700">Ticker</th>
-                <th style="padding:10px 10px;text-align:right;font-weight:700">Weight</th>
-                <th style="padding:10px 10px;text-align:right;font-weight:700">Return</th>
-                <th style="padding:10px 10px;text-align:left;font-weight:700">Risk</th>
-                <th style="padding:10px 10px;text-align:left;font-weight:700">Hedge (auto)</th>
-                <th style="padding:10px 10px;text-align:left;font-weight:700">Strike</th>
-                <th style="padding:10px 10px;text-align:right;font-weight:700">Cost</th>
-                <th style="padding:10px 10px;text-align:left;font-weight:700">Protected</th>
-              </tr>
-            </thead>
-            <tbody id="ph-table-body"></tbody>
-          </table>
-        </div>
-        <div id="ph-no-fno-note" style="display:none;padding:10px 14px;font-size:11px;color:#BE185D;background:rgba(190,24,93,.04);border-top:1px solid rgba(190,24,93,.15);font-family:var(--fm);font-weight:600;letter-spacing:.03em">
-          NO-F&amp;O NAMES &nbsp;are hedged via a correlated index proxy — highlighted above.
-        </div>
-      </div>
-
-      <!-- Coverage band -->
-      <div class="card" style="margin-bottom:8px">
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:24px;align-items:center">
-
-          <!-- Dial -->
-          <div>
-            <div style="font-size:10px;font-weight:700;color:#BE185D;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:4px">Coverage Level</div>
-            <div style="font-size:15px;font-weight:700;margin-bottom:12px">One dial sets every strike</div>
-            <input type="range" id="ph-coverage-slider" min="0" max="100" value="50"
-                   oninput="phSetCoverage(this.value)"
-                   style="width:100%;accent-color:#BE185D;cursor:pointer">
-            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);font-family:var(--fm);margin-top:4px">
-              <span>Unhedged</span>
-              <span id="ph-coverage-label" style="font-weight:700;color:#BE185D">Lightly hedged</span>
-              <span>Fully protected</span>
-            </div>
-          </div>
-
-          <!-- Max drawdown -->
-          <div style="text-align:center">
-            <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:6px">Max Drawdown Protected</div>
-            <div id="ph-max-dd-hedged" style="font-size:28px;font-weight:700;font-family:var(--fm);color:#BE185D">—</div>
-            <div id="ph-max-dd-unhedged" style="font-size:12px;color:var(--t2);font-family:var(--fm);margin-top:2px">vs — unhedged</div>
-          </div>
-
-          <!-- Monthly cost -->
-          <div style="text-align:center">
-            <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:6px">Monthly Cost</div>
-            <div id="ph-monthly-cost" style="font-size:28px;font-weight:700;font-family:var(--fm);color:var(--text)">—</div>
-            <div id="ph-monthly-cost-sub" style="font-size:12px;color:var(--t2);font-family:var(--fm);margin-top:2px">premium drag</div>
-          </div>
-
-          <!-- CTA -->
-          <div>
-            <button style="padding:12px 20px;border:none;border-radius:8px;background:#BE185D;color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">
-              Place hedge orders
-            </button>
-            <div style="font-size:11px;color:var(--t3);font-family:var(--fm);margin-top:6px;max-width:160px">
-              Drag the dial — strikes, costs &amp; the table all update together.
-            </div>
-          </div>
-
-        </div>
-      </div><!-- /coverage band -->
-
-      <!-- Divider -->
-      <div style="display:flex;align-items:center;gap:16px;margin:32px 0 24px">
-        <span style="flex:1;height:1px;background:var(--border)"></span>
-        <span style="font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--t3);font-family:var(--fm);white-space:nowrap">THEN PRESSURE-TEST IT</span>
-        <span style="flex:1;height:1px;background:var(--border)"></span>
-      </div>
-
-      <!-- ── Section 2: Payoff & scenario simulator ── -->
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
-        <span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px;background:#BE185D;color:#fff;font-weight:700;font-size:14px;flex-shrink:0">2</span>
-        <h3 style="font-size:17px;font-weight:700;color:var(--text);margin:0">Payoff &amp; scenario simulator</h3>
-      </div>
-      <div style="font-size:13px;color:var(--t2);margin-bottom:18px;padding:10px 14px;border:1px dashed rgba(190,24,93,.3);border-radius:6px;background:rgba(190,24,93,.03);font-family:var(--fm)">
-        See the downside flatten before committing. The kinked curve makes 'what a hedge does' tangible.
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
-
-        <!-- Payoff chart -->
-        <div class="card">
+        <!-- Duration picker -->
+        <div class="card" style="padding:0;overflow:hidden;margin-bottom:16px">
           <div class="card-hdr">
-            <span class="card-title">Portfolio P&amp;L — hedged vs unhedged</span>
-            <span id="ph-chart-coverage-badge" class="card-sub">at 50% coverage</span>
+            <span class="card-title">Hedge Horizon</span>
+            <span class="card-sub">How far ahead to protect your portfolio</span>
           </div>
-          <div style="height:280px;position:relative">
-            <canvas id="ph-payoff-chart"></canvas>
-          </div>
-        </div>
-
-        <!-- Scenario P&L -->
-        <div class="card" style="padding:0;overflow:hidden">
-          <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-            <span style="font-weight:700;font-size:14px">Scenario P&amp;L</span>
-            <div style="display:flex;gap:4px">
-              <button id="ph-tab-pp"     onclick="phSetScenarioTab('pp')"
-                      style="padding:4px 10px;border-radius:4px;border:1px solid rgba(0,0,0,.12);background:#BE185D;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--fm)">
-                Protective put
-              </button>
-              <button id="ph-tab-ps"     onclick="phSetScenarioTab('ps')"
-                      style="padding:4px 10px;border-radius:4px;border:1px solid rgba(0,0,0,.12);background:transparent;color:#64748b;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--fm)">
-                Put spread
-              </button>
-              <button id="ph-tab-collar" onclick="phSetScenarioTab('collar')"
-                      style="padding:4px 10px;border-radius:4px;border:1px solid rgba(0,0,0,.12);background:transparent;color:#64748b;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--fm)">
-                Collar
-              </button>
-            </div>
-          </div>
-          <table style="width:100%;border-collapse:collapse;font-size:13px">
-            <thead>
-              <tr style="font-size:11px;color:#64748b;border-bottom:2px solid rgba(0,0,0,.08);text-transform:uppercase;letter-spacing:.04em">
-                <th style="padding:10px 12px;text-align:left;font-weight:700">Market</th>
-                <th style="padding:10px 12px;text-align:right;font-weight:700">Unhedged</th>
-                <th style="padding:10px 12px;text-align:right;font-weight:700">Hedged</th>
-              </tr>
-            </thead>
-            <tbody id="ph-scenario-body"></tbody>
-          </table>
-          <div style="padding:12px 14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-            <div style="font-size:12px;color:var(--t2)">
-              Cost of this hedge &nbsp;<strong id="ph-cost-display" style="font-family:var(--fm)">—</strong>
-            </div>
-            <button style="padding:8px 18px;border:none;border-radius:6px;background:#BE185D;color:#fff;font-size:13px;font-weight:700;cursor:pointer">
-              Apply this hedge
-            </button>
+          <div style="padding:12px 16px;display:flex;gap:8px;flex-wrap:wrap">
+            <button id="ph-dur-1m" onclick="phSetDuration('1m')" style="padding:6px 18px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--fm);background:transparent;color:#64748b;border:1px solid rgba(0,0,0,.15)">Immediate (1M)</button>
+            <button id="ph-dur-3m" onclick="phSetDuration('3m')" style="padding:6px 18px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--fm);background:transparent;color:#64748b;border:1px solid rgba(0,0,0,.15)">Near Term (3M)</button>
+            <button id="ph-dur-1y" onclick="phSetDuration('1y')" style="padding:6px 18px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--fm);background:#BE185D;color:#fff;border:1px solid #BE185D">Short Term (1Y)</button>
           </div>
         </div>
 
-      </div><!-- /simulator grid -->
+        <!-- Holdings table -->
+        <div class="card" style="padding:0;overflow:hidden;margin-bottom:16px">
+          <div class="card-hdr">
+            <span class="card-title">Your portfolio — instruments to hedge</span>
+            <span class="card-sub" id="ph-discover-portfolio-name">—</span>
+          </div>
+          <div class="tbl-wrap" style="max-height:230px">
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+              <thead style="position:sticky;top:0;z-index:1;background:var(--surface)">
+                <tr style="font-size:11px;color:#64748b;border-bottom:2px solid rgba(0,0,0,.1);text-transform:uppercase;letter-spacing:.04em">
+                  <th style="padding:10px 12px;text-align:left;font-weight:700">Ticker</th>
+                  <th style="padding:10px 10px;text-align:right;font-weight:700">Weight</th>
+                  <th style="padding:10px 10px;text-align:right;font-weight:700">1Y Return</th>
+                  <th style="padding:10px 12px;text-align:left;font-weight:700">Risk</th>
+                </tr>
+              </thead>
+              <tbody id="ph-discover-holdings"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Concept explanation -->
+        <div style="padding:14px 16px;border-radius:8px;background:rgba(100,116,139,.05);border-left:3px solid rgba(190,24,93,.3);margin-bottom:20px">
+          <div style="font-size:10px;font-weight:700;color:#BE185D;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:8px">How portfolio hedging works</div>
+          <p style="font-size:12px;color:var(--t2);line-height:1.65;font-family:var(--fm);margin:0 0 6px">
+            A hedge is an option position that <strong>gains value when a stock falls</strong> — it acts as insurance for your portfolio. The table above shows your current holdings; heavier weights carry proportionally more portfolio risk.
+          </p>
+          <p style="font-size:12px;color:var(--t2);line-height:1.65;font-family:var(--fm);margin:0">
+            Choose a <strong>horizon</strong> that matches when you need protection most. Short horizons (1M) cost less per month but must be renewed frequently; a 1Y hedge locks in the strike price for the full period at a single premium.
+          </p>
+        </div>
+
+        <!-- Next -->
+        <div style="display:flex;justify-content:flex-end">
+          <button id="ph-discover-next" onclick="phGoNext()"
+                  style="padding:10px 24px;border:none;border-radius:8px;background:#BE185D;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--fm)">
+            Next — choose strategy →
+          </button>
+        </div>
+
+      </div><!-- /ph-panel-discover -->
+
+      <!-- ── Panel: Selection ────────────────────────────────────────── -->
+      <div id="ph-panel-selection" style="display:none">
+
+        <div class="card" style="padding:0;overflow:hidden;margin-bottom:16px">
+          <div class="card-hdr">
+            <span class="card-title">Choose hedging strategy per instrument</span>
+            <span class="card-sub">1σ move is scaled to your selected duration</span>
+          </div>
+          <div class="tbl-wrap" style="max-height:230px">
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+              <thead style="position:sticky;top:0;z-index:1;background:var(--surface)">
+                <tr style="font-size:11px;color:#64748b;border-bottom:2px solid rgba(0,0,0,.1);text-transform:uppercase;letter-spacing:.04em">
+                  <th style="padding:10px 10px;text-align:left;font-weight:700">Ticker</th>
+                  <th style="padding:10px 10px;text-align:right;font-weight:700">Weight</th>
+                  <th style="padding:10px 10px;text-align:left;font-weight:700">1σ Move</th>
+                  <th style="padding:10px 14px;text-align:left;font-weight:700">Put Buy</th>
+                  <th style="padding:10px 14px;text-align:left;font-weight:700">Sell Call</th>
+                </tr>
+              </thead>
+              <tbody id="ph-selection-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Concept explanation -->
+        <div style="padding:14px 16px;border-radius:8px;background:rgba(100,116,139,.05);border-left:3px solid rgba(190,24,93,.3);margin-bottom:20px">
+          <div style="font-size:10px;font-weight:700;color:#BE185D;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:10px">Put Buy vs Sell Call — what's the difference?</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--text);font-family:var(--fm);margin-bottom:4px">Put Buy &nbsp;<span style="font-size:10px;font-weight:500;color:var(--t3)">(pay premium)</span></div>
+              <p style="font-size:12px;color:var(--t2);line-height:1.6;font-family:var(--fm);margin:0">You pay a monthly premium. If the stock falls below the strike, the put gains value and caps your loss. Best for <strong>high-risk (●●●+)</strong> instruments where downside certainty matters most.</p>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--text);font-family:var(--fm);margin-bottom:4px">Sell Call &nbsp;<span style="font-size:10px;font-weight:500;color:var(--t3)">(receive premium)</span></div>
+              <p style="font-size:12px;color:var(--t2);line-height:1.6;font-family:var(--fm);margin:0">You receive premium today but give up gains above the strike. Best for <strong>lower-risk (●●)</strong> instruments or when capping upside in exchange for income is acceptable.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nav -->
+        <div style="display:flex;justify-content:space-between">
+          <button onclick="phGoBack()" style="padding:10px 20px;border:1px solid rgba(0,0,0,.15);border-radius:8px;background:transparent;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--fm)">← Back</button>
+          <button onclick="phGoNext()" style="padding:10px 24px;border:none;border-radius:8px;background:#BE185D;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--fm)">Next — see scenarios →</button>
+        </div>
+
+      </div><!-- /ph-panel-selection -->
+
+      <!-- ── Panel: Allocation ───────────────────────────────────────── -->
+      <div id="ph-panel-allocation" style="display:none">
+
+        <!-- σ scenario matrix -->
+        <div class="card" style="padding:0;overflow:hidden;margin-bottom:16px">
+          <div class="card-hdr">
+            <span class="card-title">σ-anchored scenario matrix</span>
+            <span class="card-sub">Unhedged (top) · hedged P&amp;L after premium (pink)</span>
+          </div>
+          <div class="tbl-wrap" style="max-height:240px;overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+              <thead style="position:sticky;top:0;z-index:1;background:var(--surface)">
+                <tr style="font-size:11px;color:#64748b;border-bottom:2px solid rgba(0,0,0,.1);text-transform:uppercase;letter-spacing:.04em">
+                  <th style="padding:10px 10px;text-align:left;font-weight:700">Instrument</th>
+                  <th style="padding:10px 10px;text-align:right;font-weight:700">−2σ</th>
+                  <th style="padding:10px 10px;text-align:right;font-weight:700">−1σ</th>
+                  <th style="padding:10px 10px;text-align:right;font-weight:700">Flat</th>
+                  <th style="padding:10px 10px;text-align:right;font-weight:700">+1σ</th>
+                </tr>
+              </thead>
+              <tbody id="ph-alloc-body"></tbody>
+              <tfoot>
+                <tr id="ph-alloc-agg-row" style="background:rgba(190,24,93,.04);border-top:2px solid rgba(190,24,93,.2)"></tr>
+              </tfoot>
+            </table>
+          </div>
+          <div style="padding:8px 12px;font-size:10px;color:var(--t3);font-family:var(--fm);border-top:1px solid var(--border)">
+            Top number = unhedged P&amp;L &nbsp;·&nbsp; <span style="background:rgba(190,24,93,.06);padding:1px 4px;border-radius:3px">Pink</span> = hedged P&amp;L after premium
+          </div>
+        </div>
+
+        <!-- Concept explanation -->
+        <div style="padding:14px 16px;border-radius:8px;background:rgba(100,116,139,.05);border-left:3px solid rgba(190,24,93,.3);margin-bottom:16px">
+          <div style="font-size:10px;font-weight:700;color:#BE185D;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:10px">Reading the σ scenario matrix</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--text);font-family:var(--fm);margin-bottom:4px">What is σ (sigma)?</div>
+              <p style="font-size:12px;color:var(--t2);line-height:1.6;font-family:var(--fm);margin:0">Sigma is the statistically expected move for your instrument over the chosen horizon. <strong>−2σ</strong> is a severe decline that occurs ~2.5% of the time; <strong>−1σ</strong> is a moderate dip, occurring roughly 16% of periods.</p>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--text);font-family:var(--fm);margin-bottom:4px">How to read the table</div>
+              <p style="font-size:12px;color:var(--t2);line-height:1.6;font-family:var(--fm);margin:0">Each cell shows the <strong>unhedged P&L</strong> (top) and the <strong>hedged P&L</strong> (pink, after deducting the option premium). The protection is most visible in the −2σ column — that's the floor your hedge creates.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary strip -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+          <div class="card" style="text-align:center;padding:14px">
+            <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:4px">Total Monthly Premium</div>
+            <div id="ph-alloc-cost" style="font-size:22px;font-weight:700;font-family:var(--fm);color:var(--text)">—</div>
+          </div>
+          <div class="card" style="text-align:center;padding:14px">
+            <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:4px">Max Drawdown Floor</div>
+            <div id="ph-alloc-dd" style="font-size:22px;font-weight:700;font-family:var(--fm);color:#BE185D">—</div>
+          </div>
+        </div>
+
+        <!-- Nav -->
+        <div style="display:flex;justify-content:space-between">
+          <button onclick="phGoBack()" style="padding:10px 20px;border:1px solid rgba(0,0,0,.15);border-radius:8px;background:transparent;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--fm)">← Back</button>
+          <button onclick="phGoNext()" style="padding:10px 24px;border:none;border-radius:8px;background:#BE185D;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--fm)">Confirm hedge →</button>
+        </div>
+
+      </div><!-- /ph-panel-allocation -->
+
+      <!-- ── Panel: Hedge ───────────────────────────────────────────── -->
+      <div id="ph-panel-hedge" style="display:none">
+
+        <!-- Portfolio name badge -->
+        <div style="margin-bottom:20px;font-size:12px;color:var(--t2);font-family:var(--fm)">
+          Portfolio: <strong id="ph-portfolio-name">—</strong>
+        </div>
+
+        <!-- Section 1 header -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px;background:#BE185D;color:#fff;font-weight:700;font-size:14px;flex-shrink:0">1</span>
+          <h3 style="font-size:17px;font-weight:700;color:var(--text);margin:0">Hedge table + coverage dial</h3>
+        </div>
+        <div style="font-size:13px;color:var(--t2);margin-bottom:18px;padding:10px 14px;border:1px dashed rgba(190,24,93,.3);border-radius:6px;background:rgba(190,24,93,.03);font-family:var(--fm)">
+          Your holdings with auto-assigned hedge; one coverage dial sets every strike and cost at once.
+        </div>
+
+        <!-- Hedge table -->
+        <div class="card" style="padding:0;overflow:hidden;margin-bottom:16px">
+          <div class="card-hdr">
+            <span class="card-title">Holdings hedge plan</span>
+            <span class="card-sub">Auto-assigned strategy per instrument</span>
+          </div>
+          <div class="tbl-wrap" style="max-height:230px;overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+              <thead style="position:sticky;top:0;z-index:1;background:var(--surface)">
+                <tr style="font-size:11px;color:#64748b;border-bottom:2px solid rgba(0,0,0,.1);text-transform:uppercase;letter-spacing:.04em">
+                  <th style="padding:10px 10px;text-align:left;font-weight:700">Ticker</th>
+                  <th style="padding:10px 10px;text-align:right;font-weight:700">Weight</th>
+                  <th style="padding:10px 10px;text-align:right;font-weight:700">Return</th>
+                  <th style="padding:10px 10px;text-align:left;font-weight:700">Risk</th>
+                  <th style="padding:10px 10px;text-align:left;font-weight:700">Hedge (auto)</th>
+                  <th style="padding:10px 10px;text-align:left;font-weight:700">Strike</th>
+                  <th style="padding:10px 10px;text-align:right;font-weight:700">Cost</th>
+                  <th style="padding:10px 10px;text-align:left;font-weight:700">Protected</th>
+                </tr>
+              </thead>
+              <tbody id="ph-table-body"></tbody>
+            </table>
+          </div>
+          <div id="ph-no-fno-note" style="display:none;padding:10px 14px;font-size:11px;color:#BE185D;background:rgba(190,24,93,.04);border-top:1px solid rgba(190,24,93,.15);font-family:var(--fm);font-weight:600;letter-spacing:.03em">
+            NO-F&amp;O NAMES &nbsp;are hedged via a correlated index proxy — highlighted above.
+          </div>
+        </div>
+
+        <!-- Coverage band -->
+        <div class="card" style="margin-bottom:8px">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:24px;align-items:center">
+            <div>
+              <div style="font-size:10px;font-weight:700;color:#BE185D;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:4px">Coverage Level</div>
+              <div style="font-size:15px;font-weight:700;margin-bottom:12px">One dial sets every strike</div>
+              <input type="range" id="ph-coverage-slider" min="0" max="100" value="50"
+                     oninput="phSetCoverage(this.value)"
+                     style="width:100%;accent-color:#BE185D;cursor:pointer">
+              <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);font-family:var(--fm);margin-top:4px">
+                <span>Unhedged</span>
+                <span id="ph-coverage-label" style="font-weight:700;color:#BE185D">Lightly hedged</span>
+                <span>Fully protected</span>
+              </div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:6px">Max Drawdown Protected</div>
+              <div id="ph-max-dd-hedged" style="font-size:28px;font-weight:700;font-family:var(--fm);color:#BE185D">—</div>
+              <div id="ph-max-dd-unhedged" style="font-size:12px;color:var(--t2);font-family:var(--fm);margin-top:2px">vs — unhedged</div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:6px">Monthly Cost</div>
+              <div id="ph-monthly-cost" style="font-size:28px;font-weight:700;font-family:var(--fm);color:var(--text)">—</div>
+              <div id="ph-monthly-cost-sub" style="font-size:12px;color:var(--t2);font-family:var(--fm);margin-top:2px">premium drag</div>
+            </div>
+            <div>
+              <button style="padding:12px 20px;border:none;border-radius:8px;background:#BE185D;color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">
+                Place hedge orders
+              </button>
+              <div style="font-size:11px;color:var(--t3);font-family:var(--fm);margin-top:6px;max-width:160px">
+                Drag the dial — strikes, costs &amp; the table all update together.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <div style="display:flex;align-items:center;gap:16px;margin:32px 0 24px">
+          <span style="flex:1;height:1px;background:var(--border)"></span>
+          <span style="font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--t3);font-family:var(--fm);white-space:nowrap">THEN PRESSURE-TEST IT</span>
+          <span style="flex:1;height:1px;background:var(--border)"></span>
+        </div>
+
+        <!-- Section 2: Payoff & scenario simulator -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px;background:#BE185D;color:#fff;font-weight:700;font-size:14px;flex-shrink:0">2</span>
+          <h3 style="font-size:17px;font-weight:700;color:var(--text);margin:0">Payoff &amp; scenario simulator</h3>
+        </div>
+        <div style="font-size:13px;color:var(--t2);margin-bottom:18px;padding:10px 14px;border:1px dashed rgba(190,24,93,.3);border-radius:6px;background:rgba(190,24,93,.03);font-family:var(--fm)">
+          See the downside flatten before committing. The kinked curve makes 'what a hedge does' tangible.
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+          <div class="card">
+            <div class="card-hdr">
+              <span class="card-title">Portfolio P&amp;L — hedged vs unhedged</span>
+              <span id="ph-chart-coverage-badge" class="card-sub">at 50% coverage</span>
+            </div>
+            <div style="height:280px;position:relative">
+              <canvas id="ph-payoff-chart"></canvas>
+            </div>
+          </div>
+          <div class="card" style="padding:0;overflow:hidden">
+            <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+              <span style="font-weight:700;font-size:14px">Scenario P&amp;L</span>
+              <div style="display:flex;gap:4px">
+                <button id="ph-tab-pp" onclick="phSetScenarioTab('pp')"
+                        style="padding:4px 10px;border-radius:4px;border:1px solid rgba(0,0,0,.12);background:#BE185D;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--fm)">
+                  Protective put
+                </button>
+                <button id="ph-tab-ps" onclick="phSetScenarioTab('ps')"
+                        style="padding:4px 10px;border-radius:4px;border:1px solid rgba(0,0,0,.12);background:transparent;color:#64748b;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--fm)">
+                  Put spread
+                </button>
+                <button id="ph-tab-collar" onclick="phSetScenarioTab('collar')"
+                        style="padding:4px 10px;border-radius:4px;border:1px solid rgba(0,0,0,.12);background:transparent;color:#64748b;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--fm)">
+                  Collar
+                </button>
+              </div>
+            </div>
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+              <thead>
+                <tr style="font-size:11px;color:#64748b;border-bottom:2px solid rgba(0,0,0,.08);text-transform:uppercase;letter-spacing:.04em">
+                  <th style="padding:10px 12px;text-align:left;font-weight:700">Market</th>
+                  <th style="padding:10px 12px;text-align:right;font-weight:700">Unhedged</th>
+                  <th style="padding:10px 12px;text-align:right;font-weight:700">Hedged</th>
+                </tr>
+              </thead>
+              <tbody id="ph-scenario-body"></tbody>
+            </table>
+            <div style="padding:12px 14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+              <div style="font-size:12px;color:var(--t2)">
+                Cost of this hedge &nbsp;<strong id="ph-cost-display" style="font-family:var(--fm)">—</strong>
+              </div>
+              <button style="padding:8px 18px;border:none;border-radius:6px;background:#BE185D;color:#fff;font-size:13px;font-weight:700;cursor:pointer">
+                Apply this hedge
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Back nav -->
+        <div>
+          <button onclick="phGoBack()" style="padding:8px 16px;border:1px solid rgba(0,0,0,.15);border-radius:6px;background:transparent;color:var(--t2);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--fm)">← Back to Allocation</button>
+        </div>
+
+      </div><!-- /ph-panel-hedge -->
 
     </div><!-- /ph-content -->
 

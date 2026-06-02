@@ -1,0 +1,39 @@
+{
+  "run_id": "20260602-1200",
+  "app": "fno",
+  "request": "Feature 28 Phase 3 completion: fix hedge wizard AttributeError + UX alignment (look-n-feel, 5-row scroll, concept blocks) + spec updates (3G)",
+  "skill_file": "n/a",
+  "agents": [
+    {
+      "role": "engineer",
+      "status": "pass",
+      "steps_required": 5,
+      "steps_completed": 5,
+      "adherence_score": 1.0,
+      "token_estimate": 1200,
+      "grounding_checks": {
+        "branch_created": false,
+        "code_changed": true,
+        "spec_updated": true,
+        "ruff_passed": true,
+        "contract_matches_architect": true
+      },
+      "failure_modes": [],
+      "notes": "Fixed AttributeError (HoldingItem dict parse in portfolio_hedge.py). UX: Discover/Selection/Allocation tabs aligned to FnO design system — .card-hdr headers, table-based Discover holdings, .tbl-wrap 230/240px scroll + sticky thead, concept blocks. RITA fixes: auth redirect + cache bust + ruff reformat. Spec_HTML_Code.md + Spec_Python_Code.md updated. Commit 13dc6bb."
+    }
+  ],
+  "overall_status": "pass",
+  "total_tokens_estimated": 1200,
+  "duration_minutes": 45,
+  "branch": "master",
+  "merge_status": "merged",
+  "merge_commit": "13dc6bb",
+  "human_score": {
+    "accuracy": 3,
+    "relevance": 4,
+    "csat": 3,
+    "planning_ok": true,
+    "time_saved_hours": 8,
+    "notes": ""
+  }
+}
