@@ -135,14 +135,14 @@ class TestGatewayHtmlDesktopLinks:
             "FnO Desktop Only card must link with ?desktop=1"
         )
 
-    def test_card_ops_href_contains_desktop_param(self, html_text):
-        """card-ops anchor href must contain ?desktop=1 (Desktop Only card)."""
+    def test_card_ops_href_links_to_mobile_app(self, html_text):
+        """card-ops anchor href must link to /mobileapp/ops.html (Mobile Ready card)."""
         card_ops_idx = html_text.find('id="card-ops"')
         assert card_ops_idx != -1, "card-ops id not found"
         card_ops_block = html_text[card_ops_idx: card_ops_idx + 500]
-        assert "?desktop=1" in card_ops_block, (
-            "card-ops block does not contain ?desktop=1 — "
-            "Ops Desktop Only card must link with ?desktop=1"
+        assert "/mobileapp/ops.html" in card_ops_block, (
+            "card-ops block does not contain /mobileapp/ops.html — "
+            "Ops card is now Mobile Ready and must link to /mobileapp/ops.html"
         )
 
     def test_card_ds_href_contains_desktop_param(self, html_text):
