@@ -20,6 +20,7 @@ class UserPortfolioService:
         user_id: str,
         holdings: list[HoldingItem],
         name: str | None = None,
+        total_value_eur: float | None = None,
     ) -> UserPortfolioOut:
         """Persist a new portfolio snapshot for the user (soft-replaces the active one)."""
         if not holdings:
@@ -37,6 +38,7 @@ class UserPortfolioService:
             key_id=key.key_id,
             name=resolved_name,
             holdings=[h.model_dump() for h in holdings],
+            total_value_eur=total_value_eur,
             is_active=True,
         )
         UserPortfolioRepo(self._db).insert(new_row)

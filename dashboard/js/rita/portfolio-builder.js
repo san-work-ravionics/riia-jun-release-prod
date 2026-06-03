@@ -697,11 +697,15 @@ export async function pbBuildPortfolio() {
     return;
   }
   const name = `My Portfolio ${new Date().toLocaleDateString('en-IN')}`;
+  const eurRaw = parseFloat(document.getElementById('pb-total-eur')?.value);
+  const totalValueEur = isNaN(eurRaw) || eurRaw <= 0 ? null : eurRaw;
   // Use custom allocations if they sum to ~100, else fall back to equal split
   const allocSum = [..._basket].reduce((s, id) => s + (_allocationPct.get(id) ?? 0), 0);
   let holdings;
   if (Math.abs(allocSum - 100) < 1) {
-    holdings = [..._basket].map(id => ({ instrument_id: id, allocation_pct: _allocationPct.get(id) ?? 0 }));
+    holdings = [..._basket]
+      .map(id => ({ instrument_id: id, allocation_pct: _allocationPct.get(id) ?? 0 }))
+      .filter(h => h.allocation_pct > 0);
   } else {
     const eq = Math.floor(100 / _basket.size);
     holdings = [..._basket].map(id => ({ instrument_id: id, allocation_pct: eq }));
@@ -715,7 +719,7 @@ export async function pbBuildPortfolio() {
   _hide('pb-status-msg');
 
   try {
-    await api('/api/v1/user-portfolio/', 'POST', { name, holdings });
+    await api('/api/v1/user-portfolio/', 'POST', { name, holdings, total_value_eur: totalValueEur });
     const msg = document.getElementById('pb-status-msg');
     if (msg) { msg.textContent = `Portfolio "${name}" saved with ${_basket.size} instruments.`; msg.style.color = '#16a34a'; msg.style.display = ''; }
   } catch (e) {

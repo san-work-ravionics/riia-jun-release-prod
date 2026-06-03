@@ -21,6 +21,7 @@ class HoldingItem(BaseModel):
 class UserPortfolioCreate(BaseModel):
     name: str | None = None
     holdings: list[HoldingItem]
+    total_value_eur: float | None = None
 
 
 class UserPortfolioOut(BaseModel):
@@ -30,6 +31,7 @@ class UserPortfolioOut(BaseModel):
     key_id: str
     name: str
     holdings: list[HoldingItem]
+    total_value_eur: float | None = None
     created_at: datetime
     updated_at: datetime
     is_active: bool

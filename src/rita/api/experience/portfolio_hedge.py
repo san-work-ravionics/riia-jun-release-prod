@@ -32,6 +32,12 @@ _FNO_ELIGIBLE: frozenset[str] = frozenset({
     "HCLTECH", "LT", "ONGC", "NTPC", "POWERGRID", "BPCL",
 })
 
+# US / international tickers whose instrument_id exceeds the 5-char heuristic below.
+# "NVIDIA" was renamed from "NVDA" in the DB, breaking the len≤5 guard.
+_US_INTL_TICKERS: frozenset[str] = frozenset({
+    "NVIDIA", "TRU", "DJI", "IXIC",
+})
+
 _DURATION_MONTHS: dict[str, float] = {"1m": 1.0, "3m": 3.0, "1y": 12.0}
 
 # ── Pydantic schemas ───────────────────────────────────────────────────────────
@@ -49,6 +55,10 @@ class HedgeHolding(BaseModel):
     ann_vol_pct: float        # annualised realised volatility %
     call_sell_cost_pct: float # BS call premium at symmetric OTM level
     duration: str             # '1m' | '3m' | '1y'
+    # EUR-denominated fields (None when portfolio has no total_value_eur stored)
+    position_eur: float | None = None        # allocation_pct/100 * total_value_eur
+    put_cost_eur: float | None = None        # full-duration put premium in EUR
+    var_95_eur: float | None = None          # 2σ downside EUR = 95% VaR
 
 
 class HedgeAggregate(BaseModel):
@@ -174,6 +184,7 @@ def _coverage_params(
 def get_portfolio_hedge(
     coverage: int = Query(default=50, ge=0, le=100, description="Coverage level 0–100 %"),
     duration: str = Query(default="1y", pattern="^(1m|3m|1y)$", description="Option tenor: 1m | 3m | 1y"),
+    total_value_eur: float | None = Query(default=None, description="Portfolio total EUR value override (frontend-supplied)"),
     current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> PortfolioHedgeResponse:
@@ -198,6 +209,8 @@ def get_portfolio_hedge(
     ]
     if not holdings_raw:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio has no holdings")
+
+    total_eur: float | None = total_value_eur if total_value_eur is not None else portfolio.total_value_eur
 
     all_records = MarketDataCacheRepository(db).read_all()
     from collections import defaultdict
@@ -231,17 +244,28 @@ def get_portfolio_hedge(
             hedge_type = "put_spread" if alloc >= 20 else "protective_put"
         elif h.instrument_id.endswith(".NS") or inst_id in {"NIFTY", "BANKNIFTY"}:
             hedge_type = "nifty_proxy"
+        elif inst_id in _US_INTL_TICKERS or (
+            len(inst_id) <= 5 and inst_id.isalpha() and inst_id not in _FNO_ELIGIBLE
+        ):
+            hedge_type = "ndx_proxy"
         else:
-            hedge_type = (
-                "ndx_proxy"
-                if len(inst_id) <= 5 and inst_id.isalpha() and inst_id not in _FNO_ELIGIBLE
-                else "nifty_proxy"
-            )
+            hedge_type = "nifty_proxy"
 
         vol, return_1y, rs = _vol_and_return(inst_id)
         strike_pct, strike_label, cost_pct, protected_pct, call_sell_cost_pct = _coverage_params(
             coverage, vol, hedge_type, alloc, t_months
         )
+
+        pos_eur: float | None = None
+        put_cost_eur: float | None = None
+        var_95_eur: float | None = None
+        if total_eur is not None:
+            pos_eur = round(total_eur * alloc / 100.0, 2)
+            # ATM put (strike = 0% OTM): max loss = premium only — clean story for non-savvy users
+            atm_cost_pct = _bs_put_pct(vol, 0.0, t_months=t_months)
+            put_cost_eur = round(pos_eur * atm_cost_pct / 100.0, 2)
+            sigma_eur = pos_eur * vol / 100.0 * (t_months / 12.0) ** 0.5
+            var_95_eur = round(2.0 * sigma_eur, 2)
 
         result_holdings.append(HedgeHolding(
             instrument_id=inst_id,
@@ -257,6 +281,9 @@ def get_portfolio_hedge(
             ann_vol_pct=round(vol, 2),
             call_sell_cost_pct=call_sell_cost_pct,
             duration=duration,
+            position_eur=pos_eur,
+            put_cost_eur=put_cost_eur,
+            var_95_eur=var_95_eur,
         ))
 
     total_weight = sum(h.weight for h in result_holdings) or 1.0

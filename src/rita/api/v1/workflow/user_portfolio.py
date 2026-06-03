@@ -27,7 +27,7 @@ def save_portfolio(
 ) -> UserPortfolioOut:
     """Save (replace) the active portfolio for the authenticated user."""
     try:
-        return UserPortfolioService(db).save(current_user.id, body.holdings, body.name)
+        return UserPortfolioService(db).save(current_user.id, body.holdings, body.name, body.total_value_eur)
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
