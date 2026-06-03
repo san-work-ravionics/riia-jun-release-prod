@@ -26,7 +26,7 @@ export function initNav() {
       item.classList.add('active');
       document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
       document.getElementById('page-' + item.dataset.page).classList.add('active');
-      if (item.dataset.page === 'history') loadHedgeHistory();
+      if (item.dataset.page === 'hedge') loadHedgeHistory();
       if (item.dataset.page === 'equity-hedge') loadEquityHedge();
       if (_sectionLoaders[item.dataset.page]) { _sectionLoaders[item.dataset.page](); }
     });

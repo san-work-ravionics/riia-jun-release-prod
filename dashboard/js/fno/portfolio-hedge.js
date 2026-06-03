@@ -1,6 +1,6 @@
 // ── Portfolio Hedge — Feature 28 (single-page layout) ────────────────────────
-// Holdings table (sorted by risk ↓) + sticky totals row + reactive coverage dial
-// + payoff chart + scenario table — all driven by checkbox selection.
+// 4-KPI top row + holdings table (risk-sorted, sticky totals) + coverage dial +
+// payoff chart + scenario table — all reactive to checkbox selection.
 // API: GET /api/v1/experience/fno/portfolio-hedge?coverage=N&duration=D  (JWT)
 
 import { apiFetch } from './api.js';
@@ -19,10 +19,10 @@ const _FNO_ELIGIBLE = new Set([
 const _state = {
   duration:      '1y',
   coverage:      50,
-  holdings:      [],   // [{instrument_id, allocation_pct}]
-  instruments:   {},   // id → {return_1y_pct, risk_score, daily_return_pct, region}
-  apiHedge:      null, // PortfolioHedgeResponse | null
-  selections:    {},   // id → 'put_buy' | 'call_sell'
+  holdings:      [],
+  instruments:   {},
+  apiHedge:      null,
+  selections:    {},
   hedgeChecked:  new Set(),
   totalValueEur: null,
   _portfolioName: '',
@@ -43,7 +43,7 @@ function _riskDots(r) {
 }
 
 function _fmtPct(v) {
-  const c = v > 0.5 ? '#16a34a' : v < -0.5 ? '#dc2626' : '#64748b';
+  const c = v > 0.5 ? '#2563eb' : v < -0.5 ? '#dc2626' : '#64748b';
   return `<span style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:${c}">${v >= 0 ? '+' : ''}${v.toFixed(1)}%</span>`;
 }
 
@@ -61,13 +61,34 @@ function _estRisk(daily_return_pct) {
   return 5;
 }
 
-// ── Risk lookup (API first, then instruments cache, then estimate) ─────────────
+// ── Risk lookup (API → instruments cache → estimate) ──────────────────────────
 function _riskOf(id) {
   const hm = _state.apiHedge?.holdings?.find(h => h.instrument_id === id);
   return (hm?.risk_score) ?? (_state.instruments[id]?.risk_score) ?? _estRisk(_state.instruments[id]?.daily_return_pct);
 }
 
-// ── Sticky totals row (reflects checked instruments only) ─────────────────────
+// ── Top 4 KPI widgets (reactive to hedgeChecked) ──────────────────────────────
+function _renderTopKpis() {
+  _setText('ph-kpi-portfolio-val', _state.totalValueEur != null ? _fmtEur(_state.totalValueEur) : '—');
+
+  const hedgeMap = {};
+  if (_state.apiHedge?.holdings) {
+    for (const hh of _state.apiHedge.holdings) hedgeMap[hh.instrument_id] = hh;
+  }
+  const checked = _state.holdings.filter(h =>
+    _state.hedgeChecked.has(h.instrument_id) && hedgeMap[h.instrument_id]
+  );
+
+  const totalDrop = checked.reduce((s, h) => s + (hedgeMap[h.instrument_id].var_95_eur ?? 0), 0);
+  const totalCost = checked.reduce((s, h) => s + (hedgeMap[h.instrument_id].put_cost_eur ?? 0), 0);
+  const protPct   = totalDrop > 0 ? ((totalDrop - totalCost) / totalDrop * 100) : 0;
+
+  _setText('ph-kpi-drop-impact', totalDrop > 0 ? '−' + _fmtEur(totalDrop) : '—');
+  _setText('ph-kpi-premium',     totalCost > 0 ? _fmtEur(totalCost)        : '—');
+  _setText('ph-kpi-protection',  protPct   > 0 ? protPct.toFixed(0) + '%'  : '—');
+}
+
+// ── Sticky totals row (reflects hedgeChecked only) ────────────────────────────
 function _renderDiscoverTotals() {
   const tr = document.getElementById('ph-discover-totals-row');
   if (!tr) return;
@@ -107,8 +128,12 @@ function _renderDiscoverTotals() {
 // ── Holdings selection table ───────────────────────────────────────────────────
 function _renderDiscover() {
   _setText('ph-discover-portfolio-name', _state._portfolioName || '—');
-  const eurInput = document.getElementById('ph-total-eur');
-  if (eurInput && _state.totalValueEur != null) eurInput.value = _state.totalValueEur;
+
+  // Show portfolio EUR value (read-only from saved portfolio)
+  const eurDisp = document.getElementById('ph-eur-display');
+  if (eurDisp) eurDisp.textContent = _state.totalValueEur != null ? _fmtEur(_state.totalValueEur) : '—';
+  const eurHint = document.getElementById('ph-eur-hint');
+  if (eurHint) eurHint.style.display = _state.totalValueEur == null ? '' : 'none';
 
   const tbody = document.getElementById('ph-discover-holdings');
   if (!tbody) return;
@@ -133,7 +158,8 @@ function _renderDiscover() {
     const ret      = inst.return_1y_pct ?? inst.daily_return_pct;
     const risk     = _riskOf(h.instrument_id);
     const retStr   = ret != null ? ((ret >= 0 ? '+' : '') + ret.toFixed(1) + '%') : '—';
-    const retColor = (ret || 0) > 0 ? '#16a34a' : (ret || 0) < 0 ? '#dc2626' : '#64748b';
+    // Blue for positive returns, red for negative — no green
+    const retColor = (ret || 0) > 0 ? '#2563eb' : (ret || 0) < 0 ? '#dc2626' : '#64748b';
 
     const hd      = hedgeMap[h.instrument_id];
     const sigMove = hd ? '±' + (hd.ann_vol_pct * Math.sqrt(tMonths / 12)).toFixed(1) + '%' : '—';
@@ -161,19 +187,6 @@ function _renderDiscover() {
   }).join('');
 
   _renderDiscoverTotals();
-}
-
-// ── Summary KPI strip (reflects selected instruments) ─────────────────────────
-function _renderAllocation() {
-  const rows = _buildRows();
-  if (!rows.length) {
-    _setText('ph-alloc-cost', '—');
-    _setText('ph-alloc-dd',   '—');
-    return;
-  }
-  const { totalCost, maxDdHedged } = _aggregates(rows);
-  _setText('ph-alloc-cost', `${totalCost.toFixed(2)}%/mo`);
-  _setText('ph-alloc-dd',   `${maxDdHedged.toFixed(0)}%`);
 }
 
 // ── Build rows for widgets (checked instruments only) ─────────────────────────
@@ -219,7 +232,6 @@ function _buildRows() {
     for (const h of _state.apiHedge.holdings) apiMap[h.instrument_id] = h;
   }
 
-  // Only checked instruments feed the widgets/plots
   return _state.holdings
     .filter(h => _state.hedgeChecked.has(h.instrument_id))
     .map(h => {
@@ -244,7 +256,6 @@ function _buildRows() {
         };
       }
 
-      // Client-side fallback when API hedge data is unavailable
       const risk   = _estRisk(inst.daily_return_pct);
       const ret    = inst.return_1y_pct ?? inst.daily_return_pct;
       const type   = _hedgeType(h.instrument_id, region, h.allocation_pct);
@@ -265,23 +276,23 @@ function _aggregates(rows) {
   return { totalCost, avgStrike, maxDdHedged, maxDdUnhedged };
 }
 
-// ── Coverage band (reactive) ───────────────────────────────────────────────────
+// ── Coverage band ──────────────────────────────────────────────────────────────
 function _renderCoverageBand() {
   const rows = _buildRows();
 
   if (!rows.length) {
-    _setText('ph-max-dd-hedged',   '—');
-    _setText('ph-max-dd-unhedged', 'select instruments above');
-    _setText('ph-monthly-cost',    '—');
+    _setText('ph-max-dd-hedged',    '—');
+    _setText('ph-max-dd-unhedged',  'select instruments above');
+    _setText('ph-monthly-cost',     '—');
     _setText('ph-monthly-cost-sub', 'premium drag');
-    _setText('ph-coverage-label',  'No instruments selected');
+    _setText('ph-coverage-label',   'No instruments selected');
     return;
   }
 
   const { totalCost, maxDdHedged, maxDdUnhedged } = _aggregates(rows);
-  _setText('ph-max-dd-hedged',   `${maxDdHedged.toFixed(0)}%`);
-  _setText('ph-max-dd-unhedged', `vs ${maxDdUnhedged.toFixed(0)}% unhedged`);
-  _setText('ph-monthly-cost',    `${totalCost.toFixed(2)}%`);
+  _setText('ph-max-dd-hedged',    `${maxDdHedged.toFixed(0)}%`);
+  _setText('ph-max-dd-unhedged',  `vs ${maxDdUnhedged.toFixed(0)}% unhedged`);
+  _setText('ph-monthly-cost',     `${totalCost.toFixed(2)}%`);
   _setText('ph-monthly-cost-sub', 'premium drag');
 
   const c = _state.coverage;
@@ -291,7 +302,7 @@ function _renderCoverageBand() {
   _setText('ph-coverage-label', label);
 }
 
-// ── Payoff chart (reactive) ────────────────────────────────────────────────────
+// ── Payoff chart ───────────────────────────────────────────────────────────────
 function _renderPayoffChart() {
   const canvas = document.getElementById('ph-payoff-chart');
   if (!canvas) return;
@@ -344,7 +355,7 @@ function _renderPayoffChart() {
   });
 }
 
-// ── Scenario table (reactive) ──────────────────────────────────────────────────
+// ── Scenario table ─────────────────────────────────────────────────────────────
 function _renderScenarioTable() {
   const rows  = _buildRows();
   const tbody = document.getElementById('ph-scenario-body');
@@ -373,7 +384,7 @@ function _renderScenarioTable() {
   }
 
   function _fmtPctLegacy(v) {
-    const color = v > 0 ? '#16a34a' : v < -0.5 ? '#dc2626' : '#64748b';
+    const color = v > 0 ? '#2563eb' : v < -0.5 ? '#dc2626' : '#64748b';
     return `<span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:${color}">${v > 0 ? '+' : ''}${v.toFixed(0)}%</span>`;
   }
 
@@ -405,7 +416,7 @@ function _highlightScenarioTab() {
 }
 
 function _renderHedgeWidgets() {
-  _renderAllocation();
+  _renderTopKpis();
   _renderCoverageBand();
   _renderPayoffChart();
   _renderScenarioTable();
@@ -488,7 +499,7 @@ export async function loadPortfolioHedge() {
     if (hedgeData?.holdings) {
       for (const h of hedgeData.holdings) {
         _state.selections[h.instrument_id] = (h.risk_score ?? 2) >= 3 ? 'put_buy' : 'call_sell';
-        _state.hedgeChecked.add(h.instrument_id); // pre-check all hedgeable instruments
+        _state.hedgeChecked.add(h.instrument_id);
       }
     }
 
@@ -535,16 +546,10 @@ export function phPickStrategy(id, strategy) {
   _state.selections[id] = strategy;
 }
 
-export function phSetTotalEur(val) {
-  const v = parseFloat(val);
-  _state.totalValueEur = isNaN(v) || v <= 0 ? null : v;
-}
-
 export function phSetCoverage(val) {
   _state.coverage = parseInt(val, 10);
   _renderHedgeWidgets();
 
-  // Debounced API re-fetch — refreshes strike/cost values at new coverage level
   const token = sessionStorage.getItem('auth_token');
   if (token) {
     const captureCov = _state.coverage;
