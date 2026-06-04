@@ -1,126 +1,179 @@
-// ── FnO App Initialisation — extracted from fno/api.js god module ─────────────
-// FC-IMP verified exports:
-//   apiBase       — fno/api.js re-exports from shared/api.js ✓
-//   RITA_API_KEY  — declared in fno/api.js ✓
-//   state         — fno/state.js export const state ✓
-//   buildExpiryPills — fno/nav.js export function buildExpiryPills ✓
-//   renderDashboard, renderDailyProgress — fno/dashboard.js ✓
-//   renderPositionsKpis, renderPositionsTable — fno/positions.js ✓
-//   renderMarginKpis, updateMarginSections, renderMarginTables, renderClosedPositions — fno/margin.js ✓
-//   renderGreeksCards, renderGreeksTable, updateRiskSections — fno/greeks.js ✓
-//   renderStressScenarios — fno/stress.js ✓
-//   renderPayoffChart — fno/payoff.js ✓
-//   saveToday, syncPriceHistory, renderScenarios — fno/rr.js ✓
-//   renderHedgeRadar — fno/hedge.js ✓
-//   initManoeuvre — fno/manoeuvre.js ✓
+// ── FnO App Initialisation ────────────────────────────────────────────────────
 
 import { apiBase, RITA_API_KEY } from './api.js';
 import { state } from './state.js';
 import { buildExpiryPills } from './nav.js';
-import { loadEquityHedge } from './equity_hedge.js';
-import {
-  renderDashboard,
-  renderDailyProgress,
-} from './dashboard.js';
-import { renderPositionsKpis, renderPositionsTable } from './positions.js';
-import {
-  renderMarginKpis,
-  updateMarginSections,
-  renderMarginTables,
-  renderClosedPositions,
-} from './margin.js';
+import { renderDashboard } from './dashboard.js';
 import { renderGreeksCards, renderGreeksTable, updateRiskSections } from './greeks.js';
 import { renderStressScenarios } from './stress.js';
 import { renderPayoffChart } from './payoff.js';
 import { saveToday, syncPriceHistory, renderScenarios } from './rr.js';
-import { renderHedgeRadar } from './hedge.js';
+import { renderPortfolioHedgeRadar } from './hedge.js';
 import { initManoeuvre } from './manoeuvre.js';
 
-export async function fetchPositions() {
-  const mode = state.paperMode ? 'paper' : 'live';
-  try {
-    const resp = await fetch(apiBase() + `/api/v1/portfolio/positions?mode=${mode}`,
-      RITA_API_KEY ? { headers: { 'X-API-Key': RITA_API_KEY } } : {});
-    if (!resp.ok) throw new Error(`API ${resp.status}`);
-    state.positions = await resp.json();
-  } catch (e) {
-    console.error('fetchPositions error:', e);
-    state.positions = [];
+// ── scenario_levels shape normalisation ──────────────────────────────────────
+// API may return {INST: {target, sl}} or {INST: {bull:{target,sl}, bear:{target,sl}}}.
+// Normalise everything to the bull/bear shape so consumers (rr.js) are consistent.
+function _normScenarioLevels(raw) {
+  const out = {};
+  for (const [key, val] of Object.entries(raw || {})) {
+    if (val && val.bull !== undefined) {
+      out[key] = val; // already normalised
+    } else if (val && val.target !== undefined && val.sl !== undefined) {
+      out[key] = {
+        bull: { target: val.target, sl: val.sl },
+        bear: { target: val.sl,    sl: val.target },
+      };
+    } else {
+      out[key] = val;
+    }
   }
-  buildExpiryPills();
-  renderPositionsKpis();
-  renderPositionsTable();
+  return out;
 }
 
 // window.RITA_API_BASE can be set by the host page to point at a non-origin
 // API server (e.g. staging). Defaults to '' = same origin.
 
-export async function initApp() {
-  try {
-    const resp = await fetch(apiBase() + '/api/v1/portfolio/summary',
-      RITA_API_KEY ? { headers: { 'X-API-Key': RITA_API_KEY } } : {});
-    if (!resp.ok) throw new Error(`API ${resp.status}`);
-    const d = await resp.json();
+export async function initApp(mode = 'mock') {
+  state.analyticsMode = mode;
 
-    state.marketData      = d.market || {};
-    state.positions       = d.positions || [];
-    buildExpiryPills();
-    state.greeksData      = d.greeks || [];
-    state.closedPositions = d.closed_positions || [];
-    state.realizedPnl     = d.realized_pnl || 0;
-    state.portDelta       = d.net_delta || {};
-    state.netGreeks       = d.net_greeks || {};
-    state.scenarioLevels  = d.scenario_levels || {};
-    state.marginData      = d.margin || {};
-    state.stressData      = d.stress || [];
-    state.payoffData      = d.payoff || {};
-    state.hedgeQuality    = d.hedge_quality || {};
+  // Disable toggle during load
+  const chk = document.getElementById('analytics-mode-chk');
+  if (chk) chk.disabled = true;
 
-    // Update sidebar
-    const asOf = d.last_date || d.as_of || '';
-    document.getElementById('sidebar-as-of').textContent = asOf ? `As of ${asOf}` : '';
+  const url = apiBase() + `/api/v1/experience/fno/portfolio-analytics?mode=${mode}`;
+  const headers = RITA_API_KEY ? { 'X-API-Key': RITA_API_KEY } : {};
 
-  } catch (e) {
-    console.error('Portfolio API error:', e);
-    document.getElementById('sidebar-as-of').textContent = 'API error — check server';
+  // Add JWT for real mode
+  if (mode === 'real') {
+    const token = sessionStorage.getItem('auth_token');
+    if (token) headers['Authorization'] = `Bearer ${token}`;
   }
 
-  // Fetch positions (paper or live depending on state.paperMode)
-  await fetchPositions();
+  // Fire portfolio + geography fetches in parallel with the main analytics call
+  const _token = sessionStorage.getItem('auth_token');
+  const _portHeaders = { ...(RITA_API_KEY ? { 'X-API-Key': RITA_API_KEY } : {}), ...(_token ? { Authorization: `Bearer ${_token}` } : {}) };
+  const _portPromise = fetch(apiBase() + '/api/v1/experience/user-portfolio', { headers: _portHeaders })
+    .then(r => r.ok ? r.json() : null).catch(() => null);
+  const _geoPromise = fetch(apiBase() + '/api/v1/experience/rita/geography-overview')
+    .then(r => r.ok ? r.json() : null).catch(() => null);
 
-  // Render all sections
+  let rawResp = null;
+  try {
+    rawResp = await fetch(url, { headers });
+  } catch (e) {
+    console.error('Portfolio analytics fetch failed:', e);
+    document.getElementById('sidebar-as-of').textContent = 'API error — check server';
+    if (chk) chk.disabled = false;
+    _renderAll();
+    return;
+  }
+
+  if (!rawResp.ok) {
+    if (mode === 'real') {
+      const errEl = document.getElementById('analytics-mode-error');
+      if (rawResp.status === 401) {
+        if (errEl) { errEl.textContent = 'Login required for Real mode'; errEl.style.display = ''; }
+        if (chk) { chk.checked = false; chk.disabled = false; }
+        return initApp('mock');
+      } else if (rawResp.status === 404) {
+        if (errEl) { errEl.textContent = 'No portfolio configured'; errEl.style.display = ''; }
+        if (chk) { chk.checked = false; chk.disabled = false; }
+        return initApp('mock');
+      }
+    }
+    console.error('Portfolio analytics API error:', rawResp.status);
+    document.getElementById('sidebar-as-of').textContent = 'API error — check server';
+    if (chk) chk.disabled = false;
+    _renderAll();
+    return;
+  }
+
+  let data;
+  try {
+    data = await rawResp.json();
+  } catch (e) {
+    console.error('Portfolio analytics JSON parse error:', e);
+    document.getElementById('sidebar-as-of').textContent = 'API error — check server';
+    if (chk) chk.disabled = false;
+    _renderAll();
+    return;
+  }
+
+  // Map all 13 response fields to state
+  state.portfolioMeta    = data.portfolio_meta    || {};
+  state.marketData       = data.market            || {};
+  state.positions        = data.positions         || [];
+  state.greeksData       = data.greeks            || [];
+  state.netGreeks        = data.net_greeks        || {};
+  state.portDelta        = data.net_delta         || {};
+  state.scenarioLevels   = _normScenarioLevels(data.scenario_levels || {});
+  state.payoffData       = data.payoff            || {};
+  state.stressData       = data.stress            || [];
+  state.hedgeQuality     = data.hedge_quality     || {};
+  state.closedPositions  = data.closed_positions  || [];
+  state.realizedPnl      = data.realized_pnl      || 0;
+  state.marginData       = data.margin            || {};
+
+  // Update sidebar as-of timestamp
+  const asOf = data.portfolio_meta?.updated_at || '—';
+  const asOfEl = document.getElementById('sidebar-as-of');
+  if (asOfEl) asOfEl.textContent = asOf !== '—' ? `Updated ${asOf}` : '';
+
+  // Resolve the parallel portfolio + geography fetches, build geo instrument list
+  const [portData, geoData] = await Promise.all([_portPromise, _geoPromise]);
+  _buildPortfolioGeoInstruments(portData, geoData);
+
+  // Re-enable toggle
+  if (chk) chk.disabled = false;
+
+  buildExpiryPills();
+  _renderAll();
   saveToday();
-  syncPriceHistory().then(() => { renderScenarios(); renderDailyProgress(); });
+  syncPriceHistory().then(() => { renderScenarios(); });
+}
+
+function _renderAll() {
   renderDashboard();
-  renderPositionsKpis();
-  renderPositionsTable();
-  renderClosedPositions();
-  renderMarginKpis();
-  updateMarginSections();
-  renderMarginTables();
   updateRiskSections();
   renderGreeksCards();
   renderGreeksTable();
   renderStressScenarios();
   renderScenarios();
   renderPayoffChart();
-  renderHedgeRadar();
+  renderPortfolioHedgeRadar();
   initManoeuvre();
+}
 
-  // Re-render all pages when ASML equity hedge data is injected into state
-  document.addEventListener('rita:asml-state-updated', () => {
-    buildExpiryPills();
-    renderDashboard();
-    renderPositionsKpis();
-    renderPositionsTable();
-    renderClosedPositions();
-    renderMarginKpis();
-    updateMarginSections();
-    renderMarginTables();
-  });
+function _buildPortfolioGeoInstruments(portData, geoData) {
+  // Build a name+region lookup from geography-overview (all DB instruments)
+  const geoInstMap = {};
+  if (geoData?.regions) {
+    for (const reg of geoData.regions) {
+      for (const inst of (reg.instruments ?? [])) {
+        geoInstMap[inst.id] = { name: inst.name, region: reg.region };
+      }
+    }
+  }
+  if (portData?.holdings?.length) {
+    state.portfolioGeoInstruments = portData.holdings.map(h => {
+      const geo = geoInstMap[h.instrument_id] || {};
+      return {
+        id: h.instrument_id,
+        name: geo.name || h.instrument_id,
+        region: geo.region || 'Other',
+        allocation_pct: h.allocation_pct,
+      };
+    });
+  } else {
+    state.portfolioGeoInstruments = [];
+  }
+}
 
-  // Auto-load equity hedge in background so ASML data flows to all pages
-  loadEquityHedge(false).catch(() => {});
+// Backward-compat shim — main.js imports fetchPositions for the Paper/Live toggle.
+// Delegates to initApp so the single-fetch architecture is preserved.
+export async function fetchPositions() {
+  return initApp(state.analyticsMode);
 }
 
 export async function checkStatus() {

@@ -61,7 +61,28 @@ class RequireRole:
     def __call__(self, user: UserModel = Depends(get_current_user)):
         if getattr(user, self.role_name, False) is not True:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, 
-                detail=f"Permission denied: requires {self.role_name}"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Permission denied: requires {self.role_name}",
             )
         return user
+
+
+_optional_bearer = HTTPBearer(auto_error=False)
+
+
+async def get_optional_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_optional_bearer),
+    db: Session = Depends(get_db),
+) -> UserModel | None:
+    """Return the authenticated user or None when no token is supplied.
+
+    Used by endpoints that support both authenticated and unauthenticated access
+    (e.g. mode=mock vs mode=real on the portfolio-analytics endpoint).
+    No exception is raised when credentials are absent or invalid.
+    """
+    if credentials is None:
+        return None
+    try:
+        return get_current_user(credentials, db)
+    except HTTPException:
+        return None

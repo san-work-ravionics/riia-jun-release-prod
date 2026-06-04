@@ -137,7 +137,7 @@ function manLots(p) {
   const pnlPerLot = p.pnl / nLots;
   return Array.from({ length: nLots }, (_, i) => ({
     ...p,
-    lotKey:  p.instrument + '_L' + (i + 1),
+    lotKey:  (p.full ?? p.instrument ?? p.und) + '_L' + (i + 1),
     lotIdx:  i + 1,
     nLots,
     lotSz,

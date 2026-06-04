@@ -173,7 +173,7 @@ export function renderBullBearKpis(und) {
     <div class="kpi"><div class="kpi-label">${t('rr.current_pnl')}</div><div class="kpi-value ${pnlClass(bullPnl + bearPnl)}">${fmtPnl(bullPnl + bearPnl)}</div><div class="kpi-sub">${t('rr.bull_bear_combined')}</div></div>
     <div class="kpi"><div class="kpi-label">${t('rr.bull_bets_pnl')}</div><div class="kpi-value ${pnlClass(bullPnl)}">${fmtPnl(bullPnl)}</div><div class="kpi-sub">${bullCnt} pos · FUT Long · CE Long · PE Short</div></div>
     <div class="kpi"><div class="kpi-label">${t('rr.bear_bets_pnl')}</div><div class="kpi-value ${pnlClass(bearPnl)}">${fmtPnl(bearPnl)}</div><div class="kpi-sub">${bearCnt} pos · FUT Short · CE Short · PE Long</div></div>
-    <div class="kpi"><div class="kpi-label">${und === 'BANKNIFTY' ? 'BANKNIFTY' : 'NIFTY'} Spot</div><div class="kpi-value" style="font-family:var(--fm)">${spot.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div><div class="kpi-sub">${state.marketData[und].date}</div></div>
+    <div class="kpi"><div class="kpi-label">${und} Spot</div><div class="kpi-value" style="font-family:var(--fm)">${spot.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div><div class="kpi-sub">${state.marketData[und].date}</div></div>
   </div>`;
 }
 
@@ -273,28 +273,37 @@ function _hasScenLevels(und) {
 }
 
 export function renderScenarios() {
-  document.getElementById('nifty-scen-section').style.display     = state.currentUnd === 'BANKNIFTY' ? 'none' : '';
-  document.getElementById('banknifty-scen-section').style.display = state.currentUnd === 'NIFTY'     ? 'none' : '';
+  // Instruments come from scenarioLevels keys (portfolio-driven, not hardcoded)
+  const allInsts = Object.keys(state.scenarioLevels || {}).filter(und => _hasScenLevels(und));
+  const activeInsts = state.currentUnd === 'ALL'
+    ? allInsts
+    : allInsts.filter(und => und === state.currentUnd);
 
-  if (state.currentUnd !== 'BANKNIFTY') {
-    if (_hasScenLevels('NIFTY')) {
-      document.getElementById('nifty-rr-kpis').innerHTML  = renderBullBearKpis('NIFTY');
-      document.getElementById('nifty-rr-views').innerHTML = renderView('NIFTY', 'bull') + renderView('NIFTY', 'bear');
-    } else {
-      document.getElementById('nifty-rr-views').innerHTML = '<div style="padding:20px;font-family:var(--fm);font-size:12px;color:var(--t3);">No scenario levels available for NIFTY.</div>';
+  // Render dynamic instrument sections
+  const sectionsEl = document.getElementById('scen-instrument-sections');
+  if (sectionsEl) {
+    sectionsEl.innerHTML = activeInsts.map(und => {
+      const kpis  = _hasScenLevels(und) ? renderBullBearKpis(und) : '';
+      const views = _hasScenLevels(und)
+        ? renderView(und, 'bull') + renderView(und, 'bear')
+        : `<div style="padding:20px;font-family:var(--fm);font-size:12px;color:var(--t3);">No scenario levels available for ${und}.</div>`;
+      const tagCls = und.toLowerCase() === 'banknifty' ? 'banknifty' : und.toLowerCase() === 'nifty' ? 'nifty' : '';
+      return `<div id="scen-section-${und.toLowerCase()}">
+        <div class="und-section-hdr">
+          <span class="und-section-tag ${tagCls}" style="font-family:var(--fm);font-size:11px;font-weight:600;padding:2px 10px;border-radius:3px">${und}</span>
+          <div class="line"></div>
+        </div>
+        ${kpis}
+        ${views}
+      </div>`;
+    }).join('');
+    if (activeInsts.length === 0) {
+      sectionsEl.innerHTML = '<div style="padding:20px;font-family:var(--fm);font-size:12px;color:var(--t3);">No scenario levels configured for portfolio instruments.</div>';
     }
   }
-  if (state.currentUnd !== 'NIFTY') {
-    if (_hasScenLevels('BANKNIFTY')) {
-      document.getElementById('banknifty-rr-kpis').innerHTML  = renderBullBearKpis('BANKNIFTY');
-      document.getElementById('banknifty-rr-views').innerHTML = renderView('BANKNIFTY', 'bull') + renderView('BANKNIFTY', 'bear');
-    } else {
-      document.getElementById('banknifty-rr-views').innerHTML = '<div style="padding:20px;font-family:var(--fm);font-size:12px;color:var(--t3);">No scenario levels available for BANKNIFTY.</div>';
-    }
-  }
 
-  const summaryDefs = ['NIFTY', 'BANKNIFTY']
-    .filter(und => _hasScenLevels(und))
+  // Summary card — all portfolio instruments
+  const summaryDefs = allInsts
     .flatMap(und => ['bull', 'bear'].map(mode => ({
       und, mode: mode.charAt(0).toUpperCase() + mode.slice(1),
       sl:     state.scenarioLevels[und][mode].sl,
@@ -303,17 +312,17 @@ export function renderScenarios() {
       delta:  state.portDelta[und]
     }))).filter(r => state.currentUnd === 'ALL' || r.und === state.currentUnd);
 
+  const deltaSubParts = allInsts.map(und => `${und} ${state.portDelta[und] ?? '—'}`).join(' · ');
+
   const summaryRows = summaryDefs.map(r => {
     const sc      = computeScen(r.sl, r.target, r.cur, r.delta);
     const dir     = getProgressDir(r.und, r.mode.toLowerCase());
     const isBull  = r.mode === 'Bull';
     const dirIcon = dir === 'toward' ? '<span style="color:var(--pos)">↑</span>' : dir === 'away' ? '<span style="color:var(--p03)">↓</span>' : '—';
     const groupPnl = state.positions.filter(p => p.und === r.und && getBullBear(p) === r.mode.toLowerCase()).reduce((s, p) => s + p.pnl, 0);
-    const undBg = r.und === 'NIFTY' ? 'var(--p02-bg)' : 'var(--p04-bg)';
-    const undClr = r.und === 'NIFTY' ? 'var(--p02)' : 'var(--p04)';
     return `<tr>
       <td>
-        <span style="font-family:var(--fm);font-size:10px;font-weight:600;padding:2px 7px;border-radius:3px;background:${undBg};color:${undClr};">${r.und}</span>
+        <span style="font-family:var(--fm);font-size:10px;font-weight:600;padding:2px 7px;border-radius:3px;background:var(--surface2);color:var(--t2);">${r.und}</span>
         <span style="font-family:var(--fm);font-size:10px;font-weight:600;padding:2px 7px;border-radius:3px;background:${isBull ? 'var(--p01-bg)' : 'var(--neg-bg)'};color:${isBull ? 'var(--p01)' : 'var(--neg)'};">${r.mode}</span>
       </td>
       <td class="val">${r.sl.toLocaleString('en-IN')}</td>
@@ -330,7 +339,7 @@ export function renderScenarios() {
   document.getElementById('scen-summary-card').innerHTML = `
     <div class="card-hdr">
       <span class="card-title">${t('rr.rr_summary')}</span>
-      <span class="card-sub">Net Δ: NIFTY ${state.portDelta.NIFTY ?? '—'} · BANKNIFTY ${state.portDelta.BANKNIFTY ?? '—'} · ↑ = moving toward target</span>
+      <span class="card-sub">Net Δ: ${deltaSubParts || '—'} · ↑ = moving toward target</span>
     </div>
     <div class="card-body" style="padding:0">
       <div class="tbl-wrap">
@@ -339,7 +348,7 @@ export function renderScenarios() {
             <th>${t('rr.col_scenario')}</th><th>${t('rr.col_stop_loss')}</th><th>${t('rr.col_current')}</th><th>${t('rr.col_target')}</th>
             <th>${t('rr.col_progress')}</th><th>${t('rr.col_rr')}</th><th>${t('rr.col_current_pnl')}</th><th>${t('rr.col_at_target')}</th><th>${t('rr.col_at_stop')}</th>
           </tr></thead>
-          <tbody>${summaryRows}</tbody>
+          <tbody>${summaryRows || '<tr><td colspan="9" style="text-align:center;padding:16px;color:var(--t3);font-family:var(--fm);font-size:12px">No scenario levels configured</td></tr>'}</tbody>
         </table>
       </div>
     </div>`;

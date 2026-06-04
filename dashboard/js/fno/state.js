@@ -4,6 +4,9 @@
 // Cross-module consumers import `state` and read from it directly.
 
 export const state = {
+  portfolioMeta: null,
+  analyticsMode: 'mock',
+  portfolioGeoInstruments: null,  // [{id, name, region, allocation_pct}] — built at init from DB
   marketData: {},
   positions: [],
   greeksData: [],

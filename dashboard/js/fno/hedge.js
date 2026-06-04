@@ -262,6 +262,71 @@ export function renderHedgeHistory() {
   }
 }
 
+// ── PORTFOLIO HEDGE RADAR (F30 Phase 3 — analytics state) ────────────────────
+export function renderPortfolioHedgeRadar() {
+  try {
+    const positions = state.hedgeQuality?.positions;
+    if (!positions?.length) {
+      const kpisEl = document.getElementById('hqs-kpis');
+      if (kpisEl) kpisEl.innerHTML = '<span style="font-size:12px;color:var(--t3);font-family:var(--fm)">No hedge quality data</span>';
+      return;
+    }
+
+    const total    = positions.length;
+    const hedged   = positions.filter(p => p.hedged === true).length;
+    const unhedged = total - hedged;
+
+    const kpisEl = document.getElementById('hqs-kpis');
+    if (kpisEl) {
+      kpisEl.innerHTML = `
+        <div class="kpi">
+          <div class="kpi-label">Total Positions</div>
+          <div class="kpi-value">${total}</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Hedged</div>
+          <div class="kpi-value pos">${hedged}</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Unhedged</div>
+          <div class="kpi-value ${unhedged > 0 ? 'neg' : 'pos'}">${unhedged}</div>
+        </div>`;
+    }
+
+    const bannerEl = document.getElementById('hqs-alert-banner');
+    if (bannerEl) {
+      if (unhedged > 0) {
+        bannerEl.innerHTML = `<div class="alert-bar red"><span style="font-size:16px;">⚠</span> <strong>${unhedged} unhedged position${unhedged !== 1 ? 's' : ''}</strong> — consider adding hedge coverage.</div>`;
+      } else if (positions.some(p => p.hqs_tier === 'YELLOW')) {
+        bannerEl.innerHTML = `<div class="alert-bar yellow"><span style="font-size:16px;">◈</span> Some positions are in YELLOW tier — monitor coverage.</div>`;
+      } else {
+        bannerEl.innerHTML = `<div class="alert-bar green"><span style="font-size:16px;">✓</span> All positions hedged and in acceptable tier.</div>`;
+      }
+    }
+
+    const tbody = document.getElementById('hqs-tbody');
+    if (tbody) {
+      tbody.innerHTML = positions.map(p => {
+        const tierClass = (p.hqs_tier || '').toLowerCase();
+        const hedgedLabel = p.hedged ? '<span style="color:var(--p01)">Yes</span>' : '<span style="color:var(--neg)">No</span>';
+        const coveragePct = p.coverage_pct != null ? parseFloat(p.coverage_pct).toFixed(1) + '%' : '—';
+        return `<tr>
+          <td style="padding:6px 10px;font-size:12px">${p.instrument ?? '—'}</td>
+          <td style="padding:6px 10px;font-size:12px;font-family:'IBM Plex Mono',monospace">${p.hqs ?? '—'}</td>
+          <td style="padding:6px 10px;font-size:12px"><span class="hqs-badge ${tierClass}">${p.hqs_tier ?? '—'}</span></td>
+          <td style="padding:6px 10px;font-size:12px">${hedgedLabel}</td>
+          <td style="padding:6px 10px;font-size:12px">${p.strategy ?? '—'}</td>
+          <td style="padding:6px 10px;font-size:12px;font-family:'IBM Plex Mono',monospace">${coveragePct}</td>
+        </tr>`;
+      }).join('');
+    }
+  } catch (e) {
+    console.error('renderPortfolioHedgeRadar error:', e);
+    const kpisEl = document.getElementById('hqs-kpis');
+    if (kpisEl) kpisEl.innerHTML = '<span style="font-size:12px;color:var(--neg);font-family:var(--fm)">Error loading hedge quality data</span>';
+  }
+}
+
 // ── HEDGE RADAR ───────────────────────────────────────────────────────────────
 export function renderHedgeRadar() {
   const allPos = (state.hedgeQuality.positions || []).filter(p =>

@@ -1,0 +1,940 @@
+INFO:     Will watch for changes in these directories: ['/Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release']
+/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [6973] using WatchFiles
+/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [7269]
+INFO:     Waiting for application startup.
+{"name": "rita", "version": "1.0.0", "event": "app.startup", "level": "info", "timestamp": "2026-05-26T05:59:23.039900Z"}
+{"instrument": "ATHER", "error": "No CSV data found for instrument 'ATHER'. Expected files in /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/raw/ATHER or /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/input/ATHER.", "event": "market_data.seed_failed", "level": "warning", "timestamp": "2026-05-26T05:59:30.037810Z"}
+{"instrument": "ASML26MAY1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T05:59:30.067201Z"}
+{"instrument": "ASML26JUN1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T05:59:30.068631Z"}
+INFO:     Application startup complete.
+{"method": "GET", "path": "/dashboard", "status_code": 307, "event": "http.request", "trace_id": "cf587a4a-8ddc-416c-b7e7-08ae04048fb5", "level": "info", "timestamp": "2026-05-26T05:59:38.689356Z"}
+INFO:     127.0.0.1:49978 - "GET /dashboard HTTP/1.1" 307 Temporary Redirect
+{"method": "GET", "path": "/dashboard/", "status_code": 304, "event": "http.request", "trace_id": "df65b38e-3077-4887-8f8e-68a4cffc148a", "level": "info", "timestamp": "2026-05-26T05:59:38.768318Z"}
+INFO:     127.0.0.1:49978 - "GET /dashboard/ HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/favicon.ico", "status_code": 404, "event": "http.request", "trace_id": "5d551db4-ca84-4ec4-bc02-39f512ef521b", "level": "info", "timestamp": "2026-05-26T05:59:39.675513Z"}
+INFO:     127.0.0.1:49978 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+{"method": "GET", "path": "/dashboard/", "status_code": 304, "event": "http.request", "trace_id": "6b5e482e-38aa-4718-b030-92348f00a247", "level": "info", "timestamp": "2026-05-26T05:59:42.150361Z"}
+INFO:     127.0.0.1:49978 - "GET /dashboard/ HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/", "status_code": 304, "event": "http.request", "trace_id": "9c76d88b-5459-45c1-8f2b-fff0f965fa35", "level": "info", "timestamp": "2026-05-26T06:01:30.218601Z"}
+INFO:     127.0.0.1:49995 - "GET /dashboard/ HTTP/1.1" 304 Not Modified
+WARNING:  WatchFiles detected changes in 'tests/unit/test_mobile_gateway.py', 'src/rita/main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "app.shutdown", "level": "info", "timestamp": "2026-05-26T06:40:32.406772Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [7269]
+/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [9405]
+INFO:     Waiting for application startup.
+{"name": "rita", "version": "1.0.0", "event": "app.startup", "level": "info", "timestamp": "2026-05-26T06:40:36.354560Z"}
+{"instrument": "ATHER", "error": "No CSV data found for instrument 'ATHER'. Expected files in /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/raw/ATHER or /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/input/ATHER.", "event": "market_data.seed_failed", "level": "warning", "timestamp": "2026-05-26T06:40:38.396821Z"}
+{"instrument": "ASML26MAY1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T06:40:38.408893Z"}
+{"instrument": "ASML26JUN1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T06:40:38.409263Z"}
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests/unit/test_mobile_detection.py', 'src/rita/main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "app.shutdown", "level": "info", "timestamp": "2026-05-26T10:12:59.437680Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [9405]
+/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [20072]
+INFO:     Waiting for application startup.
+{"name": "rita", "version": "1.0.0", "event": "app.startup", "level": "info", "timestamp": "2026-05-26T10:13:11.248771Z"}
+{"instrument": "ATHER", "error": "No CSV data found for instrument 'ATHER'. Expected files in /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/raw/ATHER or /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/input/ATHER.", "event": "market_data.seed_failed", "level": "warning", "timestamp": "2026-05-26T10:13:19.832252Z"}
+{"instrument": "ASML26MAY1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T10:13:19.854607Z"}
+{"instrument": "ASML26JUN1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T10:13:19.855185Z"}
+INFO:     Application startup complete.
+{"method": "GET", "path": "/mobile", "status_code": 200, "event": "http.request", "trace_id": "b50eaf5e-86bb-49be-b122-beac86fbffc8", "level": "info", "timestamp": "2026-05-26T12:07:30.763384Z"}
+INFO:     127.0.0.1:53978 - "GET /mobile HTTP/1.1" 200 OK
+{"method": "GET", "path": "/onboarding", "status_code": 200, "event": "http.request", "trace_id": "dadf5e83-f86b-46a5-81ee-c9832dbcb1ff", "level": "info", "timestamp": "2026-05-26T12:07:34.234252Z"}
+INFO:     127.0.0.1:53978 - "GET /onboarding HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/investgame.html", "status_code": 200, "event": "http.request", "trace_id": "73df6454-c2a7-4ca3-85b1-b1dd752e5d84", "level": "info", "timestamp": "2026-05-26T12:07:36.418349Z"}
+INFO:     127.0.0.1:53978 - "GET /dashboard/investgame.html?desktop=1 HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/invest-game/main.js", "status_code": 200, "event": "http.request", "trace_id": "089b3861-04f7-433b-8146-babda74d54ce", "level": "info", "timestamp": "2026-05-26T12:07:36.539782Z"}
+INFO:     127.0.0.1:53978 - "GET /dashboard/js/invest-game/main.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/invest-game/api.js", "status_code": 200, "event": "http.request", "trace_id": "347b8b29-b904-4048-9f7d-1162b47708db", "level": "info", "timestamp": "2026-05-26T12:07:36.572674Z"}
+INFO:     127.0.0.1:53978 - "GET /dashboard/js/invest-game/api.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/index.html", "status_code": 200, "event": "http.request", "trace_id": "c63f3967-659c-4a9a-9410-f84fba3e8c43", "level": "info", "timestamp": "2026-05-26T12:07:42.729511Z"}
+INFO:     127.0.0.1:53979 - "GET /dashboard/index.html HTTP/1.1" 200 OK
+{"method": "GET", "path": "/mobile", "status_code": 200, "event": "http.request", "trace_id": "fd5af8c5-18ac-48ae-b650-96f8d030a817", "level": "info", "timestamp": "2026-05-26T12:07:50.904956Z"}
+INFO:     127.0.0.1:53983 - "GET /mobile HTTP/1.1" 200 OK
+{"method": "GET", "path": "/onboarding", "status_code": 200, "event": "http.request", "trace_id": "bf5ac722-23f0-42d3-ae89-82eb21c5316a", "level": "info", "timestamp": "2026-05-26T12:07:52.963883Z"}
+INFO:     127.0.0.1:53983 - "GET /onboarding HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/index.html", "status_code": 304, "event": "http.request", "trace_id": "edd7b989-9309-4e61-9719-0bbea3f11ab7", "level": "info", "timestamp": "2026-05-26T12:09:35.242436Z"}
+INFO:     127.0.0.1:54002 - "GET /dashboard/index.html HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/onboarding", "status_code": 200, "event": "http.request", "trace_id": "62e18e2e-e79a-4c53-83d3-9a13712ede19", "level": "info", "timestamp": "2026-05-26T12:09:37.827693Z"}
+INFO:     127.0.0.1:54002 - "GET /onboarding HTTP/1.1" 200 OK
+{"method": "GET", "path": "/mobile", "status_code": 200, "event": "http.request", "trace_id": "73210645-f16f-4722-b858-d1733f103aab", "level": "info", "timestamp": "2026-05-26T12:09:46.841085Z"}
+INFO:     127.0.0.1:54003 - "GET /mobile HTTP/1.1" 200 OK
+{"method": "GET", "path": "/onboarding", "status_code": 200, "event": "http.request", "trace_id": "1fde6608-c626-4a78-87f0-6c7e30f551a0", "level": "info", "timestamp": "2026-05-26T12:09:48.909724Z"}
+INFO:     127.0.0.1:54003 - "GET /onboarding HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'tests/unit/test_agent_metrics.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "app.shutdown", "level": "info", "timestamp": "2026-05-26T13:21:55.299324Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [20072]
+/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [34032]
+INFO:     Waiting for application startup.
+{"name": "rita", "version": "1.0.0", "event": "app.startup", "level": "info", "timestamp": "2026-05-26T13:22:00.438648Z"}
+{"instrument": "ATHER", "error": "No CSV data found for instrument 'ATHER'. Expected files in /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/raw/ATHER or /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/input/ATHER.", "event": "market_data.seed_failed", "level": "warning", "timestamp": "2026-05-26T13:22:03.256825Z"}
+{"instrument": "ASML26MAY1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T13:22:03.274086Z"}
+{"instrument": "ASML26JUN1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T13:22:03.274617Z"}
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/rita/api/experience/ops.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "app.shutdown", "level": "info", "timestamp": "2026-05-26T15:44:17.113011Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [34032]
+/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [36984]
+INFO:     Waiting for application startup.
+{"name": "rita", "version": "1.0.0", "event": "app.startup", "level": "info", "timestamp": "2026-05-26T15:44:19.816251Z"}
+{"instrument": "ATHER", "error": "No CSV data found for instrument 'ATHER'. Expected files in /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/raw/ATHER or /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/input/ATHER.", "event": "market_data.seed_failed", "level": "warning", "timestamp": "2026-05-26T15:44:21.279138Z"}
+{"instrument": "ASML26MAY1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T15:44:21.290121Z"}
+{"instrument": "ASML26JUN1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T15:44:21.290541Z"}
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/rita/api/experience/ops.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "app.shutdown", "level": "info", "timestamp": "2026-05-26T15:44:21.594902Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [36984]
+/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [36988]
+INFO:     Waiting for application startup.
+{"name": "rita", "version": "1.0.0", "event": "app.startup", "level": "info", "timestamp": "2026-05-26T15:44:24.058605Z"}
+{"instrument": "ATHER", "error": "No CSV data found for instrument 'ATHER'. Expected files in /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/raw/ATHER or /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/input/ATHER.", "event": "market_data.seed_failed", "level": "warning", "timestamp": "2026-05-26T15:44:25.516308Z"}
+{"instrument": "ASML26MAY1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T15:44:25.528386Z"}
+{"instrument": "ASML26JUN1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T15:44:25.528776Z"}
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests/unit/test_api_metrics.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "app.shutdown", "level": "info", "timestamp": "2026-05-26T15:44:26.541436Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [36988]
+/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [36990]
+INFO:     Waiting for application startup.
+{"name": "rita", "version": "1.0.0", "event": "app.startup", "level": "info", "timestamp": "2026-05-26T15:44:29.023737Z"}
+{"instrument": "ATHER", "error": "No CSV data found for instrument 'ATHER'. Expected files in /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/raw/ATHER or /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/input/ATHER.", "event": "market_data.seed_failed", "level": "warning", "timestamp": "2026-05-26T15:44:30.756062Z"}
+{"instrument": "ASML26MAY1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T15:44:30.767989Z"}
+{"instrument": "ASML26JUN1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T15:44:30.768462Z"}
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests/unit/test_mobile_gateway.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "app.shutdown", "level": "info", "timestamp": "2026-05-26T15:44:31.070517Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [36990]
+/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [36994]
+INFO:     Waiting for application startup.
+{"name": "rita", "version": "1.0.0", "event": "app.startup", "level": "info", "timestamp": "2026-05-26T15:44:34.013762Z"}
+{"instrument": "ATHER", "error": "No CSV data found for instrument 'ATHER'. Expected files in /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/raw/ATHER or /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/input/ATHER.", "event": "market_data.seed_failed", "level": "warning", "timestamp": "2026-05-26T15:44:35.435158Z"}
+{"instrument": "ASML26MAY1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T15:44:35.446397Z"}
+{"instrument": "ASML26JUN1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T15:44:35.447114Z"}
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests/unit/test_shared_js_layer.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "app.shutdown", "level": "info", "timestamp": "2026-05-26T15:44:36.359370Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [36994]
+/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [36996]
+INFO:     Waiting for application startup.
+{"name": "rita", "version": "1.0.0", "event": "app.startup", "level": "info", "timestamp": "2026-05-26T15:44:38.833878Z"}
+{"instrument": "ATHER", "error": "No CSV data found for instrument 'ATHER'. Expected files in /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/raw/ATHER or /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/input/ATHER.", "event": "market_data.seed_failed", "level": "warning", "timestamp": "2026-05-26T15:44:40.355597Z"}
+{"instrument": "ASML26MAY1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T15:44:40.367199Z"}
+{"instrument": "ASML26JUN1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T15:44:40.367593Z"}
+INFO:     Application startup complete.
+{"method": "GET", "path": "/dashboard/investgame.html", "status_code": 304, "event": "http.request", "trace_id": "81b2246c-ed4d-4472-9e60-cc1dc4a85680", "level": "info", "timestamp": "2026-05-26T15:46:05.591444Z"}
+INFO:     127.0.0.1:55081 - "GET /dashboard/investgame.html?desktop=1 HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/ops.html", "status_code": 200, "event": "http.request", "trace_id": "09308a58-0a73-4c94-9d9d-5e735abec28d", "level": "info", "timestamp": "2026-05-26T15:46:13.833654Z"}
+INFO:     127.0.0.1:55082 - "GET /dashboard/ops.html HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/main.js", "status_code": 304, "event": "http.request", "trace_id": "cdaee4fa-0d7a-4c8b-9a83-e3f73a89323f", "level": "info", "timestamp": "2026-05-26T15:46:13.929470Z"}
+INFO:     127.0.0.1:55082 - "GET /dashboard/js/ops/main.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/css/responsive.css", "status_code": 304, "event": "http.request", "trace_id": "9684ebfd-6a6a-4181-867a-f7663801f895", "level": "info", "timestamp": "2026-05-26T15:46:13.930782Z"}
+INFO:     127.0.0.1:55084 - "GET /dashboard/css/responsive.css HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/ops/deploy.js", "status_code": 304, "event": "http.request", "trace_id": "e3b1b0d6-2aef-4500-9376-e45e2a87100a", "level": "info", "timestamp": "2026-05-26T15:46:14.030067Z"}
+INFO:     127.0.0.1:55090 - "GET /dashboard/js/ops/deploy.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/ops/daily-ops.js", "status_code": 304, "event": "http.request", "trace_id": "8217322f-720f-46ed-8654-cf57173b40d2", "level": "info", "timestamp": "2026-05-26T15:46:14.031383Z"}
+INFO:     127.0.0.1:55092 - "GET /dashboard/js/ops/daily-ops.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/ops/nav.js", "status_code": 304, "event": "http.request", "trace_id": "256d7e20-eb11-4ce8-9fb4-b508ff7ab4ec", "level": "info", "timestamp": "2026-05-26T15:46:14.038342Z"}
+INFO:     127.0.0.1:55082 - "GET /dashboard/js/ops/nav.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/ops/monitoring.js", "status_code": 200, "event": "http.request", "trace_id": "c2b48c98-a682-4745-a43a-37607e80c063", "level": "info", "timestamp": "2026-05-26T15:46:14.057318Z"}
+INFO:     127.0.0.1:55088 - "GET /dashboard/js/ops/monitoring.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/overview.js", "status_code": 304, "event": "http.request", "trace_id": "6ffb09c8-8023-4ec7-a98e-da93be9ad5a8", "level": "info", "timestamp": "2026-05-26T15:46:14.065023Z"}
+INFO:     127.0.0.1:55086 - "GET /dashboard/js/ops/overview.js HTTP/1.1" 304 Not Modified
+{"instrument_id": "ASML", "event": "instrument.selected", "trace_id": "b42b4333-7f2a-42e8-8eb7-f0d6ce4c7cc5", "level": "info", "timestamp": "2026-05-26T15:46:14.072454Z"}
+{"method": "GET", "path": "/dashboard/js/ops/observability.js", "status_code": 200, "event": "http.request", "trace_id": "5ef11ac7-3c14-4cef-b580-80cb5f64956b", "level": "info", "timestamp": "2026-05-26T15:46:14.076188Z"}
+INFO:     127.0.0.1:55090 - "GET /dashboard/js/ops/observability.js HTTP/1.1" 200 OK
+{"method": "POST", "path": "/api/v1/instrument/select", "status_code": 200, "event": "http.request", "trace_id": "b42b4333-7f2a-42e8-8eb7-f0d6ce4c7cc5", "level": "info", "timestamp": "2026-05-26T15:46:14.088257Z"}
+INFO:     127.0.0.1:55084 - "POST /api/v1/instrument/select HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/test-results.js", "status_code": 304, "event": "http.request", "trace_id": "9b4cea18-568a-424a-bc38-688f4b2f9057", "level": "info", "timestamp": "2026-05-26T15:46:14.089881Z"}
+INFO:     127.0.0.1:55086 - "GET /dashboard/js/ops/test-results.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/ops/chat.js", "status_code": 304, "event": "http.request", "trace_id": "14ad8986-a3e5-4f6d-a009-c5cfa5b4ffdb", "level": "info", "timestamp": "2026-05-26T15:46:14.091230Z"}
+INFO:     127.0.0.1:55092 - "GET /dashboard/js/ops/chat.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/ops/sidebar.js", "status_code": 200, "event": "http.request", "trace_id": "ee5d3329-11c8-48e2-996e-e19adfb1fe04", "level": "info", "timestamp": "2026-05-26T15:46:14.091682Z"}
+INFO:     127.0.0.1:55082 - "GET /dashboard/js/ops/sidebar.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/agent-builds.js", "status_code": 304, "event": "http.request", "trace_id": "64e40073-6166-4e72-938c-cced49b64be6", "level": "info", "timestamp": "2026-05-26T15:46:14.103038Z"}
+INFO:     127.0.0.1:55092 - "GET /dashboard/js/ops/agent-builds.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/ops/users.js", "status_code": 304, "event": "http.request", "trace_id": "8980fe75-9035-4370-bb36-4a49401a4e7e", "level": "info", "timestamp": "2026-05-26T15:46:14.103394Z"}
+INFO:     127.0.0.1:55086 - "GET /dashboard/js/ops/users.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/ops/alerts.js", "status_code": 200, "event": "http.request", "trace_id": "e1e54c8d-9d6a-417d-b15e-05d2b9176b9c", "level": "info", "timestamp": "2026-05-26T15:46:14.111969Z"}
+INFO:     127.0.0.1:55092 - "GET /dashboard/js/ops/alerts.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/game-compliance.js", "status_code": 304, "event": "http.request", "trace_id": "6d33f667-c3fe-4cd7-9005-82a05e1cda1b", "level": "info", "timestamp": "2026-05-26T15:46:14.112706Z"}
+INFO:     127.0.0.1:55086 - "GET /dashboard/js/ops/game-compliance.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/ops/source-availability.js", "status_code": 200, "event": "http.request", "trace_id": "3d31f777-ed85-481e-8743-e28aeed39bb0", "level": "info", "timestamp": "2026-05-26T15:46:14.117214Z"}
+INFO:     127.0.0.1:55086 - "GET /dashboard/js/ops/source-availability.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/functional-kpis.js", "status_code": 304, "event": "http.request", "trace_id": "24a066f9-2688-4a85-bc8a-6e0478ea91b4", "level": "info", "timestamp": "2026-05-26T15:46:14.132300Z"}
+INFO:     127.0.0.1:55088 - "GET /dashboard/js/ops/functional-kpis.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/ops/utils.js", "status_code": 304, "event": "http.request", "trace_id": "a86ba3f7-1000-49ac-bf13-59a7bf03cf8f", "level": "info", "timestamp": "2026-05-26T15:46:14.134705Z"}
+INFO:     127.0.0.1:55088 - "GET /dashboard/js/ops/utils.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/ops/api-metrics.js", "status_code": 304, "event": "http.request", "trace_id": "7a21978e-4c79-4b10-820b-8b7c483df964", "level": "info", "timestamp": "2026-05-26T15:46:14.137265Z"}
+INFO:     127.0.0.1:55088 - "GET /dashboard/js/ops/api-metrics.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/shared/i18n.js", "status_code": 304, "event": "http.request", "trace_id": "8efd46c9-1d4e-4288-8509-a72029090f77", "level": "info", "timestamp": "2026-05-26T15:46:14.139936Z"}
+INFO:     127.0.0.1:55088 - "GET /dashboard/js/shared/i18n.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/ops/api.js", "status_code": 304, "event": "http.request", "trace_id": "446537d7-fa32-4942-beaf-d93b7aaf86e5", "level": "info", "timestamp": "2026-05-26T15:46:14.142611Z"}
+INFO:     127.0.0.1:55088 - "GET /dashboard/js/ops/api.js HTTP/1.1" 304 Not Modified
+{"event": "experience.compose", "trace_id": "474fbf7c-e89e-44ae-a7de-c074f794e04b", "handler": "active_instrument", "duration_ms": 3, "overall_status": "ok", "response_keys": ["id", "name", "flag", "exchange", "lot_size"], "sources": {"active_instrument": {"status": "ok", "record_count": 1, "duration_ms": 1}}, "level": "info", "timestamp": "2026-05-26T15:46:14.208444Z"}
+{"method": "GET", "path": "/dashboard/js/shared/utils.js", "status_code": 304, "event": "http.request", "trace_id": "d1b13d55-418b-4a0e-b133-eb4f7bd3d79e", "level": "info", "timestamp": "2026-05-26T15:46:14.209375Z"}
+INFO:     127.0.0.1:55092 - "GET /dashboard/js/shared/utils.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/locales/fr.js", "status_code": 304, "event": "http.request", "trace_id": "61935e5f-81d2-4d15-885f-8e57be6079a5", "level": "info", "timestamp": "2026-05-26T15:46:14.210321Z"}
+INFO:     127.0.0.1:55082 - "GET /dashboard/js/locales/fr.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/locales/en.js", "status_code": 304, "event": "http.request", "trace_id": "d9d946fa-a1c9-4bed-83e2-2d1781701793", "level": "info", "timestamp": "2026-05-26T15:46:14.215424Z"}
+INFO:     127.0.0.1:55084 - "GET /dashboard/js/locales/en.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/locales/nl.js", "status_code": 304, "event": "http.request", "trace_id": "22ff8cf2-b2d3-42c9-a1a8-023495c63f79", "level": "info", "timestamp": "2026-05-26T15:46:14.215766Z"}
+INFO:     127.0.0.1:55090 - "GET /dashboard/js/locales/nl.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/js/shared/api.js", "status_code": 304, "event": "http.request", "trace_id": "ac3357e9-cdb6-4f50-b462-4b7543cdd887", "level": "info", "timestamp": "2026-05-26T15:46:14.220557Z"}
+INFO:     127.0.0.1:55088 - "GET /dashboard/js/shared/api.js HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/api/v1/instrument/active", "status_code": 200, "event": "http.request", "trace_id": "474fbf7c-e89e-44ae-a7de-c074f794e04b", "level": "info", "timestamp": "2026-05-26T15:46:14.221082Z"}
+INFO:     127.0.0.1:55086 - "GET /api/v1/instrument/active HTTP/1.1" 200 OK
+{"event": "experience.compose", "trace_id": "f5b95a5186fb4", "handler": "metrics_summary", "duration_ms": 11, "overall_status": "partial", "response_keys": ["api_requests", "pipeline", "training"], "sources": {"prometheus_metrics": {"status": "ok", "record_count": 30, "duration_ms": 0}, "training_kpis": {"status": "empty", "record_count": 0, "duration_ms": 10}}, "level": "info", "timestamp": "2026-05-26T15:46:14.303467Z"}
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "bd21d5f913ab9", "level": "info", "timestamp": "2026-05-26T15:46:14.312500Z"}
+INFO:     127.0.0.1:55084 - "GET /progress HTTP/1.1" 200 OK
+{"method": "GET", "path": "/ops/metrics/source-availability.json", "status_code": 304, "event": "http.request", "trace_id": "f888c93d-5c8d-4879-9ae8-b600b6bac396", "level": "info", "timestamp": "2026-05-26T15:46:14.333245Z"}
+INFO:     127.0.0.1:55092 - "GET /ops/metrics/source-availability.json HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/api/experience/ops/metrics/summary", "status_code": 200, "event": "http.request", "trace_id": "f5b95a5186fb4", "level": "info", "timestamp": "2026-05-26T15:46:14.354965Z"}
+INFO:     127.0.0.1:55088 - "GET /api/experience/ops/metrics/summary HTTP/1.1" 200 OK
+{"event": "experience.compose", "trace_id": "1295ba5926d64", "handler": "metrics_summary", "duration_ms": 2, "overall_status": "partial", "response_keys": ["api_requests", "pipeline", "training"], "sources": {"prometheus_metrics": {"status": "ok", "record_count": 32, "duration_ms": 0}, "training_kpis": {"status": "empty", "record_count": 0, "duration_ms": 1}}, "level": "info", "timestamp": "2026-05-26T15:46:14.406309Z"}
+{"method": "GET", "path": "/api/experience/ops/metrics/summary", "status_code": 200, "event": "http.request", "trace_id": "1295ba5926d64", "level": "info", "timestamp": "2026-05-26T15:46:14.624695Z"}
+INFO:     127.0.0.1:55092 - "GET /api/experience/ops/metrics/summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "3423169ec654f", "level": "info", "timestamp": "2026-05-26T15:46:14.651568Z"}
+INFO:     127.0.0.1:55086 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/functional-kpis", "status_code": 200, "event": "http.request", "trace_id": "7dfeba8b-6ff5-4d61-84d5-e1c09bc6c523", "level": "info", "timestamp": "2026-05-26T15:46:14.676092Z"}
+INFO:     127.0.0.1:55084 - "GET /api/experience/ops/functional-kpis HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/mcp-calls", "status_code": 200, "event": "http.request", "trace_id": "3da74499b5c358", "level": "info", "timestamp": "2026-05-26T15:46:14.688839Z"}
+INFO:     127.0.0.1:55086 - "GET /api/v1/mcp-calls HTTP/1.1" 200 OK
+{"event": "github_deploys.ok", "trace_id": "c2f28c9afebac8", "runs": 10, "level": "info", "timestamp": "2026-05-26T15:46:15.283703Z"}
+{"method": "GET", "path": "/api/experience/ops/github-deploys", "status_code": 200, "event": "http.request", "trace_id": "c2f28c9afebac8", "level": "info", "timestamp": "2026-05-26T15:46:15.293337Z"}
+INFO:     127.0.0.1:55090 - "GET /api/experience/ops/github-deploys HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/api-metrics", "status_code": 200, "event": "http.request", "trace_id": "8c43a3cb253e1", "level": "info", "timestamp": "2026-05-26T15:46:15.318247Z"}
+INFO:     127.0.0.1:55090 - "GET /api/experience/ops/api-metrics HTTP/1.1" 200 OK
+{"event": "aws_alerts.ok", "trace_id": "86c7119a-aeae-4af6-b952-1cb5bc4a1186", "alarms": 2, "level": "info", "timestamp": "2026-05-26T15:46:15.895994Z"}
+{"method": "GET", "path": "/api/experience/ops/aws-alerts", "status_code": 200, "event": "http.request", "trace_id": "86c7119a-aeae-4af6-b952-1cb5bc4a1186", "level": "info", "timestamp": "2026-05-26T15:46:15.906801Z"}
+INFO:     127.0.0.1:55082 - "GET /api/experience/ops/aws-alerts HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/test-results", "status_code": 200, "event": "http.request", "trace_id": "af81e0be528d5", "level": "info", "timestamp": "2026-05-26T15:46:16.108397Z"}
+INFO:     127.0.0.1:55082 - "GET /api/v1/test-results HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/ops.html", "status_code": 304, "event": "http.request", "trace_id": "86008d03-f1c3-4439-a09e-2c2aa1263fb4", "level": "info", "timestamp": "2026-05-26T15:46:25.842596Z"}
+INFO:     127.0.0.1:55098 - "GET /dashboard/ops.html HTTP/1.1" 304 Not Modified
+{"event": "experience.compose", "trace_id": "9366ff49192c28", "handler": "metrics_summary", "duration_ms": 4, "overall_status": "partial", "response_keys": ["api_requests", "pipeline", "training"], "sources": {"prometheus_metrics": {"status": "ok", "record_count": 39, "duration_ms": 1}, "training_kpis": {"status": "empty", "record_count": 0, "duration_ms": 3}}, "level": "info", "timestamp": "2026-05-26T15:46:25.984697Z"}
+{"instrument_id": "ASML", "event": "instrument.selected", "trace_id": "68f8e53a-b1de-40ef-b048-8dcd32251e1a", "level": "info", "timestamp": "2026-05-26T15:46:25.989405Z"}
+{"method": "GET", "path": "/api/experience/ops/metrics/summary", "status_code": 200, "event": "http.request", "trace_id": "9366ff49192c28", "level": "info", "timestamp": "2026-05-26T15:46:25.998763Z"}
+INFO:     127.0.0.1:55103 - "GET /api/experience/ops/metrics/summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "03189e3225192", "level": "info", "timestamp": "2026-05-26T15:46:25.999524Z"}
+INFO:     127.0.0.1:55104 - "GET /progress HTTP/1.1" 200 OK
+{"method": "POST", "path": "/api/v1/instrument/select", "status_code": 200, "event": "http.request", "trace_id": "68f8e53a-b1de-40ef-b048-8dcd32251e1a", "level": "info", "timestamp": "2026-05-26T15:46:26.042881Z"}
+INFO:     127.0.0.1:55098 - "POST /api/v1/instrument/select HTTP/1.1" 200 OK
+{"event": "experience.compose", "trace_id": "bb143755597f2", "handler": "metrics_summary", "duration_ms": 4, "overall_status": "partial", "response_keys": ["api_requests", "pipeline", "training"], "sources": {"prometheus_metrics": {"status": "ok", "record_count": 40, "duration_ms": 1}, "training_kpis": {"status": "empty", "record_count": 0, "duration_ms": 2}}, "level": "info", "timestamp": "2026-05-26T15:46:26.105078Z"}
+{"event": "experience.compose", "trace_id": "40d4352c-5a5e-4586-b9ce-a27c278d103a", "handler": "active_instrument", "duration_ms": 4, "overall_status": "ok", "response_keys": ["id", "name", "flag", "exchange", "lot_size"], "sources": {"active_instrument": {"status": "ok", "record_count": 1, "duration_ms": 2}}, "level": "info", "timestamp": "2026-05-26T15:46:26.114341Z"}
+{"method": "GET", "path": "/api/experience/ops/metrics/summary", "status_code": 200, "event": "http.request", "trace_id": "bb143755597f2", "level": "info", "timestamp": "2026-05-26T15:46:26.274901Z"}
+INFO:     127.0.0.1:55103 - "GET /api/experience/ops/metrics/summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/instrument/active", "status_code": 200, "event": "http.request", "trace_id": "40d4352c-5a5e-4586-b9ce-a27c278d103a", "level": "info", "timestamp": "2026-05-26T15:46:26.332059Z"}
+INFO:     127.0.0.1:55098 - "GET /api/v1/instrument/active HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/functional-kpis", "status_code": 200, "event": "http.request", "trace_id": "44245daa-40fa-4410-bdc3-66a0bb23e691", "level": "info", "timestamp": "2026-05-26T15:46:26.334721Z"}
+INFO:     127.0.0.1:55104 - "GET /api/experience/ops/functional-kpis HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "a47e0b841f03c", "level": "info", "timestamp": "2026-05-26T15:46:26.339266Z"}
+INFO:     127.0.0.1:55100 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/mcp-calls", "status_code": 200, "event": "http.request", "trace_id": "87f96e900654a", "level": "info", "timestamp": "2026-05-26T15:46:26.352064Z"}
+INFO:     127.0.0.1:55100 - "GET /api/v1/mcp-calls HTTP/1.1" 200 OK
+{"event": "github_deploys.ok", "trace_id": "6b107786277b88", "runs": 10, "level": "info", "timestamp": "2026-05-26T15:46:26.728542Z"}
+{"event": "aws_alerts.ok", "trace_id": "4d0498e9-a90d-48d8-8c30-21b8d1cef285", "alarms": 2, "level": "info", "timestamp": "2026-05-26T15:46:26.731819Z"}
+{"method": "GET", "path": "/api/experience/ops/github-deploys", "status_code": 200, "event": "http.request", "trace_id": "6b107786277b88", "level": "info", "timestamp": "2026-05-26T15:46:26.738448Z"}
+INFO:     127.0.0.1:55107 - "GET /api/experience/ops/github-deploys HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/aws-alerts", "status_code": 200, "event": "http.request", "trace_id": "4d0498e9-a90d-48d8-8c30-21b8d1cef285", "level": "info", "timestamp": "2026-05-26T15:46:26.746090Z"}
+INFO:     127.0.0.1:55108 - "GET /api/experience/ops/aws-alerts HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/api-metrics", "status_code": 200, "event": "http.request", "trace_id": "4bd6d1a2256818", "level": "info", "timestamp": "2026-05-26T15:46:26.760621Z"}
+INFO:     127.0.0.1:55107 - "GET /api/experience/ops/api-metrics HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/test-results", "status_code": 200, "event": "http.request", "trace_id": "d9cdc6eba097d8", "level": "info", "timestamp": "2026-05-26T15:46:27.684583Z"}
+INFO:     127.0.0.1:55107 - "GET /api/v1/test-results HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/ops.html", "status_code": 304, "event": "http.request", "trace_id": "c48d5e68-f071-4a95-90da-b3d86d93db15", "level": "info", "timestamp": "2026-05-26T15:47:01.486245Z"}
+INFO:     127.0.0.1:55118 - "GET /dashboard/ops.html HTTP/1.1" 304 Not Modified
+{"event": "experience.compose", "trace_id": "4731872ee35f68", "handler": "metrics_summary", "duration_ms": 3, "overall_status": "partial", "response_keys": ["api_requests", "pipeline", "training"], "sources": {"prometheus_metrics": {"status": "ok", "record_count": 49, "duration_ms": 1}, "training_kpis": {"status": "empty", "record_count": 0, "duration_ms": 2}}, "level": "info", "timestamp": "2026-05-26T15:47:01.667046Z"}
+{"instrument_id": "ASML", "event": "instrument.selected", "trace_id": "d136ca57-8903-45c1-9573-5df5b2e34272", "level": "info", "timestamp": "2026-05-26T15:47:01.687462Z"}
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "39968f03e7e45", "level": "info", "timestamp": "2026-05-26T15:47:01.709830Z"}
+INFO:     127.0.0.1:55124 - "GET /progress HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/metrics/summary", "status_code": 200, "event": "http.request", "trace_id": "4731872ee35f68", "level": "info", "timestamp": "2026-05-26T15:47:01.711841Z"}
+INFO:     127.0.0.1:55122 - "GET /api/experience/ops/metrics/summary HTTP/1.1" 200 OK
+{"method": "POST", "path": "/api/v1/instrument/select", "status_code": 200, "event": "http.request", "trace_id": "d136ca57-8903-45c1-9573-5df5b2e34272", "level": "info", "timestamp": "2026-05-26T15:47:01.796440Z"}
+INFO:     127.0.0.1:55118 - "POST /api/v1/instrument/select HTTP/1.1" 200 OK
+{"event": "experience.compose", "trace_id": "ad2d9595812ff8", "handler": "metrics_summary", "duration_ms": 3, "overall_status": "partial", "response_keys": ["api_requests", "pipeline", "training"], "sources": {"prometheus_metrics": {"status": "ok", "record_count": 50, "duration_ms": 2}, "training_kpis": {"status": "empty", "record_count": 0, "duration_ms": 0}}, "level": "info", "timestamp": "2026-05-26T15:47:01.819739Z"}
+{"event": "experience.compose", "trace_id": "34127990-5239-499c-b67b-48a9788eb2ba", "handler": "active_instrument", "duration_ms": 64, "overall_status": "ok", "response_keys": ["id", "name", "flag", "exchange", "lot_size"], "sources": {"active_instrument": {"status": "ok", "record_count": 1, "duration_ms": 50}}, "level": "info", "timestamp": "2026-05-26T15:47:02.033989Z"}
+{"method": "GET", "path": "/api/experience/ops/metrics/summary", "status_code": 200, "event": "http.request", "trace_id": "ad2d9595812ff8", "level": "info", "timestamp": "2026-05-26T15:47:02.104063Z"}
+INFO:     127.0.0.1:55122 - "GET /api/experience/ops/metrics/summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/functional-kpis", "status_code": 200, "event": "http.request", "trace_id": "3874a485-95ff-4b6e-87a8-313a5e7260e0", "level": "info", "timestamp": "2026-05-26T15:47:02.160213Z"}
+INFO:     127.0.0.1:55124 - "GET /api/experience/ops/functional-kpis HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/instrument/active", "status_code": 200, "event": "http.request", "trace_id": "34127990-5239-499c-b67b-48a9788eb2ba", "level": "info", "timestamp": "2026-05-26T15:47:02.193665Z"}
+INFO:     127.0.0.1:55118 - "GET /api/v1/instrument/active HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "877f0e4cbd0688", "level": "info", "timestamp": "2026-05-26T15:47:02.197914Z"}
+INFO:     127.0.0.1:55119 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/mcp-calls", "status_code": 200, "event": "http.request", "trace_id": "9898ce0b85f7", "level": "info", "timestamp": "2026-05-26T15:47:02.208931Z"}
+INFO:     127.0.0.1:55119 - "GET /api/v1/mcp-calls HTTP/1.1" 200 OK
+{"event": "github_deploys.ok", "trace_id": "53916e4000c5f8", "runs": 10, "level": "info", "timestamp": "2026-05-26T15:47:02.422777Z"}
+{"method": "GET", "path": "/api/experience/ops/github-deploys", "status_code": 200, "event": "http.request", "trace_id": "53916e4000c5f8", "level": "info", "timestamp": "2026-05-26T15:47:02.434649Z"}
+INFO:     127.0.0.1:55126 - "GET /api/experience/ops/github-deploys HTTP/1.1" 200 OK
+{"event": "aws_alerts.ok", "trace_id": "de58ebbd-12f1-4d2f-a561-49f4fbcf8c46", "alarms": 2, "level": "info", "timestamp": "2026-05-26T15:47:02.483424Z"}
+{"method": "GET", "path": "/api/experience/ops/aws-alerts", "status_code": 200, "event": "http.request", "trace_id": "de58ebbd-12f1-4d2f-a561-49f4fbcf8c46", "level": "info", "timestamp": "2026-05-26T15:47:02.524390Z"}
+INFO:     127.0.0.1:55128 - "GET /api/experience/ops/aws-alerts HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/api-metrics", "status_code": 200, "event": "http.request", "trace_id": "3ea0282f6b5cd", "level": "info", "timestamp": "2026-05-26T15:47:02.543724Z"}
+INFO:     127.0.0.1:55126 - "GET /api/experience/ops/api-metrics HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/test-results", "status_code": 200, "event": "http.request", "trace_id": "fca87d5d3cdbb8", "level": "info", "timestamp": "2026-05-26T15:47:03.651268Z"}
+INFO:     127.0.0.1:55126 - "GET /api/v1/test-results HTTP/1.1" 200 OK
+{"method": "GET", "path": "/.well-known/appspecific/com.chrome.devtools.json", "status_code": 404, "event": "http.request", "trace_id": "e2218e4b-1991-4b22-a413-0bdf6caaf553", "level": "info", "timestamp": "2026-05-26T15:47:09.861304Z"}
+INFO:     127.0.0.1:55138 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 Not Found
+{"method": "GET", "path": "/dashboard/ops.html", "status_code": 304, "event": "http.request", "trace_id": "b89920f5-93a1-4389-a17b-0ea60fd4aa01", "level": "info", "timestamp": "2026-05-26T15:47:42.575243Z"}
+INFO:     127.0.0.1:55307 - "GET /dashboard/ops.html HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/.well-known/appspecific/com.chrome.devtools.json", "status_code": 404, "event": "http.request", "trace_id": "8f26d571-4627-4164-9bb8-d238f23e6303", "level": "info", "timestamp": "2026-05-26T15:47:42.841902Z"}
+INFO:     127.0.0.1:55307 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 Not Found
+{"instrument_id": "ASML", "event": "instrument.selected", "trace_id": "ea3660b5-de4a-4d4c-b122-4e1476f8debc", "level": "info", "timestamp": "2026-05-26T15:47:42.850872Z"}
+{"method": "POST", "path": "/api/v1/instrument/select", "status_code": 200, "event": "http.request", "trace_id": "ea3660b5-de4a-4d4c-b122-4e1476f8debc", "level": "info", "timestamp": "2026-05-26T15:47:42.855289Z"}
+INFO:     127.0.0.1:55309 - "POST /api/v1/instrument/select HTTP/1.1" 200 OK
+{"event": "experience.compose", "trace_id": "661b429f-bc76-4f42-8cbd-fe1a997de60c", "handler": "active_instrument", "duration_ms": 2, "overall_status": "ok", "response_keys": ["id", "name", "flag", "exchange", "lot_size"], "sources": {"active_instrument": {"status": "ok", "record_count": 1, "duration_ms": 0}}, "level": "info", "timestamp": "2026-05-26T15:47:43.105193Z"}
+{"method": "GET", "path": "/api/v1/instrument/active", "status_code": 200, "event": "http.request", "trace_id": "661b429f-bc76-4f42-8cbd-fe1a997de60c", "level": "info", "timestamp": "2026-05-26T15:47:43.166375Z"}
+INFO:     127.0.0.1:55309 - "GET /api/v1/instrument/active HTTP/1.1" 200 OK
+{"event": "experience.compose", "trace_id": "13b51963a10298", "handler": "metrics_summary", "duration_ms": 4, "overall_status": "partial", "response_keys": ["api_requests", "pipeline", "training"], "sources": {"prometheus_metrics": {"status": "ok", "record_count": 62, "duration_ms": 1}, "training_kpis": {"status": "empty", "record_count": 0, "duration_ms": 2}}, "level": "info", "timestamp": "2026-05-26T15:47:43.308798Z"}
+{"method": "GET", "path": "/api/experience/ops/metrics/summary", "status_code": 200, "event": "http.request", "trace_id": "13b51963a10298", "level": "info", "timestamp": "2026-05-26T15:47:43.488050Z"}
+INFO:     127.0.0.1:55315 - "GET /api/experience/ops/metrics/summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "1c1a7bb8ba9318", "level": "info", "timestamp": "2026-05-26T15:47:43.488472Z"}
+INFO:     127.0.0.1:55317 - "GET /progress HTTP/1.1" 200 OK
+{"event": "experience.compose", "trace_id": "56f19bd2588478", "handler": "metrics_summary", "duration_ms": 3, "overall_status": "partial", "response_keys": ["api_requests", "pipeline", "training"], "sources": {"prometheus_metrics": {"status": "ok", "record_count": 64, "duration_ms": 2}, "training_kpis": {"status": "empty", "record_count": 0, "duration_ms": 1}}, "level": "info", "timestamp": "2026-05-26T15:47:43.504872Z"}
+{"method": "GET", "path": "/api/experience/ops/metrics/summary", "status_code": 200, "event": "http.request", "trace_id": "56f19bd2588478", "level": "info", "timestamp": "2026-05-26T15:47:43.509023Z"}
+INFO:     127.0.0.1:55315 - "GET /api/experience/ops/metrics/summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/functional-kpis", "status_code": 200, "event": "http.request", "trace_id": "66859dd5-cf2e-405a-b7b1-176d398d35c9", "level": "info", "timestamp": "2026-05-26T15:47:43.650134Z"}
+INFO:     127.0.0.1:55309 - "GET /api/experience/ops/functional-kpis HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "543827abe01558", "level": "info", "timestamp": "2026-05-26T15:47:43.910214Z"}
+INFO:     127.0.0.1:55307 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/mcp-calls", "status_code": 200, "event": "http.request", "trace_id": "f7c6bb04f642e", "level": "info", "timestamp": "2026-05-26T15:47:43.924776Z"}
+INFO:     127.0.0.1:55307 - "GET /api/v1/mcp-calls HTTP/1.1" 200 OK
+{"event": "aws_alerts.ok", "trace_id": "6cde51c6-4d2a-4686-b75f-be704559d5f4", "alarms": 2, "level": "info", "timestamp": "2026-05-26T15:47:43.976120Z"}
+{"method": "GET", "path": "/api/experience/ops/aws-alerts", "status_code": 200, "event": "http.request", "trace_id": "6cde51c6-4d2a-4686-b75f-be704559d5f4", "level": "info", "timestamp": "2026-05-26T15:47:43.981180Z"}
+INFO:     127.0.0.1:55321 - "GET /api/experience/ops/aws-alerts HTTP/1.1" 200 OK
+{"event": "github_deploys.ok", "trace_id": "d0e3b96c1d94b", "runs": 10, "level": "info", "timestamp": "2026-05-26T15:47:44.059344Z"}
+{"method": "GET", "path": "/api/experience/ops/github-deploys", "status_code": 200, "event": "http.request", "trace_id": "d0e3b96c1d94b", "level": "info", "timestamp": "2026-05-26T15:47:44.063730Z"}
+INFO:     127.0.0.1:55320 - "GET /api/experience/ops/github-deploys HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/api-metrics", "status_code": 200, "event": "http.request", "trace_id": "8167372b1ac3b8", "level": "info", "timestamp": "2026-05-26T15:47:44.095669Z"}
+INFO:     127.0.0.1:55320 - "GET /api/experience/ops/api-metrics HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/test-results", "status_code": 200, "event": "http.request", "trace_id": "ff72570b5c38c", "level": "info", "timestamp": "2026-05-26T15:47:45.321413Z"}
+INFO:     127.0.0.1:55320 - "GET /api/v1/test-results HTTP/1.1" 200 OK
+INFO:     Will watch for changes in these directories: ['/Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release']
+/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [37490] using WatchFiles
+/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [37492]
+INFO:     Waiting for application startup.
+{"name": "rita", "version": "1.0.0", "event": "app.startup", "level": "info", "timestamp": "2026-05-26T15:48:14.946968Z"}
+{"instrument": "ATHER", "error": "No CSV data found for instrument 'ATHER'. Expected files in /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/raw/ATHER or /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/input/ATHER.", "event": "market_data.seed_failed", "level": "warning", "timestamp": "2026-05-26T15:48:17.006049Z"}
+{"instrument": "ASML26MAY1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T15:48:17.019633Z"}
+{"instrument": "ASML26JUN1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T15:48:17.020684Z"}
+INFO:     Application startup complete.
+{"method": "GET", "path": "/dashboard/ops.html", "status_code": 304, "event": "http.request", "trace_id": "07121d04-8b66-4cb3-ab7b-850e6613720b", "level": "info", "timestamp": "2026-05-26T15:48:19.599860Z"}
+INFO:     127.0.0.1:55491 - "GET /dashboard/ops.html HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/.well-known/appspecific/com.chrome.devtools.json", "status_code": 404, "event": "http.request", "trace_id": "020672e7-00f7-4f9d-86f7-8f228604083b", "level": "info", "timestamp": "2026-05-26T15:48:19.748715Z"}
+INFO:     127.0.0.1:55491 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 Not Found
+{"instrument_id": "ASML", "event": "instrument.selected", "trace_id": "78a8be52-2d89-44d5-a2a2-11a5528dc25c", "level": "info", "timestamp": "2026-05-26T15:48:19.982297Z"}
+{"method": "POST", "path": "/api/v1/instrument/select", "status_code": 200, "event": "http.request", "trace_id": "78a8be52-2d89-44d5-a2a2-11a5528dc25c", "level": "info", "timestamp": "2026-05-26T15:48:19.986259Z"}
+INFO:     127.0.0.1:55491 - "POST /api/v1/instrument/select HTTP/1.1" 200 OK
+{"event": "experience.compose", "trace_id": "7d0495bd-a83b-4e26-ab31-dcd2d3b31b8a", "handler": "active_instrument", "duration_ms": 6, "overall_status": "ok", "response_keys": ["id", "name", "flag", "exchange", "lot_size"], "sources": {"active_instrument": {"status": "ok", "record_count": 1, "duration_ms": 2}}, "level": "info", "timestamp": "2026-05-26T15:48:20.068428Z"}
+{"method": "GET", "path": "/api/v1/instrument/active", "status_code": 200, "event": "http.request", "trace_id": "7d0495bd-a83b-4e26-ab31-dcd2d3b31b8a", "level": "info", "timestamp": "2026-05-26T15:48:20.072345Z"}
+INFO:     127.0.0.1:55491 - "GET /api/v1/instrument/active HTTP/1.1" 200 OK
+{"event": "experience.compose", "trace_id": "410aa34e70f21", "handler": "metrics_summary", "duration_ms": 8, "overall_status": "partial", "response_keys": ["api_requests", "pipeline", "training"], "sources": {"prometheus_metrics": {"status": "ok", "record_count": 4, "duration_ms": 0}, "training_kpis": {"status": "empty", "record_count": 0, "duration_ms": 8}}, "level": "info", "timestamp": "2026-05-26T15:48:20.248341Z"}
+{"method": "GET", "path": "/api/experience/ops/metrics/summary", "status_code": 200, "event": "http.request", "trace_id": "410aa34e70f21", "level": "info", "timestamp": "2026-05-26T15:48:20.523156Z"}
+INFO:     127.0.0.1:55493 - "GET /api/experience/ops/metrics/summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "dfe6d5736bc46", "level": "info", "timestamp": "2026-05-26T15:48:20.550778Z"}
+INFO:     127.0.0.1:55500 - "GET /progress HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/functional-kpis", "status_code": 200, "event": "http.request", "trace_id": "4820f4c7-41a2-48ce-9d19-9351a8cfe314", "level": "info", "timestamp": "2026-05-26T15:48:20.634862Z"}
+INFO:     127.0.0.1:55506 - "GET /api/experience/ops/functional-kpis HTTP/1.1" 200 OK
+{"event": "experience.compose", "trace_id": "e9a33ae58e7068", "handler": "metrics_summary", "duration_ms": 20, "overall_status": "partial", "response_keys": ["api_requests", "pipeline", "training"], "sources": {"prometheus_metrics": {"status": "ok", "record_count": 5, "duration_ms": 1}, "training_kpis": {"status": "empty", "record_count": 0, "duration_ms": 18}}, "level": "info", "timestamp": "2026-05-26T15:48:20.724546Z"}
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "2379bb1438cbb8", "level": "info", "timestamp": "2026-05-26T15:48:20.726061Z"}
+INFO:     127.0.0.1:55491 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/metrics/summary", "status_code": 200, "event": "http.request", "trace_id": "e9a33ae58e7068", "level": "info", "timestamp": "2026-05-26T15:48:20.741334Z"}
+INFO:     127.0.0.1:55493 - "GET /api/experience/ops/metrics/summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/mcp-calls", "status_code": 200, "event": "http.request", "trace_id": "89302f27456218", "level": "info", "timestamp": "2026-05-26T15:48:20.755136Z"}
+INFO:     127.0.0.1:55491 - "GET /api/v1/mcp-calls HTTP/1.1" 200 OK
+{"event": "github_deploys.ok", "trace_id": "06760e58b33be", "runs": 10, "level": "info", "timestamp": "2026-05-26T15:48:21.346736Z"}
+{"method": "GET", "path": "/api/experience/ops/github-deploys", "status_code": 200, "event": "http.request", "trace_id": "06760e58b33be", "level": "info", "timestamp": "2026-05-26T15:48:21.356320Z"}
+INFO:     127.0.0.1:55502 - "GET /api/experience/ops/github-deploys HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/api-metrics", "status_code": 200, "event": "http.request", "trace_id": "68b68e5407a658", "level": "info", "timestamp": "2026-05-26T15:48:21.390428Z"}
+INFO:     127.0.0.1:55502 - "GET /api/experience/ops/api-metrics HTTP/1.1" 200 OK
+{"event": "aws_alerts.ok", "trace_id": "36fb5a49-716b-4619-a521-61144154e82d", "alarms": 2, "level": "info", "timestamp": "2026-05-26T15:48:21.955463Z"}
+{"method": "GET", "path": "/api/experience/ops/aws-alerts", "status_code": 200, "event": "http.request", "trace_id": "36fb5a49-716b-4619-a521-61144154e82d", "level": "info", "timestamp": "2026-05-26T15:48:21.961046Z"}
+INFO:     127.0.0.1:55504 - "GET /api/experience/ops/aws-alerts HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/test-results", "status_code": 200, "event": "http.request", "trace_id": "23cf7b7895eab", "level": "info", "timestamp": "2026-05-26T15:48:25.525728Z"}
+INFO:     127.0.0.1:55504 - "GET /api/v1/test-results HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'tests/e2e/test_rita_scenarios.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "app.shutdown", "level": "info", "timestamp": "2026-05-26T15:51:35.180223Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [37492]
+WARNING:  WatchFiles detected changes in 'tests/e2e/test_rita_scenarios.py'. Reloading...
+/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [38185]
+INFO:     Waiting for application startup.
+{"name": "rita", "version": "1.0.0", "event": "app.startup", "level": "info", "timestamp": "2026-05-26T15:51:39.346500Z"}
+{"instrument": "ATHER", "error": "No CSV data found for instrument 'ATHER'. Expected files in /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/raw/ATHER or /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/input/ATHER.", "event": "market_data.seed_failed", "level": "warning", "timestamp": "2026-05-26T15:51:41.432645Z"}
+{"instrument": "ASML26MAY1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T15:51:41.448556Z"}
+{"instrument": "ASML26JUN1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T15:51:41.448993Z"}
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "app.shutdown", "level": "info", "timestamp": "2026-05-26T15:51:41.550654Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [38185]
+WARNING:  WatchFiles detected changes in 'tests/e2e/test_ops_scenarios.py'. Reloading...
+/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [38190]
+INFO:     Waiting for application startup.
+{"name": "rita", "version": "1.0.0", "event": "app.startup", "level": "info", "timestamp": "2026-05-26T15:51:43.990026Z"}
+{"instrument": "ATHER", "error": "No CSV data found for instrument 'ATHER'. Expected files in /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/raw/ATHER or /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/input/ATHER.", "event": "market_data.seed_failed", "level": "warning", "timestamp": "2026-05-26T15:51:45.438422Z"}
+{"instrument": "ASML26MAY1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T15:51:45.451392Z"}
+{"instrument": "ASML26JUN1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T15:51:45.451994Z"}
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "app.shutdown", "level": "info", "timestamp": "2026-05-26T15:51:45.553712Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [38190]
+/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [38242]
+INFO:     Waiting for application startup.
+{"name": "rita", "version": "1.0.0", "event": "app.startup", "level": "info", "timestamp": "2026-05-26T15:51:48.478100Z"}
+{"instrument": "ATHER", "error": "No CSV data found for instrument 'ATHER'. Expected files in /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/raw/ATHER or /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/input/ATHER.", "event": "market_data.seed_failed", "level": "warning", "timestamp": "2026-05-26T15:51:50.015017Z"}
+{"instrument": "ASML26MAY1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T15:51:50.027148Z"}
+{"instrument": "ASML26JUN1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T15:51:50.027603Z"}
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests/e2e/conftest.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "app.shutdown", "level": "info", "timestamp": "2026-05-26T15:52:51.008923Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [38242]
+/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [38507]
+INFO:     Waiting for application startup.
+{"name": "rita", "version": "1.0.0", "event": "app.startup", "level": "info", "timestamp": "2026-05-26T15:52:53.993206Z"}
+{"instrument": "ATHER", "error": "No CSV data found for instrument 'ATHER'. Expected files in /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/raw/ATHER or /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/input/ATHER.", "event": "market_data.seed_failed", "level": "warning", "timestamp": "2026-05-26T15:52:56.068322Z"}
+{"instrument": "ASML26MAY1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T15:52:56.079968Z"}
+{"instrument": "ASML26JUN1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T15:52:56.080309Z"}
+INFO:     Application startup complete.
+{"method": "GET", "path": "/dashboard/ops.html", "status_code": 304, "event": "http.request", "trace_id": "e5b5996b-029c-42e1-8cf0-4a278249ac2f", "level": "info", "timestamp": "2026-05-26T15:56:25.238124Z"}
+INFO:     127.0.0.1:57614 - "GET /dashboard/ops.html HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/.well-known/appspecific/com.chrome.devtools.json", "status_code": 404, "event": "http.request", "trace_id": "866a118f-7f81-44ef-99b8-f70dc45da66b", "level": "info", "timestamp": "2026-05-26T15:56:25.315735Z"}
+INFO:     127.0.0.1:57614 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 Not Found
+{"instrument_id": "ASML", "event": "instrument.selected", "trace_id": "c02ac52e-b84d-4888-9ff1-73a1be9af2bf", "level": "info", "timestamp": "2026-05-26T15:56:25.574558Z"}
+{"method": "POST", "path": "/api/v1/instrument/select", "status_code": 200, "event": "http.request", "trace_id": "c02ac52e-b84d-4888-9ff1-73a1be9af2bf", "level": "info", "timestamp": "2026-05-26T15:56:25.580265Z"}
+INFO:     127.0.0.1:57614 - "POST /api/v1/instrument/select HTTP/1.1" 200 OK
+{"event": "experience.compose", "trace_id": "af1c84dc-8900-4589-b1c2-dac4fd45fd21", "handler": "active_instrument", "duration_ms": 1, "overall_status": "ok", "response_keys": ["id", "name", "flag", "exchange", "lot_size"], "sources": {"active_instrument": {"status": "ok", "record_count": 1, "duration_ms": 0}}, "level": "info", "timestamp": "2026-05-26T15:56:25.894199Z"}
+{"event": "experience.compose", "trace_id": "ce81f4814eef88", "handler": "metrics_summary", "duration_ms": 11, "overall_status": "partial", "response_keys": ["api_requests", "pipeline", "training"], "sources": {"prometheus_metrics": {"status": "ok", "record_count": 3, "duration_ms": 0}, "training_kpis": {"status": "empty", "record_count": 0, "duration_ms": 10}}, "level": "info", "timestamp": "2026-05-26T15:56:25.908171Z"}
+{"method": "GET", "path": "/api/v1/instrument/active", "status_code": 200, "event": "http.request", "trace_id": "af1c84dc-8900-4589-b1c2-dac4fd45fd21", "level": "info", "timestamp": "2026-05-26T15:56:25.934523Z"}
+INFO:     127.0.0.1:57614 - "GET /api/v1/instrument/active HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/metrics/summary", "status_code": 200, "event": "http.request", "trace_id": "ce81f4814eef88", "level": "info", "timestamp": "2026-05-26T15:56:26.031178Z"}
+INFO:     127.0.0.1:57620 - "GET /api/experience/ops/metrics/summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "224b2277a9cdb", "level": "info", "timestamp": "2026-05-26T15:56:26.056578Z"}
+INFO:     127.0.0.1:57621 - "GET /progress HTTP/1.1" 200 OK
+{"event": "experience.compose", "trace_id": "3375f5bf76e53", "handler": "metrics_summary", "duration_ms": 5, "overall_status": "partial", "response_keys": ["api_requests", "pipeline", "training"], "sources": {"prometheus_metrics": {"status": "ok", "record_count": 5, "duration_ms": 0}, "training_kpis": {"status": "empty", "record_count": 0, "duration_ms": 4}}, "level": "info", "timestamp": "2026-05-26T15:56:26.083623Z"}
+{"method": "GET", "path": "/api/experience/ops/metrics/summary", "status_code": 200, "event": "http.request", "trace_id": "3375f5bf76e53", "level": "info", "timestamp": "2026-05-26T15:56:26.126260Z"}
+INFO:     127.0.0.1:57620 - "GET /api/experience/ops/metrics/summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/functional-kpis", "status_code": 200, "event": "http.request", "trace_id": "50fcbd91-6624-409a-a5fb-b170c8aef05a", "level": "info", "timestamp": "2026-05-26T15:56:26.278658Z"}
+INFO:     127.0.0.1:57614 - "GET /api/experience/ops/functional-kpis HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "d8620a4368c8f8", "level": "info", "timestamp": "2026-05-26T15:56:26.681259Z"}
+INFO:     127.0.0.1:57616 - "GET /health HTTP/1.1" 200 OK
+{"event": "github_deploys.ok", "trace_id": "3e448ad5f47f78", "runs": 10, "level": "info", "timestamp": "2026-05-26T15:56:27.045597Z"}
+{"method": "GET", "path": "/api/v1/mcp-calls", "status_code": 200, "event": "http.request", "trace_id": "33c834b1fec9e8", "level": "info", "timestamp": "2026-05-26T15:56:27.060108Z"}
+INFO:     127.0.0.1:57616 - "GET /api/v1/mcp-calls HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/github-deploys", "status_code": 200, "event": "http.request", "trace_id": "3e448ad5f47f78", "level": "info", "timestamp": "2026-05-26T15:56:27.096442Z"}
+INFO:     127.0.0.1:57623 - "GET /api/experience/ops/github-deploys HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/api-metrics", "status_code": 200, "event": "http.request", "trace_id": "20a0bfd8c5e8b8", "level": "info", "timestamp": "2026-05-26T15:56:27.134618Z"}
+INFO:     127.0.0.1:57623 - "GET /api/experience/ops/api-metrics HTTP/1.1" 200 OK
+{"event": "aws_alerts.ok", "trace_id": "754a7219-f3a0-40ec-982c-68330f6ff63a", "alarms": 2, "level": "info", "timestamp": "2026-05-26T15:56:28.012814Z"}
+{"method": "GET", "path": "/api/experience/ops/aws-alerts", "status_code": 200, "event": "http.request", "trace_id": "754a7219-f3a0-40ec-982c-68330f6ff63a", "level": "info", "timestamp": "2026-05-26T15:56:28.019018Z"}
+INFO:     127.0.0.1:57625 - "GET /api/experience/ops/aws-alerts HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/test-results", "status_code": 200, "event": "http.request", "trace_id": "c50021d0508818", "level": "info", "timestamp": "2026-05-26T15:56:28.476160Z"}
+INFO:     127.0.0.1:57625 - "GET /api/v1/test-results HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/", "status_code": 200, "event": "http.request", "trace_id": "13798698-37d2-4cbf-a6cc-f4b6bcbdfc65", "level": "info", "timestamp": "2026-05-26T16:01:22.196232Z"}
+INFO:     127.0.0.1:58863 - "GET /dashboard/ HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/ops.html", "status_code": 200, "event": "http.request", "trace_id": "bea237bf-7d1d-4285-949f-2ff648ee3d82", "level": "info", "timestamp": "2026-05-26T16:01:24.432044Z"}
+INFO:     127.0.0.1:58863 - "GET /dashboard/ops.html HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/css/responsive.css", "status_code": 200, "event": "http.request", "trace_id": "3766c07a-117a-451d-b09d-691586f64506", "level": "info", "timestamp": "2026-05-26T16:01:24.477422Z"}
+INFO:     127.0.0.1:58863 - "GET /dashboard/css/responsive.css HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/main.js", "status_code": 200, "event": "http.request", "trace_id": "17853022-f001-4baa-9658-954583678de0", "level": "info", "timestamp": "2026-05-26T16:01:24.478999Z"}
+INFO:     127.0.0.1:58879 - "GET /dashboard/js/ops/main.js HTTP/1.1" 200 OK
+{"event": "experience.compose", "trace_id": "fe2dbf96-5ac6-4c72-a0c6-882aba9ac27a", "handler": "active_instrument", "duration_ms": 1, "overall_status": "ok", "response_keys": ["id", "name", "flag", "exchange", "lot_size"], "sources": {"active_instrument": {"status": "ok", "record_count": 1, "duration_ms": 0}}, "level": "info", "timestamp": "2026-05-26T16:01:24.620729Z"}
+{"method": "GET", "path": "/api/v1/instrument/active", "status_code": 200, "event": "http.request", "trace_id": "fe2dbf96-5ac6-4c72-a0c6-882aba9ac27a", "level": "info", "timestamp": "2026-05-26T16:01:24.626200Z"}
+INFO:     127.0.0.1:58879 - "GET /api/v1/instrument/active HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/chat.js", "status_code": 200, "event": "http.request", "trace_id": "8a0fbbf2-0010-477b-aa14-9f17f2d69a8f", "level": "info", "timestamp": "2026-05-26T16:01:24.696583Z"}
+INFO:     127.0.0.1:58879 - "GET /dashboard/js/ops/chat.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/deploy.js", "status_code": 200, "event": "http.request", "trace_id": "edf8fb57-6b1b-4f31-9025-352857c00ece", "level": "info", "timestamp": "2026-05-26T16:01:24.697687Z"}
+INFO:     127.0.0.1:58887 - "GET /dashboard/js/ops/deploy.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/nav.js", "status_code": 200, "event": "http.request", "trace_id": "4d9d2e35-b9b8-4679-9eff-f49ebcf7bee7", "level": "info", "timestamp": "2026-05-26T16:01:24.698205Z"}
+INFO:     127.0.0.1:58863 - "GET /dashboard/js/ops/nav.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/observability.js", "status_code": 200, "event": "http.request", "trace_id": "2a2220cb-c37c-46cd-8ce9-276586834c01", "level": "info", "timestamp": "2026-05-26T16:01:24.700046Z"}
+INFO:     127.0.0.1:58888 - "GET /dashboard/js/ops/observability.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/overview.js", "status_code": 200, "event": "http.request", "trace_id": "7b1777d8-74e8-42f3-a993-46f2419f3244", "level": "info", "timestamp": "2026-05-26T16:01:24.708249Z"}
+INFO:     127.0.0.1:58883 - "GET /dashboard/js/ops/overview.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/monitoring.js", "status_code": 200, "event": "http.request", "trace_id": "ec7da4c6-b353-4e96-b96b-b3806245b5aa", "level": "info", "timestamp": "2026-05-26T16:01:24.709432Z"}
+INFO:     127.0.0.1:58884 - "GET /dashboard/js/ops/monitoring.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/daily-ops.js", "status_code": 200, "event": "http.request", "trace_id": "2657f25e-2ff7-4e7c-821f-64acef2036e1", "level": "info", "timestamp": "2026-05-26T16:01:24.745863Z"}
+INFO:     127.0.0.1:58883 - "GET /dashboard/js/ops/daily-ops.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/game-compliance.js", "status_code": 200, "event": "http.request", "trace_id": "20e10fd4-7323-4e22-9a72-725d30e9ce8c", "level": "info", "timestamp": "2026-05-26T16:01:24.748930Z"}
+INFO:     127.0.0.1:58888 - "GET /dashboard/js/ops/game-compliance.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/sidebar.js", "status_code": 200, "event": "http.request", "trace_id": "66e7f947-96ff-4e8d-a61d-c544c8a69297", "level": "info", "timestamp": "2026-05-26T16:01:24.749695Z"}
+INFO:     127.0.0.1:58863 - "GET /dashboard/js/ops/sidebar.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/test-results.js", "status_code": 200, "event": "http.request", "trace_id": "bfebeff3-2899-40cc-81cd-283d2c22f910", "level": "info", "timestamp": "2026-05-26T16:01:24.751687Z"}
+INFO:     127.0.0.1:58879 - "GET /dashboard/js/ops/test-results.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/users.js", "status_code": 200, "event": "http.request", "trace_id": "05b2ac38-ec4e-476e-bad0-8b31492b237b", "level": "info", "timestamp": "2026-05-26T16:01:24.755086Z"}
+INFO:     127.0.0.1:58884 - "GET /dashboard/js/ops/users.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/agent-builds.js", "status_code": 200, "event": "http.request", "trace_id": "3dc73be3-b09c-4fbc-874a-0ac2cbb80a98", "level": "info", "timestamp": "2026-05-26T16:01:24.760548Z"}
+INFO:     127.0.0.1:58887 - "GET /dashboard/js/ops/agent-builds.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/alerts.js", "status_code": 200, "event": "http.request", "trace_id": "17cf4b23-529a-4c7f-a90d-47d14f9e74f3", "level": "info", "timestamp": "2026-05-26T16:01:24.787129Z"}
+INFO:     127.0.0.1:58883 - "GET /dashboard/js/ops/alerts.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/api-metrics.js", "status_code": 200, "event": "http.request", "trace_id": "d4246a50-3ff6-4223-8ed1-e927a3eff134", "level": "info", "timestamp": "2026-05-26T16:01:24.794221Z"}
+INFO:     127.0.0.1:58884 - "GET /dashboard/js/ops/api-metrics.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/source-availability.js", "status_code": 200, "event": "http.request", "trace_id": "c76fbb08-19ac-47d5-978a-700dfb798917", "level": "info", "timestamp": "2026-05-26T16:01:24.794671Z"}
+INFO:     127.0.0.1:58863 - "GET /dashboard/js/ops/source-availability.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/functional-kpis.js", "status_code": 200, "event": "http.request", "trace_id": "38367634-79ea-465d-9828-42a85d271558", "level": "info", "timestamp": "2026-05-26T16:01:24.796309Z"}
+INFO:     127.0.0.1:58879 - "GET /dashboard/js/ops/functional-kpis.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/utils.js", "status_code": 200, "event": "http.request", "trace_id": "70bf61bb-b287-4c4a-bb45-30c9e70c66c2", "level": "info", "timestamp": "2026-05-26T16:01:24.803198Z"}
+INFO:     127.0.0.1:58888 - "GET /dashboard/js/ops/utils.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/shared/i18n.js", "status_code": 200, "event": "http.request", "trace_id": "e17cfa1b-74f3-44f3-b469-741f50b8a4fe", "level": "info", "timestamp": "2026-05-26T16:01:24.806824Z"}
+INFO:     127.0.0.1:58887 - "GET /dashboard/js/shared/i18n.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/ops/api.js", "status_code": 200, "event": "http.request", "trace_id": "d27db3b3-f644-4404-b62d-0153609ca10c", "level": "info", "timestamp": "2026-05-26T16:01:24.815866Z"}
+INFO:     127.0.0.1:58883 - "GET /dashboard/js/ops/api.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/locales/fr.js", "status_code": 200, "event": "http.request", "trace_id": "a8f905ed-eb08-4fcf-80cd-9ec117047790", "level": "info", "timestamp": "2026-05-26T16:01:24.838049Z"}
+INFO:     127.0.0.1:58863 - "GET /dashboard/js/locales/fr.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/shared/utils.js", "status_code": 200, "event": "http.request", "trace_id": "b1966e92-818c-47bd-84d3-244b73910921", "level": "info", "timestamp": "2026-05-26T16:01:24.840926Z"}
+INFO:     127.0.0.1:58888 - "GET /dashboard/js/shared/utils.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/locales/nl.js", "status_code": 200, "event": "http.request", "trace_id": "75fe374c-9d50-46cc-9301-237e794650f4", "level": "info", "timestamp": "2026-05-26T16:01:24.841662Z"}
+INFO:     127.0.0.1:58884 - "GET /dashboard/js/locales/nl.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/locales/en.js", "status_code": 200, "event": "http.request", "trace_id": "2f158ddb-8ee4-4451-9c56-33b04778eed4", "level": "info", "timestamp": "2026-05-26T16:01:24.842514Z"}
+INFO:     127.0.0.1:58887 - "GET /dashboard/js/locales/en.js HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/js/shared/api.js", "status_code": 200, "event": "http.request", "trace_id": "176afa82-6b36-4ab4-b2cd-bdcc80e60dc7", "level": "info", "timestamp": "2026-05-26T16:01:24.845737Z"}
+INFO:     127.0.0.1:58883 - "GET /dashboard/js/shared/api.js HTTP/1.1" 200 OK
+{"event": "experience.compose", "trace_id": "5f3d274b837ae8", "handler": "metrics_summary", "duration_ms": 12, "overall_status": "partial", "response_keys": ["api_requests", "pipeline", "training"], "sources": {"prometheus_metrics": {"status": "ok", "record_count": 40, "duration_ms": 1}, "training_kpis": {"status": "empty", "record_count": 0, "duration_ms": 10}}, "level": "info", "timestamp": "2026-05-26T16:01:24.894724Z"}
+{"method": "GET", "path": "/ops/metrics/source-availability.json", "status_code": 200, "event": "http.request", "trace_id": "61997d0d-08bc-4186-898e-291942760b41", "level": "info", "timestamp": "2026-05-26T16:01:24.898986Z"}
+INFO:     127.0.0.1:58879 - "GET /ops/metrics/source-availability.json HTTP/1.1" 200 OK
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "9af84bdc56c208", "level": "info", "timestamp": "2026-05-26T16:01:24.917207Z"}
+INFO:     127.0.0.1:58884 - "GET /progress HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/metrics/summary", "status_code": 200, "event": "http.request", "trace_id": "5f3d274b837ae8", "level": "info", "timestamp": "2026-05-26T16:01:24.918791Z"}
+INFO:     127.0.0.1:58888 - "GET /api/experience/ops/metrics/summary HTTP/1.1" 200 OK
+{"event": "experience.compose", "trace_id": "16f765b57830e8", "handler": "metrics_summary", "duration_ms": 3, "overall_status": "partial", "response_keys": ["api_requests", "pipeline", "training"], "sources": {"prometheus_metrics": {"status": "ok", "record_count": 42, "duration_ms": 0}, "training_kpis": {"status": "empty", "record_count": 0, "duration_ms": 2}}, "level": "info", "timestamp": "2026-05-26T16:01:24.934327Z"}
+{"method": "GET", "path": "/api/experience/ops/metrics/summary", "status_code": 200, "event": "http.request", "trace_id": "16f765b57830e8", "level": "info", "timestamp": "2026-05-26T16:01:24.962119Z"}
+INFO:     127.0.0.1:58888 - "GET /api/experience/ops/metrics/summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/functional-kpis", "status_code": 200, "event": "http.request", "trace_id": "affbb35c-0ae7-48ac-99c3-5111429d301a", "level": "info", "timestamp": "2026-05-26T16:01:25.019084Z"}
+INFO:     127.0.0.1:58884 - "GET /api/experience/ops/functional-kpis HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "9697a2123a8f38", "level": "info", "timestamp": "2026-05-26T16:01:25.183941Z"}
+INFO:     127.0.0.1:58883 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/mcp-calls", "status_code": 200, "event": "http.request", "trace_id": "e9860b5d736758", "level": "info", "timestamp": "2026-05-26T16:01:25.192908Z"}
+INFO:     127.0.0.1:58883 - "GET /api/v1/mcp-calls HTTP/1.1" 200 OK
+{"event": "experience.compose", "trace_id": "1eaec8c85ea63", "handler": "step_log", "duration_ms": 1, "overall_status": "ok", "response_keys": [], "sources": {"pipeline_runs": {"status": "ok", "record_count": 1, "duration_ms": 1}}, "level": "info", "timestamp": "2026-05-26T16:01:25.213812Z"}
+{"method": "GET", "path": "/api/experience/ops/step-log", "status_code": 200, "event": "http.request", "trace_id": "1eaec8c85ea63", "level": "info", "timestamp": "2026-05-26T16:01:25.217457Z"}
+INFO:     127.0.0.1:58883 - "GET /api/experience/ops/step-log HTTP/1.1" 200 OK
+{"event": "github_deploys.ok", "trace_id": "4ec7a9564c651", "runs": 10, "level": "info", "timestamp": "2026-05-26T16:01:25.774895Z"}
+{"method": "GET", "path": "/api/experience/ops/github-deploys", "status_code": 200, "event": "http.request", "trace_id": "4ec7a9564c651", "level": "info", "timestamp": "2026-05-26T16:01:25.781298Z"}
+INFO:     127.0.0.1:58887 - "GET /api/experience/ops/github-deploys HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/api-metrics", "status_code": 200, "event": "http.request", "trace_id": "ca4452ca4897c", "level": "info", "timestamp": "2026-05-26T16:01:25.799254Z"}
+INFO:     127.0.0.1:58887 - "GET /api/experience/ops/api-metrics HTTP/1.1" 200 OK
+{"event": "aws_alerts.ok", "trace_id": "573b0345-653a-47d6-a023-7360c5bcc16b", "alarms": 2, "level": "info", "timestamp": "2026-05-26T16:01:25.807881Z"}
+{"method": "GET", "path": "/api/experience/ops/aws-alerts", "status_code": 200, "event": "http.request", "trace_id": "573b0345-653a-47d6-a023-7360c5bcc16b", "level": "info", "timestamp": "2026-05-26T16:01:25.815112Z"}
+INFO:     127.0.0.1:58863 - "GET /api/experience/ops/aws-alerts HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/test-results", "status_code": 200, "event": "http.request", "trace_id": "1aa60cd9e07348", "level": "info", "timestamp": "2026-05-26T16:01:26.274758Z"}
+INFO:     127.0.0.1:58863 - "GET /api/v1/test-results HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/ops.html", "status_code": 304, "event": "http.request", "trace_id": "e15a3441-c362-4e50-b8dc-bb44f6884046", "level": "info", "timestamp": "2026-05-26T16:01:29.937877Z"}
+INFO:     127.0.0.1:58863 - "GET /dashboard/ops.html HTTP/1.1" 304 Not Modified
+{"event": "experience.compose", "trace_id": "3fd44690-d83d-4491-9f8f-b8a410cc7a3d", "handler": "active_instrument", "duration_ms": 11, "overall_status": "ok", "response_keys": ["id", "name", "flag", "exchange", "lot_size"], "sources": {"active_instrument": {"status": "ok", "record_count": 1, "duration_ms": 1}}, "level": "info", "timestamp": "2026-05-26T16:01:30.044736Z"}
+{"event": "experience.compose", "trace_id": "4bd0629bceb3a8", "handler": "metrics_summary", "duration_ms": 9, "overall_status": "partial", "response_keys": ["api_requests", "pipeline", "training"], "sources": {"prometheus_metrics": {"status": "ok", "record_count": 50, "duration_ms": 5}, "training_kpis": {"status": "empty", "record_count": 0, "duration_ms": 3}}, "level": "info", "timestamp": "2026-05-26T16:01:30.048265Z"}
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "a2b701bffd982", "level": "info", "timestamp": "2026-05-26T16:01:30.050265Z"}
+INFO:     127.0.0.1:58884 - "GET /progress HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/instrument/active", "status_code": 200, "event": "http.request", "trace_id": "3fd44690-d83d-4491-9f8f-b8a410cc7a3d", "level": "info", "timestamp": "2026-05-26T16:01:30.058740Z"}
+INFO:     127.0.0.1:58863 - "GET /api/v1/instrument/active HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/metrics/summary", "status_code": 200, "event": "http.request", "trace_id": "4bd0629bceb3a8", "level": "info", "timestamp": "2026-05-26T16:01:30.064073Z"}
+INFO:     127.0.0.1:58883 - "GET /api/experience/ops/metrics/summary HTTP/1.1" 200 OK
+{"event": "experience.compose", "trace_id": "8fe5b871fd18d", "handler": "metrics_summary", "duration_ms": 3, "overall_status": "partial", "response_keys": ["api_requests", "pipeline", "training"], "sources": {"prometheus_metrics": {"status": "ok", "record_count": 52, "duration_ms": 0}, "training_kpis": {"status": "empty", "record_count": 0, "duration_ms": 2}}, "level": "info", "timestamp": "2026-05-26T16:01:30.077777Z"}
+{"method": "GET", "path": "/api/experience/ops/metrics/summary", "status_code": 200, "event": "http.request", "trace_id": "8fe5b871fd18d", "level": "info", "timestamp": "2026-05-26T16:01:30.272314Z"}
+INFO:     127.0.0.1:58863 - "GET /api/experience/ops/metrics/summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/functional-kpis", "status_code": 200, "event": "http.request", "trace_id": "1fafd9dc-03b1-46f1-a42f-463d4b6f2485", "level": "info", "timestamp": "2026-05-26T16:01:30.363415Z"}
+INFO:     127.0.0.1:58884 - "GET /api/experience/ops/functional-kpis HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "891c6f64885ad8", "level": "info", "timestamp": "2026-05-26T16:01:30.396641Z"}
+INFO:     127.0.0.1:58887 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/mcp-calls", "status_code": 200, "event": "http.request", "trace_id": "b378c03e4f08d", "level": "info", "timestamp": "2026-05-26T16:01:30.408454Z"}
+INFO:     127.0.0.1:58887 - "GET /api/v1/mcp-calls HTTP/1.1" 200 OK
+{"event": "experience.compose", "trace_id": "b79098ccdc2ef", "handler": "step_log", "duration_ms": 1, "overall_status": "ok", "response_keys": [], "sources": {"pipeline_runs": {"status": "ok", "record_count": 1, "duration_ms": 1}}, "level": "info", "timestamp": "2026-05-26T16:01:30.417398Z"}
+{"method": "GET", "path": "/api/experience/ops/step-log", "status_code": 200, "event": "http.request", "trace_id": "b79098ccdc2ef", "level": "info", "timestamp": "2026-05-26T16:01:30.421986Z"}
+INFO:     127.0.0.1:58887 - "GET /api/experience/ops/step-log HTTP/1.1" 200 OK
+{"event": "aws_alerts.ok", "trace_id": "bffff144-aea8-469d-ae83-0f1d13ef0a6d", "alarms": 2, "level": "info", "timestamp": "2026-05-26T16:01:30.721030Z"}
+{"method": "GET", "path": "/api/experience/ops/aws-alerts", "status_code": 200, "event": "http.request", "trace_id": "bffff144-aea8-469d-ae83-0f1d13ef0a6d", "level": "info", "timestamp": "2026-05-26T16:01:30.731316Z"}
+INFO:     127.0.0.1:58916 - "GET /api/experience/ops/aws-alerts HTTP/1.1" 200 OK
+{"event": "github_deploys.ok", "trace_id": "9e75e65d6eca88", "runs": 10, "level": "info", "timestamp": "2026-05-26T16:01:36.498908Z"}
+{"method": "GET", "path": "/api/experience/ops/github-deploys", "status_code": 200, "event": "http.request", "trace_id": "9e75e65d6eca88", "level": "info", "timestamp": "2026-05-26T16:01:36.507717Z"}
+INFO:     127.0.0.1:58914 - "GET /api/experience/ops/github-deploys HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/api-metrics", "status_code": 200, "event": "http.request", "trace_id": "096f3212f1b0c8", "level": "info", "timestamp": "2026-05-26T16:01:36.530226Z"}
+INFO:     127.0.0.1:58914 - "GET /api/experience/ops/api-metrics HTTP/1.1" 200 OK
+{"method": "GET", "path": "/.well-known/appspecific/com.chrome.devtools.json", "status_code": 404, "event": "http.request", "trace_id": "ca0208fb-2653-4cc6-b435-59560751f2cc", "level": "info", "timestamp": "2026-05-26T16:01:51.397772Z"}
+INFO:     127.0.0.1:59007 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 Not Found
+{"method": "GET", "path": "/api/v1/test-results", "status_code": 200, "event": "http.request", "trace_id": "a64b3b696689b8", "level": "info", "timestamp": "2026-05-26T16:01:55.808637Z"}
+INFO:     127.0.0.1:59007 - "GET /api/v1/test-results HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/test-results", "status_code": 200, "event": "http.request", "trace_id": "97cfd40f-97ba-499d-8d0b-419f26788e42", "level": "info", "timestamp": "2026-05-26T16:02:19.965768Z"}
+INFO:     127.0.0.1:59132 - "GET /api/v1/test-results HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/test-results", "status_code": 200, "event": "http.request", "trace_id": "6b129d07-0a86-452f-807b-4afa55b837b5", "level": "info", "timestamp": "2026-05-26T16:02:25.951499Z"}
+INFO:     127.0.0.1:59159 - "GET /api/v1/test-results HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/ops.html", "status_code": 304, "event": "http.request", "trace_id": "0daa42df-579c-41e0-a59d-536b22f5a9c0", "level": "info", "timestamp": "2026-05-26T16:08:04.614843Z"}
+INFO:     127.0.0.1:60669 - "GET /dashboard/ops.html HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/.well-known/appspecific/com.chrome.devtools.json", "status_code": 404, "event": "http.request", "trace_id": "27dc6cd6-d19a-4a5e-b074-26a3aae3e527", "level": "info", "timestamp": "2026-05-26T16:08:04.854874Z"}
+INFO:     127.0.0.1:60669 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 Not Found
+{"method": "GET", "path": "/dashboard/js/ops/overview.js", "status_code": 304, "event": "http.request", "trace_id": "98550fbc-0819-4cae-bd0e-9858d68e7203", "level": "info", "timestamp": "2026-05-26T16:08:04.863859Z"}
+INFO:     127.0.0.1:60677 - "GET /dashboard/js/ops/overview.js HTTP/1.1" 304 Not Modified
+{"event": "experience.compose", "trace_id": "6698a74b-d1d0-46a0-9a65-03ae59dbd525", "handler": "active_instrument", "duration_ms": 2, "overall_status": "ok", "response_keys": ["id", "name", "flag", "exchange", "lot_size"], "sources": {"active_instrument": {"status": "ok", "record_count": 1, "duration_ms": 1}}, "level": "info", "timestamp": "2026-05-26T16:08:04.864638Z"}
+{"method": "GET", "path": "/api/v1/instrument/active", "status_code": 200, "event": "http.request", "trace_id": "6698a74b-d1d0-46a0-9a65-03ae59dbd525", "level": "info", "timestamp": "2026-05-26T16:08:04.881552Z"}
+INFO:     127.0.0.1:60675 - "GET /api/v1/instrument/active HTTP/1.1" 200 OK
+{"event": "experience.compose", "trace_id": "8bec65c03fec88", "handler": "metrics_summary", "duration_ms": 133, "overall_status": "partial", "response_keys": ["api_requests", "pipeline", "training"], "sources": {"prometheus_metrics": {"status": "ok", "record_count": 66, "duration_ms": 1}, "training_kpis": {"status": "empty", "record_count": 0, "duration_ms": 132}}, "level": "info", "timestamp": "2026-05-26T16:08:05.094083Z"}
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "50f986b4fe9cf", "level": "info", "timestamp": "2026-05-26T16:08:05.147239Z"}
+INFO:     127.0.0.1:60679 - "GET /progress HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/metrics/summary", "status_code": 200, "event": "http.request", "trace_id": "8bec65c03fec88", "level": "info", "timestamp": "2026-05-26T16:08:05.151296Z"}
+INFO:     127.0.0.1:60677 - "GET /api/experience/ops/metrics/summary HTTP/1.1" 200 OK
+{"event": "experience.compose", "trace_id": "b4b97e2089a3e8", "handler": "metrics_summary", "duration_ms": 58, "overall_status": "partial", "response_keys": ["api_requests", "pipeline", "training"], "sources": {"prometheus_metrics": {"status": "ok", "record_count": 67, "duration_ms": 1}, "training_kpis": {"status": "empty", "record_count": 0, "duration_ms": 56}}, "level": "info", "timestamp": "2026-05-26T16:08:05.322099Z"}
+{"method": "GET", "path": "/api/experience/ops/functional-kpis", "status_code": 200, "event": "http.request", "trace_id": "57bf21ec-c3d6-40b3-ae4d-f6cac62ab3d2", "level": "info", "timestamp": "2026-05-26T16:08:05.414902Z"}
+INFO:     127.0.0.1:60685 - "GET /api/experience/ops/functional-kpis HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/metrics/summary", "status_code": 200, "event": "http.request", "trace_id": "b4b97e2089a3e8", "level": "info", "timestamp": "2026-05-26T16:08:05.421572Z"}
+INFO:     127.0.0.1:60679 - "GET /api/experience/ops/metrics/summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "0173ec5cb55e9", "level": "info", "timestamp": "2026-05-26T16:08:05.447658Z"}
+INFO:     127.0.0.1:60675 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/mcp-calls", "status_code": 200, "event": "http.request", "trace_id": "d05ef702212f58", "level": "info", "timestamp": "2026-05-26T16:08:05.461787Z"}
+INFO:     127.0.0.1:60675 - "GET /api/v1/mcp-calls HTTP/1.1" 200 OK
+{"event": "experience.compose", "trace_id": "7456b0616612", "handler": "step_log", "duration_ms": 0, "overall_status": "ok", "response_keys": [], "sources": {"pipeline_runs": {"status": "ok", "record_count": 2, "duration_ms": 0}}, "level": "info", "timestamp": "2026-05-26T16:08:05.476249Z"}
+{"method": "GET", "path": "/api/experience/ops/step-log", "status_code": 200, "event": "http.request", "trace_id": "7456b0616612", "level": "info", "timestamp": "2026-05-26T16:08:05.479313Z"}
+INFO:     127.0.0.1:60675 - "GET /api/experience/ops/step-log HTTP/1.1" 200 OK
+{"event": "aws_alerts.ok", "trace_id": "3e74e0ed-7011-4614-932d-834269b3323f", "alarms": 2, "level": "info", "timestamp": "2026-05-26T16:08:05.987281Z"}
+{"method": "GET", "path": "/api/experience/ops/aws-alerts", "status_code": 200, "event": "http.request", "trace_id": "3e74e0ed-7011-4614-932d-834269b3323f", "level": "info", "timestamp": "2026-05-26T16:08:05.997931Z"}
+INFO:     127.0.0.1:60683 - "GET /api/experience/ops/aws-alerts HTTP/1.1" 200 OK
+{"event": "github_deploys.ok", "trace_id": "0c5331a2d62fe", "runs": 10, "level": "info", "timestamp": "2026-05-26T16:08:06.004928Z"}
+{"method": "GET", "path": "/api/experience/ops/github-deploys", "status_code": 200, "event": "http.request", "trace_id": "0c5331a2d62fe", "level": "info", "timestamp": "2026-05-26T16:08:06.008250Z"}
+INFO:     127.0.0.1:60681 - "GET /api/experience/ops/github-deploys HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/api-metrics", "status_code": 200, "event": "http.request", "trace_id": "ec08798fdae43", "level": "info", "timestamp": "2026-05-26T16:08:06.026751Z"}
+INFO:     127.0.0.1:60681 - "GET /api/experience/ops/api-metrics HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/test-results", "status_code": 200, "event": "http.request", "trace_id": "781ca40ed5ebd8", "level": "info", "timestamp": "2026-05-26T16:08:07.881746Z"}
+INFO:     127.0.0.1:60681 - "GET /api/v1/test-results HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'src/rita/config.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "app.shutdown", "level": "info", "timestamp": "2026-05-26T16:19:04.278347Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [38507]
+Process SpawnProcess-6:
+Traceback (most recent call last):
+  File "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+    target(sockets=sockets)
+  File "/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/uvicorn/server.py", line 75, in run
+    return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/uvicorn/_compat.py", line 30, in asyncio_run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+  File "/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/uvicorn/server.py", line 79, in serve
+    await self._serve(sockets)
+  File "/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/uvicorn/server.py", line 86, in _serve
+    config.load()
+  File "/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/uvicorn/config.py", line 481, in load
+    self.loaded_app = self.load_app()
+                      ^^^^^^^^^^^^^^^
+  File "/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/uvicorn/config.py", line 415, in load_app
+    return import_from_string(self.app)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+    module = importlib.import_module(module_str)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/src/rita/main.py", line 22, in <module>
+    import rita.models  # noqa: F401 -- registers all ORM models with Base.metadata
+    ^^^^^^^^^^^^^^^^^^
+  File "/Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/src/rita/models/__init__.py", line 2, in <module>
+    from .positions import PositionModel
+  File "/Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/src/rita/models/positions.py", line 4, in <module>
+    from rita.database import Base
+  File "/Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/src/rita/database.py", line 9, in <module>
+    from rita.config import get_settings
+  File "/Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/src/rita/config.py", line 264, in <module>
+    settings: Settings = Settings()
+                         ^^^^^^^^^^
+  File "/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic_settings/main.py", line 247, in __init__
+    super().__init__(**__pydantic_self__.__class__._settings_build_values(sources, init_kwargs))
+  File "/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Settings
+security.jwt_secret
+  Extra inputs are not permitted [type=extra_forbidden, input_value='change-me-in-production', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden
+WARNING:  WatchFiles detected changes in 'src/rita/config.py'. Reloading...
+/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [40878]
+INFO:     Waiting for application startup.
+{"name": "rita", "version": "1.0.0", "event": "app.startup", "level": "info", "timestamp": "2026-05-26T16:19:34.298675Z"}
+{"instrument": "ATHER", "error": "No CSV data found for instrument 'ATHER'. Expected files in /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/raw/ATHER or /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/input/ATHER.", "event": "market_data.seed_failed", "level": "warning", "timestamp": "2026-05-26T16:19:36.214382Z"}
+{"instrument": "ASML26MAY1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T16:19:36.226392Z"}
+{"instrument": "ASML26JUN1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T16:19:36.226737Z"}
+INFO:     Application startup complete.
+{"method": "GET", "path": "/dashboard/ops.html", "status_code": 304, "event": "http.request", "trace_id": "fb687bc0-1e9b-4a9c-a448-e549466c2295", "level": "info", "timestamp": "2026-05-26T16:21:48.676637Z"}
+INFO:     127.0.0.1:64073 - "GET /dashboard/ops.html HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/.well-known/appspecific/com.chrome.devtools.json", "status_code": 404, "event": "http.request", "trace_id": "0d009570-2c79-4b94-9c5d-c133e6e29fa3", "level": "info", "timestamp": "2026-05-26T16:21:48.826377Z"}
+INFO:     127.0.0.1:64073 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 Not Found
+{"instrument_id": "ASML", "event": "instrument.selected", "trace_id": "6c848e15-77c7-464f-9c6c-fd8c80e656e4", "level": "info", "timestamp": "2026-05-26T16:21:49.132224Z"}
+{"method": "POST", "path": "/api/v1/instrument/select", "status_code": 200, "event": "http.request", "trace_id": "6c848e15-77c7-464f-9c6c-fd8c80e656e4", "level": "info", "timestamp": "2026-05-26T16:21:49.139257Z"}
+INFO:     127.0.0.1:64073 - "POST /api/v1/instrument/select HTTP/1.1" 200 OK
+{"event": "experience.compose", "trace_id": "1055d059-af3c-4e05-9dde-6c86010930a4", "handler": "active_instrument", "duration_ms": 4, "overall_status": "ok", "response_keys": ["id", "name", "flag", "exchange", "lot_size"], "sources": {"active_instrument": {"status": "ok", "record_count": 1, "duration_ms": 1}}, "level": "info", "timestamp": "2026-05-26T16:21:49.322468Z"}
+{"method": "GET", "path": "/api/v1/instrument/active", "status_code": 200, "event": "http.request", "trace_id": "1055d059-af3c-4e05-9dde-6c86010930a4", "level": "info", "timestamp": "2026-05-26T16:21:49.326718Z"}
+INFO:     127.0.0.1:64073 - "GET /api/v1/instrument/active HTTP/1.1" 200 OK
+{"event": "experience.compose", "trace_id": "782338abf38758", "handler": "metrics_summary", "duration_ms": 13, "overall_status": "partial", "response_keys": ["api_requests", "pipeline", "training"], "sources": {"prometheus_metrics": {"status": "ok", "record_count": 4, "duration_ms": 0}, "training_kpis": {"status": "empty", "record_count": 0, "duration_ms": 12}}, "level": "info", "timestamp": "2026-05-26T16:21:49.450685Z"}
+{"method": "GET", "path": "/api/experience/ops/metrics/summary", "status_code": 200, "event": "http.request", "trace_id": "782338abf38758", "level": "info", "timestamp": "2026-05-26T16:21:49.508144Z"}
+INFO:     127.0.0.1:64075 - "GET /api/experience/ops/metrics/summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/progress", "status_code": 200, "event": "http.request", "trace_id": "2c2271669e04d8", "level": "info", "timestamp": "2026-05-26T16:21:49.635554Z"}
+INFO:     127.0.0.1:64081 - "GET /progress HTTP/1.1" 200 OK
+{"event": "experience.compose", "trace_id": "4705c51d8cbba8", "handler": "metrics_summary", "duration_ms": 10, "overall_status": "partial", "response_keys": ["api_requests", "pipeline", "training"], "sources": {"prometheus_metrics": {"status": "ok", "record_count": 4, "duration_ms": 0}, "training_kpis": {"status": "empty", "record_count": 0, "duration_ms": 9}}, "level": "info", "timestamp": "2026-05-26T16:21:49.703417Z"}
+{"method": "GET", "path": "/api/experience/ops/functional-kpis", "status_code": 200, "event": "http.request", "trace_id": "65180c17-1c36-4ae2-b5a4-8a24ae6de06a", "level": "info", "timestamp": "2026-05-26T16:21:49.703608Z"}
+INFO:     127.0.0.1:64087 - "GET /api/experience/ops/functional-kpis HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/metrics/summary", "status_code": 200, "event": "http.request", "trace_id": "4705c51d8cbba8", "level": "info", "timestamp": "2026-05-26T16:21:49.716745Z"}
+INFO:     127.0.0.1:64075 - "GET /api/experience/ops/metrics/summary HTTP/1.1" 200 OK
+{"method": "GET", "path": "/health", "status_code": 200, "event": "http.request", "trace_id": "8791c0ea4082d8", "level": "info", "timestamp": "2026-05-26T16:21:50.083190Z"}
+INFO:     127.0.0.1:64073 - "GET /health HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/mcp-calls", "status_code": 200, "event": "http.request", "trace_id": "d6bf010e6e51b", "level": "info", "timestamp": "2026-05-26T16:21:50.100872Z"}
+INFO:     127.0.0.1:64073 - "GET /api/v1/mcp-calls HTTP/1.1" 200 OK
+{"event": "github_deploys.ok", "trace_id": "970bd51b4ce65", "runs": 10, "level": "info", "timestamp": "2026-05-26T16:21:50.280152Z"}
+{"method": "GET", "path": "/api/experience/ops/github-deploys", "status_code": 200, "event": "http.request", "trace_id": "970bd51b4ce65", "level": "info", "timestamp": "2026-05-26T16:21:50.283141Z"}
+INFO:     127.0.0.1:64084 - "GET /api/experience/ops/github-deploys HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/experience/ops/api-metrics", "status_code": 200, "event": "http.request", "trace_id": "23d928488c9838", "level": "info", "timestamp": "2026-05-26T16:21:50.323337Z"}
+INFO:     127.0.0.1:64084 - "GET /api/experience/ops/api-metrics HTTP/1.1" 200 OK
+{"event": "aws_alerts.ok", "trace_id": "e6599f89-7f14-4611-a4e6-e1f445300961", "alarms": 2, "level": "info", "timestamp": "2026-05-26T16:21:51.111115Z"}
+{"method": "GET", "path": "/api/experience/ops/aws-alerts", "status_code": 200, "event": "http.request", "trace_id": "e6599f89-7f14-4611-a4e6-e1f445300961", "level": "info", "timestamp": "2026-05-26T16:21:51.123567Z"}
+INFO:     127.0.0.1:64085 - "GET /api/experience/ops/aws-alerts HTTP/1.1" 200 OK
+{"method": "GET", "path": "/api/v1/test-results", "status_code": 200, "event": "http.request", "trace_id": "7f3bc41c3ce6a8", "level": "info", "timestamp": "2026-05-26T16:21:51.810073Z"}
+INFO:     127.0.0.1:64085 - "GET /api/v1/test-results HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'src/rita/interfaces/mcp_tools.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "app.shutdown", "level": "info", "timestamp": "2026-05-26T18:09:57.989396Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [40878]
+/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [54082]
+INFO:     Waiting for application startup.
+{"name": "rita", "version": "1.0.0", "event": "app.startup", "level": "info", "timestamp": "2026-05-26T18:10:02.768510Z"}
+{"instrument": "ATHER", "error": "No CSV data found for instrument 'ATHER'. Expected files in /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/raw/ATHER or /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/input/ATHER.", "event": "market_data.seed_failed", "level": "warning", "timestamp": "2026-05-26T18:10:05.577374Z"}
+{"instrument": "ASML26MAY1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T18:10:05.594072Z"}
+{"instrument": "ASML26JUN1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T18:10:05.594432Z"}
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/rita/interfaces/rita_mcp_server.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "app.shutdown", "level": "info", "timestamp": "2026-05-26T18:10:16.097510Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [54082]
+/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [54088]
+INFO:     Waiting for application startup.
+{"name": "rita", "version": "1.0.0", "event": "app.startup", "level": "info", "timestamp": "2026-05-26T18:10:18.694891Z"}
+{"instrument": "ATHER", "error": "No CSV data found for instrument 'ATHER'. Expected files in /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/raw/ATHER or /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/input/ATHER.", "event": "market_data.seed_failed", "level": "warning", "timestamp": "2026-05-26T18:10:20.145056Z"}
+{"instrument": "ASML26MAY1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T18:10:20.158138Z"}
+{"instrument": "ASML26JUN1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T18:10:20.158587Z"}
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/rita/interfaces/mcp_sse_app.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "app.shutdown", "level": "info", "timestamp": "2026-05-26T18:10:23.586929Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [54088]
+/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [54091]
+INFO:     Waiting for application startup.
+{"name": "rita", "version": "1.0.0", "event": "app.startup", "level": "info", "timestamp": "2026-05-26T18:10:26.111429Z"}
+{"instrument": "ATHER", "error": "No CSV data found for instrument 'ATHER'. Expected files in /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/raw/ATHER or /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/input/ATHER.", "event": "market_data.seed_failed", "level": "warning", "timestamp": "2026-05-26T18:10:27.583519Z"}
+{"instrument": "ASML26MAY1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T18:10:27.595463Z"}
+{"instrument": "ASML26JUN1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T18:10:27.595834Z"}
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/rita/main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "app.shutdown", "level": "info", "timestamp": "2026-05-26T18:10:28.401461Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [54091]
+/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [54095]
+INFO:     Waiting for application startup.
+{"name": "rita", "version": "1.0.0", "event": "app.startup", "level": "info", "timestamp": "2026-05-26T18:10:31.328241Z"}
+WARNING:  WatchFiles detected changes in 'src/rita/main.py'. Reloading...
+{"instrument": "ATHER", "error": "No CSV data found for instrument 'ATHER'. Expected files in /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/raw/ATHER or /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/input/ATHER.", "event": "market_data.seed_failed", "level": "warning", "timestamp": "2026-05-26T18:10:32.760339Z"}
+{"instrument": "ASML26MAY1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T18:10:32.772019Z"}
+{"instrument": "ASML26JUN1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T18:10:32.772430Z"}
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "app.shutdown", "level": "info", "timestamp": "2026-05-26T18:10:32.874907Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [54095]
+/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [54097]
+INFO:     Waiting for application startup.
+{"name": "rita", "version": "1.0.0", "event": "app.startup", "level": "info", "timestamp": "2026-05-26T18:10:35.783865Z"}
+{"instrument": "ATHER", "error": "No CSV data found for instrument 'ATHER'. Expected files in /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/raw/ATHER or /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/input/ATHER.", "event": "market_data.seed_failed", "level": "warning", "timestamp": "2026-05-26T18:10:37.147303Z"}
+{"instrument": "ASML26MAY1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T18:10:37.158552Z"}
+{"instrument": "ASML26JUN1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T18:10:37.158943Z"}
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/rita/interfaces/mcp_tools.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "app.shutdown", "level": "info", "timestamp": "2026-05-26T18:50:10.335084Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [54097]
+/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [56202]
+INFO:     Waiting for application startup.
+{"name": "rita", "version": "1.0.0", "event": "app.startup", "level": "info", "timestamp": "2026-05-26T18:50:15.294976Z"}
+{"instrument": "ATHER", "error": "No CSV data found for instrument 'ATHER'. Expected files in /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/raw/ATHER or /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/input/ATHER.", "event": "market_data.seed_failed", "level": "warning", "timestamp": "2026-05-26T18:50:17.363750Z"}
+{"instrument": "ASML26MAY1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T18:50:17.380194Z"}
+{"instrument": "ASML26JUN1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T18:50:17.380672Z"}
+INFO:     Application startup complete.
+{"method": "GET", "path": "/dashboard", "status_code": 307, "event": "http.request", "trace_id": "3de21f1f-85f9-4288-8182-704d9ac1328e", "level": "info", "timestamp": "2026-05-26T19:20:44.251562Z"}
+INFO:     127.0.0.1:53584 - "GET /dashboard HTTP/1.1" 307 Temporary Redirect
+{"method": "GET", "path": "/dashboard/", "status_code": 304, "event": "http.request", "trace_id": "1a380951-46e9-41c3-aac2-c873cb861208", "level": "info", "timestamp": "2026-05-26T19:20:44.321025Z"}
+INFO:     127.0.0.1:53584 - "GET /dashboard/ HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/onboarding", "status_code": 200, "event": "http.request", "trace_id": "92b76b02-c6f6-4704-8052-43ccf7397b0c", "level": "info", "timestamp": "2026-05-26T19:29:23.197552Z"}
+INFO:     127.0.0.1:55772 - "GET /onboarding HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard/investgame.html", "status_code": 304, "event": "http.request", "trace_id": "df9d4676-4ddf-4285-8c6e-9797aaf9bd50", "level": "info", "timestamp": "2026-05-26T19:29:24.714216Z"}
+INFO:     127.0.0.1:55772 - "GET /dashboard/investgame.html?desktop=1 HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/dashboard/index.html", "status_code": 304, "event": "http.request", "trace_id": "6fed20d9-02fd-4bf9-8d4d-1bf28331449f", "level": "info", "timestamp": "2026-05-26T19:29:26.961873Z"}
+INFO:     127.0.0.1:55772 - "GET /dashboard/index.html HTTP/1.1" 304 Not Modified
+{"method": "GET", "path": "/onboarding", "status_code": 200, "event": "http.request", "trace_id": "f6b8c66a-d5a4-4970-8ca3-01d11f0b84b5", "level": "info", "timestamp": "2026-05-26T19:34:46.605892Z"}
+INFO:     127.0.0.1:57112 - "GET /onboarding HTTP/1.1" 200 OK
+{"method": "GET", "path": "/onboarding", "status_code": 200, "event": "http.request", "trace_id": "44fa1d33-1cda-4fba-9c65-ab01c5b2d158", "level": "info", "timestamp": "2026-05-26T19:35:52.531965Z"}
+INFO:     127.0.0.1:57388 - "GET /onboarding HTTP/1.1" 200 OK
+INFO:     Will watch for changes in these directories: ['/Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release']
+/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [58611] using WatchFiles
+/Users/sgawde/work/py-shared-env/dev/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [58614]
+INFO:     Waiting for application startup.
+{"name": "rita", "version": "1.0.0", "event": "app.startup", "level": "info", "timestamp": "2026-05-26T19:36:34.997551Z"}
+{"instrument": "ATHER", "error": "No CSV data found for instrument 'ATHER'. Expected files in /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/raw/ATHER or /Users/sgawde/work/riia-jun-demo/riia-cowork-jun-demo/riia-jun-release/data/input/ATHER.", "event": "market_data.seed_failed", "level": "warning", "timestamp": "2026-05-26T19:36:37.181722Z"}
+{"instrument": "ASML26MAY1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T19:36:37.196510Z"}
+{"instrument": "ASML26JUN1300CE", "event": "paper_positions.updated", "level": "info", "timestamp": "2026-05-26T19:36:37.197194Z"}
+INFO:     Application startup complete.
+{"method": "GET", "path": "/onboarding", "status_code": 200, "event": "http.request", "trace_id": "f9e9279f-83bf-4d2b-9731-182eb87c5887", "level": "info", "timestamp": "2026-05-26T19:36:38.094753Z"}
+INFO:     127.0.0.1:57580 - "GET /onboarding HTTP/1.1" 200 OK
+{"method": "GET", "path": "/onboarding", "status_code": 200, "event": "http.request", "trace_id": "a723ef3f-a962-4e54-a5a9-a1bfe1b444b0", "level": "info", "timestamp": "2026-05-26T19:36:45.860371Z"}
+INFO:     127.0.0.1:57581 - "GET /onboarding HTTP/1.1" 200 OK
+{"method": "GET", "path": "/onboarding", "status_code": 200, "event": "http.request", "trace_id": "3241020d-c93a-4ab9-b0e3-951c3d34bbb7", "level": "info", "timestamp": "2026-05-26T19:37:04.278558Z"}
+INFO:     127.0.0.1:57694 - "GET /onboarding HTTP/1.1" 200 OK
+{"method": "GET", "path": "/dashboard", "status_code": 307, "event": "http.request", "trace_id": "73e39581-747e-4fed-ba24-dfa4be800a16", "level": "info", "timestamp": "2026-05-26T19:39:09.436379Z"}
+INFO:     127.0.0.1:57942 - "GET /dashboard HTTP/1.1" 307 Temporary Redirect
+{"method": "GET", "path": "/dashboard/", "status_code": 200, "event": "http.request", "trace_id": "1a2f5dde-6479-46a5-85ea-53e766482da3", "level": "info", "timestamp": "2026-05-26T19:39:13.059064Z"}
+INFO:     127.0.0.1:57942 - "GET /dashboard/ HTTP/1.1" 200 OK
+{"method": "GET", "path": "/favicon.ico", "status_code": 404, "event": "http.request", "trace_id": "947f81ba-1d96-4acc-a068-484f776778a9", "level": "info", "timestamp": "2026-05-26T19:39:13.239214Z"}
+INFO:     127.0.0.1:57942 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+{"method": "GET", "path": "/dashboard", "status_code": 307, "event": "http.request", "trace_id": "017c9b0d-0def-449c-8f83-d3ea382bc514", "level": "info", "timestamp": "2026-05-26T19:40:16.801989Z"}
+INFO:     127.0.0.1:58044 - "GET /dashboard HTTP/1.1" 307 Temporary Redirect
+{"method": "GET", "path": "/.well-known/appspecific/com.chrome.devtools.json", "status_code": 404, "event": "http.request", "trace_id": "f68e1ef8-2232-43ed-bdd8-91bdd8fd3d4c", "level": "info", "timestamp": "2026-05-26T19:40:17.141860Z"}
+INFO:     127.0.0.1:58044 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 Not Found
+{"method": "GET", "path": "/favicon.ico", "status_code": 404, "event": "http.request", "trace_id": "df0b088d-5297-499c-b451-c1bbbddf4691", "level": "info", "timestamp": "2026-05-26T19:40:17.932547Z"}
+INFO:     127.0.0.1:58044 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+{"method": "GET", "path": "/.well-known/appspecific/com.chrome.devtools.json", "status_code": 404, "event": "http.request", "trace_id": "af6f494f-0ecf-47a5-89c2-e73fa11cd142", "level": "info", "timestamp": "2026-05-26T19:40:22.461995Z"}
+INFO:     127.0.0.1:58044 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 Not Found
+{"method": "GET", "path": "/onboarding", "status_code": 200, "event": "http.request", "trace_id": "8f319051-621e-4c6c-b95a-9ebd87f017c9", "level": "info", "timestamp": "2026-05-26T19:40:40.532387Z"}
+INFO:     127.0.0.1:58045 - "GET /onboarding HTTP/1.1" 200 OK
+{"method": "GET", "path": "/.well-known/appspecific/com.chrome.devtools.json", "status_code": 404, "event": "http.request", "trace_id": "7a10749d-2390-4084-859d-10f38c8ce436", "level": "info", "timestamp": "2026-05-26T19:40:40.620629Z"}
+INFO:     127.0.0.1:58146 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 Not Found
+{"method": "GET", "path": "/favicon.ico", "status_code": 404, "event": "http.request", "trace_id": "0e431983-1a89-43cd-aa92-e4a455514dcd", "level": "info", "timestamp": "2026-05-26T19:40:41.099549Z"}
+INFO:     127.0.0.1:58045 - "GET /favicon.ico HTTP/1.1" 404 Not Found

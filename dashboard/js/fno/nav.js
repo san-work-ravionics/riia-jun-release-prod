@@ -4,13 +4,6 @@ import { state } from './state.js';
 // Section loaders registry — modules register themselves in main.js
 export const _sectionLoaders = {};
 import { renderDashboard } from './dashboard.js';
-import { renderPositionsKpis, renderPositionsTable } from './positions.js';
-import {
-  renderMarginKpis,
-  updateMarginSections,
-  renderMarginTables,
-  renderClosedPositions,
-} from './margin.js';
 import { renderGreeksCards, renderGreeksTable, updateRiskSections } from './greeks.js';
 import { renderStressScenarios } from './stress.js';
 import { renderPayoffChart } from './payoff.js';
@@ -41,12 +34,6 @@ export function setUnderlying(und) {
   });
   buildExpiryPills();
   renderDashboard();
-  renderPositionsKpis();
-  renderPositionsTable();
-  renderClosedPositions();
-  renderMarginKpis();
-  updateMarginSections();
-  renderMarginTables();
   updateRiskSections();
   renderGreeksCards();
   renderGreeksTable();
@@ -72,12 +59,6 @@ export function setExpiry(exp, btn) {
   document.querySelectorAll('.exp-pill').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderDashboard();
-  renderPositionsKpis();
-  renderPositionsTable();
-  renderClosedPositions();
-  renderMarginKpis();
-  updateMarginSections();
-  renderMarginTables();
   updateRiskSections();
   renderGreeksCards();
   renderGreeksTable();

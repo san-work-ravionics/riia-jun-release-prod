@@ -1,9 +1,9 @@
 // ── Portfolio Hedge — Feature 28 (single-page layout) ────────────────────────
 // 4-KPI top row + holdings table (risk-sorted, sticky totals) + coverage dial +
 // payoff chart + scenario table — all reactive to checkbox selection.
-// API: GET /api/v1/experience/fno/portfolio-hedge?coverage=N&duration=D  (JWT)
+// API: GET /api/v1/experience/fno/portfolio-hedge?coverage=N  (JWT)
 
-import { apiFetch } from './api.js';
+import { api, apiFetch } from './api.js';
 import { isLocalDev, ensureDevToken } from '../shared/dev-auth.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -30,6 +30,10 @@ const _state = {
 
 let _scenarioTab = 'pp';
 let _payoffChart = null;
+
+// ── Hedge-plan persistence state ──────────────────────────────────────────────
+let _savePlanTimer = null;
+const _SAVE_DEBOUNCE_MS = 400;
 
 // ── DOM helpers ───────────────────────────────────────────────────────────────
 function _show(id) { const el = document.getElementById(id); if (el) el.style.display = ''; }
@@ -104,19 +108,21 @@ function _renderDiscoverTotals() {
   const n = checked.length;
 
   if (!n) {
-    tr.innerHTML = `<td colspan="9" style="padding:7px 10px;font-size:11px;color:var(--t3);font-family:var(--fm);font-style:italic">Select instruments to see portfolio totals</td>`;
+    tr.innerHTML = `<td colspan="10" style="padding:7px 10px;font-size:11px;color:var(--t3);font-family:var(--fm);font-style:italic">Select instruments to see portfolio totals</td>`;
     return;
   }
 
-  const totalDrop   = checked.reduce((s, h) => s + (hedgeMap[h.instrument_id].var_95_eur ?? 0), 0);
-  const totalCost   = checked.reduce((s, h) => s + (hedgeMap[h.instrument_id].put_cost_eur ?? 0), 0);
-  const totalSaving = totalDrop - totalCost;
-  const hasEur      = checked.some(h => hedgeMap[h.instrument_id].position_eur != null);
+  const totalDrop     = checked.reduce((s, h) => s + (hedgeMap[h.instrument_id].var_95_eur ?? 0), 0);
+  const totalCost     = checked.reduce((s, h) => s + (hedgeMap[h.instrument_id].put_cost_eur ?? 0), 0);
+  const totalSaving   = totalDrop - totalCost;
+  const totalPosition = checked.reduce((s, h) => s + (hedgeMap[h.instrument_id].position_eur ?? 0), 0);
+  const hasEur        = checked.some(h => hedgeMap[h.instrument_id].position_eur != null);
 
   tr.innerHTML = `
     <td style="padding:7px 10px;font-size:11px;font-weight:700;color:#BE185D;font-family:var(--fm);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap">
       Portfolio total <span style="font-weight:500;color:var(--t3)">(${n} selected)</span>
     </td>
+    <td style="padding:7px 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;white-space:nowrap">${hasEur ? _fmtEur(totalPosition) : '—'}</td>
     <td colspan="3" style="padding:7px 10px"></td>
     <td style="padding:7px 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:#dc2626;white-space:nowrap">${hasEur ? '−' + _fmtEur(totalDrop) : '—'}</td>
     <td style="padding:7px 10px;text-align:center"><span style="font-size:11px;font-weight:700;background:rgba(22,163,74,.12);color:#16a34a;padding:2px 7px;border-radius:100px;font-family:var(--fm)">95%</span></td>
@@ -145,7 +151,7 @@ function _renderDiscover() {
   }
 
   if (!_state.holdings.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="padding:16px;text-align:center;color:#94a3b8;font-size:12px">No portfolio holdings found.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="padding:16px;text-align:center;color:#94a3b8;font-size:12px">No portfolio holdings found.</td></tr>';
     _renderDiscoverTotals();
     return;
   }
@@ -166,11 +172,11 @@ function _renderDiscover() {
     const checked = _state.hedgeChecked.has(h.instrument_id);
 
     return `<tr style="border-bottom:1px solid rgba(0,0,0,.05)">
-      <td style="padding:9px 10px">
+      <td style="padding:9px 10px;white-space:nowrap">
         <span style="font-weight:700;font-family:'IBM Plex Mono',monospace;font-size:13px">${h.instrument_id}</span>
         <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--t2);margin-left:5px">${h.allocation_pct}%</span>
-        ${hd ? `<br><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#94a3b8">${_fmtEur(hd.position_eur)}</span>` : ''}
       </td>
+      <td style="padding:9px 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#64748b;white-space:nowrap">${hd && hd.position_eur != null ? _fmtEur(hd.position_eur) : '—'}</td>
       <td style="padding:9px 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:${retColor};white-space:nowrap">${retStr}</td>
       <td style="padding:9px 10px">${_riskDots(risk)}</td>
       <td style="padding:9px 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#64748b;white-space:nowrap">${sigMove}</td>
@@ -423,6 +429,36 @@ function _renderHedgeWidgets() {
   _highlightScenarioTab();
 }
 
+// ── Hedge-plan persistence helpers ───────────────────────────────────────────
+
+async function loadHedgePlan() {
+  try {
+    const plan = await api('/api/v1/experience/fno/hedge-plan');
+    _state.coverage     = plan.coverage;
+    _state.hedgeChecked = new Set(plan.hedged_ids);
+    _scenarioTab        = plan.scenario_tab;
+  } catch (e) {
+    console.warn('[PH] loadHedgePlan: no saved plan or error — using defaults', e);
+  }
+}
+
+async function saveHedgePlan() {
+  try {
+    await api('/api/v1/experience/fno/hedge-plan', 'PUT', {
+      hedged_ids:   [..._state.hedgeChecked],
+      coverage:     _state.coverage,
+      scenario_tab: _scenarioTab,
+    });
+  } catch (e) {
+    console.warn('[PH] saveHedgePlan: failed to persist plan', e);
+  }
+}
+
+function _debouncedSave() {
+  clearTimeout(_savePlanTimer);
+  _savePlanTimer = setTimeout(saveHedgePlan, _SAVE_DEBOUNCE_MS);
+}
+
 // ── API fetch ─────────────────────────────────────────────────────────────────
 async function _fetchHedge(token) {
   try {
@@ -493,13 +529,21 @@ export async function loadPortfolioHedge() {
     _state.selections   = {};
     _state.hedgeChecked = new Set();
 
+    await loadHedgePlan();
+
     const hedgeData = await _fetchHedge(token);
     _state.apiHedge = hedgeData;
 
     if (hedgeData?.holdings) {
       for (const h of hedgeData.holdings) {
         _state.selections[h.instrument_id] = (h.risk_score ?? 2) >= 3 ? 'put_buy' : 'call_sell';
-        _state.hedgeChecked.add(h.instrument_id);
+      }
+      // If no saved plan was found (hedgeChecked still empty after loadHedgePlan),
+      // default to all instruments checked so first-time users see a fully populated view.
+      if (_state.hedgeChecked.size === 0) {
+        for (const h of hedgeData.holdings) {
+          _state.hedgeChecked.add(h.instrument_id);
+        }
       }
     }
 
@@ -538,6 +582,7 @@ export function phToggleHedge(id) {
   } else {
     _state.hedgeChecked.add(id);
   }
+  _debouncedSave();
   _renderDiscoverTotals();
   _renderHedgeWidgets();
 }
@@ -548,6 +593,7 @@ export function phPickStrategy(id, strategy) {
 
 export function phSetCoverage(val) {
   _state.coverage = parseInt(val, 10);
+  _debouncedSave();
   _renderHedgeWidgets();
 
   const token = sessionStorage.getItem('auth_token');
@@ -567,6 +613,7 @@ export function phSetCoverage(val) {
 
 export function phSetScenarioTab(tab) {
   _scenarioTab = tab;
+  _debouncedSave();
   _highlightScenarioTab();
   _renderPayoffChart();
   _renderScenarioTable();

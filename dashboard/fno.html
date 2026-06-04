@@ -121,6 +121,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
 .kpi-delta{font-size:11px;color:var(--t3);margin-top:3px;}
 .kpi-delta.pos{color:var(--pos);}
 .kpi-delta.neg{color:var(--neg);}
+.card-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px;}
 .inst-geo{border:1.5px solid var(--p03-bd) !important;background:var(--p03-bg) !important;max-width:200px;}
 
 /* Market snapshot */
@@ -420,10 +421,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     <div class="nav-item p04" data-page="equity-hedge">
       <span class="nav-icon">⬗</span> <span data-i18n="nav.equity_hedge">Equity Hedge</span>
     </div>
-    <div class="nav-item p03" data-page="portfolio-hedge">
-      <span class="nav-icon">⬡</span> Portfolio Hedge
-    </div>
-    <div class="nav-item p04" data-page="risk">
+<div class="nav-item p04" data-page="risk">
       <span class="nav-icon">⬡</span> <span data-i18n="nav.risk">Risk &amp; Greeks</span>
     </div>
     <div class="nav-item p01" data-page="scenarios">
@@ -441,6 +439,14 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
   <div class="sidebar-footer">
     <div class="lbl">Portfolio Manager v1.0</div>
     <div class="lbl" id="sidebar-as-of" style="margin-top:2px;">Loading...</div>
+    <div class="sidebar-row mt-1">
+      <label class="paper-toggle">
+        <input type="checkbox" id="analytics-mode-chk" onchange="toggleAnalyticsMode(this.checked)">
+        <span class="toggle-track"></span>
+        <span id="analytics-mode-label" class="lbl ml-1">Mock</span>
+      </label>
+    </div>
+    <div id="analytics-mode-error" class="lbl mt-1" style="color:var(--danger);display:none;"></div>
   </div>
 </div>
 
@@ -458,186 +464,159 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       <span class="phase-tag p01">Overview</span>
     </div>
 
-    <!-- KPIs — updated by setUnderlying() -->
-    <div class="kpi-row c5" id="dash-kpis"></div>
+    <!-- Geo-region instrument overview — rendered by renderGeoOverview() -->
+    <div id="fno-geo-overview" class="card-row"></div>
 
-    <!-- Instrument capsule (geo-kpi style) -->
-    <div id="fno-inst-capsule" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px"></div>
-
-    <!-- 7-widget row: 3 position KPIs + 4 margin KPIs -->
-    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:20px;align-items:stretch">
-      <div id="pos-kpis" style="display:contents"></div>
-      <div id="margin-kpis" style="display:contents"></div>
+    <!-- State banners -->
+    <div id="ph-loading" style="display:none;color:var(--t3);font-size:13px;padding:12px 0;font-family:var(--fm)">Loading hedge plan…</div>
+    <div id="ph-error" style="display:none;font-size:13px;padding:10px 14px;border-radius:6px;background:rgba(220,38,38,.08);color:#dc2626;margin-bottom:16px">
+      Error: <span id="ph-error-msg"></span>
     </div>
-    <div id="mkt-grid" style="display:none"></div>
+    <div id="ph-empty" style="display:none;padding:16px 0">
+      <span id="ph-empty-msg" style="font-size:13px;color:var(--t3);font-family:var(--fm)">No portfolio found.</span>
+    </div>
 
-    <div class="two-col">
-      <div class="card">
-        <div class="card-hdr">
-          <span class="card-title" id="seg-chart-title">P&amp;L by Expiry Segment</span>
-          <span class="card-sub">Unrealized + realized</span>
-        </div>
-        <div class="card-body">
-          <div class="chart-wrap"><canvas id="segment-chart"></canvas></div>
-        </div>
-      </div>
+    <!-- Main content (revealed after load) -->
+    <div id="ph-content" style="display:none">
 
-      <div class="card">
-        <div class="card-hdr">
-          <span class="card-title">Top Movers</span>
-          <span class="card-sub" id="movers-sub">All underlyings</span>
-        </div>
-        <div class="card-body" style="padding:0">
-          <div class="tbl-wrap">
-            <table>
-              <thead><tr><th>Instrument</th><th>Exp</th><th>Side</th><th>P&amp;L</th></tr></thead>
-              <tbody id="movers-tbody"></tbody>
-            </table>
+      <!-- 4 top KPI widgets -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+        <div class="card" style="text-align:center;padding:16px">
+          <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:6px">Portfolio Value</div>
+          <div id="ph-kpi-portfolio-val" style="font-size:22px;font-weight:700;font-family:var(--fm);color:var(--text)">—</div>
+          <div style="font-size:10px;color:var(--t2);font-family:var(--fm);margin-top:4px">
+            <span id="ph-discover-portfolio-name">—</span>
+            <a id="ph-eur-hint" href="/" style="display:none;color:#BE185D;margin-left:4px">Set in Portfolio Builder →</a>
           </div>
         </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-hdr">
-        <span class="card-title">Market &amp; Daily P&amp;L</span>
-        <span class="card-sub">ASML % move vs net portfolio P&amp;L per day</span>
-      </div>
-      <div class="card-body">
-        <div class="chart-wrap tall" id="daily-progress-wrap"><canvas id="daily-progress-chart"></canvas></div>
-      </div>
-    </div>
-
-    <!-- ── POSITIONS ─────────────────────────────────────────── -->
-    <div class="section-divider">Positions</div>
-
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <div class="page-sub" id="pos-page-sub">Loading...</div>
-      <div style="display:flex;align-items:center;gap:14px;">
-        <label class="paper-toggle" title="Toggle between paper (dummy) and live broker positions">
-          <input type="checkbox" id="paper-mode-chk" checked onchange="togglePaperMode(this.checked)">
-          <span class="paper-toggle-track"><span class="paper-toggle-thumb"></span></span>
-          <span id="paper-mode-label" class="paper-mode-label">Paper</span>
-        </label>
-      </div>
-    </div>
-
-    <div class="filter-row" id="pos-filter-row">
-      <button class="filter-btn active" onclick="filterPos('ALL',this)">All</button>
-      <button class="filter-btn" onclick="filterPos('FUT',this)">Futures</button>
-      <button class="filter-btn" onclick="filterPos('CE',this)">Call (CE)</button>
-      <button class="filter-btn" onclick="filterPos('PE',this)">Put (PE)</button>
-    </div>
-
-    <div class="card">
-      <div class="card-hdr">
-        <span class="card-title">Active Positions</span>
-        <span class="card-sub" id="pos-count-lbl">20 positions</span>
-      </div>
-      <div class="card-body" style="padding:0">
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr>
-              <th>Instrument</th><th>Exp</th><th>Type</th><th>Strike</th>
-              <th>Side</th><th>Qty</th><th>Avg</th><th>LTP</th>
-              <th>Chg %</th><th>P&amp;L</th><th>HQS</th>
-            </tr></thead>
-            <tbody id="pos-tbody"></tbody>
-          </table>
+        <div class="card" style="text-align:center;padding:16px">
+          <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:6px">1σ Downside Impact</div>
+          <div id="ph-kpi-drop-impact" style="font-size:22px;font-weight:700;font-family:var(--fm);color:#dc2626">—</div>
+          <div style="font-size:10px;color:var(--t3);font-family:var(--fm);margin-top:4px">95% worst-case drop</div>
         </div>
-        <div class="tbl-footer">
-          <span class="lbl">Net Unrealized:</span>
-          <span class="val" id="pos-total">—</span>
+        <div class="card" style="text-align:center;padding:16px">
+          <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:6px">Put Premium</div>
+          <div id="ph-kpi-premium" style="font-size:22px;font-weight:700;font-family:var(--fm);color:var(--text)">—</div>
+          <div style="font-size:10px;color:var(--t3);font-family:var(--fm);margin-top:4px">cost to protect</div>
+        </div>
+        <div class="card" style="text-align:center;padding:16px">
+          <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:6px">Loss Protected</div>
+          <div id="ph-kpi-protection" style="font-size:22px;font-weight:700;font-family:var(--fm);color:#2563eb">—</div>
+          <div style="font-size:10px;color:var(--t3);font-family:var(--fm);margin-top:4px">of worst-case</div>
         </div>
       </div>
-    </div>
 
-    <div class="section-divider">Closed Positions — APR 2026 &amp; Legacy</div>
-    <div class="info-note">Expired / closed trades. P&amp;L is realized and booked.</div>
-    <div class="card">
-      <div class="card-hdr">
-        <span class="card-title">Closed Positions</span>
-        <span class="card-sub" id="closed-card-sub">Realized P&amp;L: —</span>
-      </div>
-      <div class="card-body" style="padding:0">
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr><th>Instrument</th><th>Expiry</th><th>Type</th><th>Strike</th><th>Realized P&amp;L</th></tr></thead>
-            <tbody id="closed-tbody"></tbody>
-          </table>
-        </div>
-        <div class="tbl-footer">
-          <span class="lbl">Total Realized:</span><span class="val pos" id="closed-total">—</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── MARGIN ─────────────────────────────────────────────── -->
-    <div class="section-divider">Margin Tracker</div>
-
-    <div class="card" id="margin-util-card"></div>
-
-    <!-- ASML Equity Hedge Margin -->
-    <div id="asml-margin-section">
-      <div class="und-section-hdr">
-        <span class="und-section-tag asml">ASML Equity Hedge</span>
-        <div class="line"></div>
-      </div>
-      <div class="card">
+      <!-- Holdings selection table — sorted by risk ↓, sticky totals row -->
+      <div class="card" style="padding:0;overflow:hidden;margin-bottom:20px">
         <div class="card-hdr">
-          <span class="card-title">ASML — Equity Hedge Options</span>
-          <span class="card-sub">Covered Call margin (est.) · Protective Put premium</span>
+          <span class="card-title">Holdings — downside &amp; hedge cost</span>
+          <span class="card-sub">sorted by risk · check to include in hedge</span>
         </div>
-        <div class="card-body" style="padding:0">
-          <div class="tbl-wrap">
-            <table>
-              <thead><tr><th>Instrument</th><th>Exp</th><th>Type</th><th>Side</th><th>Shares</th><th>SPAN (Est.)</th><th>Exposure (Est.)</th><th>Total (Est.)</th></tr></thead>
-              <tbody id="asml-margin-tbody"></tbody>
-            </table>
+        <div class="tbl-wrap" style="max-height:340px">
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead style="position:sticky;top:0;z-index:1;background:var(--surface)">
+              <tr style="font-size:11px;color:#64748b;border-bottom:1px solid rgba(0,0,0,.08);text-transform:uppercase;letter-spacing:.04em">
+                <th style="padding:9px 10px;text-align:left;font-weight:700">Instrument</th>
+                <th style="padding:9px 10px;text-align:left;font-weight:700">Position (€)</th>
+                <th style="padding:9px 10px;text-align:left;font-weight:700">1Y Return</th>
+                <th style="padding:9px 10px;text-align:left;font-weight:700">Risk</th>
+                <th style="padding:9px 10px;text-align:left;font-weight:700">1σ Down</th>
+                <th style="padding:9px 10px;text-align:left;font-weight:700">Could Drop (€)</th>
+                <th style="padding:9px 10px;text-align:center;font-weight:700">Prob</th>
+                <th style="padding:9px 10px;text-align:left;font-weight:700">Put Cost (€)</th>
+                <th style="padding:9px 10px;text-align:left;font-weight:700">Reduce Loss By</th>
+                <th style="padding:9px 14px;text-align:center;font-weight:700">Hedge?</th>
+              </tr>
+              <tr id="ph-discover-totals-row" style="background:rgba(190,24,93,.04);border-bottom:2px solid rgba(0,0,0,.1)">
+                <td colspan="10" style="padding:7px 10px;font-size:11px;color:var(--t3);font-family:var(--fm);font-style:italic">Select instruments to see portfolio totals</td>
+              </tr>
+            </thead>
+            <tbody id="ph-discover-holdings"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Chart + Coverage dial + Scenario — 3-column row -->
+      <div style="display:grid;grid-template-columns:1fr 230px 1fr;gap:16px;margin-bottom:24px">
+
+        <!-- Left: P&L payoff chart -->
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title">Portfolio P&amp;L — hedged vs unhedged</span>
+            <span id="ph-chart-coverage-badge" class="card-sub">at 50% coverage</span>
           </div>
-          <div class="tbl-footer" id="asml-margin-footer"></div>
+          <div style="height:260px;position:relative">
+            <canvas id="ph-payoff-chart"></canvas>
+          </div>
         </div>
-      </div>
-    </div>
 
-    <div class="card">
-      <div class="card-hdr">
-        <span class="card-title" id="margin-chart-title">Margin by Category</span>
-        <span class="card-sub">SPAN vs Exposure — estimated</span>
-      </div>
-      <div class="card-body">
-        <div class="chart-wrap"><canvas id="margin-chart"></canvas></div>
-      </div>
-    </div>
+        <!-- Middle: Coverage dial + Max DD + Monthly Cost -->
+        <div class="card" style="display:flex;flex-direction:column;justify-content:space-between;padding:16px">
+          <div>
+            <div style="font-size:10px;font-weight:700;color:#BE185D;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:4px">Coverage Level</div>
+            <div style="font-size:13px;font-weight:700;margin-bottom:10px">One dial · all strikes</div>
+            <input type="range" id="ph-coverage-slider" min="0" max="100" value="50"
+                   oninput="phSetCoverage(this.value)"
+                   style="width:100%;accent-color:#BE185D;cursor:pointer">
+            <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--t3);font-family:var(--fm);margin-top:3px">
+              <span>0%</span>
+              <span id="ph-coverage-label" style="font-weight:700;color:#BE185D">Lightly hedged</span>
+              <span>100%</span>
+            </div>
+          </div>
+          <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div style="text-align:center">
+              <div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;font-family:var(--fm);margin-bottom:4px">Max DD</div>
+              <div id="ph-max-dd-hedged" style="font-size:22px;font-weight:700;font-family:var(--fm);color:#BE185D">—</div>
+              <div id="ph-max-dd-unhedged" style="font-size:10px;color:var(--t2);font-family:var(--fm);margin-top:2px">vs — unhedged</div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;font-family:var(--fm);margin-bottom:4px">Mo. Cost</div>
+              <div id="ph-monthly-cost" style="font-size:22px;font-weight:700;font-family:var(--fm);color:var(--text)">—</div>
+              <div id="ph-monthly-cost-sub" style="font-size:10px;color:var(--t2);font-family:var(--fm);margin-top:2px">premium drag</div>
+            </div>
+          </div>
+        </div>
 
-    <!-- ── My Portfolio ──────────────────────────────────────────── -->
-    <div class="section-divider">My Portfolio</div>
-    <div id="fno-mp-meta" style="padding:4px 0 12px;font-size:12px;color:var(--t2);font-family:var(--fm)">
-      <span>Portfolio: </span><strong id="fno-mp-name">—</strong>
-      &nbsp;&nbsp;·&nbsp;&nbsp;
-      <span>Last saved: </span><span id="fno-mp-updated">—</span>
-    </div>
-    <div id="fno-mp-empty" style="display:none;font-size:13px;color:var(--t3);padding:8px 0;font-family:var(--fm)">
-      No portfolio saved yet. <a href="/" style="color:#BE185D">Build one in the RITA Portfolio Builder →</a>
-    </div>
-    <div id="fno-mp-error" style="display:none;font-size:12px;color:#dc2626;padding:4px 0;font-family:var(--fm)"></div>
-    <div class="card" style="padding:0;overflow:hidden">
-      <table class="data-table" id="fno-mp-table" style="width:100%;border-collapse:collapse;font-size:13px">
-        <thead style="background:var(--surface)">
-          <tr style="font-size:11px;color:#64748b;border-bottom:2px solid rgba(0,0,0,.1);text-transform:uppercase;letter-spacing:.04em">
-            <th style="padding:9px 12px;text-align:left;font-weight:700">Instrument</th>
-            <th style="padding:9px 12px;text-align:right;font-weight:700">Allocation %</th>
-          </tr>
-        </thead>
-        <tbody id="fno-mp-holdings-body"></tbody>
-        <tfoot>
-          <tr style="border-top:2px solid rgba(0,0,0,.08);background:rgba(100,116,139,.04)">
-            <td style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--t2);font-family:var(--fm);text-transform:uppercase;letter-spacing:.04em">Total</td>
-            <td id="fno-mp-total" style="padding:8px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700">—</td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
+        <!-- Right: Scenario P&L table -->
+        <div class="card" style="padding:0;overflow:hidden">
+          <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+            <span style="font-weight:700;font-size:14px">Scenario P&amp;L</span>
+            <div style="display:flex;gap:4px">
+              <button id="ph-tab-pp" onclick="phSetScenarioTab('pp')"
+                      style="padding:4px 10px;border-radius:4px;border:1px solid rgba(0,0,0,.12);background:#BE185D;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--fm)">
+                Protective put
+              </button>
+              <button id="ph-tab-ps" onclick="phSetScenarioTab('ps')"
+                      style="padding:4px 10px;border-radius:4px;border:1px solid rgba(0,0,0,.12);background:transparent;color:#64748b;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--fm)">
+                Put spread
+              </button>
+              <button id="ph-tab-collar" onclick="phSetScenarioTab('collar')"
+                      style="padding:4px 10px;border-radius:4px;border:1px solid rgba(0,0,0,.12);background:transparent;color:#64748b;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--fm)">
+                Collar
+              </button>
+            </div>
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead>
+              <tr style="font-size:11px;color:#64748b;border-bottom:2px solid rgba(0,0,0,.08);text-transform:uppercase;letter-spacing:.04em">
+                <th style="padding:10px 12px;text-align:left;font-weight:700">Market</th>
+                <th style="padding:10px 12px;text-align:right;font-weight:700">Unhedged</th>
+                <th style="padding:10px 12px;text-align:right;font-weight:700">Hedged</th>
+              </tr>
+            </thead>
+            <tbody id="ph-scenario-body"></tbody>
+          </table>
+          <div style="padding:12px 14px;border-top:1px solid var(--border)">
+            <div style="font-size:12px;color:var(--t2)">
+              Cost of this hedge &nbsp;<strong id="ph-cost-display" style="font-family:var(--fm)">—</strong>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div><!-- /ph-content -->
   </div>
 
   <!-- ═══════════════════════════════════════════════
@@ -670,6 +649,8 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       </div>
       <div class="card-body">
         <div class="scenario-row" id="stress-row"></div>
+        <!-- Historical event scenarios (F30 Phase 3 — analytics state) -->
+        <div id="stress-events-row" class="mt-3" style="margin-top:16px"></div>
         <!-- Payoff charts: side-by-side (ALL), or single (NIFTY/BANKNIFTY) -->
         <div id="payoff-charts-grid" style="display:grid;gap:18px;margin-top:4px;">
           <div id="payoff-nifty-wrap">
@@ -718,25 +699,8 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
 
     <div class="info-note">Portfolio impact uses first-order delta approximation (Δ × price move). Gamma/vega not captured. Bull bets = FUT Long · CE Long · PE Short &nbsp;·&nbsp; Bear bets = FUT Short · CE Short · PE Long.</div>
 
-    <!-- NIFTY section -->
-    <div id="nifty-scen-section">
-      <div class="und-section-hdr">
-        <span class="und-section-tag nifty">NIFTY</span>
-        <div class="line"></div>
-      </div>
-      <div id="nifty-rr-kpis"></div>
-      <div id="nifty-rr-views"></div>
-    </div>
-
-    <!-- BANKNIFTY section -->
-    <div id="banknifty-scen-section">
-      <div class="und-section-hdr">
-        <span class="und-section-tag banknifty">BANKNIFTY</span>
-        <div class="line"></div>
-      </div>
-      <div id="banknifty-rr-kpis"></div>
-      <div id="banknifty-rr-views"></div>
-    </div>
+    <!-- Dynamic instrument sections — injected by renderScenarios() -->
+    <div id="scen-instrument-sections"></div>
 
     <!-- Daily history -->
     <div id="rr-history"></div>
@@ -1097,160 +1061,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
   <!-- ═══════════════════════════════════════════════
        PORTFOLIO HEDGE (Feature 28 Phase 3)
   ════════════════════════════════════════════════ -->
-  <div class="section" id="page-portfolio-hedge">
-    <div class="page-hdr">
-      <div>
-        <div class="page-title">Portfolio Hedge</div>
-        <div class="page-sub">Select instruments · adjust coverage · pressure-test it</div>
-      </div>
-      <span class="phase-tag p03">Hedge</span>
-    </div>
-
-    <!-- State banners -->
-    <div id="ph-loading" style="display:none;color:var(--t3);font-size:13px;padding:12px 0;font-family:var(--fm)">Loading hedge plan…</div>
-    <div id="ph-error" style="display:none;font-size:13px;padding:10px 14px;border-radius:6px;background:rgba(220,38,38,.08);color:#dc2626;margin-bottom:16px">
-      Error: <span id="ph-error-msg"></span>
-    </div>
-    <div id="ph-empty" style="display:none;padding:16px 0">
-      <span id="ph-empty-msg" style="font-size:13px;color:var(--t3);font-family:var(--fm)">No portfolio found.</span>
-    </div>
-
-    <!-- Main content (revealed after load) -->
-    <div id="ph-content" style="display:none">
-
-      <!-- 4 top KPI widgets -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
-        <div class="card" style="text-align:center;padding:16px">
-          <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:6px">Portfolio Value</div>
-          <div id="ph-kpi-portfolio-val" style="font-size:22px;font-weight:700;font-family:var(--fm);color:var(--text)">—</div>
-          <div style="font-size:10px;color:var(--t2);font-family:var(--fm);margin-top:4px">
-            <span id="ph-discover-portfolio-name">—</span>
-            <a id="ph-eur-hint" href="/" style="display:none;color:#BE185D;margin-left:4px">Set in Portfolio Builder →</a>
-          </div>
-        </div>
-        <div class="card" style="text-align:center;padding:16px">
-          <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:6px">1σ Downside Impact</div>
-          <div id="ph-kpi-drop-impact" style="font-size:22px;font-weight:700;font-family:var(--fm);color:#dc2626">—</div>
-          <div style="font-size:10px;color:var(--t3);font-family:var(--fm);margin-top:4px">95% worst-case drop</div>
-        </div>
-        <div class="card" style="text-align:center;padding:16px">
-          <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:6px">Put Premium</div>
-          <div id="ph-kpi-premium" style="font-size:22px;font-weight:700;font-family:var(--fm);color:var(--text)">—</div>
-          <div style="font-size:10px;color:var(--t3);font-family:var(--fm);margin-top:4px">cost to protect</div>
-        </div>
-        <div class="card" style="text-align:center;padding:16px">
-          <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:6px">Loss Protected</div>
-          <div id="ph-kpi-protection" style="font-size:22px;font-weight:700;font-family:var(--fm);color:#2563eb">—</div>
-          <div style="font-size:10px;color:var(--t3);font-family:var(--fm);margin-top:4px">of worst-case</div>
-        </div>
-      </div>
-
-      <!-- Holdings selection table — sorted by risk ↓, sticky totals row -->
-      <div class="card" style="padding:0;overflow:hidden;margin-bottom:20px">
-        <div class="card-hdr">
-          <span class="card-title">Holdings — downside &amp; hedge cost</span>
-          <span class="card-sub">sorted by risk · check to include in hedge</span>
-        </div>
-        <div class="tbl-wrap" style="max-height:340px">
-          <table style="width:100%;border-collapse:collapse;font-size:13px">
-            <thead style="position:sticky;top:0;z-index:1;background:var(--surface)">
-              <tr style="font-size:11px;color:#64748b;border-bottom:1px solid rgba(0,0,0,.08);text-transform:uppercase;letter-spacing:.04em">
-                <th style="padding:9px 10px;text-align:left;font-weight:700">Instrument</th>
-                <th style="padding:9px 10px;text-align:left;font-weight:700">1Y Return</th>
-                <th style="padding:9px 10px;text-align:left;font-weight:700">Risk</th>
-                <th style="padding:9px 10px;text-align:left;font-weight:700">1σ Down</th>
-                <th style="padding:9px 10px;text-align:left;font-weight:700">Could Drop (€)</th>
-                <th style="padding:9px 10px;text-align:center;font-weight:700">Prob</th>
-                <th style="padding:9px 10px;text-align:left;font-weight:700">Put Cost (€)</th>
-                <th style="padding:9px 10px;text-align:left;font-weight:700">Reduce Loss By</th>
-                <th style="padding:9px 14px;text-align:center;font-weight:700">Hedge?</th>
-              </tr>
-              <tr id="ph-discover-totals-row" style="background:rgba(190,24,93,.04);border-bottom:2px solid rgba(0,0,0,.1)">
-                <td colspan="9" style="padding:7px 10px;font-size:11px;color:var(--t3);font-family:var(--fm);font-style:italic">Select instruments to see portfolio totals</td>
-              </tr>
-            </thead>
-            <tbody id="ph-discover-holdings"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Coverage dial — top of the plot area -->
-      <div class="card" style="margin-bottom:16px">
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;align-items:center">
-          <div>
-            <div style="font-size:10px;font-weight:700;color:#BE185D;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:4px">Coverage Level</div>
-            <div style="font-size:15px;font-weight:700;margin-bottom:12px">One dial sets every strike</div>
-            <input type="range" id="ph-coverage-slider" min="0" max="100" value="50"
-                   oninput="phSetCoverage(this.value)"
-                   style="width:100%;accent-color:#BE185D;cursor:pointer">
-            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);font-family:var(--fm);margin-top:4px">
-              <span>Unhedged</span>
-              <span id="ph-coverage-label" style="font-weight:700;color:#BE185D">Lightly hedged</span>
-              <span>Fully protected</span>
-            </div>
-          </div>
-          <div style="text-align:center">
-            <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:6px">Max Drawdown Protected</div>
-            <div id="ph-max-dd-hedged" style="font-size:28px;font-weight:700;font-family:var(--fm);color:#BE185D">—</div>
-            <div id="ph-max-dd-unhedged" style="font-size:12px;color:var(--t2);font-family:var(--fm);margin-top:2px">vs — unhedged</div>
-          </div>
-          <div style="text-align:center">
-            <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:6px">Monthly Cost</div>
-            <div id="ph-monthly-cost" style="font-size:28px;font-weight:700;font-family:var(--fm);color:var(--text)">—</div>
-            <div id="ph-monthly-cost-sub" style="font-size:12px;color:var(--t2);font-family:var(--fm);margin-top:2px">premium drag</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Payoff chart + scenario table -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
-        <div class="card">
-          <div class="card-hdr">
-            <span class="card-title">Portfolio P&amp;L — hedged vs unhedged</span>
-            <span id="ph-chart-coverage-badge" class="card-sub">at 50% coverage</span>
-          </div>
-          <div style="height:280px;position:relative">
-            <canvas id="ph-payoff-chart"></canvas>
-          </div>
-        </div>
-        <div class="card" style="padding:0;overflow:hidden">
-          <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-            <span style="font-weight:700;font-size:14px">Scenario P&amp;L</span>
-            <div style="display:flex;gap:4px">
-              <button id="ph-tab-pp" onclick="phSetScenarioTab('pp')"
-                      style="padding:4px 10px;border-radius:4px;border:1px solid rgba(0,0,0,.12);background:#BE185D;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--fm)">
-                Protective put
-              </button>
-              <button id="ph-tab-ps" onclick="phSetScenarioTab('ps')"
-                      style="padding:4px 10px;border-radius:4px;border:1px solid rgba(0,0,0,.12);background:transparent;color:#64748b;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--fm)">
-                Put spread
-              </button>
-              <button id="ph-tab-collar" onclick="phSetScenarioTab('collar')"
-                      style="padding:4px 10px;border-radius:4px;border:1px solid rgba(0,0,0,.12);background:transparent;color:#64748b;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--fm)">
-                Collar
-              </button>
-            </div>
-          </div>
-          <table style="width:100%;border-collapse:collapse;font-size:13px">
-            <thead>
-              <tr style="font-size:11px;color:#64748b;border-bottom:2px solid rgba(0,0,0,.08);text-transform:uppercase;letter-spacing:.04em">
-                <th style="padding:10px 12px;text-align:left;font-weight:700">Market</th>
-                <th style="padding:10px 12px;text-align:right;font-weight:700">Unhedged</th>
-                <th style="padding:10px 12px;text-align:right;font-weight:700">Hedged</th>
-              </tr>
-            </thead>
-            <tbody id="ph-scenario-body"></tbody>
-          </table>
-          <div style="padding:12px 14px;border-top:1px solid var(--border)">
-            <div style="font-size:12px;color:var(--t2)">
-              Cost of this hedge &nbsp;<strong id="ph-cost-display" style="font-family:var(--fm)">—</strong>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /ph-content -->
-  </div><!-- /page-portfolio-hedge -->
+  <div class="section" id="page-portfolio-hedge"></div>
 
 </div><!-- /main -->
 </div><!-- /shell -->

@@ -460,12 +460,17 @@ export async function pbBuildPortfolio() {
   const remainder = 100 - allocationPct * _basket.size;
   if (remainder > 0 && holdings.length > 0) holdings[0].allocation_pct += remainder;
 
+  const eurEl = document.getElementById('pb-total-eur');
+  const totalValueEur = eurEl && eurEl.value ? parseFloat(eurEl.value) : null;
+
   const buildBtn = document.getElementById('pb-basket-build-btn');
   if (buildBtn) { buildBtn.disabled = true; buildBtn.textContent = 'Building…'; }
   _hide('pb-status-msg');
 
   try {
-    await api('/api/v1/user-portfolio/', 'POST', { name, holdings });
+    const payload = { name, holdings };
+    if (totalValueEur != null && totalValueEur > 0) payload.total_value_eur = totalValueEur;
+    await api('/api/v1/user-portfolio/', 'POST', payload);
     _setText('pb-status-msg', `Portfolio "${name}" built successfully with ${_basket.size} instruments.`);
     document.getElementById('pb-status-msg').style.color = '#16a34a';
     _show('pb-status-msg');

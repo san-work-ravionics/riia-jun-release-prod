@@ -44,16 +44,18 @@ export function renderGreeksTable() {
     const dStr = g.delta >= 0 ? `+${g.delta}` : String(g.delta);
     const tStr = g.theta > 0 ? `+₹${g.theta}` : g.theta === 0 ? '₹0' : `−₹${Math.abs(g.theta)}`;
     const vStr = g.vega  > 0 ? `+₹${g.vega}`  : g.vega  === 0 ? '₹0' : `−₹${Math.abs(g.vega)}`;
+    const instLabel = g.full ?? (g.und && g.hedge_type ? `${g.und} ${g.hedge_type}` : g.und ?? '—');
+    const ivVal = g.ann_vol_pct != null ? parseFloat(g.ann_vol_pct).toFixed(1) + '%' : '—';
     return `<tr>
-      <td>${g.full}</td>
-      <td><span style="font-family:var(--fm);font-size:10px;font-weight:500;padding:2px 7px;border-radius:3px;background:${g.und === 'NIFTY' ? 'var(--p02-bg)' : 'var(--p04-bg)'};color:${g.und === 'NIFTY' ? 'var(--p02)' : 'var(--p04)'};">${g.und}</span></td>
-      <td><span class="exp-badge ${g.exp.toLowerCase()}">${g.exp}</span></td>
-      <td><span class="inst-badge ${g.type.toLowerCase()}">${g.type}</span></td>
-      <td><span class="side-badge ${g.side.toLowerCase()}">${g.side}</span></td>
-      <td class="${g.delta >= 0 ? 'pos' : 'neg'} val">${dStr}</td>
-      <td class="${g.theta >= 0 ? 'pos' : 'neg'} val">${tStr}</td>
-      <td class="${g.vega  >= 0 ? 'pos' : 'neg'} val">${vStr}</td>
-      <td class="val">${g.iv}</td>
+      <td>${instLabel}</td>
+      <td><span style="font-family:var(--fm);font-size:10px;font-weight:500;padding:2px 7px;border-radius:3px;background:${g.und === 'NIFTY' ? 'var(--p02-bg)' : 'var(--p04-bg)'};color:${g.und === 'NIFTY' ? 'var(--p02)' : 'var(--p04)'};">${g.und ?? '—'}</span></td>
+      <td><span class="exp-badge ${(g.exp ?? '').toLowerCase()}">${g.exp ?? '—'}</span></td>
+      <td><span class="inst-badge ${(g.type ?? '').toLowerCase()}">${g.type ?? '—'}</span></td>
+      <td><span class="side-badge ${(g.side ?? '').toLowerCase()}">${g.side ?? '—'}</span></td>
+      <td class="${(g.delta ?? 0) >= 0 ? 'pos' : 'neg'} val">${dStr}</td>
+      <td class="${(g.theta ?? 0) >= 0 ? 'pos' : 'neg'} val">${tStr}</td>
+      <td class="${(g.vega  ?? 0) >= 0 ? 'pos' : 'neg'} val">${vStr}</td>
+      <td class="val">${ivVal}</td>
     </tr>`;
   }).join('');
   const totDelta = filtered.reduce((s, g) => s + g.delta, 0);

@@ -40,7 +40,7 @@ async function apiFetch(url, opts = {}) {
 }
 import { state } from './state.js';
 import { initNav, setUnderlying, setExpiry, _sectionLoaders } from './nav.js';
-import { loadFnoMyPortfolio } from './my-portfolio.js';
+import { loadFnoMyPortfolio, fnoSelectInstrument } from './my-portfolio.js';
 import { filterPos } from './positions.js';
 import {
   manSelectTile,
@@ -67,6 +67,14 @@ window.togglePaperMode  = function(isPaper) {
   if (lbl) lbl.textContent = isPaper ? 'Paper' : 'Live';
   fetchPositions();
 };
+window.toggleAnalyticsMode = function(isReal) {
+  state.analyticsMode = isReal ? 'real' : 'mock';
+  const lbl = document.getElementById('analytics-mode-label');
+  if (lbl) lbl.textContent = isReal ? 'Real' : 'Mock';
+  const err = document.getElementById('analytics-mode-error');
+  if (err) { err.textContent = ''; err.style.display = 'none'; }
+  initApp(state.analyticsMode);
+};
 
 // Manoeuvre
 window.manSelectTile    = manSelectTile;
@@ -85,8 +93,9 @@ import { loadEquityHedge } from './equity_hedge.js';
 import { initI18n, setLanguage, applyTranslations } from '../shared/i18n.js';
 import { loadPortfolioHedge, phSetCoverage, phSetDuration, phToggleHedge, phPickStrategy, phSetScenarioTab } from './portfolio-hedge.js';
 
-window.setLanguage = setLanguage;
-window.loadEquityHedge = loadEquityHedge;
+window.setLanguage        = setLanguage;
+window.loadEquityHedge   = loadEquityHedge;
+window.fnoSelectInstrument = fnoSelectInstrument;
 
 // Portfolio Hedge wizard
 _sectionLoaders['portfolio-hedge'] = loadPortfolioHedge;
@@ -97,6 +106,19 @@ window.phToggleHedge      = phToggleHedge;
 window.phPickStrategy     = phPickStrategy;
 window.phSetScenarioTab   = phSetScenarioTab;
 
+// My Portfolio CTA — navigates to portfolio-hedge section from Overview
+window.fnoMpGoHedge = function () {
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+  const navItem = document.querySelector('.nav-item[data-section="portfolio-hedge"]');
+  if (navItem) navItem.classList.add('active');
+  const section = document.getElementById('page-portfolio-hedge');
+  if (section) section.classList.add('active');
+  if (typeof _sectionLoaders['portfolio-hedge'] === 'function') {
+    _sectionLoaders['portfolio-hedge']();
+  }
+};
+
 // ── Boot ──────────────────────────────────────────────────────────────────────
 initI18n(); applyTranslations();
 window.addEventListener('load', async () => {
@@ -104,7 +126,7 @@ window.addEventListener('load', async () => {
   initNav();
   initApp();
   checkStatus();
-  loadFnoMyPortfolio(); // populate My Portfolio card in Overview
+  loadPortfolioHedge();
   // Poll API status every 30s
   setInterval(checkStatus, 30000);
 });

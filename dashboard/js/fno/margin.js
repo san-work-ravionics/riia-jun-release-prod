@@ -92,10 +92,12 @@ export function renderClosedPositions() {
   );
   const total = filtered.reduce((s, p) => s + p.pnl, 0);
 
-  document.getElementById('closed-card-sub').textContent =
-    `Realized P&L: ${fmtPnl(state.realizedPnl)}`;
+  const subEl = document.getElementById('closed-card-sub');
+  if (subEl) subEl.textContent = `Realized P&L: ${fmtPnl(state.realizedPnl)}`;
 
-  document.getElementById('closed-tbody').innerHTML = filtered.map(p => {
+  const tbodyEl = document.getElementById('closed-tbody');
+  if (!tbodyEl) return;
+  tbodyEl.innerHTML = filtered.map(p => {
     const typeCls = p.type.toLowerCase();
     return `<tr>
       <td>${p.full || p.instrument}</td>

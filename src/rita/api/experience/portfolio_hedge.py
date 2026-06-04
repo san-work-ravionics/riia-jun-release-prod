@@ -3,8 +3,8 @@
 ADR-001 Tier 3: read-only composition, no writes, no side effects.
 Computes per-holding hedge parameters using Black-Scholes on realized vol.
 
-GET /api/v1/experience/fno/portfolio-hedge?coverage=50&duration=1y  (JWT required)
-duration: '1m' | '3m' | '1y'  (default '1y')
+GET /api/v1/experience/fno/portfolio-hedge?coverage=50  (JWT required)
+Tenor is hardcoded to 1y (12 months). duration param removed in F29 Phase 0.
 """
 from __future__ import annotations
 
@@ -37,8 +37,6 @@ _FNO_ELIGIBLE: frozenset[str] = frozenset({
 _US_INTL_TICKERS: frozenset[str] = frozenset({
     "NVIDIA", "TRU", "DJI", "IXIC",
 })
-
-_DURATION_MONTHS: dict[str, float] = {"1m": 1.0, "3m": 3.0, "1y": 12.0}
 
 # ── Pydantic schemas ───────────────────────────────────────────────────────────
 class HedgeHolding(BaseModel):
@@ -183,18 +181,18 @@ def _coverage_params(
 @router.get("/portfolio-hedge", response_model=PortfolioHedgeResponse)
 def get_portfolio_hedge(
     coverage: int = Query(default=50, ge=0, le=100, description="Coverage level 0–100 %"),
-    duration: str = Query(default="1y", pattern="^(1m|3m|1y)$", description="Option tenor: 1m | 3m | 1y"),
     total_value_eur: float | None = Query(default=None, description="Portfolio total EUR value override (frontend-supplied)"),
     current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> PortfolioHedgeResponse:
-    """Compute hedge parameters for the saved portfolio at given coverage and duration.
+    """Compute hedge parameters for the saved portfolio at given coverage level.
 
+    Tenor is hardcoded to 1y (12 months) — duration param removed in F29 Phase 0.
     Returns ann_vol_pct and call_sell_cost_pct per holding so the Selection and
     Allocation wizard tabs can show Put Buy vs Sell Call comparison with σ-anchored
     scenarios. Read-only — no db.commit().
     """
-    t_months = _DURATION_MONTHS.get(duration, 12.0)
+    t_months = 12.0
 
     key = UserPortfolioKeyRepo(db).find_by_user_id(current_user.id)
     if key is None:
@@ -280,7 +278,7 @@ def get_portfolio_hedge(
             protected_pct=protected_pct,
             ann_vol_pct=round(vol, 2),
             call_sell_cost_pct=call_sell_cost_pct,
-            duration=duration,
+            duration="1y",
             position_eur=pos_eur,
             put_cost_eur=put_cost_eur,
             var_95_eur=var_95_eur,
@@ -300,5 +298,5 @@ def get_portfolio_hedge(
             monthly_cost_pct=round(monthly_cost, 3),
         ),
         coverage=coverage,
-        duration=duration,
+        duration="1y",
     )
