@@ -1,12 +1,18 @@
 // ── FnO Dashboard — Entry Point ───────────────────────────────────────────────
 
-// ingest ?token= from OAuth callback
+// ingest ?token= from OAuth callback; migrate legacy localStorage key on first load
 (function() {
   const p = new URLSearchParams(window.location.search);
   const t = p.get('token');
   if (t) {
     sessionStorage.setItem('auth_token', t);
     history.replaceState({}, '', window.location.pathname);
+  } else {
+    const legacy = localStorage.getItem('rita_token');
+    if (legacy && !sessionStorage.getItem('auth_token')) {
+      sessionStorage.setItem('auth_token', legacy);
+      localStorage.removeItem('rita_token');
+    }
   }
 })();
 
@@ -112,7 +118,7 @@ initI18n(); applyTranslations();
 window.addEventListener('load', async () => {
   await ensureDevToken();
   initNav();
-  initApp();
+  initApp('real');
   checkStatus();
   loadPortfolioHedge();
   // Poll API status every 30s
