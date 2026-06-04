@@ -153,6 +153,13 @@ MOCK_PORTFOLIO: dict = {
             "avg": 132.4, "ltp": 132.4, "chg": 3.4, "pnl": 0.0,
             "currency": "USD", "ann_vol_pct": 44.5, "region": "US",
         },
+        {
+            "und": "TRU", "full": "Tata Resources Unlisted", "exp": "EQUITY",
+            "type": "EQ", "side": "Long", "qty": 1,
+            "allocation_pct": 5.0, "position_eur": 2500.0,
+            "avg": 410.0, "ltp": 410.0, "chg": 0.8, "pnl": 0.0,
+            "currency": "INR", "ann_vol_pct": 28.0, "region": "India",
+        },
     ],
     "greeks": [
         {
