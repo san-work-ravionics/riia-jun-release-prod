@@ -5,7 +5,7 @@
   const p = new URLSearchParams(window.location.search);
   const t = p.get('token');
   if (t) {
-    localStorage.setItem('rita_token', t);
+    sessionStorage.setItem('auth_token', t);
     history.replaceState({}, '', window.location.pathname);
   }
 })();
@@ -49,6 +49,12 @@ import {
 
 // ── Window bindings for inline onclick= attributes ────────────────────────────
 // Navigation / filter
+window.toggleAnalyticsMode = function(mode) {
+  state.analyticsMode = mode;
+  const errEl = document.getElementById('analytics-mode-error');
+  if (errEl) { errEl.textContent = ''; errEl.style.display = 'none'; }
+  initApp(state.analyticsMode);
+};
 window.setUnderlying    = setUnderlying;
 window.setExpiry        = setExpiry;
 window.filterPos        = filterPos;

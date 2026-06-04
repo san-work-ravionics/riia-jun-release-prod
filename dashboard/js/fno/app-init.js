@@ -34,17 +34,17 @@ function _normScenarioLevels(raw) {
 // window.RITA_API_BASE can be set by the host page to point at a non-origin
 // API server (e.g. staging). Defaults to '' = same origin.
 
-export async function initApp() {
-  state.analyticsMode = 'real';
+export async function initApp(mode = 'mock') {
+  state.analyticsMode = mode;
 
-  const url = apiBase() + '/api/v1/experience/fno/portfolio-analytics?mode=real';
+  const url = apiBase() + '/api/v1/experience/fno/portfolio-analytics?mode=' + mode;
   const headers = RITA_API_KEY ? { 'X-API-Key': RITA_API_KEY } : {};
 
-  const token = localStorage.getItem('rita_token');
+  const token = sessionStorage.getItem('auth_token');
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   // Fire portfolio + geography fetches in parallel with the main analytics call
-  const _token = localStorage.getItem('rita_token');
+  const _token = sessionStorage.getItem('auth_token');
   const _portHeaders = { ...(RITA_API_KEY ? { 'X-API-Key': RITA_API_KEY } : {}), ...(_token ? { Authorization: `Bearer ${_token}` } : {}) };
   const _portPromise = fetch(apiBase() + '/api/v1/experience/user-portfolio', { headers: _portHeaders })
     .then(r => r.ok ? r.json() : null).catch(() => null);
@@ -156,7 +156,7 @@ function _buildPortfolioGeoInstruments(portData, geoData) {
 // Backward-compat shim — main.js imports fetchPositions for the Paper/Live toggle.
 // Delegates to initApp so the single-fetch architecture is preserved.
 export async function fetchPositions() {
-  return initApp();
+  return initApp(state.analyticsMode);
 }
 
 export async function checkStatus() {
