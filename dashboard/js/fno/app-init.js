@@ -34,24 +34,17 @@ function _normScenarioLevels(raw) {
 // window.RITA_API_BASE can be set by the host page to point at a non-origin
 // API server (e.g. staging). Defaults to '' = same origin.
 
-export async function initApp(mode = 'mock') {
-  state.analyticsMode = mode;
+export async function initApp() {
+  state.analyticsMode = 'real';
 
-  // Disable toggle during load
-  const chk = document.getElementById('analytics-mode-chk');
-  if (chk) chk.disabled = true;
-
-  const url = apiBase() + `/api/v1/experience/fno/portfolio-analytics?mode=${mode}`;
+  const url = apiBase() + '/api/v1/experience/fno/portfolio-analytics?mode=real';
   const headers = RITA_API_KEY ? { 'X-API-Key': RITA_API_KEY } : {};
 
-  // Add JWT for real mode
-  if (mode === 'real') {
-    const token = sessionStorage.getItem('auth_token');
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-  }
+  const token = localStorage.getItem('rita_token');
+  if (token) headers['Authorization'] = `Bearer ${token}`;
 
   // Fire portfolio + geography fetches in parallel with the main analytics call
-  const _token = sessionStorage.getItem('auth_token');
+  const _token = localStorage.getItem('rita_token');
   const _portHeaders = { ...(RITA_API_KEY ? { 'X-API-Key': RITA_API_KEY } : {}), ...(_token ? { Authorization: `Bearer ${_token}` } : {}) };
   const _portPromise = fetch(apiBase() + '/api/v1/experience/user-portfolio', { headers: _portHeaders })
     .then(r => r.ok ? r.json() : null).catch(() => null);
@@ -64,27 +57,21 @@ export async function initApp(mode = 'mock') {
   } catch (e) {
     console.error('Portfolio analytics fetch failed:', e);
     document.getElementById('sidebar-as-of').textContent = 'API error — check server';
-    if (chk) chk.disabled = false;
     _renderAll();
     return;
   }
 
   if (!rawResp.ok) {
-    if (mode === 'real') {
-      const errEl = document.getElementById('analytics-mode-error');
-      if (rawResp.status === 401) {
-        if (errEl) { errEl.textContent = 'Login required for Real mode'; errEl.style.display = ''; }
-        if (chk) { chk.checked = false; chk.disabled = false; }
-        return initApp('mock');
-      } else if (rawResp.status === 404) {
-        if (errEl) { errEl.textContent = 'No portfolio configured'; errEl.style.display = ''; }
-        if (chk) { chk.checked = false; chk.disabled = false; }
-        return initApp('mock');
-      }
+    const errEl = document.getElementById('analytics-mode-error');
+    if (rawResp.status === 401) {
+      window.location.href = '/';
+      return;
+    } else if (rawResp.status === 404) {
+      if (errEl) { errEl.textContent = 'No portfolio configured — set one in Portfolio Builder'; errEl.style.display = ''; }
+    } else {
+      console.error('Portfolio analytics API error:', rawResp.status);
+      document.getElementById('sidebar-as-of').textContent = 'API error — check server';
     }
-    console.error('Portfolio analytics API error:', rawResp.status);
-    document.getElementById('sidebar-as-of').textContent = 'API error — check server';
-    if (chk) chk.disabled = false;
     _renderAll();
     return;
   }
@@ -95,7 +82,6 @@ export async function initApp(mode = 'mock') {
   } catch (e) {
     console.error('Portfolio analytics JSON parse error:', e);
     document.getElementById('sidebar-as-of').textContent = 'API error — check server';
-    if (chk) chk.disabled = false;
     _renderAll();
     return;
   }
@@ -123,9 +109,6 @@ export async function initApp(mode = 'mock') {
   // Resolve the parallel portfolio + geography fetches, build geo instrument list
   const [portData, geoData] = await Promise.all([_portPromise, _geoPromise]);
   _buildPortfolioGeoInstruments(portData, geoData);
-
-  // Re-enable toggle
-  if (chk) chk.disabled = false;
 
   buildExpiryPills();
   _renderAll();
@@ -173,7 +156,7 @@ function _buildPortfolioGeoInstruments(portData, geoData) {
 // Backward-compat shim — main.js imports fetchPositions for the Paper/Live toggle.
 // Delegates to initApp so the single-fetch architecture is preserved.
 export async function fetchPositions() {
-  return initApp(state.analyticsMode);
+  return initApp();
 }
 
 export async function checkStatus() {

@@ -1,20 +1,11 @@
 // ── FnO Dashboard — Entry Point ───────────────────────────────────────────────
 
-// migrate legacy rita_token → auth_token (one-time, silent)
-(function() {
-  const legacy = sessionStorage.getItem('rita_token');
-  if (legacy && !sessionStorage.getItem('auth_token')) {
-    sessionStorage.setItem('auth_token', legacy);
-    sessionStorage.removeItem('rita_token');
-  }
-})();
-
 // ingest ?token= from OAuth callback
 (function() {
   const p = new URLSearchParams(window.location.search);
   const t = p.get('token');
   if (t) {
-    sessionStorage.setItem('auth_token', t);
+    localStorage.setItem('rita_token', t);
     history.replaceState({}, '', window.location.pathname);
   }
 })();
@@ -67,15 +58,6 @@ window.togglePaperMode  = function(isPaper) {
   if (lbl) lbl.textContent = isPaper ? 'Paper' : 'Live';
   fetchPositions();
 };
-window.toggleAnalyticsMode = function(isReal) {
-  state.analyticsMode = isReal ? 'real' : 'mock';
-  const lbl = document.getElementById('analytics-mode-label');
-  if (lbl) lbl.textContent = isReal ? 'Real' : 'Mock';
-  const err = document.getElementById('analytics-mode-error');
-  if (err) { err.textContent = ''; err.style.display = 'none'; }
-  initApp(state.analyticsMode);
-};
-
 // Manoeuvre
 window.manSelectTile    = manSelectTile;
 window.manSwitchTab     = manSwitchTab;
