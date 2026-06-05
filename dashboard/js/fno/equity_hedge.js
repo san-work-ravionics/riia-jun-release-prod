@@ -1,4 +1,4 @@
-// ── ASML Equity Hedge Scenarios ────────────────────────────────────────────────
+// ── Equity Hedge Scenarios ────────────────────────────────────────────────────
 import { state } from './state.js';
 import { apiBase } from './api.js';
 
@@ -7,7 +7,25 @@ const RITA_API_KEY = '';
 let _portfolioChart = null;
 let _payoffChart = null;
 
+// Instrument + shares used for the last fetch — read by injectAsmlToState + renderEquityHedge
+let _ehInstrument = 'ASML';
+let _ehNShares    = 10;
+
 const _MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+
+function _activeInstrument() {
+  const und = state.currentUnd;
+  if (und && und !== 'ALL') return und;
+  const eu = (state.portfolioGeoInstruments || []).find(i => i.region === 'EU');
+  return eu ? eu.id : 'ASML';
+}
+
+function _rollingDateRange() {
+  const end   = new Date();
+  const start = new Date();
+  start.setFullYear(start.getFullYear() - 1);
+  return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
+}
 
 function _fmtEur(v) {
   return '€' + Number(v).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -28,9 +46,9 @@ export function injectAsmlToState() {
   const mb = hs.mild_bearish;
   const sb = hs.strong_bearish;
 
-  const instrument = (document.getElementById('eh-instrument')?.value || 'ASML').trim().toUpperCase();
-  const nShares    = parseInt(document.getElementById('eh-n-shares')?.value || '10', 10);
-  const endDate    = document.getElementById('eh-end-date')?.value || '2025-01-31';
+  const instrument = _ehInstrument;
+  const nShares    = _ehNShares;
+  const endDate    = _rollingDateRange().end;
   const expLabel   = _MONTHS[new Date(endDate + 'T00:00:00').getMonth()] || 'EXP';
 
   // Remove stale entries from a prior inject
@@ -93,26 +111,26 @@ export function injectAsmlToState() {
 }
 
 export async function loadEquityHedge(forceRefresh = false) {
-  if (state.equityHedgeData && !forceRefresh) {
+  const instrument = _activeInstrument();
+  if (state.equityHedgeData && !forceRefresh && _ehInstrument === instrument) {
     renderEquityHedge(state.equityHedgeData);
     return;
   }
+  _ehInstrument = instrument;
+  _ehNShares    = 10;
+  const { start: startDate, end: endDate } = _rollingDateRange();
+
   const loadEl = document.getElementById('eh-loading');
   const resEl  = document.getElementById('eh-results');
-  if (loadEl) { loadEl.textContent = 'Loading…'; loadEl.style.display = 'flex'; }
+  if (loadEl) { loadEl.textContent = `Loading ${instrument}…`; loadEl.style.display = 'flex'; }
   if (resEl)  resEl.style.display = 'none';
-
-  const instrument = (document.getElementById('eh-instrument')?.value || 'ASML').trim().toUpperCase();
-  const nShares    = parseInt(document.getElementById('eh-n-shares')?.value || '10', 10);
-  const startDate  = document.getElementById('eh-start-date')?.value || '2025-01-01';
-  const endDate    = document.getElementById('eh-end-date')?.value   || '2025-01-31';
 
   try {
     const headers = { 'Content-Type': 'application/json', ...(RITA_API_KEY ? { 'X-API-Key': RITA_API_KEY } : {}) };
     const resp = await fetch(apiBase() + '/api/v1/portfolio/equity-hedge-scenarios', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ instrument, n_shares: nShares, start_date: startDate, end_date: endDate }),
+      body: JSON.stringify({ instrument, n_shares: _ehNShares, start_date: startDate, end_date: endDate }),
     });
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({ detail: resp.statusText }));
@@ -177,7 +195,7 @@ export function renderEquityHedge(data) {
         data: {
           labels: p.daily.map(d => d.date),
           datasets: [{
-            label: `${(document.getElementById('eh-instrument')?.value || 'ASML')} × ${(document.getElementById('eh-n-shares')?.value || '10')} shares`,
+            label: `${_ehInstrument} × ${_ehNShares} shares`,
             data: p.daily.map(d => d.value),
             borderColor: 'var(--p04)', backgroundColor: 'rgba(107,47,160,0.08)',
             borderWidth: 2, pointRadius: 2, tension: 0.3, fill: true,
@@ -200,7 +218,7 @@ export function renderEquityHedge(data) {
   const payCtx = document.getElementById('eh-payoff-chart');
   if (payCtx) {
     requestAnimationFrame(() => {
-      const instrument = (document.getElementById('eh-instrument')?.value || 'ASML').trim().toUpperCase();
+      const instrument = _ehInstrument;
       const xLabels = pc.price_range.map(v => _fmtEur(v));
       _payoffChart = new Chart(payCtx, {
         type: 'line',

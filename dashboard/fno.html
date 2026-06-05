@@ -905,29 +905,6 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     <!-- Geo-region instrument selector — click a tile to select instrument and reload -->
     <div id="fno-geo-overview" class="card-row" style="margin-bottom:16px;"></div>
 
-    <!-- Panel 1: Portfolio Builder -->
-    <div class="card" style="margin-bottom:16px;">
-      <div class="card-hdr">
-        <span class="card-title">Portfolio Builder</span>
-        <span class="card-sub">Select instrument, shares and date range, then build</span>
-      </div>
-      <div class="card-body" style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;">
-        <label style="font-family:var(--fm);font-size:11px;color:var(--t2);">Instrument
-          <input id="eh-instrument" type="text" value="ASML" style="display:block;margin-top:4px;font-family:var(--fm);font-size:12px;padding:4px 8px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface);color:var(--text);width:80px;">
-        </label>
-        <label style="font-family:var(--fm);font-size:11px;color:var(--t2);">Shares
-          <input id="eh-n-shares" type="number" value="10" min="1" style="display:block;margin-top:4px;font-family:var(--fm);font-size:12px;padding:4px 8px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface);color:var(--text);width:80px;">
-        </label>
-        <label style="font-family:var(--fm);font-size:11px;color:var(--t2);">From
-          <input id="eh-start-date" type="date" value="2025-01-01" style="display:block;margin-top:4px;font-family:var(--fm);font-size:12px;padding:4px 8px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface);color:var(--text);">
-        </label>
-        <label style="font-family:var(--fm);font-size:11px;color:var(--t2);">To
-          <input id="eh-end-date" type="date" value="2025-01-31" style="display:block;margin-top:4px;font-family:var(--fm);font-size:12px;padding:4px 8px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface);color:var(--text);">
-        </label>
-        <button onclick="loadEquityHedge(true)" style="font-family:var(--fm);font-size:12px;font-weight:600;padding:6px 16px;border-radius:var(--r);border:none;background:var(--p04);color:#fff;cursor:pointer;align-self:flex-end;">Build &amp; Analyse</button>
-      </div>
-    </div>
-
     <!-- Loading / Error state -->
     <div id="eh-loading" style="display:none;align-items:center;justify-content:center;height:80px;font-family:var(--fm);font-size:12px;color:var(--t3);"></div>
 
