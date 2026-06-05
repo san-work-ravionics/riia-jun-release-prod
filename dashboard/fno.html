@@ -457,9 +457,6 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       <span class="phase-tag p01">Overview</span>
     </div>
 
-    <!-- Geo-region instrument overview — rendered by renderGeoOverview() -->
-    <div id="fno-geo-overview" class="card-row"></div>
-
     <!-- State banners -->
     <div id="ph-loading" style="display:none;color:var(--t3);font-size:13px;padding:12px 0;font-family:var(--fm)">Loading hedge plan…</div>
     <div id="ph-error" style="display:none;font-size:13px;padding:10px 14px;border-radius:6px;background:rgba(220,38,38,.08);color:#dc2626;margin-bottom:16px">
@@ -900,10 +897,13 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     <div class="page-hdr">
       <div>
         <div class="page-title">Equity Hedge Scenarios</div>
-        <div class="page-sub">ASML equity portfolio · Covered Call · Protective Put · Payoff comparison</div>
+        <div class="page-sub">Click an instrument below · Covered Call · Protective Put · Payoff comparison</div>
       </div>
       <span class="phase-tag p04">Equity Hedge</span>
     </div>
+
+    <!-- Geo-region instrument selector — click a tile to select instrument and reload -->
+    <div id="fno-geo-overview" class="card-row" style="margin-bottom:16px;"></div>
 
     <!-- Panel 1: Portfolio Builder -->
     <div class="card" style="margin-bottom:16px;">
