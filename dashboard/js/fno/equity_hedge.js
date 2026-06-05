@@ -27,6 +27,25 @@ function _rollingDateRange() {
   return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
 }
 
+// Fractional shares = portfolio EUR allocation / current share price
+function _computeNShares(instrument) {
+  const total    = parseFloat(state.portfolioMeta?.total_value_eur || 0);
+  const geoInsts = state.portfolioGeoInstruments || [];
+  const inst     = geoInsts.find(i => i.id === instrument);
+  const allocPct = parseFloat(inst?.allocation_pct || 0);
+  if (!total || !allocPct) return 10;
+  const allocEur = total * allocPct / 100;
+  const price    = parseFloat(state.marketData[instrument]?.close || 0);
+  if (!price) return 10;
+  return Math.round((allocEur / price) * 100) / 100;
+}
+
+function _fmtRange(start, end) {
+  const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const fmt = d => mo[+d.slice(5, 7) - 1] + ' ' + d.slice(0, 4);
+  return (start && end) ? fmt(start) + ' – ' + fmt(end) : '—';
+}
+
 function _fmtEur(v) {
   return '€' + Number(v).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
@@ -117,7 +136,7 @@ export async function loadEquityHedge(forceRefresh = false) {
     return;
   }
   _ehInstrument = instrument;
-  _ehNShares    = 10;
+  _ehNShares    = _computeNShares(instrument);
   const { start: startDate, end: endDate } = _rollingDateRange();
 
   const loadEl = document.getElementById('eh-loading');
@@ -163,9 +182,13 @@ export function renderEquityHedge(data) {
   const hedgeClass   = hedgeRetPct >= 0 ? 'pos' : 'neg';
   const netClass     = netRetPct   >= 0 ? 'pos' : 'neg';
   const setKpi = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
-  setKpi('eh-kpi-start-price',  `<div class="kpi-value">${_fmtEur(p.start_price)}</div>`);
-  setKpi('eh-kpi-end-price',    `<div class="kpi-value">${_fmtEur(p.end_price)}</div>`);
-  setKpi('eh-kpi-vol',          `<div class="kpi-value">${p.vol_30d_pct.toFixed(1)}%</div>`);
+  const startD = p.daily?.[0]?.date || '';
+  const endD   = p.daily?.[p.daily.length - 1]?.date || '';
+  setKpi('eh-kpi-date-range',   `<div class="kpi-value" style="font-size:12px">${_fmtRange(startD, endD)}</div><div class="kpi-sub">${p.daily?.length || 0} trading days</div>`);
+  setKpi('eh-kpi-start-price',  `<div class="kpi-value">${_fmtEur(p.start_price)}</div><div class="kpi-sub">${startD}</div>`);
+  setKpi('eh-kpi-end-price',    `<div class="kpi-value">${_fmtEur(p.end_price)}</div><div class="kpi-sub">${endD}</div>`);
+  setKpi('eh-kpi-shares',       `<div class="kpi-value">${p.n_shares.toFixed(2)}</div><div class="kpi-sub">${_fmtEur(p.end_price * p.n_shares)} position</div>`);
+  setKpi('eh-kpi-vol',          `<div class="kpi-value">${p.vol_30d_pct.toFixed(1)}%</div><div class="kpi-sub">annualised 30d</div>`);
   setKpi('eh-kpi-return',       `<div class="kpi-value ${retClass}">${p.return_pct >= 0 ? '+' : ''}${p.return_pct.toFixed(2)}%</div>`);
   setKpi('eh-kpi-hedge-return', `<div class="kpi-value ${hedgeClass}">+${hedgeRetPct.toFixed(2)}%</div><div class="kpi-sub">${_fmtEur(mb.total_premium_eur)} premium</div>`);
   setKpi('eh-kpi-net-return',   `<div class="kpi-value ${netClass}">${netRetPct >= 0 ? '+' : ''}${netRetPct.toFixed(2)}%</div>`);

@@ -475,7 +475,7 @@ class _DailySnapshotRequest(BaseModel):
 
 class EquityHedgeRequest(BaseModel):
     instrument: str = Field(default="ASML", description="Instrument ticker (e.g. ASML).")
-    n_shares: int = Field(default=10, ge=1, description="Number of shares held.")
+    n_shares: float = Field(default=1.0, ge=0.001, description="Number of shares held (fractional supported).")
     start_date: str = Field(description="Period start date, YYYY-MM-DD.")
     end_date: str = Field(description="Period end date, YYYY-MM-DD.")
 

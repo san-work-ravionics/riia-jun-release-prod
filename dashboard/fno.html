@@ -911,8 +911,12 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     <!-- Results wrapper -->
     <div id="eh-results" style="display:none;">
 
-      <!-- KPI rows: row 1 — portfolio stats, row 2 — return summary -->
-      <div class="kpi-row c3" style="margin-bottom:10px;">
+      <!-- KPI row — all metrics in single row -->
+      <div style="display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:8px;margin-bottom:16px;">
+        <div class="kpi">
+          <div class="kpi-label">Date Range</div>
+          <div id="eh-kpi-date-range"><div class="kpi-value" style="font-size:12px">—</div></div>
+        </div>
         <div class="kpi">
           <div class="kpi-label">Start Price</div>
           <div id="eh-kpi-start-price"><div class="kpi-value">—</div></div>
@@ -922,24 +926,23 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
           <div id="eh-kpi-end-price"><div class="kpi-value">—</div></div>
         </div>
         <div class="kpi">
+          <div class="kpi-label">Shares Held</div>
+          <div id="eh-kpi-shares"><div class="kpi-value">—</div></div>
+        </div>
+        <div class="kpi">
           <div class="kpi-label">30d Volatility</div>
           <div id="eh-kpi-vol"><div class="kpi-value">—</div></div>
         </div>
-      </div>
-      <div class="kpi-row c3" style="margin-bottom:16px;">
         <div class="kpi">
           <div class="kpi-label">Period Return</div>
-          <div class="kpi-sub">Stock appreciation</div>
           <div id="eh-kpi-return"><div class="kpi-value">—</div></div>
         </div>
         <div class="kpi">
           <div class="kpi-label">Hedge Return</div>
-          <div class="kpi-sub">Covered call premium %</div>
           <div id="eh-kpi-hedge-return"><div class="kpi-value">—</div></div>
         </div>
         <div class="kpi">
           <div class="kpi-label">Net Return</div>
-          <div class="kpi-sub">Period + hedge return</div>
           <div id="eh-kpi-net-return"><div class="kpi-value">—</div></div>
         </div>
       </div>

@@ -371,7 +371,7 @@ def portfolio_backtest(
 
 def equity_hedge_scenarios(
     instrument: str,
-    n_shares: int,
+    n_shares: float,
     start_date: str,
     end_date: str,
 ) -> dict[str, Any]:
@@ -403,13 +403,27 @@ def equity_hedge_scenarios(
     if not math.isfinite(vol_30d) or vol_30d == 0:
         vol_30d = 0.25
 
-    # Black-Scholes params
+    # Black-Scholes params — strikes derived from 1σ move over option horizon
     S       = end_price
-    K_call  = round(S * 1.05, 2)   # covered call strike (5% OTM)
-    K_put   = round(S, 2)          # protective put strike (at-the-money)
-    T       = 30 / 252             # 30 calendar days to expiry
+    T       = 30 / 252             # 30 calendar days to expiry (~1 month)
     r       = 0.03
     sigma   = vol_30d
+
+    def _round_strike(k: float) -> float:
+        """Round to the nearest standard exchange strike interval."""
+        if k < 50:
+            interval = 1.0
+        elif k < 200:
+            interval = 5.0
+        elif k < 1000:
+            interval = 10.0
+        else:
+            interval = 25.0
+        return round(round(k / interval) * interval, 2)
+
+    sigma_move = S * sigma * math.sqrt(T)   # 1σ EUR move over option horizon
+    K_call     = _round_strike(S + sigma_move)   # covered call: 1σ above spot
+    K_put      = _round_strike(S - sigma_move)   # protective put: 1σ below spot
 
     def _bs_call(s: float, k: float, t: float, rv: float, rate: float) -> float:
         if rv <= 0 or t <= 0 or k <= 0:
@@ -487,8 +501,9 @@ def equity_hedge_scenarios(
                 "max_value_eur":    round(K_call * n_shares + total_premium_call, 2),
                 "breakeven_price":  round(S - premium_call_per_share, 2),
                 "description": (
-                    f"Sell {n_shares}× {instrument.upper()} calls @ €{K_call:.2f} "
-                    f"(5% OTM). Collect €{total_premium_call:.2f} premium. "
+                    f"Sell {n_shares:.4g}× {instrument.upper()} calls @ €{K_call:.2f} "
+                    f"(+1σ OTM, {sigma_move:.2f} above spot). "
+                    f"Collect €{total_premium_call:.2f} premium. "
                     f"Upside capped at €{K_call:.2f}/share."
                 ),
             },
@@ -500,7 +515,8 @@ def equity_hedge_scenarios(
                 "floor_value_eur":  round(K_put * n_shares - total_premium_put, 2),
                 "breakeven_price":  round(S + premium_put_per_share, 2),
                 "description": (
-                    f"Buy {n_shares}× {instrument.upper()} puts @ €{K_put:.2f} (ATM). "
+                    f"Buy {n_shares:.4g}× {instrument.upper()} puts @ €{K_put:.2f} "
+                    f"(−1σ OTM, {sigma_move:.2f} below spot). "
                     f"Pay €{total_premium_put:.2f} premium. "
                     f"Portfolio floor at €{round(K_put * n_shares - total_premium_put, 2):.2f}."
                 ),
