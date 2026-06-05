@@ -478,6 +478,10 @@ class EquityHedgeRequest(BaseModel):
     n_shares: float = Field(default=1.0, ge=0.001, description="Number of shares held (fractional supported).")
     start_date: str = Field(description="Period start date, YYYY-MM-DD.")
     end_date: str = Field(description="Period end date, YYYY-MM-DD.")
+    ann_vol_pct: float | None = Field(
+        default=None, ge=0, le=500,
+        description="Annualised volatility % (e.g. 31.0 for 31%). If supplied, the engine skips CSV recomputation and uses this value — same source as the stress/std-dev table.",
+    )
 
 
 @router.post("/man-daily-snapshot")
@@ -513,6 +517,7 @@ def equity_hedge_scenarios_endpoint(
             n_shares=req.n_shares,
             start_date=req.start_date,
             end_date=req.end_date,
+            ann_vol_pct=req.ann_vol_pct,
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc

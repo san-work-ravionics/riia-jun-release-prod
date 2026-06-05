@@ -374,6 +374,7 @@ def equity_hedge_scenarios(
     n_shares: float,
     start_date: str,
     end_date: str,
+    ann_vol_pct: float | None = None,
 ) -> dict[str, Any]:
     """Compute equity portfolio performance + Black-Scholes hedge scenarios.
 
@@ -394,14 +395,17 @@ def equity_hedge_scenarios(
     end_price   = float(df_f["Close"].iloc[-1])
     return_pct  = round((end_price - start_price) / start_price * 100, 4) if start_price else 0.0
 
-    # 30-day annualised volatility
-    n_vol = min(30, len(df_f))
-    close_series = df_f["Close"].iloc[-n_vol:]
-    vol_30d = float(
-        np.log(close_series / close_series.shift(1)).dropna().std() * math.sqrt(252)
-    )
-    if not math.isfinite(vol_30d) or vol_30d == 0:
-        vol_30d = 0.25
+    # 30-day annualised volatility — prefer caller-supplied value (same source as stress table)
+    if ann_vol_pct is not None and ann_vol_pct > 0:
+        vol_30d = ann_vol_pct / 100.0
+    else:
+        n_vol = min(30, len(df_f))
+        close_series = df_f["Close"].iloc[-n_vol:]
+        vol_30d = float(
+            np.log(close_series / close_series.shift(1)).dropna().std() * math.sqrt(252)
+        )
+        if not math.isfinite(vol_30d) or vol_30d == 0:
+            vol_30d = 0.25
 
     # Black-Scholes params — strikes derived from 1σ move over option horizon
     S       = end_price

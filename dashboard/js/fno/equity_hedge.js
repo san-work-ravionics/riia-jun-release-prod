@@ -145,11 +145,17 @@ export async function loadEquityHedge(forceRefresh = false) {
   if (resEl)  resEl.style.display = 'none';
 
   try {
+    // Use same ann_vol_pct source as the stress/std-dev table (analytics endpoint)
+    const volPos   = (state.positions || []).find(p => p.und === instrument && p.ann_vol_pct != null);
+    const annVolPct = volPos ? parseFloat(volPos.ann_vol_pct) : null;
+
     const headers = { 'Content-Type': 'application/json', ...(RITA_API_KEY ? { 'X-API-Key': RITA_API_KEY } : {}) };
+    const body    = { instrument, n_shares: _ehNShares, start_date: startDate, end_date: endDate };
+    if (annVolPct != null) body.ann_vol_pct = annVolPct;
     const resp = await fetch(apiBase() + '/api/v1/portfolio/equity-hedge-scenarios', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ instrument, n_shares: _ehNShares, start_date: startDate, end_date: endDate }),
+      body: JSON.stringify(body),
     });
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({ detail: resp.statusText }));
