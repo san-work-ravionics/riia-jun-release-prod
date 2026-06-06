@@ -18,7 +18,7 @@ export async function loadConcepts() {
   const statusEl = document.getElementById('concepts-status');
   if (statusEl) statusEl.innerHTML = '<span class="spinner"></span>Loading ASML…';
 
-  const [perfRes, dataRes, dsRes, progRes, histRes, stepRes, btdRes, shapRes] = await Promise.allSettled([
+  const [perfRes, dataRes, dsRes, progRes, histRes, stepRes, btdRes, shapRes, metricsRes] = await Promise.allSettled([
     api('/api/v1/performance-summary'),
     api('/api/v1/data-understanding?instrument_id=ASML'),
     api('/api/experience/ds/?instrument=ASML'),
@@ -27,23 +27,25 @@ export async function loadConcepts() {
     api('/api/experience/ops/step-log').catch(() => []),
     api('/api/v1/experience/rita/backtest-daily?instrument=ASML').catch(() => null),
     api('/api/v1/shap').catch(() => null),
+    api('/api/v1/training-metrics?instrument=ASML').catch(() => []),
   ]);
 
-  const perf    = perfRes.status  === 'fulfilled' ? perfRes.value   : null;
-  const dataUnd = dataRes.status  === 'fulfilled' ? dataRes.value   : null;
-  const dsData  = dsRes.status    === 'fulfilled' ? dsRes.value     : null;
-  const prog    = progRes.status  === 'fulfilled' && Array.isArray(progRes.value)  ? progRes.value  : [];
-  const hist    = histRes.status  === 'fulfilled' && Array.isArray(histRes.value)  ? histRes.value  : [];
-  const steps   = stepRes.status  === 'fulfilled' && Array.isArray(stepRes.value)  ? stepRes.value  : [];
-  const btd     = btdRes.status   === 'fulfilled' ? btdRes.value    : null;
-  const shap    = shapRes.status  === 'fulfilled' ? shapRes.value   : null;
+  const perf    = perfRes.status    === 'fulfilled' ? perfRes.value    : null;
+  const dataUnd = dataRes.status    === 'fulfilled' ? dataRes.value    : null;
+  const dsData  = dsRes.status      === 'fulfilled' ? dsRes.value      : null;
+  const prog    = progRes.status    === 'fulfilled' && Array.isArray(progRes.value)    ? progRes.value    : [];
+  const hist    = histRes.status    === 'fulfilled' && Array.isArray(histRes.value)    ? histRes.value    : [];
+  const steps   = stepRes.status    === 'fulfilled' && Array.isArray(stepRes.value)    ? stepRes.value    : [];
+  const btd     = btdRes.status     === 'fulfilled' ? btdRes.value     : null;
+  const shap    = shapRes.status    === 'fulfilled' ? shapRes.value    : null;
+  const metrics = metricsRes.status === 'fulfilled' && Array.isArray(metricsRes.value) ? metricsRes.value : [];
 
   if (statusEl) statusEl.textContent = '';
 
   renderPhase1(perf, btd);
   renderPhase2(dataUnd);
   renderPhase3(dataUnd, dsData);
-  renderPhase4(prog, shap, hist);
+  renderPhase4(prog, shap, hist, metrics);
   renderPhase5(hist, btd);
   renderPhase6(steps, hist);
 }
@@ -327,13 +329,15 @@ function renderPhase3(dataUnd, dsData) {
 }
 
 // ── Phase 4: Modeling ─────────────────────────────────────────────────────────
-function renderPhase4(prog, shap, hist) {
-  // Chart 1 — TD Loss (live progress during training; empty after server restart)
-  if (!prog.length) {
+function renderPhase4(prog, shap, hist, metrics) {
+  // Chart 1 — TD Loss
+  // Prefer live progress (during active training); fall back to persisted training_metrics from DB.
+  const lossSource = prog.length ? prog : metrics;
+  if (!lossSource.length) {
     _noData('cp4-c1');
   } else {
-    const labels = prog.map((r, i) => r.timestep != null ? String(r.timestep) : String(i + 1));
-    const loss   = prog.map(r => { const v = parseFloat(r.loss ?? r.td_loss ?? r.mean_loss ?? 0); return isNaN(v) ? null : v; });
+    const labels = lossSource.map((r, i) => r.timestep != null ? String(r.timestep) : String((i + 1) * 1000));
+    const loss   = lossSource.map(r => { const v = parseFloat(r.loss ?? r.td_loss ?? r.mean_loss ?? 0); return isNaN(v) || v === 0 ? null : v; });
     const [tl, tLoss] = thinLabeled(labels, loss);
     mkChart('cp4-c1', {
       type: 'line',
@@ -345,11 +349,12 @@ function renderPhase4(prog, shap, hist) {
     });
   }
 
-  // Chart 2 — Policy improvement: val_sharpe vs train_sharpe per training round
-  // Live reward curve only exists during an active run; use training history as persistent fallback
-  if (prog.length) {
-    const labels = prog.map((r, i) => r.timestep != null ? String(r.timestep) : String(i + 1));
-    const reward = prog.map(r => { const v = parseFloat(r.reward ?? r.ep_rew_mean ?? 0); return isNaN(v) || v === 0 ? null : v; });
+  // Chart 2 — Policy improvement
+  // Live reward during active run → persisted metrics reward → training history Sharpe fallback
+  const rewardSource = prog.length ? prog : metrics;
+  if (rewardSource.length) {
+    const labels = rewardSource.map((r, i) => r.timestep != null ? String(r.timestep) : String((i + 1) * 1000));
+    const reward = rewardSource.map(r => { const v = parseFloat(r.reward ?? r.ep_rew_mean ?? 0); return isNaN(v) || v === 0 ? null : v; });
     const [tl, tr] = thinLabeled(labels, reward);
     if (tr.some(v => v !== null)) {
       mkChart('cp4-c2', {
