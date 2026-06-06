@@ -10,6 +10,7 @@ import { renderPayoffChart } from './payoff.js';
 import { saveToday, syncPriceHistory, renderScenarios } from './rr.js';
 import { renderPortfolioHedgeRadar } from './hedge.js';
 import { initManoeuvre } from './manoeuvre.js';
+import { fetchAndRenderRiskCharts, highlightRiskChart } from './risk_chart.js';
 
 // ── scenario_levels shape normalisation ──────────────────────────────────────
 // API may return {INST: {target, sl}} or {INST: {bull:{target,sl}, bear:{target,sl}}}.
@@ -30,6 +31,14 @@ function _normScenarioLevels(raw) {
   }
   return out;
 }
+
+// Re-render risk sections when the stddev table row click changes the instrument filter
+document.addEventListener('risk-filter-change', () => {
+  renderGreeksCards();
+  renderGreeksTable();
+  renderStressScenarios();
+  highlightRiskChart();
+});
 
 // window.RITA_API_BASE can be set by the host page to point at a non-origin
 // API server (e.g. staging). Defaults to '' = same origin.
@@ -112,6 +121,7 @@ export async function initApp(mode = 'mock') {
 
   buildExpiryPills();
   _renderAll();
+  fetchAndRenderRiskCharts();
   saveToday();
   syncPriceHistory().then(() => { renderScenarios(); });
 }
@@ -129,12 +139,12 @@ function _renderAll() {
 }
 
 function _buildPortfolioGeoInstruments(portData, geoData) {
-  // Build a name+region lookup from geography-overview (all DB instruments)
+  // Build a name+region+close lookup from geography-overview
   const geoInstMap = {};
   if (geoData?.regions) {
     for (const reg of geoData.regions) {
       for (const inst of (reg.instruments ?? [])) {
-        geoInstMap[inst.id] = { name: inst.name, region: reg.region };
+        geoInstMap[inst.id] = { name: inst.name, region: reg.region, close: inst.close };
       }
     }
   }
@@ -142,10 +152,13 @@ function _buildPortfolioGeoInstruments(portData, geoData) {
     state.portfolioGeoInstruments = portData.holdings.map(h => {
       const geo = geoInstMap[h.instrument_id] || {};
       return {
-        id: h.instrument_id,
-        name: geo.name || h.instrument_id,
-        region: geo.region || 'Other',
+        id:             h.instrument_id,
+        name:           geo.name || h.instrument_id,
+        region:         geo.region || 'Other',
         allocation_pct: h.allocation_pct,
+        shares:         h.shares   ?? null,   // integer share count from portfolio builder
+        cash_eur:       h.cash_eur ?? null,   // leftover cash from portfolio builder
+        close:          geo.close  ?? null,   // current market price
       };
     });
   } else {

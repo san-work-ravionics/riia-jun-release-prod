@@ -56,18 +56,16 @@ class PortfolioBacktestRequest(BaseModel):
 # ── Endpoints ──────────────────────────────────────────────────────────────────
 
 @router.get("/overview")
-def get_portfolio_overview() -> dict[str, Any]:
+def get_portfolio_overview(instruments: str | None = None) -> dict[str, Any]:
     """Return cross-instrument overview: normalised prices + return correlation.
 
-    Loads all 4 instruments (NIFTY, BANKNIFTY, ASML, NVIDIA), aligns to their
-    common date intersection, and returns:
-    - Per-instrument metadata (rows, date range, currency)
-    - Normalised Close price series (down-sampled to ≤ 500 points)
-    - Pearson correlation matrix of daily returns
+    Pass ?instruments=SBIN,TCS,HDFCBANK to restrict to specific instruments.
+    Defaults to ALL_INSTRUMENTS if omitted.
     """
     from rita.core.portfolio_engine import portfolio_overview
+    ids = [i.strip() for i in instruments.split(",")] if instruments else None
     try:
-        return portfolio_overview()
+        return portfolio_overview(instruments=ids)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:

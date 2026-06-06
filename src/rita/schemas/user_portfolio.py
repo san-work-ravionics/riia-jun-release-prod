@@ -9,6 +9,8 @@ from pydantic import BaseModel, ConfigDict, field_validator
 class HoldingItem(BaseModel):
     instrument_id: str
     allocation_pct: float
+    shares: int | None = None       # whole-number share count, computed from total_value_eur
+    cash_eur: float | None = None   # leftover cash after buying whole shares
 
     @field_validator("allocation_pct")
     @classmethod

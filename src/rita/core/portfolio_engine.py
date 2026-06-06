@@ -52,6 +52,11 @@ INSTRUMENT_CCY: dict[str, str] = {
     "BANKNIFTY": "INR",
     "ASML":      "EUR",
     "NVIDIA":    "USD",
+    "SBIN":      "INR",
+    "RELIANCE":  "INR",
+    "TCS":       "INR",
+    "HDFCBANK":  "INR",
+    "INFY":      "INR",
 }
 
 INSTRUMENT_NAMES: dict[str, str] = {
@@ -59,6 +64,11 @@ INSTRUMENT_NAMES: dict[str, str] = {
     "BANKNIFTY": "BANKNIFTY",
     "ASML":      "ASML",
     "NVIDIA":    "NVIDIA",
+    "SBIN":      "SBI",
+    "RELIANCE":  "Reliance",
+    "TCS":       "TCS",
+    "HDFCBANK":  "HDFC Bank",
+    "INFY":      "Infosys",
 }
 
 ALL_INSTRUMENTS = list(INSTRUMENT_CCY.keys())
@@ -110,13 +120,13 @@ def _adjust_for_cash(port_values: list[float], invested_frac: float) -> list[flo
 
 # ── Portfolio Overview ─────────────────────────────────────────────────────────
 
-def portfolio_overview() -> dict[str, Any]:
+def portfolio_overview(instruments: list[str] | None = None) -> dict[str, Any]:
     """Cross-instrument overview: normalised prices + daily return correlation.
 
-    Loads all 4 instruments, aligns to their common date intersection, then
-    computes normalised Close prices and a Pearson correlation matrix of daily
-    returns.  The normalised price series is down-sampled to ≤ 500 points to
-    keep the JSON payload small.
+    Loads the requested instruments (defaults to ALL_INSTRUMENTS if none given),
+    aligns to their common date intersection, then computes normalised Close
+    prices and a Pearson correlation matrix of daily returns.  The normalised
+    price series is down-sampled to ≤ 500 points to keep the JSON payload small.
 
     Returns:
         instruments: per-instrument metadata (rows, date range, currency)
@@ -125,17 +135,19 @@ def portfolio_overview() -> dict[str, Any]:
         normalized_returns: [{date, nifty, banknifty, asml, nvidia}, ...]
         correlation_matrix: {nifty: {banknifty: 0.42, ...}, ...}
     """
+    ids_to_load = [i.upper() for i in instruments] if instruments else ALL_INSTRUMENTS
+
     dfs: dict[str, pd.DataFrame] = {}
     instrument_meta: list[dict] = []
 
-    for iid in ALL_INSTRUMENTS:
+    for iid in ids_to_load:
         try:
             df = _load_with_indicators(iid)
             dfs[iid] = df
             instrument_meta.append({
                 "id":        iid.lower(),
-                "name":      INSTRUMENT_NAMES[iid],
-                "currency":  INSTRUMENT_CCY[iid],
+                "name":      INSTRUMENT_NAMES.get(iid, iid),
+                "currency":  INSTRUMENT_CCY.get(iid, "INR"),
                 "rows":      len(df),
                 "date_from": str(df.index.min().date()),
                 "date_to":   str(df.index.max().date()),
@@ -178,6 +190,9 @@ def portfolio_overview() -> dict[str, Any]:
         for k, row in corr.to_dict().items()
     }
 
+    # Starting absolute prices (first common date) — used by frontend for absolute Y-axis
+    start_prices = {k.lower(): round(float(aligned_df.iloc[0][k]), 4) for k in aligned_df.columns}
+
     # Down-sample normalised series to ≤ 500 rows
     step = max(1, len(norm_df) // 500)
     sampled = norm_df.iloc[::step]
@@ -191,6 +206,7 @@ def portfolio_overview() -> dict[str, Any]:
         "common_days":        len(aligned_df),
         "date_from":          str(aligned_df.index.min().date()),
         "date_to":            str(aligned_df.index.max().date()),
+        "start_prices":       start_prices,
         "normalized_returns": normalized_returns,
         "correlation_matrix": correlation_matrix,
     }

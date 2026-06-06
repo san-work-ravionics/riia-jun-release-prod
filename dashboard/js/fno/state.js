@@ -24,6 +24,7 @@ export const state = {
   equityHedgeData: null,
 
   // UI state
+  riskSelectedInstrument: null,   // null = Portfolio (all), or instrument id string
   currentUnd: 'ALL',
   currentExpiry: 'ALL',
   currentPosFilter: 'ALL',

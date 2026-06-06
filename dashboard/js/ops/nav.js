@@ -1,6 +1,6 @@
 // ── Navigation ────────────────────────────────────────────────────────────────
 
-export const SECTIONS = ['overview','monitoring','agent-builds','game-compliance','test','deploy','observability','chat','dailyops','users'];
+export const SECTIONS = ['overview','monitoring','agent-builds','game-compliance','test','deploy','observability','chat','risk','users'];
 
 const loadedSections = new Set(['overview']);
 

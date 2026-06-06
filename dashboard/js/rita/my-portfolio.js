@@ -1,6 +1,7 @@
 // ── My Portfolio — allocation builder ──────────────────────
 import { api } from './api.js';
 import { setEl } from './utils.js';
+import { ensureDevToken, isLocalDev } from '../shared/dev-auth.js';
 
 let _instrumentIds = [];
 
@@ -99,10 +100,13 @@ export async function loadMyPortfolio() {
 
 export async function savePortfolio() {
   // ── Auth gate ──────────────────────────────────────────────
+  await ensureDevToken();
   const token = sessionStorage.getItem('auth_token');
   if (!token) {
-    sessionStorage.setItem('post_login_redirect', window.location.href);
-    window.location.href = '/auth/google/login?state=rita';
+    if (!isLocalDev()) {
+      sessionStorage.setItem('post_login_redirect', window.location.href);
+      window.location.href = '/auth/google/login?state=rita';
+    }
     return;
   }
 

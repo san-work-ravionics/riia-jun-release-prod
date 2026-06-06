@@ -4,14 +4,19 @@ import { state } from './state.js';
 import { fmtPnl, pnlClass } from './utils.js';
 
 export function renderGreeksCards() {
-  const unds = [];
-  if (state.currentUnd !== 'BANKNIFTY') unds.push('NIFTY');
-  if (state.currentUnd !== 'NIFTY')     unds.push('BANKNIFTY');
-  const grid = document.getElementById('greeks-all-grid');
-  grid.style.gridTemplateColumns = `repeat(${unds.length * 4}, 1fr)`;
+  const sel   = state.riskSelectedInstrument;
+  const allUnds = [...new Set(state.greeksData.map(g => g.und))];
+  const unds  = sel ? (allUnds.includes(sel) ? [sel] : []) : allUnds;
+  const grid  = document.getElementById('greeks-all-grid');
+  if (!unds.length) {
+    grid.innerHTML = `<div style="padding:16px;color:var(--t4);font-size:13px;">No Greeks data — select a portfolio instrument above or check API response</div>`;
+    return;
+  }
+  const cols = Math.min(unds.length * 4, 8);
+  grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
   grid.innerHTML = unds.map(und => {
-    const filt  = state.greeksData.filter(g => g.und === und && (state.currentExpiry === 'ALL' || g.exp === state.currentExpiry));
-    const delta = filt.reduce((s, g) => s + (g.delta || 0), 0);
+    const filt  = state.greeksData.filter(g => g.und === und);
+    const delta = parseFloat(filt.reduce((s, g) => s + (g.delta || 0), 0).toFixed(4));
     const gamma = parseFloat(filt.reduce((s, g) => s + (g.gamma || 0), 0).toFixed(4));
     const theta = Math.round(filt.reduce((s, g) => s + (g.theta || 0), 0));
     const vega  = Math.round(filt.reduce((s, g) => s + (g.vega  || 0), 0));
@@ -38,8 +43,16 @@ export function renderGreeksCards() {
 }
 
 export function renderGreeksTable() {
-  const filtered = state.greeksData.filter(g => (state.currentUnd === 'ALL' || g.und === state.currentUnd) && (state.currentExpiry === 'ALL' || g.exp === state.currentExpiry));
-  document.getElementById('greeks-table-sub').textContent = state.currentUnd === 'ALL' ? t('greeks.all_positions') : state.currentUnd + t('greeks.positions_suffix');
+  const sel = state.riskSelectedInstrument;
+  const filtered = state.greeksData.filter(g =>
+    (sel ? g.und === sel : true) &&
+    (state.currentUnd === 'ALL' || g.und === state.currentUnd) &&
+    (state.currentExpiry === 'ALL' || g.exp === state.currentExpiry)
+  );
+  const subEl = document.getElementById('greeks-table-sub');
+  const noHedgeNote = filtered.length && filtered.every(g => g.theta === 0 && g.vega === 0 && g.gamma === 0)
+    ? ' · Θ/V/Γ = 0 — add a hedge plan to see option Greeks' : '';
+  subEl.textContent = (sel ? sel : (state.currentUnd === 'ALL' ? t('greeks.all_positions') : state.currentUnd + t('greeks.positions_suffix'))) + noHedgeNote;
   document.getElementById('greeks-tbody').innerHTML = filtered.map(g => {
     const dStr = g.delta >= 0 ? `+${g.delta}` : String(g.delta);
     const tStr = g.theta > 0 ? `+₹${g.theta}` : g.theta === 0 ? '₹0' : `−₹${Math.abs(g.theta)}`;
@@ -76,11 +89,5 @@ export function updateRiskSections() {
   document.getElementById('payoff-bnkn-wrap').style.display  = showBnkn  ? '' : 'none';
   document.getElementById('payoff-charts-grid').style.gridTemplateColumns = sideBySide ? '1fr 1fr' : '1fr';
 
-  const nSpot = (state.marketData.NIFTY || {}).close;
-  const bSpot = (state.marketData.BANKNIFTY || {}).close;
-  const subParts = [];
-  if (showNifty && nSpot) subParts.push(`NIFTY ~${nSpot.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`);
-  if (showBnkn  && bSpot) subParts.push(`BANKNIFTY ~${bSpot.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`);
-  document.getElementById('stress-card-sub').textContent =
-    `${t('greeks.stress_sub')}${subParts.join(' · ')}`;
+  // stress-card-sub is now set by renderStressScenarios() in stress.js
 }

@@ -1,6 +1,8 @@
 // ── Equity Hedge Scenarios ────────────────────────────────────────────────────
 import { state } from './state.js';
 import { apiBase } from './api.js';
+import { renderGreeksCards, renderGreeksTable } from './greeks.js';
+import { renderStressScenarios } from './stress.js';
 
 const RITA_API_KEY = '';
 
@@ -27,17 +29,20 @@ function _rollingDateRange() {
   return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
 }
 
-// Fractional shares = portfolio EUR allocation / current share price
+// Whole-number shares from portfolio builder, or fall back to floor(alloc / price)
 function _computeNShares(instrument) {
-  const total    = parseFloat(state.portfolioMeta?.total_value_eur || 0);
   const geoInsts = state.portfolioGeoInstruments || [];
   const inst     = geoInsts.find(i => i.id === instrument);
+  // Prefer pre-computed integer shares stored by the portfolio builder
+  if (inst?.shares != null && inst.shares > 0) return inst.shares;
+  // Fall back: derive from allocation % + total value + market price
+  const total    = parseFloat(state.portfolioMeta?.total_value_eur || 0);
   const allocPct = parseFloat(inst?.allocation_pct || 0);
   if (!total || !allocPct) return 10;
   const allocEur = total * allocPct / 100;
-  const price    = parseFloat(state.marketData[instrument]?.close || 0);
+  const price    = parseFloat(state.marketData[instrument]?.close || inst?.close || 0);
   if (!price) return 10;
-  return Math.round((allocEur / price) * 100) / 100;
+  return Math.floor(allocEur / price) || 1;
 }
 
 function _fmtRange(start, end) {
@@ -133,6 +138,10 @@ export async function loadEquityHedge(forceRefresh = false) {
   const instrument = _activeInstrument();
   if (state.equityHedgeData && !forceRefresh && _ehInstrument === instrument) {
     renderEquityHedge(state.equityHedgeData);
+    state.riskSelectedInstrument = instrument;
+    renderGreeksCards();
+    renderGreeksTable();
+    renderStressScenarios();
     return;
   }
   _ehInstrument = instrument;
@@ -167,6 +176,11 @@ export async function loadEquityHedge(forceRefresh = false) {
     if (resEl)  resEl.style.display = 'block';
     renderEquityHedge(data);
     injectAsmlToState();
+    // Filter Greeks/Stress to the active instrument and render into eh-risk-panels
+    state.riskSelectedInstrument = instrument;
+    renderGreeksCards();
+    renderGreeksTable();
+    renderStressScenarios();
   } catch (e) {
     if (loadEl) { loadEl.textContent = 'Error: ' + e.message; loadEl.style.display = 'flex'; }
     if (resEl)  resEl.style.display = 'none';

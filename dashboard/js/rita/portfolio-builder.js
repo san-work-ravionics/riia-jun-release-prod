@@ -5,6 +5,7 @@
 //      POST /api/v1/user-portfolio/                   (JWT, basket build)
 
 import { api, apiFetch } from './api.js';
+import { ensureDevToken, isLocalDev } from '../shared/dev-auth.js';
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const _basket = new Set();
@@ -58,6 +59,29 @@ function _fmtRet(pct, est) {
 
 function _allInstruments(geo) {
   return (geo.regions || []).flatMap(r => r.instruments || []);
+}
+
+function _priceForId(id) {
+  if (!_geoCache) return null;
+  for (const r of (_geoCache.regions || [])) {
+    const inst = (r.instruments || []).find(i => i.id === id);
+    if (inst && inst.close) return inst.close;
+  }
+  return null;
+}
+
+function _totalEurInput() {
+  const v = parseFloat(document.getElementById('pb-total-eur')?.value);
+  return isNaN(v) || v <= 0 ? 0 : v;
+}
+
+function _sharesAndCash(totalEur, allocPct, price) {
+  if (!totalEur || !allocPct || !price) return null;
+  const allocEur = totalEur * allocPct / 100;
+  const shares   = Math.floor(allocEur / price);
+  const actual   = shares * price;
+  const cash     = allocEur - actual;
+  return { allocEur, shares, actual, cash };
 }
 
 function _regionDisplay(apiRegion) {
@@ -129,7 +153,25 @@ function _renderRegionSummary() {
     rows.push(`<div style="font-size:12px;color:var(--t2);padding:4px 0">${total} instrument${total === 1 ? '' : 's'} selected</div>`);
   }
 
-  el.innerHTML = rows.join('');
+  // Compute total cash across all basket instruments
+  const totalEurForCash = _totalEurInput();
+  let totalCash = 0;
+  let hasPrices = false;
+  if (totalEurForCash > 0) {
+    for (const id of _basket) {
+      const p = _priceForId(id);
+      const sc = p ? _sharesAndCash(totalEurForCash, _allocationPct.get(id) ?? 0, p) : null;
+      if (sc) { totalCash += sc.cash; hasPrices = true; }
+    }
+  }
+  const cashRow = hasPrices
+    ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:12px;margin-top:2px">
+        <span style="color:var(--t2)">Cash balance</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;color:#16a34a">€${totalCash.toFixed(0)}</span>
+       </div>`
+    : '';
+
+  el.innerHTML = rows.join('') + cashRow;
   _updateSummaryStats(allocSum, retCount > 0 ? totalRet / retCount : null);
 }
 
@@ -220,9 +262,18 @@ function _renderBasket() {
       if (emptyMsg) emptyMsg.style.display = '';
     } else {
       if (emptyMsg) emptyMsg.style.display = 'none';
-      // 2-column chip grid — each chip is 2 rows: ticker+remove / % input
+      const totalEur = _totalEurInput();
+      // 2-column chip grid — each chip is 2 rows: ticker+remove / % input / shares+cash
       listEl.innerHTML = [..._basket].map(id => {
-        const pct = _allocationPct.get(id) ?? 0;
+        const pct   = _allocationPct.get(id) ?? 0;
+        const price = _priceForId(id);
+        const sc    = totalEur > 0 && price ? _sharesAndCash(totalEur, pct, price) : null;
+        const scHtml = sc
+          ? `<div id="pb-chip-sc-${id}" style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px;font-family:'IBM Plex Mono',monospace">
+               <span style="color:#16a34a;font-weight:700">${sc.shares} shares</span>
+               <span style="color:#64748b">€${sc.cash.toFixed(0)} cash</span>
+             </div>`
+          : `<div id="pb-chip-sc-${id}"></div>`;
         return `<div style="border-radius:8px;background:rgba(190,24,93,.06);border:1px solid rgba(190,24,93,.2);padding:6px 8px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
             <span style="font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:#BE185D;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px">${id}</span>
@@ -234,6 +285,7 @@ function _renderBasket() {
                    style="flex:1;min-width:0;padding:3px 6px;border:1px solid rgba(190,24,93,.35);border-radius:5px;font-size:12px;font-family:'IBM Plex Mono',monospace;text-align:right;color:#1e293b;background:#fff">
             <span style="font-size:11px;color:#64748b;font-weight:600;flex-shrink:0">%</span>
           </div>
+          ${scHtml}
         </div>`;
       }).join('');
     }
@@ -595,6 +647,10 @@ export async function loadPortfolioBuilder() {
     _renderMap(geo);
     _applyPreset('short_term', geo);
 
+    // Re-render basket chips whenever total EUR changes (shares/cash recalculation)
+    const eurInput = document.getElementById('pb-total-eur');
+    if (eurInput) eurInput.addEventListener('input', () => _renderBasket());
+
   } catch (e) {
     _hide('pb-loading');
     _setText('pb-error-msg', e.message || 'Failed to load portfolio data');
@@ -682,6 +738,21 @@ export function pbClearBasket() {
 export function pbSetAlloc(id, pct) {
   _allocationPct.set(id, Math.max(0, Math.min(100, Math.round(pct) || 0)));
   _renderRegionSummary(); // summary panel reflects new totals without re-rendering chips
+  // Update shares/cash for this chip without re-rendering the whole basket
+  const scEl = document.getElementById(`pb-chip-sc-${id}`);
+  if (scEl) {
+    const totalEur = _totalEurInput();
+    const price    = _priceForId(id);
+    const sc       = totalEur > 0 && price ? _sharesAndCash(totalEur, _allocationPct.get(id) ?? 0, price) : null;
+    scEl.style.display = sc ? 'flex' : 'none';
+    scEl.style.justifyContent = 'space-between';
+    scEl.style.marginTop = '4px';
+    scEl.style.fontSize = '10px';
+    scEl.style.fontFamily = "'IBM Plex Mono',monospace";
+    scEl.innerHTML = sc
+      ? `<span style="color:#16a34a;font-weight:700">${sc.shares} shares</span><span style="color:#64748b">€${sc.cash.toFixed(0)} cash</span>`
+      : '';
+  }
 }
 
 export async function pbBuildPortfolio() {
@@ -690,28 +761,36 @@ export async function pbBuildPortfolio() {
     if (msg) { msg.textContent = 'Add at least one instrument to the basket first.'; msg.style.color = '#dc2626'; msg.style.display = ''; }
     return;
   }
+  await ensureDevToken();
   const token = sessionStorage.getItem('auth_token');
   if (!token) {
-    sessionStorage.setItem('post_login_redirect', window.location.href);
-    window.location.href = '/auth/google/login?state=rita';
+    if (!isLocalDev()) {
+      sessionStorage.setItem('post_login_redirect', window.location.href);
+      window.location.href = '/auth/google/login?state=rita';
+    }
     return;
   }
   const name = `My Portfolio ${new Date().toLocaleDateString('en-IN')}`;
-  const eurRaw = parseFloat(document.getElementById('pb-total-eur')?.value);
-  const totalValueEur = isNaN(eurRaw) || eurRaw <= 0 ? null : eurRaw;
+  const totalValueEur = _totalEurInput() || null;
   // Use custom allocations if they sum to ~100, else fall back to equal split
   const allocSum = [..._basket].reduce((s, id) => s + (_allocationPct.get(id) ?? 0), 0);
-  let holdings;
+  let baseHoldings;
   if (Math.abs(allocSum - 100) < 1) {
-    holdings = [..._basket]
+    baseHoldings = [..._basket]
       .map(id => ({ instrument_id: id, allocation_pct: _allocationPct.get(id) ?? 0 }))
       .filter(h => h.allocation_pct > 0);
   } else {
     const eq = Math.floor(100 / _basket.size);
-    holdings = [..._basket].map(id => ({ instrument_id: id, allocation_pct: eq }));
+    baseHoldings = [..._basket].map(id => ({ instrument_id: id, allocation_pct: eq }));
     const rem = 100 - eq * _basket.size;
-    if (rem > 0) holdings[0].allocation_pct += rem;
+    if (rem > 0) baseHoldings[0].allocation_pct += rem;
   }
+  // Enrich each holding with whole-share count and cash remainder
+  const holdings = baseHoldings.map(h => {
+    const price = _priceForId(h.instrument_id);
+    const sc    = totalValueEur && price ? _sharesAndCash(totalValueEur, h.allocation_pct, price) : null;
+    return { ...h, shares: sc ? sc.shares : null, cash_eur: sc ? parseFloat(sc.cash.toFixed(2)) : null };
+  });
 
   const buildBtn      = document.getElementById('pb-basket-build-btn');
   const draftBuildBtn = document.getElementById('pb-draft-build-btn');

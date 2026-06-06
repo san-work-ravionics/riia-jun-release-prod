@@ -26,6 +26,7 @@ import { loadStrategyComparison, scSelectInstrument, scSelectYear } from './stra
 import { useChip, sendChatMsg, clearChat, updateChips, showAlerts, refreshChatChips } from './chat.js';
 import { openChartModal, closeChartModal } from './chart-modal.js';
 import { initI18n, setLanguage, applyTranslations } from '../shared/i18n.js';
+import { ensureDevToken } from '../shared/dev-auth.js';
 import { loadMyPortfolio, savePortfolio } from './my-portfolio.js';
 import { loadPortfolioBuilder, pbToggleInstrument, pbSelectAllRegion, pbClearAllRegion, pbSortTable, pbApplyGoalPreset, pbToggleDraftItem, pbBuildFromDraft, pbClearBasket, pbBuildPortfolio, pbSetAlloc } from './portfolio-builder.js?v=4';
 
@@ -145,4 +146,7 @@ async function loadActiveInstrument() {
 
 // ── Init ───────────────────────────────────────────────────
 initI18n(); applyTranslations();
-window.addEventListener('load', () => { refresh(); loadActiveInstrument(); loadMarketSignals(); });
+window.addEventListener('load', async () => {
+  await ensureDevToken();
+  refresh(); loadActiveInstrument(); loadMarketSignals();
+});

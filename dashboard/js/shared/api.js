@@ -12,8 +12,11 @@ export async function api(path, method = 'GET', body = null) {
   if (!r.ok) {
     if (r.status === 401) {
       sessionStorage.removeItem('auth_token');
-      sessionStorage.setItem('post_login_redirect', window.location.href);
-      window.location.href = '/auth/google/login';
+      const _isLocal = ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname);
+      if (!_isLocal) {
+        sessionStorage.setItem('post_login_redirect', window.location.href);
+        window.location.href = '/auth/google/login';
+      }
       return;
     }
     const err = await r.json().catch(() => ({ detail: r.statusText }));
