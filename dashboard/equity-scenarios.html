@@ -188,223 +188,62 @@
     .badge-neu  { background: var(--surface2);  color: var(--t3);     border: 1px solid var(--border2);   }
     .badge-ds   { background: var(--ds-bg);     color: var(--ds);     border: 1px solid var(--ds-bd);     }
 
-    /* ── Scenarios grid ─────────────────────────────────────────────────── */
-    .scenarios-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
-
-    @media (max-width: 860px) {
-      .scenarios-grid { grid-template-columns: 1fr; }
-      .kpi-strip      { grid-template-columns: 1fr 1fr; }
-    }
-
-    /* ── Instrument card — fno card pattern with left-border urgency ─────── */
-    .sc-card {
-      background: var(--surface);
-      border: 1.5px solid var(--border);
-      border-left: 4px solid var(--border2);  /* urgency stripe */
-      border-radius: var(--r);
-      box-shadow: var(--sh);
-      overflow: hidden;
-      transition: box-shadow 0.15s;
-    }
-    .sc-card:hover { box-shadow: var(--shm); }
-
-    .card-border-danger { border-left-color: var(--danger); }
-    .card-border-warn   { border-left-color: var(--warn); }
-    .card-border-ok     { border-left-color: var(--run); }
-    .card-border-neu    { border-left-color: var(--border2); }
-
-    /* Card header section */
-    .sc-hdr {
-      display: flex; justify-content: space-between; align-items: flex-start;
-      padding: 16px 18px 0;
-      margin-bottom: 14px; gap: 12px;
-    }
-    .sc-symbol {
-      font-size: 15px; font-weight: 700; letter-spacing: -0.2px;
-      font-family: var(--fm);
-      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-    }
-    .sc-name { font-size: 12px; color: var(--t3); margin-top: 3px; }
-    .sc-meta { font-size: 11px; color: var(--t4); margin-top: 2px; font-family: var(--fm); }
-    .sc-hdr-right { text-align: right; flex-shrink: 0; }
-    .day-chg {
-      font-size: 12px; font-weight: 600; margin-top: 6px; font-family: var(--fm);
-    }
-    .day-chg.pos { color: var(--run); }
-    .day-chg.neg { color: var(--danger); }
-    .day-chg.neu { color: var(--t3); }
-
+    /* ── Equity Scenarios table ──────────────────────────────────────────── */
+    .sc-table{width:100%;border-collapse:collapse;}
+    .sc-table thead th{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--t4);font-weight:600;padding:6px 12px;border-bottom:2px solid var(--border);text-align:left;white-space:nowrap;background:var(--surface);}
+    .sc-row{cursor:pointer;}
+    .sc-row td{padding:9px 12px;vertical-align:middle;border-bottom:1px solid var(--border);}
+    .sc-row:hover td{background:var(--surface2);}
+    .sc-pos-cell{white-space:nowrap;}
+    .sc-row.row-danger td:first-child{border-left:3px solid var(--danger);}
+    .sc-row.row-warn td:first-child{border-left:3px solid var(--warn);}
+    .sc-row.row-ok td:first-child{border-left:3px solid var(--run);}
+    .sc-row.row-neu td:first-child{border-left:3px solid transparent;}
+    .sc-sym{font-size:13px;font-weight:700;font-family:var(--fm);color:var(--text);}
+    .sc-inline-badge{margin-left:6px;vertical-align:middle;}
+    .sc-val{font-size:12px;font-weight:500;color:var(--text);font-family:var(--fm);}
+    .sc-day{font-size:11px;font-family:var(--fm);}
+    .sc-day.pos{color:var(--run);}.sc-day.neg{color:var(--danger);}.sc-day.neu{color:var(--t3);}
+    .sc-pnl{font-size:12px;font-weight:600;font-family:var(--fm);}
+    .sc-pnl.pos{color:var(--run);}.sc-pnl.neg{color:var(--danger);}
+    /* detail row */
+    .sc-detail-row{display:none;}
+    .sc-detail-row.open{display:table-row;}
+    .sc-detail-row td{padding:0;}
+    .sc-detail-panel{padding:14px 16px 14px 36px;background:var(--surface2);border-top:2px solid var(--border2);border-bottom:2px solid var(--border2);}
+    .sc-detail-top{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;}
+    .sc-detail-name{font-size:12px;font-weight:600;color:var(--text);font-family:var(--fm);}
+    .sc-detail-meta{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;}
     /* Trailing stop pill */
-    .trailing-pill {
-      font-size: 9px; text-transform: uppercase; letter-spacing: .05em;
-      color: var(--ds); background: var(--ds-bg); border: 1px solid var(--ds-bd);
-      border-radius: 3px; padding: 1px 6px; font-weight: 600; font-family: var(--fm);
-    }
-
-    /* P&L metrics row */
-    .sc-pnl-row {
-      display: flex; gap: 0;
-      margin: 0 18px 14px;
-      padding-bottom: 14px;
-      border-bottom: 1px solid var(--border);
-    }
-    .sc-pnl-item {
-      flex: 1; padding: 0 8px;
-      border-right: 1px solid var(--border);
-    }
-    .sc-pnl-item:first-child { padding-left: 0; }
-    .sc-pnl-item:last-child  { border-right: none; padding-right: 0; }
-    .pnl-label {
-      font-size: 9px; text-transform: uppercase;
-      color: var(--t4); letter-spacing: .06em;
-      margin-bottom: 4px; font-family: var(--fm);
-    }
-    .pnl-val {
-      font-size: 13px; font-weight: 500;
-      color: var(--text); font-family: var(--fm);
-    }
-    .pnl-val.pos { color: var(--run); }
-    .pnl-val.neg { color: var(--danger); }
-
-    /* ── Range bar ───────────────────────────────────────────────────────── */
-    .range-section { margin: 0 18px 12px; }
-
-    .bar-legend {
-      display: flex; justify-content: space-between; align-items: center;
-      font-family: var(--fm); margin-bottom: 8px;
-    }
-    .bar-leg-left  { font-size: 10px; font-weight: 600; color: var(--danger); }
-    .bar-leg-mid   {
-      font-size: 10px; color: var(--t4); font-weight: 400;
-      background: var(--surface2); padding: 1px 7px;
-      border-radius: 3px; border: 1px solid var(--border);
-    }
-    .bar-leg-right { font-size: 10px; font-weight: 600; color: var(--run); }
-
-    /* track */
-    .bar-wrap { position: relative; height: 30px; margin-bottom: 8px; }
-    .bar-track {
-      position: absolute; top: 50%; left: 0; right: 0;
-      transform: translateY(-50%);
-      height: 8px; background: var(--surface2);
-      border-radius: 4px; border: 1px solid var(--border);
-      overflow: hidden;
-    }
-    .bar-fill {
-      position: absolute; top: 0; left: 0; bottom: 0;
-      border-radius: 4px; transition: width 0.5s ease;
-    }
-    /* colour zones for the fill — set by JS via inline style */
-
-    /* current-price dot */
-    .bar-dot {
-      position: absolute; top: 50%;
-      transform: translate(-50%, -50%);
-      width: 16px; height: 16px;
-      border-radius: 50%;
-      border: 2px solid var(--surface);
-      box-shadow: 0 0 0 1px rgba(0,0,0,0.4);
-      z-index: 2; transition: left 0.5s ease;
-    }
-    /* average cost dot */
-    .bar-avg-dot {
-      position: absolute; top: 50%;
-      transform: translate(-50%, -50%);
-      width: 8px; height: 8px;
-      border-radius: 50%; background: var(--t4);
-      border: 1px solid var(--surface); z-index: 1;
-    }
-    /* ltp label below dot */
-    .bar-ltp-label {
-      position: absolute; bottom: 0;
-      transform: translateX(-50%);
-      font-size: 10px; font-weight: 700;
-      font-family: var(--fm); white-space: nowrap; color: var(--text);
-    }
-    .bar-stat {
-      display: flex; justify-content: space-between;
-      font-size: 11px; color: var(--t3); font-family: var(--fm);
-      margin-top: 2px;
-    }
-    .bar-stat-avg { font-size: 10px; color: var(--t4); margin-top: 3px; font-family: var(--fm); }
-    .trailing-note { font-size: 10px; color: var(--ds); margin-top: 4px; font-family: var(--fm); }
-
-    /* ── Trade chips ─────────────────────────────────────────────────────── */
-    .trade-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 18px 12px; }
-    .trade-chip {
-      font-size: 11px; color: var(--t3);
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 4px; padding: 3px 8px;
-      font-family: var(--fm);
-    }
-    .trade-chip strong { color: var(--t2); font-weight: 500; }
-
-    /* ── Recommendation — flush card footer ─────────────────────────────── */
-    .rec {
-      padding: 10px 18px;
-      font-size: 12px; line-height: 1.5;
-      border-top: 1px solid var(--border);
-      border-left: 3px solid transparent;
-      margin-top: 2px;
-    }
-    .rec-urgent {
-      background: rgba(239,83,80,0.06);
-      border-left-color: var(--danger);
-      color: var(--danger);
-    }
-    .rec-watch {
-      background: rgba(255,167,38,0.06);
-      border-left-color: var(--warn);
-      color: var(--warn);
-    }
-    .rec-good {
-      background: rgba(102,187,106,0.06);
-      border-left-color: var(--run);
-      color: var(--run);
-    }
-    .rec-info {
-      background: var(--build-bg);
-      border-left-color: var(--build);
-      color: var(--t2);
-    }
-
-    /* ── Historical alerts ──────────────────────────────────────────────── */
-    .section-block { margin-top: 36px; }
-    .section-title {
-      font-family: var(--fm);
-      font-size: 10px; font-weight: 600;
-      text-transform: uppercase; letter-spacing: .08em;
-      color: var(--t4);
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 14px;
-    }
-    .triggered-row { display: flex; flex-wrap: wrap; gap: 8px; }
-    .triggered-chip {
-      background: var(--surface);
-      border: 1.5px solid var(--border);
-      border-radius: var(--r);
-      padding: 6px 12px;
-      font-size: 12px; color: var(--t3);
-      display: flex; gap: 8px; align-items: center;
-      font-family: var(--fm);
-    }
-    .triggered-chip strong { color: var(--text); font-weight: 600; }
-    .tc-price { font-family: var(--fm); font-size: 11px; color: var(--t4); }
-
-    /* ── States ─────────────────────────────────────────────────────────── */
-    .loading {
-      padding: 60px; text-align: center; color: var(--t3); grid-column: 1 / -1;
-    }
-    .load-err {
-      padding: 24px; color: var(--danger);
-      background: var(--danger-bg);
-      border: 1.5px solid var(--danger-bd);
-      border-radius: var(--r);
-      grid-column: 1 / -1;
-      font-family: var(--fm); font-size: 12px;
-    }
+    .trailing-pill{font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--ds);background:var(--ds-bg);border:1px solid var(--ds-bd);border-radius:3px;padding:1px 5px;font-weight:600;font-family:var(--fm);}
+    /* 9-dot position indicator */
+    .pos-dots{display:flex;align-items:center;gap:6px;margin-bottom:5px;}
+    .dot{display:inline-block;width:12px;height:12px;border-radius:50%;border:2px solid;transition:background .2s;}
+    .dot-sep{width:1px;height:18px;background:var(--border2);margin:0 2px;}
+    .dot-loss{border-color:#f97316;background:transparent;}.dot-loss.dot-lit{background:#f97316;}
+    .dot-ctrl{border-color:#60a5fa;background:transparent;}.dot-ctrl.dot-lit{background:#60a5fa;}
+    .dot-gain{border-color:#a78bfa;background:transparent;}.dot-gain.dot-lit{background:#a78bfa;}
+    .pos-dots-stat{font-size:10px;color:var(--t4);font-family:var(--fm);}
+    /* Trade chips */
+    .trade-chip{font-size:10px;color:var(--t3);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2px 7px;font-family:var(--fm);}
+    .trade-chip strong{color:var(--t2);font-weight:500;}
+    /* Recommendation */
+    .rec{padding:8px 12px;font-size:11px;line-height:1.5;border-left:3px solid transparent;border-radius:3px;}
+    .rec-urgent{background:var(--danger-bg);border-left-color:var(--danger);color:var(--danger);}
+    .rec-watch{background:var(--warn-bg);border-left-color:var(--warn);color:var(--warn);}
+    .rec-good{background:var(--run-bg);border-left-color:var(--run);color:var(--run);}
+    .rec-info{background:var(--build-bg);border-left-color:var(--build);color:var(--t2);}
+    /* ── Historical alerts ────────────────────────────────────────────────── */
+    .section-block{margin-top:28px;}
+    .section-title{font-family:var(--fm);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--t4);padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:14px;}
+    .triggered-row{display:flex;flex-wrap:wrap;gap:8px;}
+    .triggered-chip{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:6px 12px;font-size:12px;color:var(--t3);display:flex;gap:8px;align-items:center;font-family:var(--fm);}
+    .triggered-chip strong{color:var(--text);font-weight:600;}
+    .tc-price{font-family:var(--fm);font-size:11px;color:var(--t4);}
+    /* ── States ──────────────────────────────────────────────────────────── */
+    .es-loading{padding:32px;text-align:center;color:var(--t3);font-size:12px;}
+    .load-err{padding:12px 16px;color:var(--danger);background:var(--danger-bg);font-family:var(--fm);font-size:12px;}
+    @media(max-width:860px){.kpi-strip{grid-template-columns:1fr 1fr;}.sc-table thead th:nth-child(6){display:none;}.sc-row td:nth-child(6){display:none;}}
   </style>
 </head>
 <body>
@@ -466,9 +305,21 @@
       <span class="page-hdr-title">Active Positions</span>
       <span class="page-hdr-sub">sorted by urgency · lowest buffer first</span>
     </div>
-    <div class="scenarios-grid" id="scenarios-grid">
-      <div class="loading">Loading positions…</div>
-    </div>
+    <table class="sc-table">
+      <thead>
+        <tr>
+          <th>Symbol</th>
+          <th>Avg Cost</th>
+          <th>LTP</th>
+          <th>P&amp;L</th>
+          <th>Invested · Status</th>
+          <th>Position</th>
+        </tr>
+      </thead>
+      <tbody id="scenarios-grid">
+        <tr><td colspan="6" class="es-loading">Loading positions…</td></tr>
+      </tbody>
+    </table>
 
     <!-- Historical triggered alerts -->
     <div class="section-block">

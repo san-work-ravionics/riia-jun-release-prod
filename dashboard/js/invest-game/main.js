@@ -153,7 +153,16 @@ function renderWarmupRows() {
 
 function populateActiveRowData(n) {
   const d = gameState.gameDays[n - 3];
-  document.getElementById(`row${n}-price`).textContent = sym() + d.close.toFixed(2);
+  const prevClose = n === 3
+    ? gameState.warmupDays[gameState.warmupDays.length - 1].close
+    : gameState.gameDays[n - 4].close;
+  const pct   = (d.close - prevClose) / prevClose * 100;
+  const isUp  = pct >= 0;
+  const arrow = isUp ? '▲' : '▼';
+  const color = isUp ? 'var(--pos)' : 'var(--neg)';
+  const sign  = isUp ? '+' : '';
+  document.getElementById(`row${n}-price`).innerHTML =
+    `${sym()}${d.close.toFixed(2)} <span style="font-size:0.8em;color:${color};white-space:nowrap">${arrow} ${sign}${pct.toFixed(2)}%</span>`;
 }
 
 function unlockRow(n) {

@@ -6,29 +6,29 @@ const MOCK_VOLATILE = {
     select: {
       game_id: 'volatile-asml-001', instrument: 'ASML', currency: 'EUR', starting_capital: 5000,
       warmup_days: [
-        { date: '2025-04-24', close: 726.40 },
-        { date: '2025-04-25', close: 711.80 }
+        { date: '2025-07-11', close: 679.98 },
+        { date: '2025-07-14', close: 683.36 }
       ],
       game_days: [
-        { date: '2025-04-28', close: 694.50 },
-        { date: '2025-04-29', close: 655.20 },
-        { date: '2025-04-30', close: 668.90 },
-        { date: '2025-05-02', close: 641.30 },
-        { date: '2025-05-05', close: 612.70 },
-        { date: '2025-05-06', close: 635.40 },
-        { date: '2025-05-07', close: 658.10 },
-        { date: '2025-05-08', close: 671.60 }
+        { date: '2025-07-15', close: 702.05 },
+        { date: '2025-07-16', close: 622.21 },
+        { date: '2025-07-17', close: 646.47 },
+        { date: '2025-07-18', close: 629.87 },
+        { date: '2025-07-21', close: 620.52 },
+        { date: '2025-07-22', close: 598.94 },
+        { date: '2025-07-23', close: 603.12 },
+        { date: '2025-07-24', close: 612.37 }
       ]
     },
     ai: [
-      { ai_action:'SELL', compliance_status:'pass',    compliance_rule:'Volatility gate',       ai_insight:'Tariff escalation detected — reducing exposure ahead of volatility.' },
-      { ai_action:'HOLD', compliance_status:'pass',    compliance_rule:'Drawdown gate',         ai_insight:'Confirming downtrend before re-entry — holding cash.' },
-      { ai_action:'HOLD', compliance_status:'pass',    compliance_rule:'Sector exposure check', ai_insight:'Bounce looks weak — staying on sidelines.' },
-      { ai_action:'BUY',  compliance_status:'pass',    compliance_rule:'Position limit check',  ai_insight:'Oversold signal — initiating position near support.' },
-      { ai_action:'HOLD', compliance_status:'pass',    compliance_rule:'Drawdown gate',         ai_insight:'Holding through pressure — support level intact.' },
-      { ai_action:'BUY',  compliance_status:'pass',    compliance_rule:'Position limit check',  ai_insight:'Volume confirms reversal — adding to position.' },
-      { ai_action:'HOLD', compliance_status:'pass',    compliance_rule:'Sector exposure check', ai_insight:'Recovery in progress — maintaining long.' },
-      { ai_action:'SELL', compliance_status:'pass',    compliance_rule:'End-of-period gate',    ai_insight:'Target reached — closing position at period end.' }
+      { ai_action:'HOLD', compliance_status:'pass',    compliance_rule:'Pre-earnings caution gate',   ai_insight:'Earnings due after close — holding position ahead of release.' },
+      { ai_action:'SELL', compliance_status:'flagged', compliance_rule:'Extreme volatility threshold', ai_insight:'Earnings shock: guidance cut confirmed — exiting on extreme volatility flag.' },
+      { ai_action:'HOLD', compliance_status:'pass',    compliance_rule:'Drawdown gate',               ai_insight:'Relief bounce — monitoring for confirmation before re-entry.' },
+      { ai_action:'HOLD', compliance_status:'pass',    compliance_rule:'Sector exposure check',       ai_insight:'Bounce fading — standing aside, no clear signal.' },
+      { ai_action:'HOLD', compliance_status:'pass',    compliance_rule:'Drawdown gate',               ai_insight:'Selling pressure continues — maintaining cash position.' },
+      { ai_action:'BUY',  compliance_status:'pass',    compliance_rule:'Position limit check',        ai_insight:'Oversold at -14% off pre-earnings high — initiating position near support.' },
+      { ai_action:'HOLD', compliance_status:'pass',    compliance_rule:'Sector exposure check',       ai_insight:'Stabilising — holding and monitoring for recovery signal.' },
+      { ai_action:'SELL', compliance_status:'pass',    compliance_rule:'End-of-period gate',          ai_insight:'Period close — liquidating position at market.' }
     ]
   },
   NVIDIA: {
