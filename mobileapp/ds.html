@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+window.onerror = function(msg, src, line, col, err) {
+  fetch('/api/v1/client-error', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: String(msg), source: src, lineno: line, colno: col, stack: err ? err.stack : null, url: location.href })
+  }).catch(function() {});
+  return false;
+};
+window.addEventListener('unhandledrejection', function(e) {
+  fetch('/api/v1/client-error', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: String(e.reason), url: location.href })
+  }).catch(function() {});
+});
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>RITA DS Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500;600&family=Epilogue:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+
+/* ── Reset ───────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+button { cursor: pointer; border: none; background: none; font: inherit; }
+
+/* ── Design tokens ───────────────────────────────────────────────────────── */
+:root {
+  --bg:       #F5F3EE;
+  --surface:  #FFFFFF;
+  --surface2: #F9F8F5;
+  --border:   #E4E0D8;
+  --border2:  #D0CBBC;
+  --text:     #1A1814;
+  --t2:       #4A4640;
+  --t3:       #8C877A;
+  --t4:       #B8B2A6;
+  /* DS accent — teal */
+  --ds:       #0E7490;
+  --ds-bg:    #ECFEFF;
+  --ds-bd:    #67E8F9;
+  /* Semantic */
+  --ok:       #1A6B3C;
+  --ok-bg:    #EDF7F2;
+  --ok-bd:    #B6DEC9;
+  --warn:     #92480A;
+  --warn-bg:  #FEF4EB;
+  --warn-bd:  #F5C99A;
+  --danger:   #9B1C1C;
+  --danger-bg:#FEF2F2;
+  --danger-bd:#FCA5A5;
+  --info:     #0056B8;
+  --info-bg:  #EDF4FF;
+  --info-bd:  #AECBF5;
+  --fd: 'Epilogue', system-ui, sans-serif;
+  --fm: 'IBM Plex Mono', 'SF Mono', monospace;
+  --fs: 'Instrument Serif', Georgia, serif;
+}
+
+/* ── App shell ───────────────────────────────────────────────────────────── */
+html, body { height: 100%; overflow: hidden; background: var(--bg); font-family: var(--fd); -webkit-font-smoothing: antialiased; }
+#app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; padding-top: env(safe-area-inset-top); }
+
+/* ── Carousel ────────────────────────────────────────────────────────────── */
+.carousel-viewport { flex: 1; overflow: hidden; position: relative; min-height: 0; }
+.carousel-track {
+  display: flex; width: calc(5 * 100vw); height: 100%;
+  transform: translateX(0);
+  transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1); will-change: transform;
+}
+.screen { width: 100vw; height: 100%; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; flex-shrink: 0; }
+.screen::-webkit-scrollbar { display: none; }
+.screen-inner { padding-bottom: 40px; }
+
+/* ── Tab bar ─────────────────────────────────────────────────────────────── */
+.tab-bar {
+  flex-shrink: 0; background: var(--bg); display: flex; align-items: flex-start;
+  padding: 8px 12px; padding-bottom: max(env(safe-area-inset-bottom), 8px);
+  border-top: 1px solid var(--border); z-index: 20;
+}
+.tab-pill {
+  flex: 1; display: flex; background: var(--surface); border-radius: 28px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.04);
+  padding: 6px 4px 8px;
+}
+.tab-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 5px 0; border-radius: 20px; transition: background 0.18s;
+  -webkit-tap-highlight-color: transparent; cursor: pointer; user-select: none;
+}
+.tab-lbl { font-family: var(--fm); font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--t3); font-weight: 500; transition: color 0.2s; }
+.tab-item[data-active="true"] { background: var(--ds-bg); }
+.tab-item[data-active="true"] .tab-lbl { color: var(--ds); font-weight: 700; }
+.tab-item[data-active="true"] svg { stroke: var(--ds); }
+.tab-item svg { display: block; stroke: var(--t3); transition: stroke 0.2s; }
+
+/* ── Screen header ───────────────────────────────────────────────────────── */
+.scr-hdr { padding: 20px 20px 8px; display: flex; align-items: flex-start; justify-content: space-between; }
+.scr-eye { font-family: var(--fm); font-size: 9px; color: var(--ds); text-transform: uppercase; letter-spacing: .12em; font-weight: 700; }
+.scr-title { font-family: var(--fs); font-size: 26px; letter-spacing: -.02em; line-height: 1.1; color: var(--text); margin-top: 2px; }
+.scr-sub { font-family: var(--fm); font-size: 10px; color: var(--t3); margin-top: 3px; }
+
+/* ── Refresh button ──────────────────────────────────────────────────────── */
+.refresh-btn {
+  display: flex; align-items: center; gap: 5px; flex-shrink: 0; margin-top: 4px;
+  font-family: var(--fm); font-size: 10px; font-weight: 600; color: var(--ds);
+  letter-spacing: 0.06em; text-transform: uppercase; background: var(--ds-bg);
+  border: 1px solid var(--ds-bd); border-radius: 20px; padding: 5px 12px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Return hero ─────────────────────────────────────────────────────────── */
+.ret-hero {
+  margin: 4px 16px 0; padding: 20px 18px; border-radius: 18px;
+  background: var(--surface); border: 1px solid var(--border);
+}
+.ret-hero-label { font-family: var(--fm); font-size: 9px; text-transform: uppercase; letter-spacing: .12em; color: var(--t3); margin-bottom: 6px; }
+.ret-hero-val { font-family: var(--fm); font-size: 32px; font-weight: 600; letter-spacing: -.02em; line-height: 1.1; }
+.ret-hero-val.pos { color: var(--ok); }
+.ret-hero-val.neg { color: var(--danger); }
+.ret-hero-val.neu { color: var(--t2); }
+.ret-hero-sub { font-family: var(--fm); font-size: 10px; color: var(--t3); margin-top: 5px; }
+
+/* ── KPI grid ────────────────────────────────────────────────────────────── */
+.kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px 16px 4px; }
+.kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 13px 14px 11px; }
+.kpi-eye { font-family: var(--fm); font-size: 9px; color: var(--t3); text-transform: uppercase; letter-spacing: .1em; }
+.kpi-val { font-family: var(--fm); font-size: 18px; font-weight: 600; color: var(--text); letter-spacing: -.01em; line-height: 1.2; margin-top: 3px; }
+.kpi-val.ok     { color: var(--ok); }
+.kpi-val.warn   { color: var(--warn); }
+.kpi-val.danger { color: var(--danger); }
+.kpi-val.pos    { color: var(--ok); }
+.kpi-val.neg    { color: var(--danger); }
+.kpi-val.neu    { color: var(--t3); }
+.kpi-val.ds     { color: var(--ds); }
+.kpi-sub { font-size: 10px; color: var(--t4); margin-top: 2px; line-height: 1.3; }
+
+/* ── Section card ────────────────────────────────────────────────────────── */
+.sec-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; margin: 12px 16px 0; padding: 14px 16px; }
+.sec-title {
+  font-family: var(--fm); font-size: 10px; font-weight: 600; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--t2); margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.sec-dot { width: 6px; height: 6px; border-radius: 3px; flex-shrink: 0; }
+
+/* ── Stat row ────────────────────────────────────────────────────────────── */
+.stat-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); }
+.stat-row:last-child { border-bottom: none; }
+.stat-lbl { font-size: 12px; color: var(--t2); }
+.stat-val { font-family: var(--fm); font-size: 12px; color: var(--text); font-weight: 500; }
+.stat-val.pos  { color: var(--ok); }
+.stat-val.neg  { color: var(--danger); }
+.stat-val.neu  { color: var(--t3); }
+.stat-val.warn { color: var(--warn); }
+
+/* ── Badge ───────────────────────────────────────────────────────────────── */
+.bdg { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 4px; font-family: var(--fm); font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; flex-shrink: 0; }
+.bdg-ok   { background: var(--ok-bg);     color: var(--ok); }
+.bdg-warn { background: var(--warn-bg);   color: var(--warn); }
+.bdg-dng  { background: var(--danger-bg); color: var(--danger); }
+.bdg-info { background: var(--info-bg);   color: var(--info); }
+.bdg-ds   { background: var(--ds-bg);     color: var(--ds); border: 1px solid var(--ds-bd); }
+
+/* ── DDQN vs B&H comparison block ───────────────────────────────────────── */
+.cmp-block { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 8px; }
+.cmp-cell { background: var(--surface); padding: 10px 12px; }
+.cmp-label { font-family: var(--fm); font-size: 9px; text-transform: uppercase; letter-spacing: .1em; color: var(--t3); margin-bottom: 4px; }
+.cmp-val   { font-family: var(--fm); font-size: 16px; font-weight: 600; }
+.cmp-val.pos { color: var(--ok); }
+.cmp-val.neg { color: var(--danger); }
+.cmp-val.neu { color: var(--t3); }
+
+/* ── Run row (training history table) ───────────────────────────────────── */
+.run-row { display: flex; align-items: center; gap: 4px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.run-row:last-child { border-bottom: none; }
+
+/* ── Trade event row ─────────────────────────────────────────────────────── */
+.evt-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); }
+.evt-row:last-child { border-bottom: none; }
+.evt-date { font-family: var(--fm); font-size: 10px; color: var(--t3); min-width: 72px; }
+.evt-pnl  { font-family: var(--fm); font-size: 11px; font-weight: 600; flex-shrink: 0; }
+.evt-pnl.pos { color: var(--ok); }
+.evt-pnl.neg { color: var(--danger); }
+.evt-pnl.neu { color: var(--t3); }
+
+/* ── Constraint row ──────────────────────────────────────────────────────── */
+.cst-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.cst-row:last-child { border-bottom: none; }
+.cst-icon { font-size: 13px; flex-shrink: 0; }
+.cst-name { font-size: 11px; color: var(--t2); flex: 1; }
+.cst-val  { font-family: var(--fm); font-size: 11px; font-weight: 600; flex-shrink: 0; }
+.cst-val.ok   { color: var(--ok); }
+.cst-val.err  { color: var(--danger); }
+.cst-val.warn { color: var(--warn); }
+
+/* ── Table header row ────────────────────────────────────────────────────── */
+.tbl-hdr { display: grid; gap: 4px; padding: 4px 0; }
+.tbl-hdr span { font-family: var(--fm); font-size: 9px; text-transform: uppercase; letter-spacing: .07em; color: var(--t4); }
+
+/* ── Empty / loading ─────────────────────────────────────────────────────── */
+.empty   { font-family: var(--fm); font-size: 11px; color: var(--t4); text-align: center; padding: 24px 20px; }
+.loading { font-family: var(--fm); font-size: 11px; color: var(--t3); text-align: center; padding: 20px; }
+
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="carousel-viewport">
+    <div class="carousel-track" id="track">
+
+
+      <!-- ══ SCREEN 0: OVERVIEW ════════════════════════════════════════════ -->
+      <div class="screen" id="s0">
+        <div class="screen-inner">
+
+          <div class="scr-hdr">
+            <div>
+              <div class="scr-eye">RITA DS Lab</div>
+              <div class="scr-title">Overview</div>
+              <div class="scr-sub" id="s0-updated">Loading…</div>
+            </div>
+            <button class="refresh-btn" onclick="initData()">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              Refresh
+            </button>
+          </div>
+
+          <!-- Return hero -->
+          <div class="ret-hero">
+            <div class="ret-hero-label">DDQN Total Return</div>
+            <div class="ret-hero-val neu" id="s0-return">—</div>
+            <div class="ret-hero-sub" id="s0-return-sub">Backtest result — run pipeline to update</div>
+          </div>
+
+          <!-- KPI grid -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-eye">Sharpe Ratio</div>
+              <div class="kpi-val" id="s0-sharpe">—</div>
+              <div class="kpi-sub">target ≥ 1.0</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">Max Drawdown</div>
+              <div class="kpi-val neg" id="s0-mdd">—</div>
+              <div class="kpi-sub">limit ≤ 10%</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">CAGR</div>
+              <div class="kpi-val" id="s0-cagr">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">Win Rate</div>
+              <div class="kpi-val" id="s0-winrate">—</div>
+            </div>
+          </div>
+
+          <!-- Last build info -->
+          <div class="sec-card">
+            <div class="sec-title">
+              <span class="sec-dot" style="background:var(--ds)"></span>
+              Last Build
+            </div>
+            <div class="stat-row">
+              <span class="stat-lbl">Instrument</span>
+              <span class="stat-val" id="s0-instrument">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-lbl">Training Runs</span>
+              <span class="stat-val" id="s0-runs">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-lbl">Best BT Sharpe</span>
+              <span class="stat-val" id="s0-best-sharpe">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-lbl">Last Run Date</span>
+              <span class="stat-val" id="s0-last-run">—</span>
+            </div>
+          </div>
+
+          <!-- Constraint status -->
+          <div class="sec-card">
+            <div class="sec-title">
+              <span class="sec-dot" style="background:var(--warn)"></span>
+              Constraint Status
+            </div>
+            <div id="s0-constraints">
+              <div class="empty">Run the pipeline to see constraint status.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- ══ SCREEN 1: PERFORMANCE ══════════════════════════════════════════ -->
+      <div class="screen" id="s1">
+        <div class="screen-inner">
+
+          <div class="scr-hdr">
+            <div>
+              <div class="scr-eye">RITA DS Lab</div>
+              <div class="scr-title">Performance</div>
+              <div class="scr-sub" id="s1-sub">DDQN strategy vs Buy &amp; Hold</div>
+            </div>
+            <button class="refresh-btn" onclick="loadPerformance()">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              Refresh
+            </button>
+          </div>
+
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-eye">Total Return</div>
+              <div class="kpi-val" id="p-return">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">Sharpe Ratio</div>
+              <div class="kpi-val" id="p-sharpe">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">Max Drawdown</div>
+              <div class="kpi-val neg" id="p-mdd">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">Win Rate</div>
+              <div class="kpi-val" id="p-winrate">—</div>
+            </div>
+          </div>
+
+          <!-- DDQN vs B&H -->
+          <div class="sec-card">
+            <div class="sec-title">
+              <span class="sec-dot" style="background:var(--ds)"></span>
+              DDQN vs Buy &amp; Hold
+            </div>
+            <div id="p-comparison">
+              <div class="loading">Loading…</div>
+            </div>
+          </div>
+
+          <!-- Recent training rounds -->
+          <div class="sec-card">
+            <div class="sec-title">
+              <span class="sec-dot" style="background:var(--ok)"></span>
+              Recent Training Rounds
+            </div>
+            <div id="p-rounds">
+              <div class="empty">No training history found.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- ══ SCREEN 2: TRADES ══════════════════════════════════════════════ -->
+      <div class="screen" id="s2">
+        <div class="screen-inner">
+
+          <div class="scr-hdr">
+            <div>
+              <div class="scr-eye">RITA DS Lab</div>
+              <div class="scr-title">Trades</div>
+              <div class="scr-sub" id="s2-sub">Model entry/exit signals</div>
+            </div>
+            <button class="refresh-btn" onclick="loadTrades()">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              Refresh
+            </button>
+          </div>
+
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-eye">Total Entries</div>
+              <div class="kpi-val" id="t-entries">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">Exit Win Rate</div>
+              <div class="kpi-val" id="t-winrate">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">Profit Exits</div>
+              <div class="kpi-val pos" id="t-profit">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">Loss Exits</div>
+              <div class="kpi-val neg" id="t-loss">—</div>
+            </div>
+          </div>
+
+          <!-- Sharpe context -->
+          <div class="sec-card">
+            <div class="sec-title">
+              <span class="sec-dot" style="background:var(--ds)"></span>
+              Sharpe at Trade
+            </div>
+            <div class="stat-row">
+              <span class="stat-lbl">Avg Sharpe at Entry</span>
+              <span class="stat-val" id="t-sharpe-entry">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-lbl">Avg Sharpe at Exit</span>
+              <span class="stat-val" id="t-sharpe-exit">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-lbl">Delta (Exit − Entry)</span>
+              <span class="stat-val" id="t-sharpe-delta">—</span>
+            </div>
+          </div>
+
+          <!-- Recent trade events -->
+          <div class="sec-card">
+            <div class="sec-title">
+              <span class="sec-dot" style="background:var(--ok)"></span>
+              Recent Trade Events
+            </div>
+            <div id="t-events">
+              <div class="empty">Run the pipeline to populate trade events.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- ══ SCREEN 3: MODEL ════════════════════════════════════════════════ -->
+      <div class="screen" id="s3">
+        <div class="screen-inner">
+
+          <div class="scr-hdr">
+            <div>
+              <div class="scr-eye">RITA DS Lab</div>
+              <div class="scr-title">Model</div>
+              <div class="scr-sub">Training history &amp; run log</div>
+            </div>
+            <button class="refresh-btn" onclick="loadModel()">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              Refresh
+            </button>
+          </div>
+
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-eye">Training Rounds</div>
+              <div class="kpi-val ds" id="m-rounds">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">Best BT Sharpe</div>
+              <div class="kpi-val" id="m-best-sharpe">—</div>
+              <div class="kpi-sub">target ≥ 1.0</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">Latest BT Return</div>
+              <div class="kpi-val" id="m-latest-ret">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">Latest Val Sharpe</div>
+              <div class="kpi-val" id="m-latest-val">—</div>
+            </div>
+          </div>
+
+          <!-- Latest run details -->
+          <div class="sec-card">
+            <div class="sec-title">
+              <span class="sec-dot" style="background:var(--ds)"></span>
+              Latest Run
+            </div>
+            <div id="m-latest-details">
+              <div class="empty">No training history found.</div>
+            </div>
+          </div>
+
+          <!-- Run history -->
+          <div class="sec-card">
+            <div class="sec-title">
+              <span class="sec-dot" style="background:var(--ok)"></span>
+              Run History
+            </div>
+            <div id="m-run-history">
+              <div class="empty">No training history found.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- ══ SCREEN 4: RISK ═════════════════════════════════════════════════ -->
+      <div class="screen" id="s4">
+        <div class="screen-inner">
+
+          <div class="scr-hdr">
+            <div>
+              <div class="scr-eye">RITA DS Lab</div>
+              <div class="scr-title">Risk</div>
+              <div class="scr-sub">VaR, drawdown budget &amp; regime</div>
+            </div>
+            <button class="refresh-btn" onclick="loadRisk()">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              Refresh
+            </button>
+          </div>
+
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-eye">Avg VaR (Invested)</div>
+              <div class="kpi-val" id="r-avg-var">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">Peak VaR 95%</div>
+              <div class="kpi-val neg" id="r-peak-var">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">Max DD Budget Used</div>
+              <div class="kpi-val" id="r-max-budget">—</div>
+              <div class="kpi-sub">of 10% MDD limit</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">Entry Events</div>
+              <div class="kpi-val" id="r-entries">—</div>
+            </div>
+          </div>
+
+          <!-- Current regime -->
+          <div class="sec-card">
+            <div class="sec-title">
+              <span class="sec-dot" style="background:var(--ds)"></span>
+              Current Regime (Latest)
+            </div>
+            <div class="stat-row">
+              <span class="stat-lbl">Trend Score</span>
+              <span class="stat-val" id="r-trend">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-lbl">Allocation</span>
+              <span class="stat-val" id="r-alloc">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-lbl">Rolling Vol 20d</span>
+              <span class="stat-val" id="r-vol">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-lbl">DD Budget Used</span>
+              <span class="stat-val" id="r-budget-latest">—</span>
+            </div>
+          </div>
+
+          <!-- Phase risk summary -->
+          <div class="sec-card">
+            <div class="sec-title">
+              <span class="sec-dot" style="background:var(--warn)"></span>
+              Phase Risk Summary
+            </div>
+            <div id="r-phase-summary">
+              <div class="empty">Run the pipeline to populate risk data.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+
+    </div><!-- /track -->
+  </div><!-- /carousel-viewport -->
+
+  <!-- ── Tab bar ──────────────────────────────────────────────────────────── -->
+  <div class="tab-bar">
+    <div class="tab-pill">
+
+      <div class="tab-item" data-active="true" data-idx="0" onclick="goTo(0)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        <span class="tab-lbl">Overview</span>
+      </div>
+
+      <div class="tab-item" data-idx="1" onclick="goTo(1)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span class="tab-lbl">Perf</span>
+      </div>
+
+      <div class="tab-item" data-idx="2" onclick="goTo(2)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        <span class="tab-lbl">Trades</span>
+      </div>
+
+      <div class="tab-item" data-idx="3" onclick="goTo(3)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        <span class="tab-lbl">Model</span>
+      </div>
+
+      <div class="tab-item" data-idx="4" onclick="goTo(4)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span class="tab-lbl">Risk</span>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+// ── API ──────────────────────────────────────────────────────────────────────
+var API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  ? 'http://localhost:8000' : '';
+
+function getToken() {
+  try { return sessionStorage.getItem('auth_token') || localStorage.getItem('rita_token') || ''; }
+  catch (e) { return ''; }
+}
+
+async function apiFetch(path) {
+  try {
+    var token = getToken();
+    var headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    var res = await fetch(API_BASE + path, { headers: headers });
+    if (res.status === 401) { location.href = '/'; return null; }
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (e) { return null; }
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+var SCREENS = 5;
+var _cur = 0;
+var _loaded = [true, false, false, false, false];
+
+function goTo(idx) {
+  if (idx < 0 || idx >= SCREENS) return;
+  _cur = idx;
+  document.getElementById('track').style.transform = 'translateX(calc(' + idx + ' * -100vw))';
+  document.querySelectorAll('.tab-item').forEach(function(t) {
+    t.dataset.active = (parseInt(t.dataset.idx) === idx).toString();
+  });
+  if (!_loaded[idx]) {
+    _loaded[idx] = true;
+    if (idx === 1) loadPerformance();
+    if (idx === 2) loadTrades();
+    if (idx === 3) loadModel();
+    if (idx === 4) loadRisk();
+  }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s == null ? '—' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function fmtPct(v, dec) {
+  if (v == null) return '—';
+  var n = parseFloat(v);
+  if (isNaN(n)) return '—';
+  dec = dec != null ? dec : 1;
+  return (n >= 0 ? '+' : '') + n.toFixed(dec) + '%';
+}
+
+function fmtPctAbs(v, dec) {
+  if (v == null) return '—';
+  var n = parseFloat(v);
+  if (isNaN(n)) return '—';
+  return n.toFixed(dec != null ? dec : 1) + '%';
+}
+
+function fmt2(v) {
+  if (v == null) return '—';
+  var n = parseFloat(v);
+  return isNaN(n) ? '—' : n.toFixed(2);
+}
+
+function setKpi(id, text, extraClass) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = text;
+  if (extraClass != null) el.className = 'kpi-val' + (extraClass ? ' ' + extraClass : '');
+}
+
+function setStat(id, text, extraClass) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = text;
+  if (extraClass != null) el.className = 'stat-val' + (extraClass ? ' ' + extraClass : '');
+}
+
+// ── Screen 0: Overview ────────────────────────────────────────────────────────
+function renderOverview(summary, history) {
+  var p    = (summary && (summary.performance || summary)) || {};
+  var rows = Array.isArray(history) ? history : ((history && history.runs) || []);
+
+  // Return hero
+  var ret   = parseFloat(p.portfolio_total_return_pct || p.total_return_pct || p.total_return || 0);
+  var cagr  = parseFloat(p.portfolio_cagr_pct || p.cagr_pct || p.cagr || 0);
+  var retEl = document.getElementById('s0-return');
+  if (retEl) {
+    retEl.textContent = fmtPct(ret, 1);
+    retEl.className   = 'ret-hero-val ' + (ret > 0 ? 'pos' : ret < 0 ? 'neg' : 'neu');
+  }
+  document.getElementById('s0-return-sub').textContent = 'CAGR ' + fmtPct(cagr, 1) + ' — backtest result';
+
+  // KPIs
+  var sharpe  = parseFloat(p.sharpe_ratio || p.sharpe || 0);
+  var mdd     = parseFloat(p.max_drawdown_pct || p.max_drawdown || 0);
+  var winrate = parseFloat(p.win_rate_pct || p.win_rate || 0);
+  setKpi('s0-sharpe',  fmt2(sharpe || null), sharpe >= 1 ? 'ok' : sharpe > 0 ? '' : '');
+  setKpi('s0-mdd',     fmtPct(mdd, 1), 'neg');
+  setKpi('s0-cagr',    fmtPct(cagr, 1), cagr > 0 ? 'pos' : cagr < 0 ? 'neg' : '');
+  setKpi('s0-winrate', fmtPct(winrate, 1), '');
+
+  // Last build
+  if (rows.length) {
+    var latest = rows[rows.length - 1];
+    var btSharpes = rows.map(function(r) {
+      return parseFloat(r.backtest_sharpe || r.sharpe_ratio || r.sharpe || 0);
+    }).filter(function(v) { return !isNaN(v) && v > 0; });
+    var bestSharpe = btSharpes.length ? Math.max.apply(null, btSharpes) : null;
+    var inst = latest.instrument_id || latest.instrument || '—';
+    var lastDate = (latest.timestamp || latest.date || '').slice(0, 10) || '—';
+    document.getElementById('s0-instrument').textContent  = inst;
+    document.getElementById('s0-runs').textContent        = rows.length;
+    document.getElementById('s0-best-sharpe').textContent = bestSharpe != null ? bestSharpe.toFixed(2) : '—';
+    document.getElementById('s0-last-run').textContent    = lastDate;
+  }
+
+  document.getElementById('s0-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+
+  // Constraints
+  var constraints = (summary && summary.constraints) || [];
+  var cstEl = document.getElementById('s0-constraints');
+  if (!cstEl) return;
+  if (!constraints.length) {
+    cstEl.innerHTML = '<div class="empty">Run the pipeline to see constraint status.</div>';
+    return;
+  }
+  cstEl.innerHTML = constraints.map(function(c) {
+    var ok  = c.passed || c.status === 'pass' || c.status === 'ok';
+    var cls = ok ? 'ok' : (c.status === 'warn' ? 'warn' : 'err');
+    var icon = ok ? '✓' : (cls === 'warn' ? '⚠' : '✗');
+    var val  = c.value != null ? String(c.value) : '';
+    var thr  = c.threshold != null ? ' / ' + c.threshold : '';
+    return '<div class="cst-row">'
+      + '<span class="cst-icon">' + icon + '</span>'
+      + '<span class="cst-name">' + esc(c.name || c.constraint || '') + '</span>'
+      + '<span class="cst-val ' + cls + '">' + esc(val + thr) + '</span>'
+      + '</div>';
+  }).join('');
+}
+
+// ── Screen 1: Performance ─────────────────────────────────────────────────────
+async function loadPerformance() {
+  var sub = document.getElementById('s1-sub');
+  if (sub) sub.textContent = 'Loading…';
+
+  var result  = await Promise.all([
+    apiFetch('/api/v1/performance-summary'),
+    apiFetch('/api/v1/experience/rita/backtest-daily'),
+    apiFetch('/api/v1/experience/rita/training-history')
+  ]);
+  var summary = result[0];
+  var daily   = result[1];
+  var history = result[2];
+
+  var p    = (summary && (summary.performance || summary)) || {};
+  var rows = Array.isArray(history) ? history : ((history && history.runs) || []);
+
+  var ret    = parseFloat(p.portfolio_total_return_pct || p.total_return_pct || p.total_return || 0);
+  var sharpe = parseFloat(p.sharpe_ratio || p.sharpe || 0);
+  var mdd    = parseFloat(p.max_drawdown_pct || p.max_drawdown || 0);
+  var wr     = parseFloat(p.win_rate_pct || p.win_rate || 0);
+
+  setKpi('p-return',  fmtPct(ret, 1),   ret > 0 ? 'pos' : ret < 0 ? 'neg' : '');
+  setKpi('p-sharpe',  fmt2(sharpe || null), sharpe >= 1 ? 'ok' : '');
+  setKpi('p-mdd',     fmtPct(mdd, 1),   'neg');
+  setKpi('p-winrate', fmtPct(wr, 1),    '');
+
+  if (sub) sub.textContent = 'DDQN strategy vs Buy & Hold';
+
+  // DDQN vs B&H from last row of backtest-daily
+  var cmpEl = document.getElementById('p-comparison');
+  if (cmpEl) {
+    var dailyArr = Array.isArray(daily) ? daily : [];
+    if (dailyArr.length) {
+      var last  = dailyArr[dailyArr.length - 1];
+      var strat = (parseFloat(last.cumulative_strategy || last.portfolio_value || 1) * 100) - 100;
+      var bnh   = (parseFloat(last.benchmark_value || last.cumulative_bnh || last.buy_hold || 1) * 100) - 100;
+      var alpha = strat - bnh;
+      cmpEl.innerHTML = '<div class="cmp-block">'
+        + '<div class="cmp-cell">'
+          + '<div class="cmp-label">DDQN Strategy</div>'
+          + '<div class="cmp-val ' + (strat > 0 ? 'pos' : strat < 0 ? 'neg' : 'neu') + '">' + fmtPct(strat, 1) + '</div>'
+          + '</div>'
+        + '<div class="cmp-cell">'
+          + '<div class="cmp-label">Buy &amp; Hold</div>'
+          + '<div class="cmp-val ' + (bnh > 0 ? 'pos' : bnh < 0 ? 'neg' : 'neu') + '">' + fmtPct(bnh, 1) + '</div>'
+          + '</div>'
+        + '</div>'
+        + '<div class="stat-row" style="margin-top:2px">'
+          + '<span class="stat-lbl">Alpha (DDQN − B&amp;H)</span>'
+          + '<span class="stat-val ' + (alpha > 0 ? 'pos' : alpha < 0 ? 'neg' : 'neu') + '">' + fmtPct(alpha, 1) + '</span>'
+          + '</div>';
+    } else {
+      cmpEl.innerHTML = '<div class="empty">Run the pipeline to populate backtest data.</div>';
+    }
+  }
+
+  // Recent training rounds (last 5)
+  var roundsEl = document.getElementById('p-rounds');
+  if (roundsEl) {
+    if (!rows.length) {
+      roundsEl.innerHTML = '<div class="empty">No training history found.</div>';
+    } else {
+      var recent = rows.slice(-5).reverse();
+      roundsEl.innerHTML = '<div style="display:grid;grid-template-columns:1fr 52px 52px 60px;gap:4px;padding:4px 0;">'
+        + '<span style="font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--t4)">Date</span>'
+        + '<span style="font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--t4);text-align:right">Sharpe</span>'
+        + '<span style="font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--t4);text-align:right">Return</span>'
+        + '<span style="font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--t4);text-align:right">MDD</span>'
+        + '</div>'
+        + recent.map(function(r) {
+            var d  = (r.timestamp || r.date || '').slice(0, 10) || '—';
+            var sh = parseFloat(r.backtest_sharpe || r.sharpe_ratio || r.sharpe || 0);
+            var rt = parseFloat(r.backtest_return_pct || r.total_return_pct || r.total_return || 0);
+            var md = parseFloat(r.backtest_mdd_pct || r.max_drawdown_pct || r.max_drawdown || 0);
+            var shColor = sh >= 1 ? 'var(--ok)' : 'var(--text)';
+            var rtColor = rt > 0 ? 'var(--ok)' : rt < 0 ? 'var(--danger)' : 'var(--t3)';
+            return '<div class="run-row">'
+              + '<span style="font-family:var(--fm);font-size:10px;color:var(--t3);flex:1">' + esc(d) + '</span>'
+              + '<span style="font-family:var(--fm);font-size:12px;font-weight:600;min-width:52px;text-align:right;color:' + shColor + '">' + (isNaN(sh) ? '—' : sh.toFixed(2)) + '</span>'
+              + '<span style="font-family:var(--fm);font-size:11px;min-width:52px;text-align:right;color:' + rtColor + '">' + fmtPct(rt, 1) + '</span>'
+              + '<span style="font-family:var(--fm);font-size:11px;min-width:60px;text-align:right;color:var(--danger)">' + fmtPctAbs(Math.abs(md), 1) + '</span>'
+              + '</div>';
+          }).join('');
+    }
+  }
+}
+
+// ── Screen 2: Trades ──────────────────────────────────────────────────────────
+async function loadTrades() {
+  var events = await apiFetch('/api/v1/trade-events');
+  events = Array.isArray(events) ? events : [];
+
+  var entries = events.filter(function(e) {
+    return e.event_type === 'entry' || e.trade_type === 'entry' || e.risk_action === 'Increased';
+  });
+  var pEx = events.filter(function(e) {
+    return (e.event_type === 'exit' || e.trade_type === 'exit' || e.risk_action === 'Reduced') && parseFloat(e.pnl || 0) > 0;
+  });
+  var lEx = events.filter(function(e) {
+    return (e.event_type === 'exit' || e.trade_type === 'exit' || e.risk_action === 'Reduced') && parseFloat(e.pnl || 0) <= 0;
+  });
+  var wr = (pEx.length + lEx.length) > 0 ? pEx.length / (pEx.length + lEx.length) : 0;
+
+  setKpi('t-entries', entries.length || events.length, '');
+  setKpi('t-winrate', fmtPct(wr * 100, 1), '');
+  setKpi('t-profit',  pEx.length, 'pos');
+  setKpi('t-loss',    lEx.length, 'neg');
+
+  var sub = document.getElementById('s2-sub');
+  if (sub) sub.textContent = events.length + ' total events';
+
+  // Sharpe at trade
+  var eS = entries.map(function(e) { return e.sharpe_at_trade; }).filter(function(v) { return v != null; });
+  var xS = pEx.concat(lEx).map(function(e) { return e.sharpe_at_trade; }).filter(function(v) { return v != null; });
+  var avgE = eS.length ? eS.reduce(function(a, b) { return a + b; }, 0) / eS.length : null;
+  var avgX = xS.length ? xS.reduce(function(a, b) { return a + b; }, 0) / xS.length : null;
+  var deltaS = (avgE != null && avgX != null) ? avgX - avgE : null;
+
+  document.getElementById('t-sharpe-entry').textContent = avgE != null ? avgE.toFixed(2) : '—';
+  document.getElementById('t-sharpe-exit').textContent  = avgX != null ? avgX.toFixed(2) : '—';
+  setStat('t-sharpe-delta',
+    deltaS != null ? (deltaS >= 0 ? '+' : '') + deltaS.toFixed(2) : '—',
+    deltaS != null ? (deltaS > 0 ? 'pos' : deltaS < 0 ? 'neg' : 'neu') : '');
+
+  // Recent events (last 12, newest first)
+  var evtEl = document.getElementById('t-events');
+  if (evtEl) {
+    if (!events.length) {
+      evtEl.innerHTML = '<div class="empty">Run the pipeline to populate trade events.</div>';
+    } else {
+      var recent = events.slice(-12).reverse();
+      evtEl.innerHTML = recent.map(function(e) {
+        var isEntry = e.event_type === 'entry' || e.trade_type === 'entry' || e.risk_action === 'Increased';
+        var label   = isEntry ? 'ENTRY' : 'EXIT';
+        var bdgCls  = isEntry ? 'bdg-info' : (parseFloat(e.pnl || 0) > 0 ? 'bdg-ok' : 'bdg-dng');
+        var pnl     = parseFloat(e.pnl || 0);
+        var pnlStr  = pnl !== 0 ? (pnl > 0 ? '+' : '') + pnl.toFixed(2) + '%' : '—';
+        var pnlCls  = pnl > 0 ? 'pos' : pnl < 0 ? 'neg' : 'neu';
+        return '<div class="evt-row">'
+          + '<span class="evt-date">' + esc((e.date || '').slice(0, 10)) + '</span>'
+          + '<span style="flex:1"><span class="bdg ' + bdgCls + '">' + label + '</span></span>'
+          + '<span class="evt-pnl ' + pnlCls + '">' + esc(pnlStr) + '</span>'
+          + '</div>';
+      }).join('');
+    }
+  }
+}
+
+// ── Screen 3: Model ───────────────────────────────────────────────────────────
+async function loadModel() {
+  var history = await apiFetch('/api/v1/experience/rita/training-history');
+  var rows    = Array.isArray(history) ? history : ((history && history.runs) || []);
+
+  setKpi('m-rounds', rows.length || '0', 'ds');
+
+  if (!rows.length) {
+    document.getElementById('m-latest-details').innerHTML = '<div class="empty">No training history found.</div>';
+    document.getElementById('m-run-history').innerHTML    = '<div class="empty">No training history found.</div>';
+    return;
+  }
+
+  var latest    = rows[rows.length - 1];
+  var btSharpes = rows.map(function(r) {
+    return parseFloat(r.backtest_sharpe || r.sharpe_ratio || r.sharpe || 0);
+  }).filter(function(v) { return !isNaN(v) && v > 0; });
+  var bestSh  = btSharpes.length ? Math.max.apply(null, btSharpes) : null;
+  var latRet  = parseFloat(latest.backtest_return_pct || latest.total_return_pct || latest.total_return || 0);
+  var latVal  = parseFloat(latest.val_sharpe || 0);
+  var latSh   = parseFloat(latest.backtest_sharpe || latest.sharpe_ratio || latest.sharpe || 0);
+  var latMdd  = parseFloat(latest.backtest_mdd_pct || latest.max_drawdown_pct || latest.max_drawdown || 0);
+  var latDate = (latest.timestamp || latest.date || '').slice(0, 10) || '—';
+  var latInst = latest.instrument_id || latest.instrument || '—';
+  var latSeed = latest.seed != null ? String(latest.seed) : '—';
+
+  setKpi('m-best-sharpe', bestSh != null ? bestSh.toFixed(2) : '—', bestSh != null && bestSh >= 1 ? 'ok' : '');
+  setKpi('m-latest-ret',  fmtPct(latRet, 1), latRet > 0 ? 'pos' : latRet < 0 ? 'neg' : '');
+  setKpi('m-latest-val',  latVal > 0 ? latVal.toFixed(2) : '—', '');
+
+  // Latest run detail rows
+  var detEl = document.getElementById('m-latest-details');
+  if (detEl) {
+    detEl.innerHTML = '<div class="stat-row"><span class="stat-lbl">Date</span><span class="stat-val">' + esc(latDate) + '</span></div>'
+      + '<div class="stat-row"><span class="stat-lbl">Instrument</span><span class="stat-val">' + esc(latInst) + '</span></div>'
+      + '<div class="stat-row"><span class="stat-lbl">Seed</span><span class="stat-val">' + esc(latSeed) + '</span></div>'
+      + '<div class="stat-row"><span class="stat-lbl">BT Sharpe</span><span class="stat-val ' + (latSh >= 1 ? 'pos' : '') + '">' + (latSh > 0 ? latSh.toFixed(2) : '—') + '</span></div>'
+      + '<div class="stat-row"><span class="stat-lbl">Max Drawdown</span><span class="stat-val neg">' + fmtPctAbs(Math.abs(latMdd), 1) + '</span></div>';
+  }
+
+  // Run history table (last 8, newest first)
+  var histEl = document.getElementById('m-run-history');
+  if (histEl) {
+    var recent = rows.slice(-8).reverse();
+    histEl.innerHTML = '<div style="display:grid;grid-template-columns:1fr 52px 52px 60px;gap:4px;padding:4px 0;">'
+      + '<span style="font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--t4)">Date</span>'
+      + '<span style="font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--t4);text-align:right">Sharpe</span>'
+      + '<span style="font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--t4);text-align:right">Return</span>'
+      + '<span style="font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--t4);text-align:right">MDD</span>'
+      + '</div>'
+      + recent.map(function(r) {
+          var d  = (r.timestamp || r.date || '').slice(0, 10) || '—';
+          var sh = parseFloat(r.backtest_sharpe || r.sharpe_ratio || r.sharpe || 0);
+          var rt = parseFloat(r.backtest_return_pct || r.total_return_pct || r.total_return || 0);
+          var md = parseFloat(r.backtest_mdd_pct || r.max_drawdown_pct || r.max_drawdown || 0);
+          var shColor = sh >= 1 ? 'var(--ok)' : 'var(--text)';
+          var rtColor = rt > 0 ? 'var(--ok)' : rt < 0 ? 'var(--danger)' : 'var(--t3)';
+          return '<div class="run-row">'
+            + '<span style="font-family:var(--fm);font-size:10px;color:var(--t3);flex:1">' + esc(d) + '</span>'
+            + '<span style="font-family:var(--fm);font-size:12px;font-weight:600;min-width:52px;text-align:right;color:' + shColor + '">' + (sh > 0 ? sh.toFixed(2) : '—') + '</span>'
+            + '<span style="font-family:var(--fm);font-size:11px;min-width:52px;text-align:right;color:' + rtColor + '">' + fmtPct(rt, 1) + '</span>'
+            + '<span style="font-family:var(--fm);font-size:11px;min-width:60px;text-align:right;color:var(--danger)">' + fmtPctAbs(Math.abs(md), 1) + '</span>'
+            + '</div>';
+        }).join('');
+  }
+}
+
+// ── Screen 4: Risk ────────────────────────────────────────────────────────────
+async function loadRisk() {
+  var result = await Promise.all([
+    apiFetch('/api/v1/experience/rita/risk-timeline'),
+    apiFetch('/api/v1/trade-events')
+  ]);
+  var risk   = Array.isArray(result[0]) ? result[0] : [];
+  var events = Array.isArray(result[1]) ? result[1] : [];
+
+  if (!risk.length) {
+    document.getElementById('r-phase-summary').innerHTML = '<div class="empty">Run the pipeline to populate risk data.</div>';
+    return;
+  }
+
+  var var95  = risk.map(function(r) { return parseFloat(r.portfolio_var_95 || r.var_95 || 0); });
+  var budget = risk.map(function(r) { return parseFloat(r.drawdown_budget_pct || r.dd_budget_used || r.budget_pct || 0); });
+
+  var invested  = risk.filter(function(r) { return parseFloat(r.allocation || 0) > 0.3; });
+  var avgVar    = invested.length ? invested.reduce(function(s, r) { return s + parseFloat(r.portfolio_var_95 || r.var_95 || 0); }, 0) / invested.length : 0;
+  var peakVar   = Math.max.apply(null, var95);
+  var maxBudget = Math.max.apply(null, budget);
+  var entries   = events.filter(function(e) { return e.event_type === 'entry' || e.trade_type === 'entry' || e.risk_action === 'Increased'; });
+
+  setKpi('r-avg-var',    avgVar.toFixed(2) + '%', '');
+  setKpi('r-peak-var',   peakVar.toFixed(2) + '%', 'neg');
+  setKpi('r-max-budget', maxBudget.toFixed(1) + '%', maxBudget > 80 ? 'danger' : maxBudget > 50 ? 'warn' : 'ok');
+  setKpi('r-entries',    entries.length, '');
+
+  // Regime from latest row
+  var last      = risk[risk.length - 1];
+  var trend     = parseFloat(last.trend_score || last.regime || 0);
+  var alloc     = parseFloat(last.allocation || 0);
+  var vol       = parseFloat(last.rolling_vol_20d || last.volatility || 0);
+  var budLast   = parseFloat(last.drawdown_budget_pct || last.dd_budget_used || last.budget_pct || 0);
+  var trendLbl  = trend > 0.3 ? 'Bullish' : trend < -0.3 ? 'Bearish' : 'Neutral';
+  var trendCls  = trend > 0.3 ? 'pos' : trend < -0.3 ? 'neg' : 'neu';
+
+  setStat('r-trend',         trend.toFixed(2) + ' — ' + trendLbl, trendCls);
+  setStat('r-alloc',         (alloc * 100).toFixed(0) + '%', '');
+  setStat('r-vol',           vol.toFixed(2) + '%', '');
+  setStat('r-budget-latest', budLast.toFixed(1) + '%', budLast > 80 ? 'warn' : '');
+
+  // Phase risk summary
+  var phases = {};
+  risk.forEach(function(r) {
+    var ph = r.phase || 'All';
+    if (!phases[ph]) phases[ph] = { cnt: 0, varSum: 0, budMax: 0 };
+    phases[ph].cnt++;
+    phases[ph].varSum += parseFloat(r.portfolio_var_95 || r.var_95 || 0);
+    phases[ph].budMax = Math.max(phases[ph].budMax, parseFloat(r.drawdown_budget_pct || r.dd_budget_used || r.budget_pct || 0));
+  });
+  var phEl = document.getElementById('r-phase-summary');
+  if (phEl) {
+    phEl.innerHTML = '<div style="display:grid;grid-template-columns:1fr 40px 60px 64px;gap:4px;padding:4px 0;">'
+      + '<span style="font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--t4)">Phase</span>'
+      + '<span style="font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--t4);text-align:right">Days</span>'
+      + '<span style="font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--t4);text-align:right">Avg VaR</span>'
+      + '<span style="font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--t4);text-align:right">Max Bdg</span>'
+      + '</div>'
+      + Object.keys(phases).map(function(ph) {
+          var g    = phases[ph];
+          var avgV = (g.varSum / g.cnt).toFixed(2) + '%';
+          var maxB = g.budMax.toFixed(1) + '%';
+          return '<div class="run-row">'
+            + '<span style="font-size:12px;color:var(--t2);flex:1">' + esc(ph) + '</span>'
+            + '<span style="font-family:var(--fm);font-size:11px;min-width:40px;text-align:right">' + g.cnt + '</span>'
+            + '<span style="font-family:var(--fm);font-size:11px;min-width:60px;text-align:right;color:var(--danger)">' + avgV + '</span>'
+            + '<span style="font-family:var(--fm);font-size:11px;min-width:64px;text-align:right;color:var(--warn)">' + maxB + '</span>'
+            + '</div>';
+        }).join('');
+  }
+}
+
+// ── Bootstrap ─────────────────────────────────────────────────────────────────
+async function initData() {
+  document.getElementById('s0-updated').textContent = 'Loading…';
+  var result  = await Promise.all([
+    apiFetch('/api/v1/performance-summary'),
+    apiFetch('/api/v1/experience/rita/training-history')
+  ]);
+  var summary = result[0];
+  var history = result[1];
+  if (!summary) {
+    document.getElementById('s0-updated').textContent = 'API error — check server';
+    return;
+  }
+  renderOverview(summary, history);
+}
+
+document.addEventListener('DOMContentLoaded', function() { initData(); });
+</script>
+</body>
+</html>
