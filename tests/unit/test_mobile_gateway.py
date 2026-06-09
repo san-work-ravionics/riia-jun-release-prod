@@ -109,7 +109,7 @@ class TestGatewayHtmlRequiredIds:
 # ---------------------------------------------------------------------------
 
 class TestGatewayHtmlDesktopLinks:
-    """Desktop Only card links (FnO, Ops, Data Science) must include ?desktop=1."""
+    """Gateway card link checks — FnO/Ops mobile-ready, DS desktop-only (?desktop=1)."""
 
     @pytest.fixture(scope="class")
     def html_text(self):
@@ -118,21 +118,14 @@ class TestGatewayHtmlDesktopLinks:
         )
         return _GATEWAY_HTML.read_text(encoding="utf-8")
 
-    def test_card_fno_href_contains_desktop_param(self, html_text):
-        """card-fno anchor href must contain ?desktop=1 (Desktop Only card)."""
-        # Find the card-fno section and check that desktop=1 appears nearby
-        assert "?desktop=1" in html_text, (
-            "gateway.html does not contain any ?desktop=1 link — "
-            "FnO/Ops/DS cards must use ?desktop=1 query param"
-        )
-        # Verify the specific card-fno block contains a desktop link
+    def test_card_fno_href_links_to_mobile_app(self, html_text):
+        """card-fno anchor href must link to /mobileapp/fno.html (Mobile Ready card)."""
         card_fno_idx = html_text.find('id="card-fno"')
         assert card_fno_idx != -1, "card-fno id not found"
-        # Grab 500 chars after the card-fno id to check the link is in that card
         card_fno_block = html_text[card_fno_idx: card_fno_idx + 500]
-        assert "?desktop=1" in card_fno_block, (
-            "card-fno block does not contain ?desktop=1 — "
-            "FnO Desktop Only card must link with ?desktop=1"
+        assert "/mobileapp/fno.html" in card_fno_block, (
+            "card-fno block does not contain /mobileapp/fno.html — "
+            "FnO card is now Mobile Ready and must link to /mobileapp/fno.html"
         )
 
     def test_card_ops_href_links_to_mobile_app(self, html_text):
