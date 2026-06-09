@@ -105,11 +105,11 @@ class TestGatewayHtmlRequiredIds:
 
 
 # ---------------------------------------------------------------------------
-# Test 4 — Link check: Desktop Only cards link with ?desktop=1
+# Test 4 — Link check: All cards link to their /mobileapp/*.html pages
 # ---------------------------------------------------------------------------
 
 class TestGatewayHtmlDesktopLinks:
-    """Gateway card link checks — FnO/Ops mobile-ready, DS desktop-only (?desktop=1)."""
+    """Gateway card link checks — FnO/Ops/DS all mobile-ready, each linking to /mobileapp/*.html."""
 
     @pytest.fixture(scope="class")
     def html_text(self):
@@ -142,14 +142,14 @@ class TestGatewayHtmlDesktopLinks:
             "not the amber tile ops class"
         )
 
-    def test_card_ds_href_contains_desktop_param(self, html_text):
-        """card-ds anchor href must contain ?desktop=1 (Desktop Only card)."""
+    def test_card_ds_href_links_to_mobile_app(self, html_text):
+        """card-ds anchor href must link to /mobileapp/ds.html (Mobile Ready card)."""
         card_ds_idx = html_text.find('id="card-ds"')
         assert card_ds_idx != -1, "card-ds id not found"
         card_ds_block = html_text[card_ds_idx: card_ds_idx + 500]
-        assert "?desktop=1" in card_ds_block, (
-            "card-ds block does not contain ?desktop=1 — "
-            "Data Science Desktop Only card must link with ?desktop=1"
+        assert "/mobileapp/ds.html" in card_ds_block, (
+            "card-ds block does not contain /mobileapp/ds.html — "
+            "DS Lab is now Mobile Ready and must link to /mobileapp/ds.html"
         )
 
 
