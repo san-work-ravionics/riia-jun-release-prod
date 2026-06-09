@@ -1,6 +1,7 @@
 // ── Position Manoeuvre ────────────────────────────────────────────────────────
 // Converted from fno-manoeuvre.js to ES module.
 // Globals replaced with state imports.
+import { t } from '../shared/i18n.js';
 import { state } from './state.js';
 import { fmtPnl, pnlClass } from './utils.js';
 import { apiBase } from './api.js';
@@ -136,7 +137,7 @@ function manLots(p) {
   const pnlPerLot = p.pnl / nLots;
   return Array.from({ length: nLots }, (_, i) => ({
     ...p,
-    lotKey:  p.instrument + '_L' + (i + 1),
+    lotKey:  (p.full ?? p.instrument ?? p.und) + '_L' + (i + 1),
     lotIdx:  i + 1,
     nLots,
     lotSz,
@@ -181,7 +182,7 @@ export function renderMonthTiles() {
         <div class="kpi-value ${isEmpty ? '' : pnlClass(pnl)}" style="font-size:18px;">
           ${isEmpty ? '—' : fmtPnl(pnl)}
         </div>
-        <div class="kpi-sub">${cnt} position${cnt !== 1 ? 's' : ''}${isSelected ? ' · selected' : ''}</div>
+        <div class="kpi-sub">${cnt} position${cnt !== 1 ? 's' : ''}${isSelected ? ' · ' + t('man.selected') : ''}</div>
       </div>`;
   };
 
@@ -302,23 +303,24 @@ function renderGroupCard(gid, eff) {
   const totTgt = gLots.reduce((s, lot) => { const v = ((state.scenarioLevels[lot.und] || {})[eff.view] || {}).target; return v != null ? s + manPayoff(lot, v) : s; }, 0);
   const totNow = gLots.reduce((s, lot) => s + lot.lotPnl, 0);
 
+  const dropHint = `<div class="man-empty-zone">${t('man.drop_hint')}</div>`;
   const tableSection = gLots.length ? `
     <div style="overflow-x:auto;max-height:184px;overflow-y:auto;">
       <table style="width:100%;border-collapse:collapse;font-size:11px;">
         <thead><tr>
-          <th class="man-th" style="text-align:left;position:sticky;top:0;z-index:1;">Instrument</th>
-          <th class="man-th" style="position:sticky;top:0;z-index:1;">Exp</th>
-          <th class="man-th" style="position:sticky;top:0;z-index:1;">Side</th>
-          <th class="man-th" style="position:sticky;top:0;z-index:1;">Qty</th>
-          <th class="man-th" style="position:sticky;top:0;z-index:1;">Entry</th>
-          <th class="man-th" style="color:var(--neg);background:var(--neg-bg);border-bottom-color:var(--neg-bd);position:sticky;top:0;z-index:1;">@SL ${scLabel('sl')}</th>
-          <th class="man-th" style="color:var(--p01);background:var(--p01-bg);border-bottom-color:var(--p01-bd);position:sticky;top:0;z-index:1;">@Tgt ${scLabel('target')}</th>
-          <th class="man-th" style="position:sticky;top:0;z-index:1;">P&amp;L Now</th>
+          <th class="man-th" style="text-align:left;position:sticky;top:0;z-index:1;">${t('man.col_instrument')}</th>
+          <th class="man-th" style="position:sticky;top:0;z-index:1;">${t('man.col_exp')}</th>
+          <th class="man-th" style="position:sticky;top:0;z-index:1;">${t('man.col_side')}</th>
+          <th class="man-th" style="position:sticky;top:0;z-index:1;">${t('man.col_qty')}</th>
+          <th class="man-th" style="position:sticky;top:0;z-index:1;">${t('man.col_entry')}</th>
+          <th class="man-th" style="color:var(--neg);background:var(--neg-bg);border-bottom-color:var(--neg-bd);position:sticky;top:0;z-index:1;">${t('man.at_sl')} ${scLabel('sl')}</th>
+          <th class="man-th" style="color:var(--p01);background:var(--p01-bg);border-bottom-color:var(--p01-bd);position:sticky;top:0;z-index:1;">${t('man.at_tgt')} ${scLabel('target')}</th>
+          <th class="man-th" style="position:sticky;top:0;z-index:1;">${t('man.col_pnl_now')}</th>
           <th style="background:var(--surface2);border-bottom:1px solid var(--border);width:30px;position:sticky;top:0;z-index:1;"></th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
-    </div>` : '<div class="man-empty-zone">Drop lots from pool below</div>';
+    </div>` : dropHint;
 
   const g = MAN_GROUPS.find(x => x.id === gid);
 
@@ -335,16 +337,16 @@ function renderGroupCard(gid, eff) {
             <input class="man-name-input" value="${eff.name.replace(/"/g, '&quot;')}"
               onchange="manSaveName('${gid}',this.value)"
               ondragstart="event.stopPropagation()" title="Click to rename">
-            <span class="man-view-badge ${isBull ? 'bull' : 'bear'}">${isBull ? 'BULL' : 'BEAR'}</span>
+            <span class="man-view-badge ${isBull ? 'bull' : 'bear'}">${isBull ? t('man.view_bull') : t('man.view_bear')}</span>
             ${gLots.length ? `<span style="font-family:var(--fm);font-size:10px;color:var(--t3);">${gLots.length} lot${gLots.length !== 1 ? 's' : ''}</span>` : ''}
           </div>
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
             ${gLots.length ? `
-              <span style="font-family:var(--fm);font-size:10px;color:var(--t3);">@SL&nbsp;<span class="${totSL >= 0 ? 'pos' : 'neg'}" style="font-weight:600;">${fmtPnl(totSL)}</span></span>
-              <span style="font-family:var(--fm);font-size:10px;color:var(--t3);">@Tgt&nbsp;<span class="${totTgt >= 0 ? 'pos' : 'neg'}" style="font-weight:600;">${fmtPnl(totTgt)}</span></span>
-              <span style="font-family:var(--fm);font-size:10px;color:var(--t3);">Now&nbsp;<span class="${totNow >= 0 ? 'pos' : 'neg'}" style="font-weight:600;">${fmtPnl(totNow)}</span></span>
+              <span style="font-family:var(--fm);font-size:10px;color:var(--t3);">${t('man.at_sl')}&nbsp;<span class="${totSL >= 0 ? 'pos' : 'neg'}" style="font-weight:600;">${fmtPnl(totSL)}</span></span>
+              <span style="font-family:var(--fm);font-size:10px;color:var(--t3);">${t('man.at_tgt')}&nbsp;<span class="${totTgt >= 0 ? 'pos' : 'neg'}" style="font-weight:600;">${fmtPnl(totTgt)}</span></span>
+              <span style="font-family:var(--fm);font-size:10px;color:var(--t3);">${t('man.now_lbl')}&nbsp;<span class="${totNow >= 0 ? 'pos' : 'neg'}" style="font-weight:600;">${fmtPnl(totNow)}</span></span>
             ` : ''}
-            <button class="man-view-btn" onclick="manToggleView('${gid}')">⇄ ${isBull ? 'Bear' : 'Bull'} view</button>
+            <button class="man-view-btn" onclick="manToggleView('${gid}')">${isBull ? t('man.bear_view_btn') : t('man.bull_view_btn')}</button>
           </div>
         </div>
         <!-- Lots table -->
@@ -352,12 +354,12 @@ function renderGroupCard(gid, eff) {
       </div>
       <!-- Sparkline panel -->
       <div class="man-spark-panel">
-        <div class="man-spark-title">P&amp;L History</div>
+        <div class="man-spark-title">${t('man.pnl_history')}</div>
         <div class="man-spark-wrap">
           <canvas id="man-spark-${gid}"></canvas>
         </div>
         <div id="man-spark-empty-${gid}" class="man-spark-empty" style="display:none;">
-          No history yet.<br>Save a snapshot to start tracking.
+          ${t('man.no_history')}<br>${t('man.save_snapshot_hint')}
         </div>
       </div>
     </div>`;
@@ -395,7 +397,7 @@ function renderSparkline(gid) {
 
   const datasets = [
     {
-      label: 'P&L Now',
+      label: t('man.col_pnl_now'),
       data: pnlData,
       borderColor: cssVar('--p02'),
       backgroundColor: cssVar('--p02') + '22',
@@ -407,7 +409,7 @@ function renderSparkline(gid) {
     },
   ];
   if (hasSL) datasets.push({
-    label: '@SL',
+    label: t('man.at_sl'),
     data: slData,
     borderColor: cssVar('--neg'),
     borderWidth: 1.5,
@@ -418,7 +420,7 @@ function renderSparkline(gid) {
     pointHoverRadius: 4,
   });
   if (hasTgt) datasets.push({
-    label: '@Target',
+    label: t('man.at_target'),
     data: tgtData,
     borderColor: cssVar('--pos'),
     borderWidth: 1.5,
@@ -473,7 +475,7 @@ function renderSparkline(gid) {
 
 // ── Snapshot Save ─────────────────────────────────────────────────────────────
 export async function manSaveSnapshot() {
-  if (!manSelectedMonth) { alert('Select a month first.'); return; }
+  if (!manSelectedMonth) { alert(t('man.alert_select_month')); return; }
 
   const today = state.marketData.NIFTY && state.marketData.NIFTY.date
     ? state.marketData.NIFTY.date
@@ -532,7 +534,7 @@ export async function manSaveSnapshot() {
 
   try {
     const btn = document.getElementById('man-snapshot-btn');
-    if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+    if (btn) { btn.disabled = true; btn.textContent = t('man.saving'); }
 
     const res = await fetch(apiBase() + '/api/v1/portfolio/man-snapshot', {
       method: 'POST',
@@ -550,7 +552,7 @@ export async function manSaveSnapshot() {
     });
     if (!res.ok) throw new Error(await res.text());
 
-    if (btn) { btn.disabled = false; btn.textContent = '⬇ Save Snapshot'; }
+    if (btn) { btn.disabled = false; btn.textContent = t('man.save_snapshot_btn'); }
 
     await manLoadHistory(manSelectedMonth);
     renderSparkline(manActiveTab);
@@ -559,7 +561,7 @@ export async function manSaveSnapshot() {
   } catch(e) {
     alert('Snapshot failed: ' + e.message);
     const btn = document.getElementById('man-snapshot-btn');
-    if (btn) { btn.disabled = false; btn.textContent = '⬇ Save Snapshot'; }
+    if (btn) { btn.disabled = false; btn.textContent = t('man.save_snapshot_btn'); }
   }
 }
 
@@ -638,8 +640,8 @@ function renderPool() {
   el.innerHTML = `
     <div class="card">
       <div class="card-hdr">
-        <span class="card-title">Position Pool — ${manSelectedUnd || ''} ${manSelectedMonth || '—'}</span>
-        <span class="card-sub">${poolLots.length} unassigned · ${assignedCount} in groups</span>
+        <span class="card-title">${t('man.pool_title')}${manSelectedUnd || ''} ${manSelectedMonth || '—'}</span>
+        <span class="card-sub">${poolLots.length} ${t('man.unassigned')}${assignedCount} ${t('man.in_groups')}</span>
       </div>
       <div class="man-pool-2col"
            ondragover="event.preventDefault();this.style.background='var(--surface2)'"
@@ -714,7 +716,7 @@ export function manToggleView(gid) {
 
 // ── CSV Export ────────────────────────────────────────────────────────────────
 export function manSaveCsv() {
-  if (!manSelectedMonth) { alert('Select a month first.'); return; }
+  if (!manSelectedMonth) { alert(t('man.alert_select_month')); return; }
   const today = new Date().toISOString().slice(0, 10);
   const hdr = ['Date','Month','Group','View','Instrument','Lot','Underlying','Expiry',
                 'Type','Side','Qty','Entry','@SL_PnL','@Target_PnL','PnL_Now'];
@@ -732,7 +734,7 @@ export function manSaveCsv() {
         lot.lotSz, lot.avg.toFixed(2), pnlSL, pnlTgt, lot.lotPnl.toFixed(0)]);
     }
   }
-  if (!rowData.length) { alert('No lots assigned to groups yet.'); return; }
+  if (!rowData.length) { alert(t('man.alert_no_lots')); return; }
   const csv = [hdr, ...rowData].map(r => r.join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const a = document.createElement('a');

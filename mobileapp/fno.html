@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+window.onerror = function(msg, src, line, col, err) {
+  fetch('/api/v1/client-error', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: String(msg), source: src, lineno: line, colno: col, stack: err ? err.stack : null, url: location.href })
+  }).catch(function() {});
+  return false;
+};
+window.addEventListener('unhandledrejection', function(e) {
+  fetch('/api/v1/client-error', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: String(e.reason), url: location.href })
+  }).catch(function() {});
+});
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>RITA FnO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500;600&family=Epilogue:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+
+/* ── Reset ───────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+button { cursor: pointer; border: none; background: none; font: inherit; }
+
+/* ── Design tokens ───────────────────────────────────────────────────────── */
+:root {
+  --bg:       #F5F3EE;
+  --surface:  #FFFFFF;
+  --surface2: #F9F8F5;
+  --border:   #E4E0D8;
+  --border2:  #D0CBBC;
+  --text:     #1A1814;
+  --t2:       #4A4640;
+  --t3:       #8C877A;
+  --t4:       #B8B2A6;
+  /* FnO accent — purple */
+  --fno:      #6B2FA0;
+  --fno-bg:   #F5EFFE;
+  --fno-bd:   #CFADF0;
+  /* Semantic */
+  --ok:       #1A6B3C;
+  --ok-bg:    #EDF7F2;
+  --ok-bd:    #B6DEC9;
+  --warn:     #92480A;
+  --warn-bg:  #FEF4EB;
+  --warn-bd:  #F5C99A;
+  --danger:   #9B1C1C;
+  --danger-bg:#FEF2F2;
+  --danger-bd:#FCA5A5;
+  --info:     #0056B8;
+  --info-bg:  #EDF4FF;
+  --info-bd:  #AECBF5;
+  --fd: 'Epilogue', system-ui, sans-serif;
+  --fm: 'IBM Plex Mono', 'SF Mono', monospace;
+  --fs: 'Instrument Serif', Georgia, serif;
+}
+
+/* ── App shell ───────────────────────────────────────────────────────────── */
+html, body { height: 100%; overflow: hidden; background: var(--bg); font-family: var(--fd); -webkit-font-smoothing: antialiased; }
+#app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; padding-top: env(safe-area-inset-top); }
+
+/* ── Carousel ────────────────────────────────────────────────────────────── */
+.carousel-viewport { flex: 1; overflow: hidden; position: relative; min-height: 0; }
+.carousel-track {
+  display: flex; width: calc(5 * 100vw); height: 100%;
+  transform: translateX(0);
+  transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1); will-change: transform;
+}
+.screen { width: 100vw; height: 100%; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; flex-shrink: 0; }
+.screen::-webkit-scrollbar { display: none; }
+.screen-inner { padding-bottom: 40px; }
+
+/* ── Tab bar ─────────────────────────────────────────────────────────────── */
+.tab-bar {
+  flex-shrink: 0; background: var(--bg); display: flex; align-items: flex-start;
+  padding: 8px 12px; padding-bottom: max(env(safe-area-inset-bottom), 8px);
+  border-top: 1px solid var(--border); z-index: 20;
+}
+.tab-pill {
+  flex: 1; display: flex; background: var(--surface); border-radius: 28px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.04);
+  padding: 6px 4px 8px;
+}
+.tab-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 5px 0; border-radius: 20px; transition: background 0.18s;
+  -webkit-tap-highlight-color: transparent; cursor: pointer; user-select: none;
+}
+.tab-lbl { font-family: var(--fm); font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--t3); font-weight: 500; transition: color 0.2s; }
+.tab-item[data-active="true"] { background: var(--fno-bg); }
+.tab-item[data-active="true"] .tab-lbl { color: var(--fno); font-weight: 700; }
+.tab-item[data-active="true"] svg { stroke: var(--fno); }
+.tab-item svg { display: block; stroke: var(--t3); transition: stroke 0.2s; }
+
+/* ── Screen header ───────────────────────────────────────────────────────── */
+.scr-hdr { padding: 20px 20px 8px; display: flex; align-items: flex-start; justify-content: space-between; }
+.scr-eye { font-family: var(--fm); font-size: 9px; color: var(--fno); text-transform: uppercase; letter-spacing: .12em; font-weight: 700; }
+.scr-title { font-family: var(--fs); font-size: 26px; letter-spacing: -.02em; line-height: 1.1; color: var(--text); margin-top: 2px; }
+.scr-sub { font-family: var(--fm); font-size: 10px; color: var(--t3); margin-top: 3px; }
+
+/* ── Refresh button ──────────────────────────────────────────────────────── */
+.refresh-btn {
+  display: flex; align-items: center; gap: 5px; flex-shrink: 0; margin-top: 4px;
+  font-family: var(--fm); font-size: 10px; font-weight: 600; color: var(--fno);
+  letter-spacing: 0.06em; text-transform: uppercase; background: var(--fno-bg);
+  border: 1px solid var(--fno-bd); border-radius: 20px; padding: 5px 12px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Mode row ────────────────────────────────────────────────────────────── */
+.mode-row { display: flex; align-items: center; gap: 6px; padding: 0 20px 10px; }
+.mode-btn {
+  font-family: var(--fm); font-size: 9px; font-weight: 600; letter-spacing: .07em;
+  text-transform: uppercase; padding: 4px 10px; border-radius: 4px;
+  border: 1px solid var(--border2); color: var(--t3); background: var(--surface2);
+  -webkit-tap-highlight-color: transparent; transition: all 0.15s;
+}
+.mode-btn.active { background: var(--fno); color: #fff; border-color: var(--fno); }
+
+/* ── P&L hero ────────────────────────────────────────────────────────────── */
+.pnl-hero {
+  margin: 4px 16px 0; padding: 20px 18px; border-radius: 18px;
+  background: var(--surface); border: 1px solid var(--border);
+}
+.pnl-hero-label { font-family: var(--fm); font-size: 9px; text-transform: uppercase; letter-spacing: .12em; color: var(--t3); margin-bottom: 6px; }
+.pnl-hero-val { font-family: var(--fm); font-size: 32px; font-weight: 600; letter-spacing: -.02em; line-height: 1.1; }
+.pnl-hero-val.pos { color: var(--ok); }
+.pnl-hero-val.neg { color: var(--danger); }
+.pnl-hero-val.neu { color: var(--t2); }
+.pnl-hero-sub { font-family: var(--fm); font-size: 10px; color: var(--t3); margin-top: 5px; }
+
+/* ── KPI grid ────────────────────────────────────────────────────────────── */
+.kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px 16px 4px; }
+.kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 13px 14px 11px; }
+.kpi-eye { font-family: var(--fm); font-size: 9px; color: var(--t3); text-transform: uppercase; letter-spacing: .1em; }
+.kpi-val { font-family: var(--fm); font-size: 18px; font-weight: 600; color: var(--text); letter-spacing: -.01em; line-height: 1.2; margin-top: 3px; }
+.kpi-val.ok     { color: var(--ok); }
+.kpi-val.warn   { color: var(--warn); }
+.kpi-val.danger { color: var(--danger); }
+.kpi-val.pos    { color: var(--ok); }
+.kpi-val.neg    { color: var(--danger); }
+.kpi-sub { font-size: 10px; color: var(--t4); margin-top: 2px; line-height: 1.3; }
+
+/* ── Section card ────────────────────────────────────────────────────────── */
+.sec-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; margin: 12px 16px 0; padding: 14px 16px; }
+.sec-title {
+  font-family: var(--fm); font-size: 10px; font-weight: 600; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--t2); margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.sec-dot { width: 6px; height: 6px; border-radius: 3px; flex-shrink: 0; }
+
+/* ── Stat row ────────────────────────────────────────────────────────────── */
+.stat-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); }
+.stat-row:last-child { border-bottom: none; }
+.stat-lbl { font-size: 12px; color: var(--t2); }
+.stat-val { font-family: var(--fm); font-size: 12px; color: var(--text); font-weight: 500; }
+.stat-val.pos { color: var(--ok); }
+.stat-val.neg { color: var(--danger); }
+.stat-val.neu { color: var(--t3); }
+
+/* ── Progress bar ────────────────────────────────────────────────────────── */
+.prog-wrap { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; flex: 1; }
+.prog-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; width: 0%; }
+.prog-fill.ok   { background: var(--ok); }
+.prog-fill.fno  { background: var(--fno); }
+.prog-fill.warn { background: var(--warn); }
+.prog-fill.dng  { background: var(--danger); }
+
+/* ── Badge ───────────────────────────────────────────────────────────────── */
+.bdg { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 4px; font-family: var(--fm); font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; flex-shrink: 0; }
+.bdg-ok   { background: var(--ok-bg);     color: var(--ok); }
+.bdg-warn { background: var(--warn-bg);   color: var(--warn); }
+.bdg-dng  { background: var(--danger-bg); color: var(--danger); }
+.bdg-info { background: var(--info-bg);   color: var(--info); }
+.bdg-mute { background: var(--surface2);  color: var(--t2); border: 1px solid var(--border); }
+
+/* ── Market price grid ───────────────────────────────────────────────────── */
+.mkt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 4px 16px 0; }
+.mkt-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; }
+.mkt-name  { font-family: var(--fm); font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--t3); }
+.mkt-price { font-family: var(--fm); font-size: 15px; font-weight: 600; color: var(--text); margin-top: 3px; }
+.mkt-chg   { font-family: var(--fm); font-size: 10px; margin-top: 2px; }
+.mkt-chg.pos { color: var(--ok); }
+.mkt-chg.neg { color: var(--danger); }
+.mkt-chg.neu { color: var(--t3); }
+
+/* ── Position card ───────────────────────────────────────────────────────── */
+.pos-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; margin: 10px 16px 0; padding: 12px 14px; }
+.pos-hdr  { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 5px; }
+.pos-name { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.3; flex: 1; }
+.pos-pnl  { font-family: var(--fm); font-size: 14px; font-weight: 600; flex-shrink: 0; }
+.pos-pnl.pos { color: var(--ok); }
+.pos-pnl.neg { color: var(--danger); }
+.pos-pnl.neu { color: var(--t3); }
+.pos-meta { font-family: var(--fm); font-size: 10px; color: var(--t3); display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+/* ── Greek block (per underlying) ────────────────────────────────────────── */
+.greek-block { margin: 12px 16px 0; }
+.greek-und-label { font-family: var(--fm); font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--fno); padding: 0 2px 6px; }
+
+/* ── Scenario block ──────────────────────────────────────────────────────── */
+.scen-block { margin: 12px 16px 0; }
+.scen-und-label { font-family: var(--fm); font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--fno); padding: 0 2px 6px; }
+
+/* ── Stress table ────────────────────────────────────────────────────────── */
+.stress-row { display: grid; grid-template-columns: 52px 1fr 100px; gap: 4px; padding: 6px 0; border-bottom: 1px solid var(--border); align-items: center; }
+.stress-row:last-child { border-bottom: none; }
+.stress-move  { font-family: var(--fm); font-size: 11px; font-weight: 600; color: var(--t2); }
+.stress-level { font-family: var(--fm); font-size: 11px; color: var(--t3); }
+.stress-pnl   { font-family: var(--fm); font-size: 11px; font-weight: 600; text-align: right; }
+.stress-pnl.pos { color: var(--ok); }
+.stress-pnl.neg { color: var(--danger); }
+.stress-pnl.neu { color: var(--t3); }
+
+/* ── Hedge quality row ───────────────────────────────────────────────────── */
+.hq-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); }
+.hq-row:last-child { border-bottom: none; }
+.hq-name  { font-size: 12px; color: var(--text); font-weight: 500; min-width: 80px; }
+.hq-score { font-family: var(--fm); font-size: 12px; font-weight: 600; min-width: 40px; text-align: right; }
+
+/* ── List label ──────────────────────────────────────────────────────────── */
+.list-label { padding: 12px 16px 4px; font-family: var(--fm); font-size: 10px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--t2); }
+
+/* ── Empty / loading ─────────────────────────────────────────────────────── */
+.empty   { font-family: var(--fm); font-size: 11px; color: var(--t4); text-align: center; padding: 28px 20px; }
+.loading { font-family: var(--fm); font-size: 11px; color: var(--t3); text-align: center; padding: 24px 20px; }
+
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="carousel-viewport">
+    <div class="carousel-track" id="track">
+
+
+      <!-- ══ SCREEN 0: OVERVIEW ════════════════════════════════════════════ -->
+      <div class="screen" id="s0">
+        <div class="screen-inner">
+
+          <div class="scr-hdr">
+            <div>
+              <div class="scr-eye">RITA FnO</div>
+              <div class="scr-title">Overview</div>
+              <div class="scr-sub" id="s0-updated">Loading…</div>
+            </div>
+            <button class="refresh-btn" onclick="initData()">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              Refresh
+            </button>
+          </div>
+
+          <!-- Mode toggle -->
+          <div class="mode-row">
+            <button class="mode-btn active" id="btn-real" onclick="setMode('real')">Real</button>
+            <button class="mode-btn" id="btn-mock" onclick="setMode('mock')">Mock</button>
+          </div>
+
+          <!-- Unrealized P&L hero -->
+          <div class="pnl-hero">
+            <div class="pnl-hero-label">Unrealized P&amp;L — All Positions</div>
+            <div class="pnl-hero-val neu" id="s0-upnl">—</div>
+            <div class="pnl-hero-sub" id="s0-upnl-sub">—</div>
+          </div>
+
+          <!-- KPI grid -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-eye">Realized P&amp;L</div>
+              <div class="kpi-val" id="s0-rpnl">—</div>
+              <div class="kpi-sub">closed trades</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">Open Positions</div>
+              <div class="kpi-val" id="s0-poscount">—</div>
+              <div class="kpi-sub">active legs</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">Margin Used</div>
+              <div class="kpi-val" id="s0-margin-used">—</div>
+              <div class="kpi-sub" id="s0-margin-util">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">Margin Free</div>
+              <div class="kpi-val ok" id="s0-margin-free">—</div>
+              <div class="kpi-sub">available</div>
+            </div>
+          </div>
+
+          <!-- Market prices -->
+          <div class="list-label">Market Prices</div>
+          <div class="mkt-grid" id="s0-mkt">
+            <div class="loading" style="grid-column:1/-1">Loading…</div>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- ══ SCREEN 1: POSITIONS ═══════════════════════════════════════════ -->
+      <div class="screen" id="s1">
+        <div class="screen-inner">
+
+          <div class="scr-hdr">
+            <div>
+              <div class="scr-eye">RITA FnO</div>
+              <div class="scr-title">Positions</div>
+              <div class="scr-sub" id="s1-sub">Open FnO legs</div>
+            </div>
+          </div>
+
+          <!-- P&L by underlying -->
+          <div class="kpi-grid" id="s1-kpis">
+            <div class="loading" style="grid-column:1/-1">Loading…</div>
+          </div>
+
+          <!-- Position list -->
+          <div class="list-label">All Positions</div>
+          <div id="s1-list">
+            <div class="loading">Loading…</div>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- ══ SCREEN 2: RISK / GREEKS ═══════════════════════════════════════ -->
+      <div class="screen" id="s2">
+        <div class="screen-inner">
+
+          <div class="scr-hdr">
+            <div>
+              <div class="scr-eye">RITA FnO</div>
+              <div class="scr-title">Greeks &amp; Margin</div>
+            </div>
+          </div>
+
+          <!-- Net Greeks per underlying -->
+          <div id="s2-greeks">
+            <div class="loading">Loading…</div>
+          </div>
+
+          <!-- Margin card -->
+          <div class="sec-card">
+            <div class="sec-title"><div class="sec-dot" style="background:var(--fno)"></div>Margin Utilization</div>
+            <div class="stat-row"><span class="stat-lbl">SPAN Margin</span><span class="stat-val" id="s2-span">—</span></div>
+            <div class="stat-row"><span class="stat-lbl">Exposure Margin</span><span class="stat-val" id="s2-exp">—</span></div>
+            <div class="stat-row"><span class="stat-lbl">Total Used</span><span class="stat-val" id="s2-total">—</span></div>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:10px;">
+              <div class="prog-wrap"><div class="prog-fill ok" id="s2-util-bar" style="width:0%"></div></div>
+              <span style="font-family:var(--fm);font-size:11px;font-weight:600;" id="s2-util-pct">—</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- ══ SCREEN 3: SCENARIOS ════════════════════════════════════════════ -->
+      <div class="screen" id="s3">
+        <div class="screen-inner">
+
+          <div class="scr-hdr">
+            <div>
+              <div class="scr-eye">RITA FnO</div>
+              <div class="scr-title">Scenarios</div>
+            </div>
+          </div>
+
+          <!-- R/R scenario levels per instrument -->
+          <div id="s3-scenarios">
+            <div class="loading">Loading…</div>
+          </div>
+
+          <!-- Stress test (delta P&L across moves) -->
+          <div class="list-label">Stress Test (Delta P&amp;L)</div>
+          <div class="sec-card">
+            <div style="display:grid;grid-template-columns:52px 1fr 100px;gap:4px;padding-bottom:6px;border-bottom:1px solid var(--border);">
+              <span style="font-family:var(--fm);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--t4)">Move</span>
+              <span style="font-family:var(--fm);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--t4)">Level</span>
+              <span style="font-family:var(--fm);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--t4);text-align:right">P&amp;L</span>
+            </div>
+            <div id="s3-stress"><div class="loading">Loading…</div></div>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- ══ SCREEN 4: HEDGE ════════════════════════════════════════════════ -->
+      <div class="screen" id="s4">
+        <div class="screen-inner">
+
+          <div class="scr-hdr">
+            <div>
+              <div class="scr-eye">RITA FnO</div>
+              <div class="scr-title">Hedge Quality</div>
+            </div>
+          </div>
+
+          <!-- Position hedge scores -->
+          <div class="sec-card">
+            <div class="sec-title"><div class="sec-dot" style="background:var(--fno)"></div>Position Hedge Scores</div>
+            <div id="s4-hq"><div class="loading">Loading…</div></div>
+          </div>
+
+          <!-- Realized P&L summary -->
+          <div class="sec-card">
+            <div class="sec-title"><div class="sec-dot" style="background:var(--ok)"></div>Realized P&amp;L</div>
+            <div class="stat-row">
+              <span class="stat-lbl">Total Realized</span>
+              <span class="stat-val" id="s4-rpnl">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-lbl">Closed Positions</span>
+              <span class="stat-val" id="s4-closed-cnt">—</span>
+            </div>
+            <div id="s4-closed-list"></div>
+          </div>
+
+        </div>
+      </div>
+
+
+    </div><!-- /carousel-track -->
+  </div><!-- /carousel-viewport -->
+
+
+  <!-- ── Tab bar ────────────────────────────────────────────────────────────── -->
+  <div class="tab-bar">
+    <div class="tab-pill">
+
+      <div class="tab-item" data-active="true" data-idx="0" onclick="goTo(0)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        <span class="tab-lbl">Overview</span>
+      </div>
+
+      <div class="tab-item" data-idx="1" onclick="goTo(1)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        <span class="tab-lbl">Positions</span>
+      </div>
+
+      <div class="tab-item" data-idx="2" onclick="goTo(2)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span class="tab-lbl">Risk</span>
+      </div>
+
+      <div class="tab-item" data-idx="3" onclick="goTo(3)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        <span class="tab-lbl">Scenarios</span>
+      </div>
+
+      <div class="tab-item" data-idx="4" onclick="goTo(4)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 12a11.05 11.05 0 0 0-22 0zm-5 7a3 3 0 0 1-6 0v-7"/></svg>
+        <span class="tab-lbl">Hedge</span>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+// ── API ──────────────────────────────────────────────────────────────────────
+var API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  ? 'http://localhost:8000' : '';
+
+var _mode = 'real';
+
+function getToken() {
+  try {
+    return sessionStorage.getItem('auth_token') || localStorage.getItem('rita_token') || '';
+  } catch { return ''; }
+}
+
+async function apiFetch(path) {
+  try {
+    var token = getToken();
+    var headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    var res = await fetch(API_BASE + path, { headers: headers });
+    if (res.status === 401) { location.href = '/'; return null; }
+    if (!res.ok) return null;
+    return await res.json();
+  } catch { return null; }
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+var SCREENS = 5;
+var _cur = 0;
+
+function goTo(idx) {
+  if (idx < 0 || idx >= SCREENS) return;
+  _cur = idx;
+  document.getElementById('track').style.transform = 'translateX(calc(' + idx + ' * -100vw))';
+  document.querySelectorAll('.tab-item').forEach(function(t) {
+    t.dataset.active = (parseInt(t.dataset.idx) === idx).toString();
+  });
+}
+
+// ── Mode toggle ───────────────────────────────────────────────────────────────
+function setMode(mode) {
+  _mode = mode;
+  document.getElementById('btn-real').classList.toggle('active', mode === 'real');
+  document.getElementById('btn-mock').classList.toggle('active', mode === 'mock');
+  initData();
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s == null ? '—' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function fmtPnl(val) {
+  if (val == null) return '—';
+  var abs = Math.abs(val);
+  var prefix = val >= 0 ? '+₹' : '−₹';
+  return prefix + abs.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+function pnlClass(val) {
+  if (val > 0) return 'pos';
+  if (val < 0) return 'neg';
+  return 'neu';
+}
+
+function fmtL(val) {
+  if (val == null || val === 0) return '₹0L';
+  return '₹' + (val / 100000).toFixed(2) + 'L';
+}
+
+function fmtPrice(val, currency) {
+  if (val == null) return '—';
+  var sym = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : '₹';
+  return sym + Number(val).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function bdg(text, cls) {
+  return '<span class="bdg bdg-' + cls + '">' + esc(text) + '</span>';
+}
+
+// ── Screen 0: Overview ───────────────────────────────────────────────────────
+function renderOverview(data) {
+  var positions   = data.positions   || [];
+  var mkt         = data.market      || {};
+  var margin      = data.margin      || {};
+  var meta        = data.portfolio_meta || {};
+  var realizedPnl = data.realized_pnl  || 0;
+
+  // Timestamp
+  var asOf = meta.updated_at || '';
+  document.getElementById('s0-updated').textContent =
+    asOf ? 'Updated ' + asOf : 'Updated ' + new Date().toLocaleTimeString();
+
+  // Unrealized P&L
+  var upnl = positions.reduce(function(s, p) { return s + (p.pnl || 0); }, 0);
+  var upnlEl = document.getElementById('s0-upnl');
+  upnlEl.textContent = fmtPnl(upnl);
+  upnlEl.className = 'pnl-hero-val ' + pnlClass(upnl);
+  document.getElementById('s0-upnl-sub').textContent =
+    positions.length + ' open position' + (positions.length !== 1 ? 's' : '');
+
+  // Realized P&L
+  var rpnlEl = document.getElementById('s0-rpnl');
+  rpnlEl.textContent = fmtPnl(realizedPnl);
+  rpnlEl.className = 'kpi-val ' + pnlClass(realizedPnl);
+
+  // Position count
+  document.getElementById('s0-poscount').textContent = positions.length;
+
+  // Margin
+  var summary = margin.summary  || {};
+  var ledger  = margin.ledger   || 3500000;
+  var utilMap = margin.utilization || {};
+  var s       = summary['ALL']  || {};
+  var total   = s.total || 0;
+  var util    = utilMap['ALL']  != null ? utilMap['ALL']
+                : (ledger > 0 ? Math.round(total / ledger * 100) : 0);
+  var avail   = Math.max(0, ledger - total);
+  var muEl    = document.getElementById('s0-margin-used');
+  muEl.textContent = fmtL(total);
+  muEl.className   = 'kpi-val ' + (util > 80 ? 'danger' : util > 60 ? 'warn' : 'ok');
+  document.getElementById('s0-margin-util').textContent = util + '% utilised';
+  document.getElementById('s0-margin-free').textContent = fmtL(avail);
+
+  // Market prices — derive instrument list from positions then mkt keys
+  var seen = {};
+  var instList = [];
+  positions.forEach(function(p) {
+    if (p.und && !seen[p.und]) { seen[p.und] = true; instList.push(p.und); }
+  });
+  Object.keys(mkt).forEach(function(k) {
+    if (!seen[k]) { seen[k] = true; instList.push(k); }
+  });
+
+  var mktEl = document.getElementById('s0-mkt');
+  if (!instList.length) {
+    mktEl.innerHTML = '<div class="empty" style="grid-column:1/-1">No market data</div>';
+    return;
+  }
+  mktEl.innerHTML = instList.map(function(id) {
+    var d    = mkt[id] || {};
+    var close = d.close != null ? fmtPrice(d.close, d.currency) : '—';
+    var chg   = parseFloat(d.chgFromOpen || 0);
+    var chgStr = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
+    var chgCls = chg > 0.3 ? 'pos' : chg < -0.3 ? 'neg' : 'neu';
+    return '<div class="mkt-card">'
+      + '<div class="mkt-name">' + esc(id) + '</div>'
+      + '<div class="mkt-price">' + esc(close) + '</div>'
+      + '<div class="mkt-chg ' + chgCls + '">' + esc(chgStr) + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+// ── Screen 1: Positions ──────────────────────────────────────────────────────
+function renderPositions(data) {
+  var positions = data.positions || [];
+
+  document.getElementById('s1-sub').textContent =
+    positions.length + ' open leg' + (positions.length !== 1 ? 's' : '');
+
+  // P&L by underlying KPIs
+  var byUnd = {};
+  positions.forEach(function(p) {
+    var und = p.und || 'OTHER';
+    if (!byUnd[und]) byUnd[und] = { pnl: 0, count: 0 };
+    byUnd[und].pnl   += p.pnl || 0;
+    byUnd[und].count += 1;
+  });
+  var undKeys  = Object.keys(byUnd);
+  var kpisEl   = document.getElementById('s1-kpis');
+
+  if (!undKeys.length) {
+    kpisEl.innerHTML = '<div class="empty" style="grid-column:1/-1">No open positions</div>';
+    document.getElementById('s1-list').innerHTML = '<div class="empty">No open positions</div>';
+    return;
+  }
+  kpisEl.innerHTML = undKeys.map(function(und) {
+    var g = byUnd[und];
+    return '<div class="kpi-card">'
+      + '<div class="kpi-eye">' + esc(und) + '</div>'
+      + '<div class="kpi-val ' + pnlClass(g.pnl) + '">' + esc(fmtPnl(g.pnl)) + '</div>'
+      + '<div class="kpi-sub">' + g.count + ' leg' + (g.count !== 1 ? 's' : '') + '</div>'
+      + '</div>';
+  }).join('');
+
+  // Position cards sorted by underlying then P&L desc
+  var sorted = positions.slice().sort(function(a, b) {
+    var ua = a.und || '', ub = b.und || '';
+    if (ua < ub) return -1;
+    if (ua > ub) return  1;
+    return (b.pnl || 0) - (a.pnl || 0);
+  });
+  document.getElementById('s1-list').innerHTML = sorted.map(function(p) {
+    var name    = p.full || ((p.und || '') + (p.strike ? ' ' + p.strike : '') + (p.type ? ' ' + p.type : ''));
+    var typeCls = p.type === 'CE' ? 'bdg-ok' : p.type === 'PE' ? 'bdg-dng' : 'bdg-info';
+    var sideCls = p.side === 'Long' ? 'bdg-ok' : 'bdg-dng';
+    var metaParts = [];
+    if (p.exp) metaParts.push(p.exp);
+    if (p.qty != null) metaParts.push(p.qty + ' qty');
+    if (p.ltp != null) metaParts.push('LTP ' + fmtPrice(p.ltp, p.currency));
+    return '<div class="pos-card">'
+      + '<div class="pos-hdr">'
+        + '<div class="pos-name">' + esc(name) + '</div>'
+        + '<div class="pos-pnl ' + pnlClass(p.pnl) + '">' + fmtPnl(p.pnl) + '</div>'
+        + '</div>'
+      + '<div class="pos-meta">'
+        + (p.type ? bdg(p.type, typeCls) : '')
+        + (p.side ? bdg(p.side, sideCls) : '')
+        + metaParts.map(function(m) { return '<span>' + esc(m) + '</span>'; }).join('')
+        + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+// ── Screen 2: Greeks & Margin ────────────────────────────────────────────────
+function renderRisk(data) {
+  var greeks = data.greeks || [];
+  var margin = data.margin || {};
+
+  // Aggregate Greeks per underlying
+  var byUnd = {};
+  greeks.forEach(function(g) {
+    var und = g.und || 'ALL';
+    if (!byUnd[und]) byUnd[und] = { delta: 0, gamma: 0, theta: 0, vega: 0 };
+    byUnd[und].delta += g.delta || 0;
+    byUnd[und].gamma += g.gamma || 0;
+    byUnd[und].theta += g.theta || 0;
+    byUnd[und].vega  += g.vega  || 0;
+  });
+
+  var greeksEl = document.getElementById('s2-greeks');
+  var undKeys  = Object.keys(byUnd);
+  if (!undKeys.length) {
+    greeksEl.innerHTML = '<div class="empty">No Greeks data — add a hedge plan in the FnO desktop app</div>';
+  } else {
+    greeksEl.innerHTML = undKeys.map(function(und) {
+      var g     = byUnd[und];
+      var delta = parseFloat(g.delta.toFixed(4));
+      var gamma = parseFloat(g.gamma.toFixed(4));
+      var theta = Math.round(g.theta);
+      var vega  = Math.round(g.vega);
+      return '<div class="greek-block">'
+        + '<div class="greek-und-label">' + esc(und) + '</div>'
+        + '<div class="sec-card" style="margin:0;">'
+          + '<div class="stat-row">'
+            + '<span class="stat-lbl">Δ&nbsp;Net Delta</span>'
+            + '<span class="stat-val ' + (delta < 0 ? 'neg' : 'pos') + '">' + (delta >= 0 ? '+' : '') + delta + '</span>'
+            + '</div>'
+          + '<div class="stat-row">'
+            + '<span class="stat-lbl">Γ&nbsp;Gamma</span>'
+            + '<span class="stat-val ' + (gamma < 0 ? 'neg' : 'pos') + '">' + (gamma >= 0 ? '+' : '') + gamma.toFixed(4) + '</span>'
+            + '</div>'
+          + '<div class="stat-row">'
+            + '<span class="stat-lbl">Θ&nbsp;Theta / day</span>'
+            + '<span class="stat-val ' + pnlClass(theta) + '">' + fmtPnl(theta) + '</span>'
+            + '</div>'
+          + '<div class="stat-row">'
+            + '<span class="stat-lbl">V&nbsp;Vega</span>'
+            + '<span class="stat-val ' + pnlClass(vega) + '">' + fmtPnl(vega) + '</span>'
+            + '</div>'
+          + '</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  // Margin
+  var summary = margin.summary  || {};
+  var ledger  = margin.ledger   || 3500000;
+  var utilMap = margin.utilization || {};
+  var s       = summary['ALL']  || {};
+  var total   = s.total    || 0;
+  var span    = s.span     || 0;
+  var exp     = s.exposure || 0;
+  var util    = utilMap['ALL'] != null ? utilMap['ALL']
+                : (ledger > 0 ? Math.round(total / ledger * 100) : 0);
+
+  document.getElementById('s2-span').textContent  = fmtL(span);
+  document.getElementById('s2-exp').textContent   = fmtL(exp);
+  document.getElementById('s2-total').textContent = fmtL(total);
+
+  var bar  = document.getElementById('s2-util-bar');
+  bar.style.width = Math.min(100, util) + '%';
+  bar.className   = 'prog-fill ' + (util > 80 ? 'dng' : util > 60 ? 'warn' : 'ok');
+  var pctEl = document.getElementById('s2-util-pct');
+  pctEl.textContent = util + '%';
+  pctEl.style.color = util > 80 ? 'var(--danger)' : util > 60 ? 'var(--warn)' : 'var(--ok)';
+}
+
+// ── Screen 3: Scenarios ──────────────────────────────────────────────────────
+function renderScenarios(data) {
+  var scenLevels = data.scenario_levels || {};
+  var greeks     = data.greeks || [];
+  var mkt        = data.market || {};
+
+  // R/R levels per instrument
+  var scenEl   = document.getElementById('s3-scenarios');
+  var instKeys = Object.keys(scenLevels);
+  if (!instKeys.length) {
+    scenEl.innerHTML = '<div class="empty">No scenario levels — set targets in FnO desktop app</div>';
+  } else {
+    scenEl.innerHTML = instKeys.map(function(inst) {
+      var lv   = scenLevels[inst] || {};
+      var bull = lv.bull || {};
+      var bear = lv.bear || {};
+      var fmt  = function(v) { return v != null ? '₹' + Number(v).toLocaleString('en-IN') : '—'; };
+      return '<div class="scen-block">'
+        + '<div class="scen-und-label">' + esc(inst) + '</div>'
+        + '<div class="sec-card" style="margin:0;">'
+          + '<div class="stat-row"><span class="stat-lbl">Bull Target</span><span class="stat-val pos">' + fmt(bull.target) + '</span></div>'
+          + '<div class="stat-row"><span class="stat-lbl">Bull SL</span><span class="stat-val neg">' + fmt(bull.sl) + '</span></div>'
+          + '<div class="stat-row"><span class="stat-lbl">Bear Target</span><span class="stat-val neg">' + fmt(bear.target) + '</span></div>'
+          + '<div class="stat-row"><span class="stat-lbl">Bear SL</span><span class="stat-val pos">' + fmt(bear.sl) + '</span></div>'
+          + '</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  // Stress — computed from Greeks × spot × move (same logic as desktop stress.js)
+  var moves    = [-0.04, -0.02, 0, 0.02, 0.04];
+  var refSpot  = (mkt['NIFTY'] || {}).close || 0;
+  var stressEl = document.getElementById('s3-stress');
+
+  if (!greeks.length) {
+    stressEl.innerHTML = '<div class="empty">No Greeks data for stress test</div>';
+    return;
+  }
+  stressEl.innerHTML = moves.map(function(move) {
+    var totalPnl = 0;
+    greeks.forEach(function(g) {
+      var spot = (mkt[g.und] || {}).close || 0;
+      totalPnl += (g.delta || 0) * spot * move;
+    });
+    totalPnl = Math.round(totalPnl);
+    var label = move === 0 ? 'Flat' : (move > 0 ? '+' : '') + (move * 100).toFixed(0) + '%';
+    var level = refSpot ? '₹' + Math.round(refSpot * (1 + move)).toLocaleString('en-IN') : '—';
+    return '<div class="stress-row">'
+      + '<span class="stress-move">'  + esc(label) + '</span>'
+      + '<span class="stress-level">' + esc(level) + '</span>'
+      + '<span class="stress-pnl ' + pnlClass(totalPnl) + '">' + fmtPnl(totalPnl) + '</span>'
+      + '</div>';
+  }).join('');
+}
+
+// ── Screen 4: Hedge Quality ──────────────────────────────────────────────────
+function renderHedge(data) {
+  var hedgeQuality = data.hedge_quality    || {};
+  var closedPos    = data.closed_positions || [];
+  var realizedPnl  = data.realized_pnl    || 0;
+
+  // Hedge quality scores per position
+  var hqEl  = document.getElementById('s4-hq');
+  var hqPos = hedgeQuality.positions || [];
+  if (!hqPos.length) {
+    hqEl.innerHTML = '<div class="empty">No hedge quality data — add a hedge plan in FnO desktop</div>';
+  } else {
+    hqEl.innerHTML = hqPos.map(function(h) {
+      var score    = h.quality_score != null ? h.quality_score : (h.score != null ? h.score : null);
+      var scorePct = score != null ? Math.round(score * 100) : null;
+      var scoreStr = scorePct != null ? scorePct + '%' : '—';
+      var barCls   = scorePct != null ? (scorePct >= 70 ? 'ok' : scorePct >= 40 ? 'warn' : 'dng') : 'fno';
+      var scoreCls = scorePct != null ? (scorePct >= 70 ? 'pos' : scorePct >= 40 ? '' : 'neg') : '';
+      var coverage = h.coverage_pct != null ? h.coverage_pct.toFixed(0) + '% covered' : '';
+      return '<div class="hq-row">'
+        + '<div class="hq-name">' + esc(h.instrument || '—') + '</div>'
+        + '<div style="flex:1;padding:0 10px;">'
+          + '<div class="prog-wrap">'
+            + '<div class="prog-fill ' + barCls + '" style="width:' + (scorePct || 0) + '%"></div>'
+            + '</div>'
+          + (coverage ? '<div style="font-family:var(--fm);font-size:9px;color:var(--t4);margin-top:3px;">' + esc(coverage) + '</div>' : '')
+          + '</div>'
+        + '<div class="hq-score ' + scoreCls + '">' + scoreStr + '</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  // Realized P&L summary
+  var rpnlEl = document.getElementById('s4-rpnl');
+  rpnlEl.textContent = fmtPnl(realizedPnl);
+  rpnlEl.className   = 'stat-val ' + pnlClass(realizedPnl);
+  document.getElementById('s4-closed-cnt').textContent = closedPos.length;
+
+  // Last 5 closed positions
+  var closedListEl = document.getElementById('s4-closed-list');
+  if (!closedPos.length) { closedListEl.innerHTML = ''; return; }
+  var recent = closedPos.slice(-5).reverse();
+  closedListEl.innerHTML = recent.map(function(p) {
+    var name    = p.full || ((p.und || '') + (p.type ? ' ' + p.type : ''));
+    var pnlVal  = p.realized_pnl != null ? p.realized_pnl : (p.pnl || 0);
+    var pnlCls  = pnlClass(pnlVal);
+    var pnlCol  = pnlCls === 'pos' ? 'var(--ok)' : pnlCls === 'neg' ? 'var(--danger)' : 'var(--t3)';
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-top:1px solid var(--border);">'
+      + '<span style="font-size:11px;color:var(--t2);">' + esc(name) + '</span>'
+      + '<span style="font-family:var(--fm);font-size:11px;font-weight:600;color:' + pnlCol + ';">' + fmtPnl(pnlVal) + '</span>'
+      + '</div>';
+  }).join('');
+}
+
+// ── Bootstrap ─────────────────────────────────────────────────────────────────
+async function initData() {
+  document.getElementById('s0-updated').textContent = 'Loading…';
+  var data = await apiFetch('/api/v1/experience/fno/portfolio-analytics?mode=' + _mode);
+  if (!data) {
+    document.getElementById('s0-updated').textContent = 'API error — check server';
+    ['s1-list','s2-greeks','s3-scenarios','s4-hq'].forEach(function(id) {
+      document.getElementById(id).innerHTML = '<div class="empty">Could not load portfolio data</div>';
+    });
+    return;
+  }
+  renderOverview(data);
+  renderPositions(data);
+  renderRisk(data);
+  renderScenarios(data);
+  renderHedge(data);
+}
+
+document.addEventListener('DOMContentLoaded', function() { initData(); });
+</script>
+</body>
+</html>

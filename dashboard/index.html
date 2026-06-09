@@ -248,7 +248,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
 
   <!-- Disclaimer -->
   <div class="disclaimer-strip">
-    <strong>Disclaimer:</strong> This platform is intended solely for research and informational purposes. It should not be considered financial, investment, or trading advice or recommendations. We use only essential functional cookies to improve user experience and platform performance, respecting privacy and data protection regulations.
+    <strong>Disclaimer:</strong> This platform is intended solely for research and informational purposes. It should not be considered financial, investment, or trading advice or recommendations. Sign-in is handled via Google OAuth 2.0; no passwords are stored on this platform. We do not use tracking or advertising cookies. Session authentication is stored in your browser's session storage and is cleared automatically when you close the tab.
   </div>
 
 </main>
@@ -275,10 +275,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get('token');
   if (token) {
-    localStorage.setItem('auth_token', token);
+    sessionStorage.setItem('auth_token', token);
     window.history.replaceState({}, document.title, window.location.pathname);
-    const redirect = localStorage.getItem('post_login_redirect');
-    if (redirect) { localStorage.removeItem('post_login_redirect'); window.location.href = redirect; }
+    const redirect = sessionStorage.getItem('post_login_redirect');
+    if (redirect) { sessionStorage.removeItem('post_login_redirect'); window.location.href = redirect; }
   }
 
   // Intercept clicks on Google Auth Protected modules
@@ -301,7 +301,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
         const targetUrl = this.getAttribute('href');
 
         // Check if user holds a token, otherwise boot them to Google SSO
-        const authToken = localStorage.getItem('auth_token');
+        const authToken = sessionStorage.getItem('auth_token');
         if (!authToken || authToken === 'null') {
           // Stash the destination so we can route back to it eventually if desired (optional)
           sessionStorage.setItem('return_url', targetUrl);

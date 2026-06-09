@@ -139,7 +139,7 @@ def instrument_onboard(
 def refresh_all_instruments(db: Session = Depends(get_db)) -> RefreshAllResponse:
     """Refresh OHLCV data for all RITA instruments by fetching delta rows from yfinance.
 
-    Skips ATHER (newly listed, data gaps expected).
+    Per-instrument errors return status='error' and do not abort the entire run.
     Per-instrument errors return status='error' and do not abort the entire run.
 
     Returns a RefreshAllResponse with:

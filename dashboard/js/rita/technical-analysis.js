@@ -1,4 +1,5 @@
 // ── Technical Analysis ─────────────────────────────────────
+import { t } from '../shared/i18n.js';
 import { api } from './api.js';
 import { setEl } from './utils.js';
 import { mkChart, destroyChart, C } from './charts.js';
@@ -26,7 +27,7 @@ function _renderCommentary(data) {
     : '';
 
   el.innerHTML = `
-    <div style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">Agent Commentary — ${data.instrument}</div>
+    <div style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">${t('ta.commentary_header')}${data.instrument}</div>
     <div style="font-size:13px;color:var(--t1);line-height:1.6;margin-bottom:12px">${data.commentary}</div>
     <div>${summaryHtml}</div>
   `;
@@ -70,10 +71,10 @@ export async function loadTechnicalAnalysis() {
       data: {
         labels: dates,
         datasets: [
-          { type: 'line', label: 'Close', data: rows.map(r => r.Close),
+          { type: 'line', label: t('ta.label_close'), data: rows.map(r => r.Close),
             borderColor: C.run, backgroundColor: 'transparent',
             pointRadius: 0, borderWidth: 2, yAxisID: 'yPrice', order: 1 },
-          { type: 'bar', label: 'Volume', data: rows.map(r => r.Volume),
+          { type: 'bar', label: t('ta.label_volume'), data: rows.map(r => r.Volume),
             backgroundColor: 'rgba(0,86,184,0.18)', borderWidth: 0,
             yAxisID: 'yVol', order: 2 },
         ]
@@ -101,7 +102,7 @@ export async function loadTechnicalAnalysis() {
       data: {
         labels: dates,
         datasets: [
-          { label: 'ATR%', data: atrPctData,
+          { label: t('ta.label_atr'), data: atrPctData,
             borderColor: C.warn, backgroundColor: 'rgba(146,72,10,0.07)',
             fill: true, tension: 0.2, pointRadius: 0, borderWidth: 2 }
         ]
@@ -131,7 +132,7 @@ export async function loadTechnicalAnalysis() {
       data: {
         labels: dates,
         datasets: [
-          { label: 'Trend Score', data: trendData,
+          { label: t('ta.label_trend_score'), data: trendData,
             borderColor: C.mon, backgroundColor: 'rgba(107,47,160,0.07)',
             fill: 'origin', tension: 0.25, pointRadius: 0, borderWidth: 2 }
         ]
@@ -172,13 +173,13 @@ export async function loadTechnicalAnalysis() {
       data: {
         labels: dates,
         datasets: [
-          { label: 'Close',    data: rows.map(r => r.Close),  borderColor: 'rgba(100,181,246,0.7)', backgroundColor: 'transparent', pointRadius: 0, borderWidth: 1.5, borderDash: [3,3] },
-          { label: 'EMA 5',   data: rows.map(r => r.ema_5),  borderColor: '#9C27B0',              backgroundColor: 'transparent', pointRadius: 0, borderWidth: 1.2, borderDash: [2,2] },
-          { label: 'EMA 13',  data: rows.map(r => r.ema_13), borderColor: C.build,                backgroundColor: 'transparent', pointRadius: 0, borderWidth: 1.2, borderDash: [4,2] },
-          { label: 'EMA 26',  data: rows.map(r => r.ema_26), borderColor: 'rgba(0,150,136,0.85)', backgroundColor: 'transparent', pointRadius: 0, borderWidth: 1.5, borderDash: [4,3] },
-          { label: 'EMA 50',  data: rows.map(r => r.ema_50), borderColor: C.warn,                 backgroundColor: 'transparent', pointRadius: 0, borderWidth: 1.5, borderDash: [6,3] },
-          { label: '▲ Bull X', data: crossUp,   type: 'line', showLine: false, spanGaps: false, pointStyle: 'triangle', pointRadius: 5, rotation: 0,   borderColor: '#1a6b3c', backgroundColor: '#1a6b3c', pointBorderColor: '#1a6b3c', pointBackgroundColor: '#1a6b3c' },
-          { label: '▼ Bear X', data: crossDown, type: 'line', showLine: false, spanGaps: false, pointStyle: 'triangle', pointRadius: 5, rotation: 180, borderColor: '#9b1c1c', backgroundColor: '#9b1c1c', pointBorderColor: '#9b1c1c', pointBackgroundColor: '#9b1c1c' },
+          { label: t('ta.label_close'),    data: rows.map(r => r.Close),  borderColor: 'rgba(100,181,246,0.7)', backgroundColor: 'transparent', pointRadius: 0, borderWidth: 1.5, borderDash: [3,3] },
+          { label: t('ta.label_ema5'),   data: rows.map(r => r.ema_5),  borderColor: '#9C27B0',              backgroundColor: 'transparent', pointRadius: 0, borderWidth: 1.2, borderDash: [2,2] },
+          { label: t('ta.label_ema13'),  data: rows.map(r => r.ema_13), borderColor: C.build,                backgroundColor: 'transparent', pointRadius: 0, borderWidth: 1.2, borderDash: [4,2] },
+          { label: t('ta.label_ema26'),  data: rows.map(r => r.ema_26), borderColor: 'rgba(0,150,136,0.85)', backgroundColor: 'transparent', pointRadius: 0, borderWidth: 1.5, borderDash: [4,3] },
+          { label: t('ta.label_ema50'),  data: rows.map(r => r.ema_50), borderColor: C.warn,                 backgroundColor: 'transparent', pointRadius: 0, borderWidth: 1.5, borderDash: [6,3] },
+          { label: t('ta.label_bull_cross'), data: crossUp,   type: 'line', showLine: false, spanGaps: false, pointStyle: 'triangle', pointRadius: 5, rotation: 0,   borderColor: '#1a6b3c', backgroundColor: '#1a6b3c', pointBorderColor: '#1a6b3c', pointBackgroundColor: '#1a6b3c' },
+          { label: t('ta.label_bear_cross'), data: crossDown, type: 'line', showLine: false, spanGaps: false, pointStyle: 'triangle', pointRadius: 5, rotation: 180, borderColor: '#9b1c1c', backgroundColor: '#9b1c1c', pointBorderColor: '#9b1c1c', pointBackgroundColor: '#9b1c1c' },
         ]
       },
       options: {
@@ -200,9 +201,9 @@ export async function loadTechnicalAnalysis() {
       data: {
         labels: dates,
         datasets: [
-          { type: 'line', label: 'MACD',   data: rows.map(r => r.macd),        borderColor: C.run,  backgroundColor: 'transparent', pointRadius: 0, borderWidth: 1.5, order: 1 },
+          { type: 'line', label: t('ta.label_macd'),   data: rows.map(r => r.macd),        borderColor: C.run,  backgroundColor: 'transparent', pointRadius: 0, borderWidth: 1.5, order: 1 },
           { type: 'line', label: 'Signal', data: rows.map(r => r.macd_signal), borderColor: C.warn, backgroundColor: 'transparent', pointRadius: 0, borderWidth: 1.5, borderDash: [3,2], order: 2 },
-          { type: 'bar',  label: 'Hist',   data: macdHist, backgroundColor: macdHist.map(v => (v || 0) >= 0 ? 'rgba(26,107,60,0.55)' : 'rgba(155,28,28,0.55)'), borderWidth: 0, order: 3 },
+          { type: 'bar',  label: t('ta.label_hist'),   data: macdHist, backgroundColor: macdHist.map(v => (v || 0) >= 0 ? 'rgba(26,107,60,0.55)' : 'rgba(155,28,28,0.55)'), borderWidth: 0, order: 3 },
         ]
       },
       options: {
@@ -223,9 +224,9 @@ export async function loadTechnicalAnalysis() {
       data: {
         labels: dates,
         datasets: [
-          { label: 'Upper', data: rows.map(r => r.bb_upper), borderColor: 'rgba(146,72,10,0.4)', backgroundColor: 'rgba(146,72,10,0.04)', fill: '+1', pointRadius: 0, borderWidth: 1, borderDash: [3,2] },
-          { label: 'Close', data: rows.map(r => r.Close),    borderColor: C.run,                 backgroundColor: 'rgba(0,86,184,0.06)',  fill: false, pointRadius: 0, borderWidth: 2 },
-          { label: 'Lower', data: rows.map(r => r.bb_lower), borderColor: 'rgba(146,72,10,0.4)', backgroundColor: 'rgba(146,72,10,0.04)', fill: '-1', pointRadius: 0, borderWidth: 1, borderDash: [3,2] },
+          { label: t('ta.label_bb_upper'), data: rows.map(r => r.bb_upper), borderColor: 'rgba(146,72,10,0.4)', backgroundColor: 'rgba(146,72,10,0.04)', fill: '+1', pointRadius: 0, borderWidth: 1, borderDash: [3,2] },
+          { label: t('ta.label_close'), data: rows.map(r => r.Close),    borderColor: C.run,                 backgroundColor: 'rgba(0,86,184,0.06)',  fill: false, pointRadius: 0, borderWidth: 2 },
+          { label: t('ta.label_bb_lower'), data: rows.map(r => r.bb_lower), borderColor: 'rgba(146,72,10,0.4)', backgroundColor: 'rgba(146,72,10,0.04)', fill: '-1', pointRadius: 0, borderWidth: 1, borderDash: [3,2] },
         ]
       },
       options: {
@@ -246,7 +247,7 @@ export async function loadTechnicalAnalysis() {
       data: {
         labels: dates,
         datasets: [
-          { label: 'RSI-14', data: rows.map(r => r.rsi_14),
+          { label: t('ta.label_rsi14'), data: rows.map(r => r.rsi_14),
             borderColor: C.run, backgroundColor: 'rgba(0,86,184,0.06)',
             fill: true, tension: 0.2, pointRadius: 0, borderWidth: 2 },
         ]

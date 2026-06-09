@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+window.onerror = function(msg, src, line, col, err) {
+  fetch('/api/v1/client-error', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: String(msg), source: src, lineno: line, colno: col, stack: err ? err.stack : null, url: location.href })
+  }).catch(function() {});
+  return false;
+};
+window.addEventListener('unhandledrejection', function(e) {
+  fetch('/api/v1/client-error', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: String(e.reason), url: location.href })
+  }).catch(function() {});
+});
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>RITA Ops</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500;600&family=Epilogue:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+
+/* ── Reset ──────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+button { cursor: pointer; border: none; background: none; font: inherit; }
+
+/* ── Design tokens ──────────────────────────────────────────────────── */
+:root {
+  --bg:       #F5F3EE;
+  --surface:  #FFFFFF;
+  --surface2: #F9F8F5;
+  --border:   #E4E0D8;
+  --border2:  #D0CBBC;
+  --text:     #1A1814;
+  --t2:       #4A4640;
+  --t3:       #8C877A;
+  --t4:       #B8B2A6;
+  /* Ops accent — teal */
+  --ops:      #0E7490;
+  --ops-bg:   #ECFEFF;
+  --ops-bd:   #67E8F9;
+  /* Semantic */
+  --ok:       #1A6B3C;
+  --ok-bg:    #EDF7F2;
+  --ok-bd:    #B6DEC9;
+  --warn:     #92480A;
+  --warn-bg:  #FEF4EB;
+  --warn-bd:  #F5C99A;
+  --danger:   #9B1C1C;
+  --danger-bg:#FEF2F2;
+  --danger-bd:#FCA5A5;
+  --info:     #0056B8;
+  --info-bg:  #EDF4FF;
+  --info-bd:  #AECBF5;
+  --acc:      #6B2FA0;
+  --acc-bg:   #F5EFFE;
+  --acc-bd:   #CFADF0;
+  --fd: 'Epilogue', system-ui, sans-serif;
+  --fm: 'IBM Plex Mono', 'SF Mono', monospace;
+  --fs: 'Instrument Serif', Georgia, serif;
+}
+
+/* ── App shell ──────────────────────────────────────────────────────── */
+html, body { height: 100%; overflow: hidden; background: var(--bg); font-family: var(--fd); -webkit-font-smoothing: antialiased; }
+#app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; padding-top: env(safe-area-inset-top); }
+
+/* ── Carousel ───────────────────────────────────────────────────────── */
+.carousel-viewport { flex: 1; overflow: hidden; position: relative; min-height: 0; }
+.carousel-track {
+  display: flex; width: calc(5 * 100vw); height: 100%;
+  transform: translateX(0);
+  transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1); will-change: transform;
+}
+.screen { width: 100vw; height: 100%; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; flex-shrink: 0; }
+.screen::-webkit-scrollbar { display: none; }
+.screen-inner { padding-bottom: 40px; }
+
+/* ── Tab bar ────────────────────────────────────────────────────────── */
+.tab-bar {
+  flex-shrink: 0; background: var(--bg); display: flex; align-items: flex-start;
+  padding: 8px 12px; padding-bottom: max(env(safe-area-inset-bottom), 8px);
+  border-top: 1px solid var(--border); z-index: 20;
+}
+.tab-pill {
+  flex: 1; display: flex; background: var(--surface); border-radius: 28px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.04);
+  padding: 6px 4px 8px;
+}
+.tab-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 5px 0; border-radius: 20px; transition: background 0.18s;
+  -webkit-tap-highlight-color: transparent; cursor: pointer; user-select: none;
+}
+.tab-lbl { font-family: var(--fm); font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--t3); font-weight: 500; transition: color 0.2s; }
+.tab-item[data-active="true"] { background: var(--ops-bg); }
+.tab-item[data-active="true"] .tab-lbl { color: var(--ops); font-weight: 700; }
+.tab-item[data-active="true"] svg { stroke: var(--ops); }
+.tab-item svg { display: block; stroke: var(--t3); transition: stroke 0.2s; }
+
+/* ── Screen header ──────────────────────────────────────────────────── */
+.scr-hdr { padding: 20px 20px 8px; display: flex; align-items: flex-start; justify-content: space-between; }
+.scr-eye { font-family: var(--fm); font-size: 9px; color: var(--ops); text-transform: uppercase; letter-spacing: .12em; font-weight: 700; }
+.scr-title { font-family: var(--fs); font-size: 26px; letter-spacing: -.02em; line-height: 1.1; color: var(--text); margin-top: 2px; }
+.scr-sub { font-family: var(--fm); font-size: 10px; color: var(--t3); margin-top: 3px; }
+
+/* ── Refresh button ─────────────────────────────────────────────────── */
+.refresh-btn {
+  display: flex; align-items: center; gap: 5px; flex-shrink: 0; margin-top: 4px;
+  font-family: var(--fm); font-size: 10px; font-weight: 600; color: var(--ops);
+  letter-spacing: 0.06em; text-transform: uppercase; background: var(--ops-bg);
+  border: 1px solid var(--ops-bd); border-radius: 20px; padding: 5px 12px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Health banner ──────────────────────────────────────────────────── */
+.health-banner {
+  margin: 6px 16px 0; padding: 16px 18px; border-radius: 18px;
+  display: flex; align-items: center; gap: 14px;
+}
+.health-banner.ok   { background: var(--ok-bg);      border: 1px solid var(--ok-bd); }
+.health-banner.warn { background: var(--warn-bg);     border: 1px solid var(--warn-bd); }
+.health-banner.down { background: var(--danger-bg);   border: 1px solid var(--danger-bd); }
+.hb-icon { width: 42px; height: 42px; border-radius: 21px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.health-banner.ok   .hb-icon { background: var(--ok); }
+.health-banner.warn .hb-icon { background: var(--warn); }
+.health-banner.down .hb-icon { background: var(--danger); }
+.hb-label { font-family: var(--fs); font-size: 20px; letter-spacing: -.01em; }
+.health-banner.ok   .hb-label { color: var(--ok); }
+.health-banner.warn .hb-label { color: var(--warn); }
+.health-banner.down .hb-label { color: var(--danger); }
+.hb-sub { font-family: var(--fm); font-size: 10px; color: var(--t3); margin-top: 2px; }
+
+/* ── KPI grid ───────────────────────────────────────────────────────── */
+.kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px 16px 4px; }
+.kpi-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  padding: 13px 14px 11px;
+}
+.kpi-eye { font-family: var(--fm); font-size: 9px; color: var(--t3); text-transform: uppercase; letter-spacing: .1em; }
+.kpi-val { font-family: var(--fm); font-size: 21px; font-weight: 600; color: var(--text); letter-spacing: -.01em; line-height: 1.2; margin-top: 3px; }
+.kpi-val.ok     { color: var(--ok); }
+.kpi-val.warn   { color: var(--warn); }
+.kpi-val.danger { color: var(--danger); }
+.kpi-sub { font-size: 10px; color: var(--t4); margin-top: 2px; line-height: 1.3; }
+
+/* ── Section card ───────────────────────────────────────────────────── */
+.sec-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  margin: 12px 16px 0; padding: 14px 16px;
+}
+.sec-title {
+  font-family: var(--fm); font-size: 10px; font-weight: 600; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--t2); margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.sec-dot { width: 6px; height: 6px; border-radius: 3px; flex-shrink: 0; }
+
+/* ── Stat row ───────────────────────────────────────────────────────── */
+.stat-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); }
+.stat-row:last-child { border-bottom: none; }
+.stat-lbl { font-size: 12px; color: var(--t2); }
+.stat-val { font-family: var(--fm); font-size: 12px; color: var(--text); font-weight: 500; }
+
+/* ── Progress bar ───────────────────────────────────────────────────── */
+.prog-wrap { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; flex: 1; }
+.prog-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; width: 0%; }
+.prog-fill.ok   { background: var(--ok); }
+.prog-fill.ops  { background: var(--ops); }
+.prog-fill.warn { background: var(--warn); }
+.prog-fill.dng  { background: var(--danger); }
+
+/* ── Alert row ──────────────────────────────────────────────────────── */
+.al-row { display: flex; align-items: flex-start; gap: 8px; padding: 9px 11px; border-radius: 10px; font-size: 12px; line-height: 1.45; margin-top: 8px; }
+.al-row.ok   { background: var(--ok-bg);    color: var(--ok); }
+.al-row.warn { background: var(--warn-bg);  color: var(--warn); }
+.al-row.dng  { background: var(--danger-bg);color: var(--danger); }
+.al-row.info { background: var(--info-bg);  color: var(--info); }
+
+/* ── Badge ──────────────────────────────────────────────────────────── */
+.bdg {
+  display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 4px;
+  font-family: var(--fm); font-size: 9px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase; flex-shrink: 0;
+}
+.bdg-ok   { background: var(--ok-bg);     color: var(--ok); }
+.bdg-warn { background: var(--warn-bg);   color: var(--warn); }
+.bdg-dng  { background: var(--danger-bg); color: var(--danger); }
+.bdg-info { background: var(--info-bg);   color: var(--info); }
+.bdg-mute { background: var(--surface2);  color: var(--t2); border: 1px solid var(--border); }
+
+/* ── Deploy card ────────────────────────────────────────────────────── */
+.deploy-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  margin: 10px 16px 0; padding: 13px 14px; display: flex; gap: 11px; align-items: flex-start;
+}
+.dep-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.dep-msg {
+  font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.35; flex: 1;
+  overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+.dep-meta { font-family: var(--fm); font-size: 10px; color: var(--t3); margin-top: 5px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+/* ── Run card ───────────────────────────────────────────────────────── */
+.run-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; margin: 10px 16px 0; padding: 13px 14px; }
+.run-hdr { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 5px; }
+.run-req { font-size: 12px; font-weight: 500; color: var(--text); line-height: 1.35; flex: 1; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.run-meta { font-family: var(--fm); font-size: 10px; color: var(--t3); display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ── Activity timeline ──────────────────────────────────────────────── */
+.act-row { display: flex; gap: 12px; padding: 0 16px; margin-bottom: 14px; }
+.act-dot-col { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+.act-dot { width: 10px; height: 10px; border-radius: 5px; }
+.act-line { width: 2px; flex: 1; background: var(--border); margin-top: 4px; min-height: 22px; }
+.act-body { flex: 1; min-width: 0; }
+.act-title { font-size: 12px; font-weight: 500; color: var(--text); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.act-sub { font-family: var(--fm); font-size: 10px; color: var(--t3); margin-top: 3px; }
+
+/* ── Empty / loading ────────────────────────────────────────────────── */
+.empty   { font-family: var(--fm); font-size: 11px; color: var(--t4); text-align: center; padding: 28px 20px; }
+.loading { font-family: var(--fm); font-size: 11px; color: var(--t3); text-align: center; padding: 24px 20px; }
+
+/* ── Section label (above list) ─────────────────────────────────────── */
+.list-label { padding: 12px 16px 4px; font-family: var(--fm); font-size: 10px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--t2); }
+
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="carousel-viewport">
+    <div class="carousel-track" id="track">
+
+
+      <!-- ══ SCREEN 0: OVERVIEW ════════════════════════════════════════ -->
+      <div class="screen" id="s0">
+        <div class="screen-inner">
+
+          <div class="scr-hdr">
+            <div>
+              <div class="scr-eye">RITA OPS</div>
+              <div class="scr-title">Overview</div>
+              <div class="scr-sub" id="s0-updated">Loading…</div>
+            </div>
+            <button class="refresh-btn" onclick="initData()">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              Refresh
+            </button>
+          </div>
+
+          <!-- Health banner -->
+          <div class="health-banner ok" id="s0-banner">
+            <div class="hb-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div>
+              <div class="hb-label" id="s0-banner-label">API Online</div>
+              <div class="hb-sub" id="s0-banner-sub">All systems nominal</div>
+            </div>
+          </div>
+
+          <!-- KPI grid -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-eye">Requests</div>
+              <div class="kpi-val" id="s0-req">—</div>
+              <div class="kpi-sub">total recorded</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">Error Rate</div>
+              <div class="kpi-val" id="s0-err">—</div>
+              <div class="kpi-sub">threshold 5%</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">Avg Latency</div>
+              <div class="kpi-val" id="s0-lat">—</div>
+              <div class="kpi-sub">per request</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">MCP Calls</div>
+              <div class="kpi-val" id="s0-mcp">—</div>
+              <div class="kpi-sub">total logged</div>
+            </div>
+          </div>
+
+          <!-- Model & data -->
+          <div class="sec-card">
+            <div class="sec-title"><div class="sec-dot" style="background:var(--ops)"></div>Model &amp; Dataset</div>
+            <div class="stat-row"><span class="stat-lbl">Model age</span><span class="stat-val" id="s0-model-age">—</span></div>
+            <div class="stat-row"><span class="stat-lbl">Backtest Sharpe</span><span class="stat-val" id="s0-sharpe">—</span></div>
+            <div class="stat-row"><span class="stat-lbl">Dataset rows</span><span class="stat-val" id="s0-rows">—</span></div>
+            <div class="stat-row"><span class="stat-lbl">Data freshness</span><span class="stat-val" id="s0-fresh">—</span></div>
+          </div>
+
+          <!-- Pipeline progress -->
+          <div class="sec-card">
+            <div class="sec-title"><div class="sec-dot" style="background:var(--acc)"></div>Pipeline Progress</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+              <div class="prog-wrap"><div class="prog-fill ok" id="s0-prog" style="width:0%"></div></div>
+              <span style="font-family:var(--fm);font-size:11px;color:var(--t2);white-space:nowrap;" id="s0-prog-txt">—</span>
+            </div>
+            <div style="font-family:var(--fm);font-size:10px;color:var(--t3);" id="s0-prog-sub">—</div>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- ══ SCREEN 1: MONITORING ══════════════════════════════════════ -->
+      <div class="screen" id="s1">
+        <div class="screen-inner">
+
+          <div class="scr-hdr">
+            <div>
+              <div class="scr-eye">RITA OPS</div>
+              <div class="scr-title">Monitoring</div>
+            </div>
+          </div>
+
+          <!-- Request stats -->
+          <div class="sec-card">
+            <div class="sec-title"><div class="sec-dot" style="background:var(--info)"></div>Request Metrics</div>
+            <div class="stat-row"><span class="stat-lbl">Total requests</span><span class="stat-val" id="s1-total">—</span></div>
+            <div class="stat-row"><span class="stat-lbl">Error count</span><span class="stat-val" id="s1-errcnt">—</span></div>
+            <div class="stat-row"><span class="stat-lbl">Avg latency</span><span class="stat-val" id="s1-lat">—</span></div>
+            <div class="stat-row"><span class="stat-lbl">Pipeline steps done</span><span class="stat-val" id="s1-steps">—</span></div>
+            <div class="stat-row"><span class="stat-lbl">Failed steps</span><span class="stat-val" id="s1-failed">—</span></div>
+          </div>
+
+          <!-- Error rate -->
+          <div class="sec-card">
+            <div class="sec-title"><div class="sec-dot" style="background:var(--warn)"></div>Error Rate</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+              <div class="prog-wrap"><div class="prog-fill ok" id="s1-err-bar" style="width:0%"></div></div>
+              <span style="font-family:var(--fm);font-size:12px;font-weight:600;" id="s1-err-pct">—</span>
+            </div>
+            <div id="s1-err-alert"></div>
+          </div>
+
+          <!-- Top endpoint -->
+          <div class="sec-card">
+            <div class="sec-title"><div class="sec-dot" style="background:var(--ops)"></div>Top Endpoint</div>
+            <div id="s1-top-ep" style="font-family:var(--fm);font-size:12px;color:var(--ops);word-break:break-all;line-height:1.4;">—</div>
+            <div id="s1-top-cnt" style="font-family:var(--fm);font-size:10px;color:var(--t3);margin-top:4px;">—</div>
+          </div>
+
+          <!-- Training -->
+          <div class="sec-card">
+            <div class="sec-title"><div class="sec-dot" style="background:var(--acc)"></div>Training Metrics</div>
+            <div class="stat-row"><span class="stat-lbl">Rounds</span><span class="stat-val" id="s1-rounds">—</span></div>
+            <div class="stat-row"><span class="stat-lbl">Latest Sharpe</span><span class="stat-val" id="s1-sharpe">—</span></div>
+            <div class="stat-row"><span class="stat-lbl">Latest MDD</span><span class="stat-val" id="s1-mdd">—</span></div>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- ══ SCREEN 2: DEPLOYMENTS ═════════════════════════════════════ -->
+      <div class="screen" id="s2">
+        <div class="screen-inner">
+
+          <div class="scr-hdr">
+            <div>
+              <div class="scr-eye">RITA OPS</div>
+              <div class="scr-title">Deployments</div>
+            </div>
+          </div>
+
+          <div id="s2-list"><div class="loading">Loading…</div></div>
+
+        </div>
+      </div>
+
+
+      <!-- ══ SCREEN 3: AGENT BUILDS ════════════════════════════════════ -->
+      <div class="screen" id="s3">
+        <div class="screen-inner">
+
+          <div class="scr-hdr">
+            <div>
+              <div class="scr-eye">RITA OPS</div>
+              <div class="scr-title">Agent Builds</div>
+            </div>
+          </div>
+
+          <!-- KPI grid -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-eye">Task Success</div>
+              <div class="kpi-val" id="s3-tsr">—</div>
+              <div class="kpi-sub">TSR all runs</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">Avg CSAT</div>
+              <div class="kpi-val" id="s3-csat">—</div>
+              <div class="kpi-sub">out of 5.0</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">Grounding</div>
+              <div class="kpi-val" id="s3-grounding">—</div>
+              <div class="kpi-sub">latest score</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">Cache Hit</div>
+              <div class="kpi-val" id="s3-cache">—</div>
+              <div class="kpi-sub">prompt cache</div>
+            </div>
+          </div>
+
+          <div class="list-label">Recent Pipeline Runs</div>
+          <div id="s3-list"><div class="loading">Loading…</div></div>
+
+        </div>
+      </div>
+
+
+      <!-- ══ SCREEN 4: ACTIVITY ═════════════════════════════════════════ -->
+      <div class="screen" id="s4">
+        <div class="screen-inner">
+
+          <div class="scr-hdr">
+            <div>
+              <div class="scr-eye">RITA OPS</div>
+              <div class="scr-title">Pipeline Activity</div>
+            </div>
+          </div>
+
+          <!-- Progress -->
+          <div class="sec-card">
+            <div class="sec-title"><div class="sec-dot" style="background:var(--ops)"></div>Build Progress</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+              <div class="prog-wrap"><div class="prog-fill ok" id="s4-prog" style="width:0%"></div></div>
+              <span style="font-family:var(--fm);font-size:11px;color:var(--t2);white-space:nowrap;" id="s4-prog-txt">—</span>
+            </div>
+            <div style="font-family:var(--fm);font-size:10px;color:var(--t3);" id="s4-prog-lbl">—</div>
+          </div>
+
+          <div class="list-label">Recent Steps</div>
+          <div id="s4-list"><div class="loading">Loading…</div></div>
+
+        </div>
+      </div>
+
+
+    </div><!-- /carousel-track -->
+  </div><!-- /carousel-viewport -->
+
+
+  <!-- ── Tab bar ──────────────────────────────────────────────────────── -->
+  <div class="tab-bar">
+    <div class="tab-pill">
+
+      <div class="tab-item" data-active="true" data-idx="0" onclick="goTo(0)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        <span class="tab-lbl">Overview</span>
+      </div>
+
+      <div class="tab-item" data-idx="1" onclick="goTo(1)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        <span class="tab-lbl">Monitoring</span>
+      </div>
+
+      <div class="tab-item" data-idx="2" onclick="goTo(2)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+        <span class="tab-lbl">Deploy</span>
+      </div>
+
+      <div class="tab-item" data-idx="3" onclick="goTo(3)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="19" cy="19" r="2"/><path d="M7 12h6M17 5.7l-6 4.6M17 18.3l-6-4.6"/></svg>
+        <span class="tab-lbl">Agents</span>
+      </div>
+
+      <div class="tab-item" data-idx="4" onclick="goTo(4)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        <span class="tab-lbl">Activity</span>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+// ── API ─────────────────────────────────────────────────────────────────
+const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  ? 'http://localhost:8000' : '';
+
+function getToken() {
+  try { return localStorage.getItem('rita_token') || ''; } catch { return ''; }
+}
+
+async function apiFetch(path) {
+  try {
+    const token = getToken();
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    const res = await fetch(API_BASE + path, { headers });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch { return null; }
+}
+
+// ── Navigation ──────────────────────────────────────────────────────────
+const SCREENS = 5;
+let _cur = 0;
+const _lazyLoaded = { 2: false, 3: false, 4: false };
+
+function goTo(idx) {
+  if (idx < 0 || idx >= SCREENS) return;
+  _cur = idx;
+  document.getElementById('track').style.transform = 'translateX(calc(' + idx + ' * -100vw))';
+  document.querySelectorAll('.tab-item').forEach(function(t) {
+    t.dataset.active = (parseInt(t.dataset.idx) === idx).toString();
+  });
+  if (idx === 2 && !_lazyLoaded[2]) { _lazyLoaded[2] = true; loadDeploys(); }
+  if (idx === 3 && !_lazyLoaded[3]) { _lazyLoaded[3] = true; loadBuilds(); }
+  if (idx === 4 && !_lazyLoaded[4]) { _lazyLoaded[4] = true; loadActivity(); }
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s == null ? '—' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function bdg(text, cls) {
+  return '<span class="bdg bdg-' + cls + '">' + esc(text) + '</span>';
+}
+
+function fmtDur(secs) {
+  if (secs == null) return '—';
+  var m = Math.floor(secs / 60), s = secs % 60;
+  return m > 0 ? m + 'm ' + s + 's' : s + 's';
+}
+
+function fmtTs(iso) {
+  if (!iso) return '—';
+  return iso.slice(0, 16).replace('T', ' ');
+}
+
+function stepName(num) {
+  var n = { 1:'Env Setup', 2:'Data Prep', 3:'Model Init', 4:'Training', 5:'Validation', 6:'Backtest', 7:'Report' };
+  return n[num] || 'Step ' + num;
+}
+
+// ── Screen 0: Status ────────────────────────────────────────────────────
+async function loadStatus() {
+  var results = await Promise.all([
+    apiFetch('/health'),
+    apiFetch('/api/experience/ops/metrics/summary'),
+    apiFetch('/api/v1/mcp-calls'),
+    apiFetch('/progress'),
+  ]);
+  var health = results[0], metrics = results[1], mcp = results[2], progress = results[3];
+
+  document.getElementById('s0-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+
+  // Health banner
+  var banner = document.getElementById('s0-banner');
+  var lbl    = document.getElementById('s0-banner-label');
+  var sub    = document.getElementById('s0-banner-sub');
+  if (health && health.status === 'ok') {
+    banner.className = 'health-banner ok';
+    lbl.textContent  = health.model_exists ? 'API Online · Model Loaded' : 'API Online';
+    sub.textContent  = 'All systems nominal';
+  } else {
+    banner.className = 'health-banner down';
+    lbl.textContent  = 'API Offline';
+    sub.textContent  = 'Cannot reach backend';
+  }
+
+  // KPIs
+  if (metrics) {
+    var req = metrics.api_requests || {};
+    document.getElementById('s0-req').textContent = req.total_requests ?? '—';
+    var ep = req.error_rate_pct != null ? req.error_rate_pct.toFixed(1) + '%'
+      : (req.total_requests > 0 ? ((req.error_count / req.total_requests) * 100).toFixed(1) + '%' : '0.0%');
+    var errEl = document.getElementById('s0-err');
+    errEl.textContent = ep;
+    errEl.className = 'kpi-val ' + (parseFloat(ep) > 5 ? 'warn' : 'ok');
+    var lat = req.avg_latency_ms;
+    document.getElementById('s0-lat').textContent = lat != null ? lat.toFixed(0) + ' ms' : '—';
+  }
+  document.getElementById('s0-mcp').textContent = mcp ? mcp.length : '—';
+
+  // Model & dataset
+  if (health) {
+    var age = health.model_age_days;
+    document.getElementById('s0-model-age').textContent = age != null ? age + ' days' : (health.model_exists ? 'exists' : 'not trained');
+    var fresh = health.data_freshness || {};
+    document.getElementById('s0-rows').textContent = fresh.total_rows != null ? fresh.total_rows.toLocaleString() : '—';
+    var dOld = fresh.days_since_latest;
+    var fEl = document.getElementById('s0-fresh');
+    fEl.textContent = dOld != null ? dOld + ' days old' : '—';
+    fEl.style.color = dOld != null && dOld > 7 ? 'var(--warn)' : 'var(--ok)';
+  }
+  if (metrics && metrics.training) {
+    var tr = metrics.training;
+    document.getElementById('s0-sharpe').textContent = tr.latest_backtest_sharpe != null ? tr.latest_backtest_sharpe.toFixed(3) : '—';
+  }
+
+  // Pipeline progress
+  if (progress && progress.steps) {
+    var steps = progress.steps, total = steps.length;
+    var done  = steps.filter(function(s){ return s.status === 'completed'; }).length;
+    var pct   = total > 0 ? Math.round(done / total * 100) : 0;
+    document.getElementById('s0-prog').style.width = pct + '%';
+    document.getElementById('s0-prog-txt').textContent = done + '/' + total;
+    document.getElementById('s0-prog-sub').textContent = pct + '% complete';
+  }
+}
+
+// ── Screen 1: Monitor ───────────────────────────────────────────────────
+async function loadMonitor() {
+  var metrics = await apiFetch('/api/experience/ops/metrics/summary');
+  if (!metrics) return;
+
+  var req  = metrics.api_requests || {};
+  var pipe = metrics.pipeline     || {};
+  var tr   = metrics.training     || {};
+
+  document.getElementById('s1-total').textContent  = req.total_requests ?? '—';
+  document.getElementById('s1-errcnt').textContent = req.error_count ?? '—';
+  document.getElementById('s1-lat').textContent    = req.avg_latency_ms != null ? req.avg_latency_ms.toFixed(0) + ' ms' : '—';
+  document.getElementById('s1-steps').textContent  = pipe.completed_steps ?? '—';
+  document.getElementById('s1-failed').textContent = pipe.failed_steps ?? '—';
+  document.getElementById('s1-rounds').textContent = tr.rounds ?? '—';
+  document.getElementById('s1-sharpe').textContent = tr.latest_backtest_sharpe != null ? tr.latest_backtest_sharpe.toFixed(3) : '—';
+  document.getElementById('s1-mdd').textContent    = tr.latest_backtest_mdd_pct != null ? tr.latest_backtest_mdd_pct.toFixed(1) + '%' : '—';
+
+  // Error rate bar
+  var errPct = req.error_rate_pct != null ? req.error_rate_pct
+    : (req.total_requests > 0 ? (req.error_count / req.total_requests) * 100 : 0);
+  var bar = document.getElementById('s1-err-bar');
+  bar.style.width      = Math.min(100, errPct) + '%';
+  bar.style.background = errPct > 5 ? 'var(--danger)' : errPct > 2 ? 'var(--warn)' : 'var(--ok)';
+  var pEl = document.getElementById('s1-err-pct');
+  pEl.textContent  = errPct.toFixed(1) + '%';
+  pEl.style.color  = errPct > 5 ? 'var(--danger)' : errPct > 2 ? 'var(--warn)' : 'var(--ok)';
+
+  var alertEl = document.getElementById('s1-err-alert');
+  if (errPct > 5) {
+    alertEl.innerHTML = '<div class="al-row warn">Error rate ' + errPct.toFixed(1) + '% — above 5% threshold</div>';
+  } else if ((pipe.failed_steps || 0) > 0) {
+    alertEl.innerHTML = '<div class="al-row warn">' + pipe.failed_steps + ' pipeline step(s) failed</div>';
+  } else {
+    alertEl.innerHTML = '<div class="al-row ok">All metrics within normal range</div>';
+  }
+
+  // Top endpoint
+  var epMap  = req.endpoints || {};
+  var epKeys = Object.keys(epMap).sort(function(a,b){ return (epMap[b].count||0) - (epMap[a].count||0); });
+  if (epKeys.length) {
+    document.getElementById('s1-top-ep').textContent  = epKeys[0];
+    document.getElementById('s1-top-cnt').textContent = (epMap[epKeys[0]].count || '—') + ' requests';
+  }
+}
+
+// ── Screen 2: Deploys ───────────────────────────────────────────────────
+async function loadDeploys() {
+  var data = await apiFetch('/api/experience/ops/github-deploys');
+  var el   = document.getElementById('s2-list');
+  if (!data || !data.runs || !data.runs.length) {
+    el.innerHTML = data && data.error
+      ? '<div class="empty">GitHub API unavailable</div>'
+      : '<div class="empty">No deploy runs found</div>';
+    return;
+  }
+  el.innerHTML = data.runs.slice(0, 8).map(function(r) {
+    var ok   = r.conclusion === 'success';
+    var fail = r.conclusion === 'failure';
+    var dot  = ok ? 'var(--ok)' : fail ? 'var(--danger)' : 'var(--warn)';
+    var cls  = ok ? 'ok' : fail ? 'dng' : 'warn';
+    return '<div class="deploy-card">'
+      + '<div class="dep-dot" style="background:' + dot + '"></div>'
+      + '<div style="flex:1;min-width:0;">'
+        + '<div class="dep-msg">' + esc(r.commit_message || '—') + '</div>'
+        + '<div class="dep-meta">'
+          + bdg(r.conclusion || r.status || '?', cls)
+          + '<span>' + esc(r.commit_sha ? r.commit_sha.slice(0,7) : '—') + '</span>'
+          + '<span>' + fmtDur(r.duration_sec) + '</span>'
+          + '<span>' + fmtTs(r.created_at) + '</span>'
+        + '</div>'
+      + '</div>'
+    + '</div>';
+  }).join('');
+}
+
+// ── Screen 3: Builds ────────────────────────────────────────────────────
+async function loadBuilds() {
+  var data = await apiFetch('/api/experience/ops/agent-builds');
+  if (!data) {
+    document.getElementById('s3-list').innerHTML = '<div class="empty">Could not load agent builds</div>';
+    return;
+  }
+  var runs = data.runs || [], m = data.metrics || {};
+
+  // KPIs
+  var tc = m.task_completion || {}, q = m.quality || {}, gt = m.grounding_trend || [];
+  document.getElementById('s3-tsr').textContent = tc.tsr != null ? (tc.tsr * 100).toFixed(1) + '%' : '—';
+  document.getElementById('s3-csat').textContent = q.avg_csat != null ? q.avg_csat.toFixed(1) : '—';
+  var lastG = gt.length ? gt[gt.length - 1].grounding_score : null;
+  document.getElementById('s3-grounding').textContent = lastG != null ? (lastG * 100).toFixed(0) + '%' : '—';
+
+  var cacheRates = [];
+  runs.forEach(function(r) {
+    (r.agents || []).forEach(function(a) {
+      var at = a.actual_tokens;
+      if (at && at.input_tokens > 0) cacheRates.push((at.cache_read_input_tokens || 0) / at.input_tokens);
+    });
+  });
+  document.getElementById('s3-cache').textContent = cacheRates.length
+    ? Math.round(cacheRates.reduce(function(s,v){return s+v;},0) / cacheRates.length * 100) + '%' : '—';
+
+  // Run list
+  var el = document.getElementById('s3-list');
+  if (!runs.length) { el.innerHTML = '<div class="empty">No pipeline runs found</div>'; return; }
+  el.innerHTML = runs.slice(0, 8).map(function(r) {
+    var ok   = r.overall_status === 'pass';
+    var warn = r.overall_status === 'pass_with_warnings';
+    var cls  = ok ? 'ok' : warn ? 'warn' : 'dng';
+    var rid  = r.run_id ? r.run_id.replace(/^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})$/, '$3/$2 $4:$5') : '—';
+    var tok  = r.total_tokens_estimated ? r.total_tokens_estimated.toLocaleString() + ' tok' : '';
+    return '<div class="run-card">'
+      + '<div class="run-hdr"><div class="run-req">' + esc(r.request || '—') + '</div>' + bdg(r.overall_status || '?', cls) + '</div>'
+      + '<div class="run-meta"><span>' + rid + '</span><span>' + (r.duration_minutes ?? '—') + ' min</span>' + (tok ? '<span>' + tok + '</span>' : '') + '</div>'
+    + '</div>';
+  }).join('');
+}
+
+// ── Screen 4: Activity ──────────────────────────────────────────────────
+async function loadActivity() {
+  var results = await Promise.all([apiFetch('/progress'), apiFetch('/api/experience/ops/step-log')]);
+  var progress = results[0], stepLog = results[1];
+
+  // Progress
+  if (progress && progress.steps) {
+    var steps = progress.steps, total = steps.length;
+    var done  = steps.filter(function(s){return s.status==='completed';}).length;
+    var pct   = total > 0 ? Math.round(done / total * 100) : 0;
+    document.getElementById('s4-prog').style.width = pct + '%';
+    document.getElementById('s4-prog-txt').textContent = done + '/' + total;
+    document.getElementById('s4-prog-lbl').textContent = pct === 100 ? 'Pipeline complete' : pct + '% complete';
+  }
+
+  // Step timeline
+  var el = document.getElementById('s4-list');
+  if (!stepLog || !stepLog.length) { el.innerHTML = '<div class="empty">No pipeline steps logged</div>'; return; }
+  var recent = stepLog.slice(-8).reverse();
+  el.innerHTML = recent.map(function(row, i) {
+    var isLast = i === recent.length - 1;
+    var isOk   = row.status === 'completed';
+    var dot    = isOk ? 'var(--ok)' : 'var(--danger)';
+    var name   = row.step_name || stepName(row.step_num);
+    var dur    = row.duration_secs != null ? row.duration_secs.toFixed(1) + 's' : '—';
+    return '<div class="act-row">'
+      + '<div class="act-dot-col"><div class="act-dot" style="background:' + dot + '"></div>' + (!isLast ? '<div class="act-line"></div>' : '') + '</div>'
+      + '<div class="act-body">'
+        + '<div class="act-title">Step ' + (row.step_num ?? '?') + ': ' + esc(name) + ' ' + bdg(row.status, isOk ? 'ok' : 'dng') + '</div>'
+        + '<div class="act-sub">' + dur + ' · ' + fmtTs(row.ended_at || row.started_at) + '</div>'
+      + '</div>'
+    + '</div>';
+  }).join('');
+}
+
+// ── Bootstrap ───────────────────────────────────────────────────────────
+async function initData() {
+  document.getElementById('s0-updated').textContent = 'Loading…';
+  await Promise.all([loadStatus(), loadMonitor()]);
+}
+
+document.addEventListener('DOMContentLoaded', function() { initData(); });
+</script>
+</body>
+</html>

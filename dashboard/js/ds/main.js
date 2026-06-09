@@ -16,8 +16,8 @@ import { loadExperimentResults, downloadExperimentResults } from './experiment-r
 import { loadTradeDiagnostics } from './trade-diagnostics.js';
 import { loadModelTrainProgress } from './model-train-progress.js';
 import { loadModelObservability } from './model-observability.js';
-import { loadModelMcp } from './model-mcp.js';
 import { loadModelAudit } from './model-audit.js';
+import { loadConcepts, switchConceptTab } from './concepts.js';
 import { closeChartModal } from './utils.js';
 import { initI18n, setLanguage, applyTranslations } from '../shared/i18n.js';
 
@@ -40,8 +40,8 @@ const _sectionLoaders = {
   'trade-diagnostics':    loadTradeDiagnostics,
   'model-train-progress': loadModelTrainProgress,
   'model-observability':  loadModelObservability,
-  'model-mcp':            loadModelMcp,
   'model-audit':          loadModelAudit,
+  'concepts':             loadConcepts,
 };
 
 // ── Section switching ─────────────────────────────────────────────────────────
@@ -67,6 +67,7 @@ window.switchTrainTab         = switchTrainTab;
 window.runPortfolioScenario   = runPortfolioScenario;
 window.downloadExperimentResults = downloadExperimentResults;
 window.setLanguage               = setLanguage;
+window.switchConceptTab          = switchConceptTab;
 window.loadMCP                   = loadMCP;
 
 // ── Keyboard escape handlers (replicate inline listeners from ds.html) ────────

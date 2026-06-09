@@ -1,1 +1,1 @@
-export { api } from '../shared/api.js';
+export { api, apiBase, apiFetch } from '../shared/api.js';

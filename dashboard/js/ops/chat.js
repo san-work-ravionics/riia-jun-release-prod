@@ -1,5 +1,6 @@
 // ── Chat Analytics ────────────────────────────────────────────────────────────
 import { apiFetch } from './api.js';
+import { t } from '../shared/i18n.js';
 
 // Maps handler name → Python function signature for transparency display
 export const HANDLER_FN = {
@@ -16,7 +17,7 @@ export async function loadChat() {
   if (!data) {
     ['chat-kpis','chat-intents','chat-recent','chat-commentary'].forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.innerHTML = '<div class="empty">No chat data yet — use the RITA Agent chat first</div>';
+      if (el) el.innerHTML = `<div class="empty">${t('ops.no_chat_data')}</div>`;
     });
     return;
   }
@@ -26,11 +27,11 @@ export async function loadChat() {
   // KPI strip
   const confColour = (s.avg_confidence || 0) >= 0.6 ? 'ok' : (s.avg_confidence || 0) >= 0.42 ? 'ops' : 'warn';
   document.getElementById('chat-kpis').innerHTML = `
-    <div class="kpi"><div class="kpi-ey">Total Queries</div><div class="kpi-val ops">${s.total_queries ?? 0}</div><div class="kpi-sub">all time</div></div>
-    <div class="kpi"><div class="kpi-ey">Avg Confidence</div><div class="kpi-val ${confColour}">${s.avg_confidence != null ? (s.avg_confidence*100).toFixed(0)+'%' : '—'}</div><div class="kpi-sub">cosine similarity</div></div>
-    <div class="kpi"><div class="kpi-ey">Avg Latency</div><div class="kpi-val ops">${s.avg_latency_ms != null ? s.avg_latency_ms.toFixed(0)+'ms' : '—'}</div><div class="kpi-sub">classify + dispatch</div></div>
-    <div class="kpi"><div class="kpi-ey">Unique Intents</div><div class="kpi-val ops">${(data.intents||[]).length}</div><div class="kpi-sub">used this session</div></div>
-    <div class="kpi"><div class="kpi-ey">Queries Today</div><div class="kpi-val ops">${s.queries_today ?? 0}</div><div class="kpi-sub">UTC day</div></div>
+    <div class="kpi"><div class="kpi-ey">${t('ops.chat_total_queries')}</div><div class="kpi-val ops">${s.total_queries ?? 0}</div><div class="kpi-sub">all time</div></div>
+    <div class="kpi"><div class="kpi-ey">${t('ops.chat_avg_confidence')}</div><div class="kpi-val ${confColour}">${s.avg_confidence != null ? (s.avg_confidence*100).toFixed(0)+'%' : '—'}</div><div class="kpi-sub">cosine similarity</div></div>
+    <div class="kpi"><div class="kpi-ey">${t('ops.chat_avg_latency')}</div><div class="kpi-val ops">${s.avg_latency_ms != null ? s.avg_latency_ms.toFixed(0)+'ms' : '—'}</div><div class="kpi-sub">classify + dispatch</div></div>
+    <div class="kpi"><div class="kpi-ey">${t('ops.chat_unique_intents')}</div><div class="kpi-val ops">${(data.intents||[]).length}</div><div class="kpi-sub">used this session</div></div>
+    <div class="kpi"><div class="kpi-ey">${t('ops.chat_queries_today')}</div><div class="kpi-val ops">${s.queries_today ?? 0}</div><div class="kpi-sub">UTC day</div></div>
   `;
 
   // Recent queries
@@ -38,7 +39,7 @@ export async function loadChat() {
   document.getElementById('chat-recent').innerHTML = recent.length
     ? `<div class="tbl-wrap" style="max-height:222px">
         <table>
-          <thead><tr><th>Query</th><th>Intent</th><th>Handler</th><th>Confidence</th><th>Latency</th><th>Time</th></tr></thead>
+          <thead><tr><th>${t('ops.chat_col_query')}</th><th>${t('ops.chat_col_intent')}</th><th>${t('ops.chat_col_handler')}</th><th>${t('ops.chat_avg_confidence')}</th><th>${t('ops.chat_avg_latency')}</th><th>${t('ops.chat_col_time')}</th></tr></thead>
           <tbody>${recent.map(r => `<tr>
             <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.query_text ?? ''}">${r.query_text ?? '—'}</td>
             <td style="font-family:var(--fm);white-space:nowrap">${(r.intent_name ?? '—').replace(/_/g,' ')}</td>
@@ -49,7 +50,7 @@ export async function loadChat() {
           </tr>`).join('')}</tbody>
         </table>
       </div>`
-    : '<div class="empty">No queries logged yet</div>';
+    : `<div class="empty">${t('ops.no_queries_logged')}</div>`;
 
   // Commentary metrics
   const cCount   = s.commentary_count ?? 0;
@@ -58,9 +59,9 @@ export async function loadChat() {
   const errColour = cErrors === 0 ? 'ok' : cErrors < 3 ? 'ops' : 'warn';
   document.getElementById('chat-commentary').innerHTML = `
     <div class="kpi-strip" style="margin-bottom:12px">
-      <div class="kpi"><div class="kpi-ey">Generated</div><div class="kpi-val ops">${cCount}</div><div class="kpi-sub">total commentaries</div></div>
-      <div class="kpi"><div class="kpi-ey">Avg Latency</div><div class="kpi-val ops">${cLatency != null ? cLatency.toFixed(0)+'ms' : '—'}</div><div class="kpi-sub">end-to-end</div></div>
-      <div class="kpi"><div class="kpi-ey">Errors</div><div class="kpi-val ${errColour}">${cErrors}</div><div class="kpi-sub">status=error rows</div></div>
+      <div class="kpi"><div class="kpi-ey">${t('ops.chat_generated')}</div><div class="kpi-val ops">${cCount}</div><div class="kpi-sub">total commentaries</div></div>
+      <div class="kpi"><div class="kpi-ey">${t('ops.chat_avg_latency')}</div><div class="kpi-val ops">${cLatency != null ? cLatency.toFixed(0)+'ms' : '—'}</div><div class="kpi-sub">end-to-end</div></div>
+      <div class="kpi"><div class="kpi-ey">${t('ops.chat_errors')}</div><div class="kpi-val ${errColour}">${cErrors}</div><div class="kpi-sub">status=error rows</div></div>
     </div>
     <div style="font-size:11px;color:var(--t3);line-height:1.7">
       <div><span style="color:var(--t2);font-weight:600">Endpoint:</span> POST /api/v1/commentary</div>
@@ -73,7 +74,7 @@ export async function loadChat() {
   const intents = data.intents || [];
   document.getElementById('chat-intents').innerHTML = intents.length
     ? `<table>
-        <thead><tr><th>Intent</th><th>Count</th><th>Avg Confidence</th><th>Python Function Called</th></tr></thead>
+        <thead><tr><th>${t('ops.chat_col_intent')}</th><th>${t('ops.chat_col_count')}</th><th>${t('ops.chat_col_avg_conf')}</th><th>${t('ops.chat_col_py_fn')}</th></tr></thead>
         <tbody>${intents.map(r => {
           const fn = HANDLER_FN[r.handler] || (r.handler ? r.handler + '(...)' : '—');
           return `<tr>
@@ -84,5 +85,5 @@ export async function loadChat() {
           </tr>`;
         }).join('')}</tbody>
       </table>`
-    : '<div class="empty">No intents logged yet</div>';
+    : `<div class="empty">${t('ops.no_intents_logged')}</div>`;
 }

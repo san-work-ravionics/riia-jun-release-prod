@@ -1,19 +1,16 @@
 // ── Navigation + underlying/expiry selectors ──────────────────────────────────
 import { state } from './state.js';
+
+// Section loaders registry — modules register themselves in main.js
+export const _sectionLoaders = {};
 import { renderDashboard } from './dashboard.js';
-import { renderPositionsKpis, renderPositionsTable } from './positions.js';
-import {
-  renderMarginKpis,
-  updateMarginSections,
-  renderMarginTables,
-  renderClosedPositions,
-} from './margin.js';
 import { renderGreeksCards, renderGreeksTable, updateRiskSections } from './greeks.js';
 import { renderStressScenarios } from './stress.js';
 import { renderPayoffChart } from './payoff.js';
 import { renderScenarios } from './rr.js';
 import { renderHedgeRadar, loadHedgeHistory } from './hedge.js';
 import { initManoeuvre, renderMonthTiles } from './manoeuvre.js';
+import { loadEquityHedge } from './equity_hedge.js';
 
 export function initNav() {
   document.querySelectorAll('.nav-item').forEach(item => {
@@ -22,7 +19,9 @@ export function initNav() {
       item.classList.add('active');
       document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
       document.getElementById('page-' + item.dataset.page).classList.add('active');
-      if (item.dataset.page === 'history') loadHedgeHistory();
+      if (item.dataset.page === 'hedge') loadHedgeHistory();
+      if (item.dataset.page === 'equity-hedge') loadEquityHedge();
+      if (_sectionLoaders[item.dataset.page]) { _sectionLoaders[item.dataset.page](); }
     });
   });
 }
@@ -35,12 +34,6 @@ export function setUnderlying(und) {
   });
   buildExpiryPills();
   renderDashboard();
-  renderPositionsKpis();
-  renderPositionsTable();
-  renderClosedPositions();
-  renderMarginKpis();
-  updateMarginSections();
-  renderMarginTables();
   updateRiskSections();
   renderGreeksCards();
   renderGreeksTable();
@@ -49,6 +42,13 @@ export function setUnderlying(und) {
   renderScenarios();
   renderHedgeRadar();
   initManoeuvre();
+  // If equity hedge page is visible, sync instrument field and reload data
+  const ehPage = document.getElementById('page-equity-hedge');
+  if (ehPage?.classList.contains('active')) {
+    const instEl = document.getElementById('eh-instrument');
+    if (instEl) instEl.value = und;
+    loadEquityHedge(true);
+  }
 }
 
 export function buildExpiryPills() {
@@ -66,12 +66,6 @@ export function setExpiry(exp, btn) {
   document.querySelectorAll('.exp-pill').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderDashboard();
-  renderPositionsKpis();
-  renderPositionsTable();
-  renderClosedPositions();
-  renderMarginKpis();
-  updateMarginSections();
-  renderMarginTables();
   updateRiskSections();
   renderGreeksCards();
   renderGreeksTable();

@@ -4,6 +4,9 @@
 // Cross-module consumers import `state` and read from it directly.
 
 export const state = {
+  portfolioMeta: null,
+  analyticsMode: 'mock',
+  portfolioGeoInstruments: null,  // [{id, name, region, allocation_pct}] — built at init from DB
   marketData: {},
   positions: [],
   greeksData: [],
@@ -18,8 +21,10 @@ export const state = {
   hedgeQuality: {},
   hedgeHistory: {},
   hedgeHistoryLoaded: false,
+  equityHedgeData: null,
 
   // UI state
+  riskSelectedInstrument: null,   // null = Portfolio (all), or instrument id string
   currentUnd: 'ALL',
   currentExpiry: 'ALL',
   currentPosFilter: 'ALL',

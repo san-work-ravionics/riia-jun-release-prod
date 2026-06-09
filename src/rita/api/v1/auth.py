@@ -52,7 +52,7 @@ def _callback_uri(request: Request, settings) -> str:
 
 
 @router.get("/google/login")
-def google_login(request: Request):
+def google_login(request: Request, state: str | None = None):
     settings = get_settings()
     redirect_uri = _callback_uri(request, settings)
 
@@ -64,10 +64,12 @@ def google_login(request: Request):
         "scope=openid%20email%20profile&"
         "access_type=offline"
     )
+    if state is not None:
+        url = f"{url}&state={state}"
     return RedirectResponse(url)
 
 @router.get("/google/callback")
-def google_callback(request: Request, code: str, db: Session = Depends(get_db)):
+def google_callback(request: Request, code: str, state: str | None = None, db: Session = Depends(get_db)):
     settings = get_settings()
     redirect_uri = _callback_uri(request, settings)
 
@@ -109,7 +111,8 @@ def google_callback(request: Request, code: str, db: Session = Depends(get_db)):
 
     # Generate internal JWT
     token = create_access_token(subject=email)
-    
-    # Send user back to dashboard.
-    response = RedirectResponse(url=f"/dashboard/index.html?token={token}")
+
+    # Send user back to dashboard — state param routes to the correct app.
+    redirect_url = "/dashboard/fno.html" if state == "fno" else "/dashboard/index.html"
+    response = RedirectResponse(url=f"{redirect_url}?token={token}")
     return response

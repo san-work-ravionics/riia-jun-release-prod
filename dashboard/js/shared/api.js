@@ -5,15 +5,18 @@
 export const apiBase = () => (window.RITA_API_BASE || '').replace(/\/$/, '');
 
 export async function api(path, method = 'GET', body = null) {
-  const token = localStorage.getItem('auth_token');
+  const token = sessionStorage.getItem('auth_token');
   const opts = { method, headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) } };
   if (body) opts.body = JSON.stringify(body);
   const r = await fetch(apiBase() + path, opts);
   if (!r.ok) {
     if (r.status === 401) {
-      localStorage.removeItem('auth_token');
-      localStorage.setItem('post_login_redirect', window.location.href);
-      window.location.href = '/auth/google/login';
+      sessionStorage.removeItem('auth_token');
+      const _isLocal = ['localhost', '127.0.0.1', '0.0.0.0'].includes(location.hostname);
+      if (!_isLocal) {
+        sessionStorage.setItem('post_login_redirect', window.location.href);
+        window.location.href = '/auth/google/login';
+      }
       return;
     }
     const err = await r.json().catch(() => ({ detail: r.statusText }));

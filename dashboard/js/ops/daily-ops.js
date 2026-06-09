@@ -1,5 +1,6 @@
 // ── Daily Ops ─────────────────────────────────────────────────────────────────
 import { apiFetch, apiBase, api } from './api.js';
+import { t } from '../shared/i18n.js';
 
 // ── Instrument availability ────────────────────────────────────────────────────
 
@@ -10,7 +11,7 @@ export async function loadInstruments() {
   const data = await apiFetch('/api/v1/instruments');
   const wrap = document.getElementById('dops-instruments');
   if (!data || !data.length) {
-    wrap.innerHTML = '<div style="font-size:12px;color:var(--t3);">No instruments found.</div>';
+    wrap.innerHTML = `<div style="font-size:12px;color:var(--t3);">${t('ops.no_instruments')}</div>`;
     return;
   }
   _instruments = data;
@@ -59,7 +60,7 @@ export function toggleInstrument(instrumentId) {
 export async function saveInstruments() {
   const btn = document.getElementById('btn-save-instruments');
   btn.disabled = true;
-  btn.textContent = 'Saving…';
+  btn.textContent = t('ops.saving');
 
   const toSave = Object.entries(_pendingChanges).filter(
     ([id, val]) => val !== (_instruments.find(i => i.id === id) || {}).data_ready
@@ -77,11 +78,11 @@ export async function saveInstruments() {
   }
 
   if (allOk) {
-    btn.textContent = '✓ Saved';
-    setTimeout(() => { btn.style.display = 'none'; btn.textContent = 'Save Changes'; btn.disabled = false; }, 1500);
+    btn.textContent = t('ops.saved');
+    setTimeout(() => { btn.style.display = 'none'; btn.textContent = t('btn.save'); btn.disabled = false; }, 1500);
     await loadInstruments();   // refresh from DB
   } else {
-    btn.textContent = 'Error — retry';
+    btn.textContent = t('ops.error_retry');
     btn.disabled = false;
   }
 }
@@ -153,7 +154,7 @@ export async function loadDailyOps() {
           </div>
         </div>
       </div>`;
-  }).join('') : '<div style="font-size:12px;color:var(--t3);padding:8px 0;">No active months found — load positions in FnO dashboard first.</div>';
+  }).join('') : `<div style="font-size:12px;color:var(--t3);padding:8px 0;">${t('ops.no_active_months')}</div>`;
 
   document.getElementById('dops-month-cards').innerHTML = cardsHtml;
 
@@ -167,7 +168,7 @@ export async function loadDailyOps() {
           </div>
           <div style="font-size:12px;color:var(--t1);">${n.notes || '<em style="color:var(--t4)">no note</em>'}</div>
         </div>`).join('')
-    : '<div style="font-size:12px;color:var(--t3);padding:8px 0;">No session notes yet.</div>';
+    : `<div style="font-size:12px;color:var(--t3);padding:8px 0;">${t('ops.no_notes')}</div>`;
 
   // ── History table ──
   const rows = d.recent_snapshots || [];
@@ -179,7 +180,7 @@ export async function loadDailyOps() {
           <td style="font-family:var(--fm);">${r.nifty_spot ? Number(r.nifty_spot).toLocaleString('en-IN',{minimumFractionDigits:2}) : '—'}</td>
           <td>${r.lot_count || '—'}</td>
         </tr>`).join('')
-    : '<tr><td colspan="4" style="text-align:center;color:var(--t3);">No snapshot history yet.</td></tr>';
+    : `<tr><td colspan="4" style="text-align:center;color:var(--t3);">${t('ops.no_history')}</td></tr>`;
 }
 
 export async function triggerSnapshot(month) {

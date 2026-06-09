@@ -2,18 +2,18 @@
 
 Provides five functions:
   check_gap()          — check how many days of data are missing for an instrument
-  fetch_and_write_raw()— download delta rows from yfinance, write/append raw CSV
+  fetch_and_write_raw()— download delta rows from yfinance, append to raw CSV (all instruments)
   rebuild_input()      — re-run load_instrument_data() and write normalized input CSV
   upsert_cache_delta() — insert new (instrument, date) rows into market_data_cache
-  refresh_all()        — orchestrate full pipeline for all 11 instruments (skips ATHER)
+  refresh_all()        — orchestrate full pipeline for all 11 instruments
 
 Rules:
 - Use structlog — no print() statements
 - Use get_settings() — not bare settings
 - upsert_cache_delta: db.add_all() with explicit existence check — no db.merge(), no DELETE
 - fetch_and_write_raw: flatten yfinance MultiIndex before CSV write
-- NIFTY/BANKNIFTY: overwrite companion _yf.csv (full download from 2009-09-01)
-- All others: append new rows to existing _daily.csv (start = last_date + 1 day)
+- All instruments use incremental fetch (last_date + 1 day → today); full seed on first run
+- NIFTY/BANKNIFTY write to companion _yf.csv; all others write to _daily.csv
 - Per-instrument errors caught in refresh_all() — never abort on a single failure
 """
 from __future__ import annotations
@@ -47,13 +47,11 @@ YF_TICKER_MAP: dict[str, str] = {
     "IXIC":      "^IXIC",
 }
 
-# NIFTY and BANKNIFTY use a companion _yf.csv file (full overwrite strategy)
-# All other instruments append new rows to the existing _daily.csv
+# NIFTY and BANKNIFTY write to a companion _yf.csv; all others use _daily.csv
 COMPANION_FILE_INSTRUMENTS: set[str] = {"NIFTY", "BANKNIFTY"}
 
-# Skip ATHER — newly listed, data gaps are expected and normal
+# Instruments excluded from refresh (newly listed, data gaps expected)
 SKIP_INSTRUMENTS: set[str] = {"ATHER"}
-
 
 # ── check_gap ─────────────────────────────────────────────────────────────────
 
@@ -105,17 +103,14 @@ def check_gap(instrument_id: str, db: Session) -> dict[str, Any]:
 def fetch_and_write_raw(instrument_id: str, yf_ticker: str, last_date: date | None) -> tuple[Path, int]:
     """Download delta rows from yfinance and write/append raw CSV.
 
-    For NIFTY/BANKNIFTY (COMPANION_FILE_INSTRUMENTS):
-      - Full download from 2009-09-01
-      - Overwrites data/raw/{INSTRUMENT}/{instrument_lower}_yf.csv
+    For NIFTY/BANKNIFTY (COMPANION_FILE_INSTRUMENTS): writes to {instrument_lower}_yf.csv.
+    For all other instruments: writes to {instrument_lower}_daily.csv.
 
-    For all other instruments:
-      - Incremental download from (last_date + 1 day) to today
-      - Appends new rows to data/raw/{INSTRUMENT}/{instrument_lower}_daily.csv
-        (or creates it if absent)
+    Both use the same incremental strategy:
+      - Download from (last_date + 1 day) to today, or from 2009-09-01 if no prior data.
+      - Appends new rows to the existing CSV (or creates it on first seed).
 
     Returns (raw_path, rows_added).
-    Raises ValueError if yfinance returns 0 rows for incremental fetch.
     Raises RuntimeError if yfinance is unreachable.
     """
     import yfinance as yf
@@ -125,22 +120,18 @@ def fetch_and_write_raw(instrument_id: str, yf_ticker: str, last_date: date | No
     raw_dir = Path(cfg.data.raw_dir) / instrument_id
     raw_dir.mkdir(parents=True, exist_ok=True)
 
-    is_companion = instrument_id in COMPANION_FILE_INSTRUMENTS
-
-    if is_companion:
-        # Full download — overwrite companion _yf.csv
+    if instrument_id in COMPANION_FILE_INSTRUMENTS:
         filename = f"{instrument_id.lower()}_yf.csv"
-        start_date = "2009-09-01"
     else:
-        # Incremental download — start from last_date + 1 day
         filename = f"{instrument_id.lower()}_daily.csv"
-        if last_date is not None:
-            start_dt = last_date + timedelta(days=1)
-            start_date = start_dt.strftime("%Y-%m-%d")
-        else:
-            start_date = "2009-09-01"
 
     raw_path = raw_dir / filename
+
+    if last_date is not None:
+        start_dt = last_date + timedelta(days=1)
+        start_date = start_dt.strftime("%Y-%m-%d")
+    else:
+        start_date = "2009-09-01"
 
     try:
         df: pd.DataFrame = yf.download(
@@ -174,30 +165,19 @@ def fetch_and_write_raw(instrument_id: str, yf_ticker: str, last_date: date | No
 
     rows_added = len(df)
 
-    if is_companion:
-        # Full overwrite of companion file
-        df.to_csv(raw_path)
-        log.info(
-            "data_refresh.companion_written",
-            instrument=instrument_id,
-            path=str(raw_path),
-            rows=rows_added,
-        )
+    if raw_path.exists():
+        existing_df = pd.read_csv(raw_path, index_col=0, parse_dates=True)
+        combined = pd.concat([existing_df, df])
+        combined = combined[~combined.index.duplicated(keep="last")].sort_index()
+        combined.to_csv(raw_path)
     else:
-        # Append new rows to existing daily CSV
-        if raw_path.exists():
-            existing_df = pd.read_csv(raw_path, index_col=0, parse_dates=True)
-            combined = pd.concat([existing_df, df])
-            combined = combined[~combined.index.duplicated(keep="last")].sort_index()
-            combined.to_csv(raw_path)
-        else:
-            df.to_csv(raw_path)
-        log.info(
-            "data_refresh.daily_appended",
-            instrument=instrument_id,
-            path=str(raw_path),
-            new_rows=rows_added,
-        )
+        df.to_csv(raw_path)
+    log.info(
+        "data_refresh.raw_appended",
+        instrument=instrument_id,
+        path=str(raw_path),
+        new_rows=rows_added,
+    )
 
     return raw_path, rows_added
 
@@ -327,7 +307,7 @@ def upsert_cache_delta(db: Session, instrument_id: str) -> int:
 def refresh_all(db: Session) -> list[dict[str, Any]]:
     """Orchestrate full data refresh pipeline for all RITA instruments.
 
-    Iterates over all instruments in YF_TICKER_MAP (skips ATHER).
+    Iterates over all instruments in YF_TICKER_MAP.
     Per-instrument errors are caught and recorded as status='error' —
     they do NOT abort the loop.
 

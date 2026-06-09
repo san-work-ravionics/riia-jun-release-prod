@@ -68,7 +68,12 @@ from rita.api.experience.invest_game import router as invest_game_router
 from rita.api.experience.users import router as users_traffic_router
 from rita.api.v1.workflow.chat import router as chat_router
 from rita.api.v1.workflow.commentary import router as commentary_router
+from rita.api.v1.workflow.user_portfolio import router as user_portfolio_workflow_router
 from rita.api.v1.portfolio import router as portfolio_router
+from rita.api.experience.user_portfolio import router as user_portfolio_experience_router
+from rita.api.experience.portfolio_hedge import router as portfolio_hedge_router
+from rita.api.experience.fno_hedge_plan import router as fno_hedge_plan_router
+from rita.api.experience.portfolio_analytics import router as portfolio_analytics_router
 
 _MOBILE_UA_RE = re.compile(r"Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini", re.IGNORECASE)
 
@@ -130,7 +135,6 @@ async def lifespan(app: FastAPI):
             _Instrument(instrument_id="ASML",      name="ASML",                         exchange="AMS",    country_code="NL", lot_size=None, is_available=True,  yf_ticker="ASML.AS",     created_at=_dt.datetime.now(_dt.timezone.utc)),
             _Instrument(instrument_id="TRU",       name="TransUnion",                   exchange="NYSE",   country_code="US", lot_size=None, is_available=True,  yf_ticker="TRU",         created_at=_dt.datetime.now(_dt.timezone.utc)),
             # India — added 2026-05-20
-            _Instrument(instrument_id="ATHER",     name="Ather Energy",                 exchange="NSE",    country_code="IN", lot_size=None, is_available=True,  yf_ticker=None,          created_at=_dt.datetime.now(_dt.timezone.utc)),
             _Instrument(instrument_id="RELIANCE",  name="Reliance Industries",          exchange="NSE",    country_code="IN", lot_size=None, is_available=True,  yf_ticker="RELIANCE.NS", created_at=_dt.datetime.now(_dt.timezone.utc)),
             _Instrument(instrument_id="SBIN",      name="State Bank of India",          exchange="NSE",    country_code="IN", lot_size=None, is_available=True,  yf_ticker="SBIN.NS",     created_at=_dt.datetime.now(_dt.timezone.utc)),
             # EU — added 2026-05-20
@@ -185,6 +189,10 @@ async def lifespan(app: FastAPI):
                 )
             _db.commit()
 
+            # Disable ATHER — no yfinance data available; remove from active instrument list
+            _db.execute(text("UPDATE instruments SET is_available = 0 WHERE instrument_id = 'ATHER'"))
+            _db.commit()
+
             # Upsert any seed instruments not yet in DB (runs on every startup, not just fresh)
             _added = 0
             for _inst in _SEED_INSTRUMENTS:
@@ -213,7 +221,7 @@ async def lifespan(app: FastAPI):
             repo = MarketDataCacheRepository(db)
             seeded = {r.underlying for r in repo.read_all()}
 
-            for _inst in ["NIFTY", "BANKNIFTY", "ASML", "NVIDIA", "ATHER", "RELIANCE", "SBIN", "ASRNL", "ATO", "AEX", "DJI", "IXIC"]:
+            for _inst in ["NIFTY", "BANKNIFTY", "ASML", "NVIDIA", "RELIANCE", "SBIN", "ASRNL", "ATO", "AEX", "DJI", "IXIC"]:
                 if _inst in seeded:
                     continue
                 try:
@@ -369,6 +377,7 @@ app.include_router(backtest_router, dependencies=[Depends(get_current_user)])
 app.include_router(evaluate_router, dependencies=[Depends(get_current_user)])
 app.include_router(pipeline_router)
 app.include_router(instrument_onboard_router)
+app.include_router(user_portfolio_workflow_router, dependencies=[Depends(get_current_user)])
 
 # -- Experience Layer -- UI-shaped aggregation routers (read-only) -------------
 app.include_router(dashboard_router)
@@ -380,6 +389,10 @@ app.include_router(ds_router)
 app.include_router(agent_panel_router)
 app.include_router(invest_game_router)
 app.include_router(users_traffic_router)
+app.include_router(user_portfolio_experience_router)
+app.include_router(portfolio_hedge_router)
+app.include_router(fno_hedge_plan_router)
+app.include_router(portfolio_analytics_router)
 
 # -- Chat -- local intent classifier + OHLCV dispatch (no external API) -------
 app.include_router(chat_router)

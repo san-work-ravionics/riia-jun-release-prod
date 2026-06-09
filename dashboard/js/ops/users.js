@@ -17,19 +17,26 @@ export async function loadUsers() {
     }
 }
 
+function maskEmail(id) {
+    if (!id || !id.includes('@')) return id;
+    const [local, domain] = id.split('@');
+    const masked = local.length <= 1 ? local : `${local[0]}****${local[local.length - 1]}`;
+    return `${masked}@***.com`;
+}
+
 function renderUsersTable(users) {
     const tbody = document.querySelector('#users-table tbody');
     if (!users.length) {
         tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--t3); padding:20px;">No users found in database</td></tr>';
         return;
     }
-    
+
     let html = '';
     users.forEach(u => {
         let ld = u.last_login_date ? new Date(u.last_login_date).toLocaleString() : 'Never';
         html += `
         <tr>
-            <td style="font-weight:600;">${u.id}</td>
+            <td style="font-weight:600;">${maskEmail(u.id)}</td>
             <td style="font-family:var(--fm); font-size:10px;">${ld}</td>
             <td style="text-align:center"><input type="checkbox" id="chk-assist-${u.id}" ${u.can_assist_research ? 'checked' : ''}></td>
             <td style="text-align:center"><input type="checkbox" id="chk-create-${u.id}" ${u.can_create_portfolio ? 'checked' : ''} disabled title="Open Access Constraint"></td>

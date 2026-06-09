@@ -30,6 +30,7 @@ from rita.core.performance import (
     simulate_stress_scenarios,
 )
 from rita.schemas.geography import GeographyOverviewResponse, GeoInstrument, GeoRegion
+from rita.core.investment_horizons import INVESTMENT_HORIZONS as _INVESTMENT_HORIZONS
 from rita.schemas.strategy_comparison import (
     StrategyComparisonResponse,
     StrategyResult,
@@ -1109,6 +1110,32 @@ def technical_commentary(
 
 # ── GET /api/v1/experience/rita/geography-overview ────────────────────────────
 
+# ── Phase 2: sector lookup (no DB column yet — static map) ───────────────────
+_SECTOR_MAP: dict[str, str] = {
+    "RELIANCE": "Energy",    "TATAMOTOR": "Auto",       "SBIN": "Financials",
+    "TCS": "Tech",           "HDFCBANK": "Financials",  "INFY": "Tech",
+    "WIPRO": "Tech",         "BAJFINANCE": "Financials","TATASTEEL": "Materials",
+    "ICICIBANK": "Financials","KOTAKBANK": "Financials","AXISBANK": "Financials",
+    "SUNPHARMA": "Healthcare","HCLTECH": "Tech",        "LT": "Industrials",
+    "ONGC": "Energy",        "NTPC": "Utilities",       "POWERGRID": "Utilities",
+    "NVIDIA": "Tech",        "MSFT": "Tech",            "AAPL": "Tech",
+    "TSLA": "Auto",          "GOOGL": "Tech",           "AMZN": "Consumer",
+    "ASML": "Tech",          "SAP": "Tech",             "NESTLE": "Consumer",
+    "LVMH": "Consumer",      "NIFTY": "Index",          "BANKNIFTY": "Index",
+}
+
+def _risk_score_from_vol(annualized_vol_pct: float) -> int:
+    """Bucket annualized volatility % into risk score 1–5 (eng-context C1)."""
+    if annualized_vol_pct < 15:
+        return 1
+    if annualized_vol_pct < 25:
+        return 2
+    if annualized_vol_pct < 35:
+        return 3
+    if annualized_vol_pct < 50:
+        return 4
+    return 5
+
 _EU_COUNTRY_CODES = frozenset({"NL", "DE", "FR", "GB", "BE", "CH", "SE", "ES", "IT", "AT", "FI", "DK", "IE", "PL", "PT"})
 _EU_COUNTRY_NAMES = frozenset({"netherlands", "germany", "france", "united kingdom", "belgium", "switzerland", "sweden", "spain", "italy", "austria", "finland", "denmark", "ireland", "poland", "portugal"})
 
@@ -1153,8 +1180,8 @@ def geography_overview(db: Session = Depends(get_db)) -> GeographyOverviewRespon
     _start = time.monotonic()
     sources: dict[str, Any] = {}
 
-    # Build a lookup: instrument_id (upper) → (close, daily_return_pct)
-    price_map: dict[str, tuple[Optional[float], Optional[float]]] = {}
+    # Build a lookup: instrument_id (upper) → (close, daily_return_pct, return_1y_pct, risk_score)
+    price_map: dict[str, tuple[Optional[float], Optional[float], Optional[float], Optional[int]]] = {}
 
     t0 = time.monotonic()
     try:
@@ -1176,6 +1203,8 @@ def geography_overview(db: Session = Depends(get_db)) -> GeographyOverviewRespon
             recs_sorted = sorted(recs, key=lambda r: r.date)
             latest = recs_sorted[-1]
             close = float(latest.close) if latest.close is not None else None
+
+            # Daily return (existing)
             if len(recs_sorted) >= 2:
                 prev_close = float(recs_sorted[-2].close) if recs_sorted[-2].close else None
                 if prev_close and prev_close != 0 and close is not None:
@@ -1184,7 +1213,54 @@ def geography_overview(db: Session = Depends(get_db)) -> GeographyOverviewRespon
                     daily_return_pct = None
             else:
                 daily_return_pct = None
-            price_map[inst_id] = (close, daily_return_pct)
+
+            # 1Y return: compare latest close with close ~252 trading days ago (C2)
+            return_1y_pct: Optional[float] = None
+            if close is not None and len(recs_sorted) >= 60:
+                idx_1y = max(0, len(recs_sorted) - 253)
+                close_1y = float(recs_sorted[idx_1y].close) if recs_sorted[idx_1y].close else None
+                if close_1y and close_1y != 0:
+                    return_1y_pct = round((close / close_1y - 1) * 100, 2)
+
+            # 5Y CAGR and 15Y CAGR — driven by investment_horizons.py config
+            return_5y_pct: Optional[float] = None
+            return_15y_pct: Optional[float] = None
+            for h_key, h_cfg in _INVESTMENT_HORIZONS.items():
+                if h_cfg["return_field"] == "return_5y_pct" and close is not None:
+                    td = h_cfg["lookback_td"]
+                    if len(recs_sorted) >= td:
+                        base = float(recs_sorted[max(0, len(recs_sorted) - td)].close or 0)
+                        if base > 0:
+                            return_5y_pct = round(((close / base) ** (1 / h_cfg["years"]) - 1) * 100, 2)
+                elif h_cfg["return_field"] == "return_15y_pct" and close is not None:
+                    td = h_cfg["lookback_td"]
+                    if len(recs_sorted) >= td:
+                        base = float(recs_sorted[max(0, len(recs_sorted) - td)].close or 0)
+                        if base > 0:
+                            return_15y_pct = round(((close / base) ** (1 / h_cfg["years"]) - 1) * 100, 2)
+
+            # Risk score: annualized vol bucketed 1–5 (C1)
+            risk_score: Optional[int] = None
+            history = [float(r.close) for r in recs_sorted[-253:] if r.close]
+            if len(history) >= 20:
+                daily_rets = [(history[i] - history[i - 1]) / history[i - 1] for i in range(1, len(history))]
+                if len(daily_rets) >= 2:
+                    ann_vol_pct = _stats.stdev(daily_rets) * (252 ** 0.5) * 100
+                    risk_score = _risk_score_from_vol(ann_vol_pct)
+
+            # Classify investment horizons using config thresholds
+            metric_map = {
+                "return_1y_pct":  return_1y_pct,
+                "return_5y_pct":  return_5y_pct,
+                "return_15y_pct": return_15y_pct,
+            }
+            horizons: list[str] = [
+                key for key, cfg in _INVESTMENT_HORIZONS.items()
+                if (v := metric_map.get(cfg["return_field"])) is not None
+                and v >= cfg["min_return_pct"]
+            ]
+
+            price_map[inst_id] = (close, daily_return_pct, return_1y_pct, return_5y_pct, return_15y_pct, risk_score, horizons)
 
     except Exception as exc:
         sources["market_data_cache"] = {
@@ -1238,7 +1314,9 @@ def geography_overview(db: Session = Depends(get_db)) -> GeographyOverviewRespon
         geo_instruments: list[GeoInstrument] = []
         for inst in bucket:
             inst_id = inst.instrument_id.upper()
-            close, daily_return_pct = price_map.get(inst_id, (None, None))
+            close, daily_return_pct, return_1y_pct, return_5y_pct, return_15y_pct, risk_score, horizons = price_map.get(
+                inst_id, (None, None, None, None, None, None, [])
+            )
             geo_instruments.append(
                 GeoInstrument(
                     id=inst_id,
@@ -1247,6 +1325,12 @@ def geography_overview(db: Session = Depends(get_db)) -> GeographyOverviewRespon
                     close=close,
                     daily_return_pct=daily_return_pct,
                     signal=_signal(daily_return_pct),
+                    return_1y_pct=return_1y_pct,
+                    return_5y_pct=return_5y_pct,
+                    return_15y_pct=return_15y_pct,
+                    risk_score=risk_score,
+                    sector=_SECTOR_MAP.get(inst_id),
+                    horizons=horizons,
                 )
             )
         regions.append(

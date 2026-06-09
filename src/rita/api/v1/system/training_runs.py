@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from rita.database import get_db
 from rita.logging_config import log_event
-from rita.repositories.training import TrainingRunsRepository
+from rita.repositories.training import TrainingMetricsRepository, TrainingRunsRepository
 from rita.repositories.backtest import BacktestRunsRepository
 
 log = structlog.get_logger()
@@ -123,6 +123,45 @@ def training_split(
         log_event(log, "error", "training_run.error", exc_info=True)
 
     return result
+
+
+@router.get("/training-metrics", summary="Per-episode loss and reward for the latest training run of an instrument")
+def training_metrics(
+    instrument: str = "NIFTY",
+    db: Session = Depends(get_db),
+) -> list[dict[str, Any]]:
+    """Return episode metrics (loss, reward, timestep) for the most recent completed training run."""
+    runs_repo = TrainingRunsRepository(db)
+    completed = sorted(
+        [r for r in runs_repo.read_all() if (r.instrument or "NIFTY") == instrument and r.status == "complete"],
+        key=lambda r: r.recorded_at,
+        reverse=True,
+    )
+    if not completed:
+        # fall back to any status so dev/test runs are still visible
+        completed = sorted(
+            [r for r in runs_repo.read_all() if (r.instrument or "NIFTY") == instrument],
+            key=lambda r: r.recorded_at,
+            reverse=True,
+        )
+    if not completed:
+        return []
+
+    run_id = completed[0].run_id
+    metrics = sorted(
+        TrainingMetricsRepository(db).read_all(),
+        key=lambda m: m.episode,
+    )
+    return [
+        {
+            "episode":  m.episode,
+            "timestep": m.episode * 1000,
+            "loss":     round(m.loss, 6)   if m.loss   is not None else None,
+            "reward":   round(m.reward, 4) if m.reward is not None else None,
+        }
+        for m in metrics
+        if m.run_id == run_id
+    ]
 
 
 @router.get("/backtest-status/{run_id}", summary="Poll backtest run status")

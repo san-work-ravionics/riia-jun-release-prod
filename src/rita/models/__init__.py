@@ -21,6 +21,9 @@ from .agent_builds import AgentBuildRunModel, AgentBuildAgentModel
 from .commentary_log import CommentaryLogModel
 from .api_call_log import ApiCallLogModel
 from .login_event import LoginEventModel
+from .user_portfolio_key import UserPortfolioKeyModel
+from .user_portfolio import UserPortfolioModel
+from .user_hedge_plan import UserHedgePlanModel
 
 __all__ = [
     "PositionModel",
@@ -48,4 +51,7 @@ __all__ = [
     "CommentaryLogModel",
     "ApiCallLogModel",
     "LoginEventModel",
+    "UserPortfolioKeyModel",
+    "UserPortfolioModel",
+    "UserHedgePlanModel",
 ]

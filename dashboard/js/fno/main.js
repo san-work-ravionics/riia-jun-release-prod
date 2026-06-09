@@ -1,6 +1,24 @@
 // ── FnO Dashboard — Entry Point ───────────────────────────────────────────────
+
+// ingest ?token= from OAuth callback; migrate legacy localStorage key on first load
+(function() {
+  const p = new URLSearchParams(window.location.search);
+  const t = p.get('token');
+  if (t) {
+    sessionStorage.setItem('auth_token', t);
+    history.replaceState({}, '', window.location.pathname);
+  } else {
+    const legacy = localStorage.getItem('rita_token');
+    if (legacy && !sessionStorage.getItem('auth_token')) {
+      sessionStorage.setItem('auth_token', legacy);
+      localStorage.removeItem('rita_token');
+    }
+  }
+})();
+
 import { initApp, checkStatus, fetchPositions } from './app-init.js';
 import { randomUUID } from '../shared/utils.js';
+import { ensureDevToken } from '../shared/dev-auth.js';
 
 const SESSION_TRACE_ID = randomUUID();
 
@@ -18,7 +36,8 @@ async function apiFetch(url, opts = {}) {
     }
 }
 import { state } from './state.js';
-import { initNav, setUnderlying, setExpiry } from './nav.js';
+import { initNav, setUnderlying, setExpiry, _sectionLoaders } from './nav.js';
+import { loadFnoMyPortfolio, fnoSelectInstrument } from './my-portfolio.js';
 import { filterPos } from './positions.js';
 import {
   manSelectTile,
@@ -36,6 +55,12 @@ import {
 
 // ── Window bindings for inline onclick= attributes ────────────────────────────
 // Navigation / filter
+window.toggleAnalyticsMode = function(mode) {
+  state.analyticsMode = mode;
+  const errEl = document.getElementById('analytics-mode-error');
+  if (errEl) { errEl.textContent = ''; errEl.style.display = 'none'; }
+  initApp(state.analyticsMode);
+};
 window.setUnderlying    = setUnderlying;
 window.setExpiry        = setExpiry;
 window.filterPos        = filterPos;
@@ -45,7 +70,6 @@ window.togglePaperMode  = function(isPaper) {
   if (lbl) lbl.textContent = isPaper ? 'Paper' : 'Live';
   fetchPositions();
 };
-
 // Manoeuvre
 window.manSelectTile    = manSelectTile;
 window.manSwitchTab     = manSwitchTab;
@@ -59,16 +83,46 @@ window.manToggleView    = manToggleView;
 window.manSaveCsv       = manSaveCsv;
 window.manSaveSnapshot  = manSaveSnapshot;
 
+import { loadEquityHedge } from './equity_hedge.js';
+import { init as loadEquityScenarios } from '../scenarios/equity-scenarios.js';
 import { initI18n, setLanguage, applyTranslations } from '../shared/i18n.js';
+import { loadPortfolioHedge, phSetCoverage, phSetDuration, phToggleHedge, phPickStrategy, phSetScenarioTab } from './portfolio-hedge.js';
 
-window.setLanguage = setLanguage;
+window.setLanguage        = setLanguage;
+window.loadEquityHedge      = loadEquityHedge;
+_sectionLoaders['equity-scenarios'] = loadEquityScenarios;
+window.fnoSelectInstrument = fnoSelectInstrument;
+
+// Portfolio Hedge wizard
+_sectionLoaders['portfolio-hedge'] = loadPortfolioHedge;
+window.loadPortfolioHedge = loadPortfolioHedge;
+window.phSetCoverage      = phSetCoverage;
+window.phSetDuration      = phSetDuration;
+window.phToggleHedge      = phToggleHedge;
+window.phPickStrategy     = phPickStrategy;
+window.phSetScenarioTab   = phSetScenarioTab;
+
+// My Portfolio CTA — navigates to portfolio-hedge section from Overview
+window.fnoMpGoHedge = function () {
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+  const navItem = document.querySelector('.nav-item[data-section="portfolio-hedge"]');
+  if (navItem) navItem.classList.add('active');
+  const section = document.getElementById('page-portfolio-hedge');
+  if (section) section.classList.add('active');
+  if (typeof _sectionLoaders['portfolio-hedge'] === 'function') {
+    _sectionLoaders['portfolio-hedge']();
+  }
+};
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 initI18n(); applyTranslations();
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
+  await ensureDevToken();
   initNav();
-  initApp();
+  initApp('real');
   checkStatus();
+  loadPortfolioHedge();
   // Poll API status every 30s
   setInterval(checkStatus, 30000);
 });

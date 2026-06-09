@@ -1,0 +1,39 @@
+{
+  "run_id": "20260530-0930",
+  "app": "rita",
+  "request": "Make NIFTY/BANKNIFTY data refresh incremental (no full overwrite); fix missing SKIP_INSTRUMENTS constant that blocked test suite; deploy to production; run data refresh",
+  "skill_file": "n/a",
+  "agents": [
+    {
+      "role": "engineer",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 1200,
+      "grounding_checks": {
+        "branch_created": false,
+        "code_changed": true,
+        "spec_updated": false,
+        "ruff_passed": true,
+        "contract_matches_architect": true
+      },
+      "failure_modes": [],
+      "notes": "1) fetch_and_write_raw() refactored — NIFTY/BANKNIFTY now incremental append to _yf.csv instead of full overwrite from 2009-09-01. 2) SKIP_INSTRUMENTS constant added (was in worktree only, never committed — blocked test_data_refresh.py). 3) Skip guard added to refresh_all(). 4) All 8 unit tests passing. Commits: 6ca80c1 (dev), b48d25e (prod)."
+    }
+  ],
+  "overall_status": "pass",
+  "total_tokens_estimated": 1200,
+  "duration_minutes": 30,
+  "branch": "master",
+  "merge_status": "merged",
+  "merge_commit": "b48d25e",
+  "human_score": {
+    "accuracy": 3,
+    "relevance": 4,
+    "csat": 3,
+    "planning_ok": true,
+    "time_saved_hours": 2,
+    "notes": ""
+  }
+}

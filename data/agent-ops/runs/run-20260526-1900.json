@@ -1,0 +1,39 @@
+{
+  "run_id": "20260526-1900",
+  "app": "ds+investor-flow",
+  "request": "Two direct bug fixes: (1) MCP calls table — timestamps displayed as raw Python datetime string with microseconds; format as EU datetime DD-MMM-YYYY HH:MM:SS AM/PM. (2) Investor onboarding flow v2 — selecting 1yr in Step 1 did not auto-select Next Purchase in Step 2, Step 3 showed 5yr default with Q1/Q2/Q3/Q4 labels instead of 3m/6m/9m/12m; long horizon stops were 4 options to 20yr instead of 5 options at 3yr steps to 15yr.",
+  "skill_file": "project-office/skills/skill-fix-js-bug.md",
+  "agents": [
+    {
+      "role": "engineer",
+      "status": "pass",
+      "steps_required": 3,
+      "steps_completed": 3,
+      "adherence_score": 1.0,
+      "token_estimate": 900,
+      "grounding_checks": {
+        "branch_created": false,
+        "code_changed": true,
+        "spec_updated": false,
+        "ruff_passed": true,
+        "contract_matches_architect": true
+      },
+      "failure_modes": [],
+      "notes": "Fix 1: added fmtDT() EU formatter to ds/utils.js + fmt column support to mkTbl(); applied to MCP table timestamp column in ds/mcp.js. Commits a50dd05 (pushed to prod). Fix 2: SLIDER_STOPS.short labels Q1/Q2/Q3/Q4→3m/6m/9m/12m; SLIDER_STOPS.long [5y,10y,15y,20y]→[3y,6y,9y,12y,15y]; added INVESTOR_TO_GOAL map + selectGoal() to Card 1 click handler in investor-flow/v2/index.html. Commit 2b2be01 (pushed to prod)."
+    }
+  ],
+  "overall_status": "pass",
+  "total_tokens_estimated": 900,
+  "duration_minutes": 20,
+  "branch": "master",
+  "merge_status": "merged",
+  "merge_commit": "2b2be01",
+  "human_score": {
+    "accuracy": 2,
+    "relevance": 4,
+    "csat": 2,
+    "planning_ok": true,
+    "time_saved_hours": 8,
+    "notes": "Fixes were correct but investor flow change not visible on local env without hard refresh — caused confusion"
+  }
+}

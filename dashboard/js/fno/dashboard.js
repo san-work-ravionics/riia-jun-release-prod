@@ -1,50 +1,174 @@
 // ── Dashboard section ─────────────────────────────────────────────────────────
 import { state, activePositions } from './state.js';
-import { fmt, fmtPnl, pnlClass } from './utils.js';
+import { fmtPnl, pnlClass } from './utils.js';
 import { loadHistory } from './rr.js';
 import { t } from '../shared/i18n.js';
 
 export function renderDashboard() {
-  renderDashKpis();
-  renderMarketSnapshot();
-  renderSegmentChart();
-  renderDailyProgress();
-  renderMovers();
+  renderGeoOverview();
+}
+
+// Currency symbol map
+const _CUR_SYM = { EUR: '€', USD: '$', INR: '₹' };
+const _REGION_LABELS = { India: 'India', US: 'United States', EU: 'Europe', Other: 'Other' };
+
+function _signalFromChg(chg) {
+  if (chg > 0.3)  return { label: 'Bullish', cls: 'pos' };
+  if (chg < -0.3) return { label: 'Bearish', cls: 'neg' };
+  return { label: 'Neutral', cls: 'neu' };
+}
+
+function _fmtClose(close, currency) {
+  const sym = _CUR_SYM[currency] || '₹';
+  return sym + Number(close).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+export function renderGeoOverview() {
+  const el = document.getElementById('fno-geo-overview');
+  if (!el) return;
+
+  const mkt = state.marketData || {};
+  const regionOrder = ['India', 'US', 'EU', 'Other'];
+  const _REGION_CUR = { India: 'INR', US: 'USD', EU: 'EUR', Other: 'INR' };
+
+  // Use DB portfolio instruments; fall back to deriving from positions+marketData
+  let instruments = state.portfolioGeoInstruments;
+  if (!instruments?.length) {
+    const instMeta = {};
+    for (const p of (state.positions || [])) {
+      if (!instMeta[p.und]) instMeta[p.und] = { id: p.und, name: p.full || p.und, region: p.region || 'Other' };
+    }
+    for (const key of Object.keys(mkt)) {
+      if (!instMeta[key]) {
+        const d = mkt[key]; const cur = d.currency || 'INR';
+        instMeta[key] = { id: key, name: key, region: cur === 'EUR' ? 'EU' : cur === 'USD' ? 'US' : 'India' };
+      }
+    }
+    instruments = Object.values(instMeta);
+  }
+  if (!instruments.length) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--t3);font-family:var(--fm)">No market data</div>';
+    return;
+  }
+
+  // Group by region
+  const byRegion = {};
+  for (const inst of instruments) {
+    const r = inst.region || 'Other';
+    if (!byRegion[r]) byRegion[r] = [];
+    byRegion[r].push(inst);
+  }
+
+  const activeUnd = state.currentUnd || 'ALL';
+  const cards = regionOrder.filter(r => byRegion[r]?.length).map(r => {
+    const label = _REGION_LABELS[r] || r;
+    const items = byRegion[r].map(inst => {
+      const id = inst.id;
+      const d = mkt[id];
+      const isActive = id === activeUnd;
+      const activeCls = isActive ? ' geo-kpi-active' : '';
+      if (!d) {
+        return `<div class="kpi geo-kpi${activeCls}" style="padding:6px 8px" data-id="${id}" onclick="setUnderlying('${id}')">
+          <div class="kpi-label" style="font-size:10px;font-weight:600;line-height:1.3;min-height:2.6em">${inst.name}</div>
+          <div class="kpi-value" style="font-size:13px">—</div>
+          <div class="kpi-delta" style="font-size:10px">—</div>
+        </div>`;
+      }
+      const chg = parseFloat(d.chgFromOpen || 0);
+      const { label: sig, cls } = _signalFromChg(chg);
+      const currency = d.currency || _REGION_CUR[r] || 'INR';
+      const priceStr = _fmtClose(d.close, currency);
+      return `<div class="kpi geo-kpi${activeCls}" style="padding:6px 8px" data-id="${id}" onclick="setUnderlying('${id}')">
+        <div class="kpi-label" style="font-size:10px;font-weight:600;line-height:1.3;min-height:2.6em">${inst.name}</div>
+        <div class="kpi-value ${cls}" style="font-size:13px">${priceStr}</div>
+        <div class="kpi-delta ${cls}" style="font-size:10px">${sig}</div>
+      </div>`;
+    }).join('');
+    return `<div class="card">
+      <div class="card-hdr" style="padding:8px 14px 4px">
+        <span class="card-title" style="font-size:12px">${label}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px;padding:4px 0">${items}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = cards || '<div style="font-size:12px;color:var(--t3);font-family:var(--fm)">No portfolio — add instruments in My Portfolio</div>';
 }
 
 export function renderDashKpis() {
   const filtered   = activePositions();
   const unreal     = filtered.reduce((s, p) => s + p.pnl, 0);
-  const realized   = state.currentUnd === 'BANKNIFTY' ? 0 : state.realizedPnl;
+  const realized   = state.realizedPnl || 0;
   const net        = unreal + realized;
   const netDelta   = state.currentUnd === 'ALL'
     ? Object.values(state.portDelta).reduce((s, v) => s + v, 0)
     : (state.portDelta[state.currentUnd] || 0);
-  const nCnt = state.positions.filter(p => p.und === 'NIFTY' && (state.currentExpiry === 'ALL' || p.exp === state.currentExpiry)).length;
-  const bCnt = state.positions.filter(p => p.und === 'BANKNIFTY' && (state.currentExpiry === 'ALL' || p.exp === state.currentExpiry)).length;
-  const subLine = state.currentUnd === 'ALL' ? `${nCnt} NIFTY · ${bCnt} BANKNIFTY`
-                : `${filtered.length} ${state.currentUnd} positions`;
+  const totalPnl   = (state.positions || []).reduce((s, p) => s + (p.pnl || 0), 0);
+
+  // Sub-label: list all underlyings for ALL, or per-instrument count
+  const undCounts = {};
+  filtered.forEach(p => { undCounts[p.und] = (undCounts[p.und] || 0) + 1; });
+  const subLine = state.currentUnd === 'ALL'
+    ? Object.entries(undCounts).map(([u, c]) => `${c} ${u}`).join(' · ') || '—'
+    : `${filtered.length} ${state.currentUnd} positions`;
   const closedCnt = state.closedPositions.filter(p => state.currentUnd === 'ALL' || p.underlying === state.currentUnd).length;
 
+  // Portfolio Value from meta
+  const totalVal = state.portfolioMeta?.total_value_eur;
+  const valStr = totalVal != null
+    ? '€' + parseFloat(totalVal).toLocaleString('en-EU', { maximumFractionDigits: 0 })
+    : '—';
+  const pnlSign = totalPnl >= 0 ? '+' : '';
+  const pnlStr  = pnlSign + totalPnl.toLocaleString('en-EU', { maximumFractionDigits: 0 });
+
   document.getElementById('dash-kpis').innerHTML = `
+    <div class="kpi"><div class="kpi-label">Portfolio Value</div><div class="kpi-value">${valStr}</div><div class="kpi-sub">saved portfolio</div></div>
+    <div class="kpi"><div class="kpi-label">Total P&amp;L</div><div class="kpi-value ${pnlClass(totalPnl)}">${pnlStr}</div><div class="kpi-sub">all positions</div></div>
     <div class="kpi"><div class="kpi-label">${t('fno.active_positions')}</div><div class="kpi-value">${filtered.length}</div><div class="kpi-sub">${subLine}</div></div>
     <div class="kpi"><div class="kpi-label">${t('fno.unrealized_pnl')}</div><div class="kpi-value ${pnlClass(unreal)}">${fmtPnl(unreal)}</div><div class="kpi-sub">${t('fno.open_positions_sub')}</div></div>
-    <div class="kpi"><div class="kpi-label">${t('fno.realized_pnl')}</div><div class="kpi-value ${pnlClass(realized)}">${fmtPnl(realized)}</div><div class="kpi-sub ${realized > 0 ? 'pos' : ''}">${state.currentUnd === 'BANKNIFTY' ? 'No closed BANKNIFTY trades' : `${closedCnt} closed trades`}</div></div>
+    <div class="kpi"><div class="kpi-label">${t('fno.realized_pnl')}</div><div class="kpi-value ${pnlClass(realized)}">${fmtPnl(realized)}</div><div class="kpi-sub ${realized > 0 ? 'pos' : ''}">${closedCnt} closed trades</div></div>
     <div class="kpi"><div class="kpi-label">${t('fno.net_pnl')}</div><div class="kpi-value ${pnlClass(net)}">${fmtPnl(net)}</div><div class="kpi-sub">${t('fno.real_unreal')}</div></div>
-    <div class="kpi"><div class="kpi-label">${t('fno.net_delta')}</div><div class="kpi-value ${netDelta < 0 ? 'neg' : 'pos'}">${netDelta > 0 ? '+' : ''}${netDelta}</div><div class="kpi-sub ${netDelta < 0 ? 'neg' : 'pos'}">${netDelta < 0 ? t('fno.net_short') : t('fno.net_long')}</div></div>
+    <div class="kpi"><div class="kpi-label">${t('fno.net_delta')}</div><div class="kpi-value ${netDelta < 0 ? 'neg' : 'pos'}">${netDelta > 0 ? '+' : ''}${netDelta.toFixed(2)}</div><div class="kpi-sub ${netDelta < 0 ? 'neg' : 'pos'}">${netDelta < 0 ? t('fno.net_short') : t('fno.net_long')}</div></div>
   `;
+}
+
+function _fmtEur(v) {
+  return '€' + Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function _renderEquityCard(u, d) {
+  const retChg   = parseFloat(d.chgFromOpen);
+  const retClass = retChg >= 0 ? 'pos' : 'neg';
+  return `<div class="kpi" style="border-left:3px solid var(--p03)">
+    <div class="kpi-label">${u} · Equity · ${d.date}</div>
+    <div class="kpi-value ${retClass}" style="font-size:18px">${_fmtEur(d.close)}</div>
+    <div class="kpi-delta ${retClass}">${retChg >= 0 ? '▲ +' : '▼ '}${Math.abs(retChg).toFixed(2)}% · from ${_fmtEur(d.prevClose)}</div>
+    <div class="kpi-sub" style="margin-top:5px;line-height:1.6">
+      H ${_fmtEur(d.high)} · L ${_fmtEur(d.low)}<br>
+      Vol 30d: ${d.vol_30d != null ? d.vol_30d.toFixed(1) + '%' : '—'} · ${d.shares}
+    </div>
+  </div>`;
 }
 
 export function renderMarketSnapshot() {
   const grid = document.getElementById('mkt-grid');
-  const underlyings = state.currentUnd === 'ALL'
-    ? ['NIFTY', 'BANKNIFTY']
-    : state.marketData[state.currentUnd] ? [state.currentUnd] : [];
+  if (!grid || grid.style.display === 'none') return;
+  let underlyings;
+  if (state.currentUnd === 'ALL') {
+    underlyings = state.marketData['ASML']?._from_eq_hedge ? ['ASML'] : [];
+  } else {
+    underlyings = state.marketData[state.currentUnd] ? [state.currentUnd] : [];
+  }
   if (!underlyings.length) { grid.innerHTML = ''; return; }
-  grid.className = `mkt-grid ${underlyings.length === 1 ? 'c1' : 'c2'}`;
+  const cols = underlyings.length >= 3 ? 'c3' : underlyings.length === 2 ? 'c2' : 'c1';
+  grid.className = `mkt-grid ${cols}`;
 
   grid.innerHTML = underlyings.map(u => {
-    const d        = state.marketData[u];
+    const d = state.marketData[u];
+    if (!d) return '';
+
+    if (d._from_eq_hedge) return _renderEquityCard(u, d);
+
     const dayChg   = parseFloat(d.chgFromOpen);
     const prevChg  = d.chgFromPrev != null ? parseFloat(d.chgFromPrev) : null;
     const range    = d.high - d.low;
@@ -84,68 +208,23 @@ export function renderMarketSnapshot() {
   }).join('');
 }
 
-export function renderSegmentChart() {
-  const expiries = state.currentExpiry !== 'ALL' ? [state.currentExpiry]
-    : [...new Set(state.positions.map(p => p.exp))].sort();
-  const sumPnl = (und, exp) => activePositions()
-    .filter(p => (und === 'ALL' || p.und === und) && p.exp === exp)
-    .reduce((s, p) => s + p.pnl, 0);
-
-  let labels = [], data = [];
-  if (state.currentUnd === 'NIFTY') {
-    expiries.forEach(e => { labels.push(`NIFTY ${e}`); data.push(sumPnl('NIFTY', e)); });
-    if (state.currentExpiry === 'ALL') { labels.push('Realized'); data.push(state.realizedPnl); }
-  } else if (state.currentUnd === 'BANKNIFTY') {
-    expiries.forEach(e => { labels.push(`BNKN ${e}`); data.push(sumPnl('BANKNIFTY', e)); });
-  } else if (state.currentUnd !== 'ALL') {
-    expiries.forEach(e => { labels.push(`${state.currentUnd} ${e}`); data.push(sumPnl(state.currentUnd, e)); });
-  } else {
-    expiries.forEach(e => {
-      labels.push(`NIFTY ${e}`); data.push(sumPnl('NIFTY', e));
-      labels.push(`BNKN ${e}`);  data.push(sumPnl('BANKNIFTY', e));
-    });
-    if (state.currentExpiry === 'ALL') { labels.push('Realized'); data.push(state.realizedPnl); }
-  }
-
-  const colors  = data.map(v => v >= 0 ? 'rgba(26,107,60,0.75)' : 'rgba(155,28,28,0.75)');
-  const borders = data.map(v => v >= 0 ? '#1A6B3C' : '#9B1C1C');
-
-  if (state.segChart) state.segChart.destroy();
-  state.segChart = new Chart(document.getElementById('segment-chart'), {
-    type: 'bar',
-    data: { labels, datasets: [{ label: 'P&L (₹)', data, backgroundColor: colors, borderColor: borders, borderWidth: 1.5, borderRadius: 4 }] },
-    options: {
-      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: d => fmtPnl(d.raw) } } },
-      scales: {
-        x: { grid: { color: 'rgba(0,0,0,.05)' }, ticks: { font: { family: 'IBM Plex Mono', size: 10 }, callback: v => `₹${(v / 1000).toFixed(0)}K` } },
-        y: { grid: { display: false }, ticks: { font: { family: 'IBM Plex Mono', size: 11 } } }
-      }
-    }
-  });
-}
 
 export function renderDailyProgress() {
   const canvas = document.getElementById('daily-progress-chart');
   if (!canvas) return;
   if (state.dpChart) { state.dpChart.destroy(); state.dpChart = null; }
 
-  const history = loadHistory().filter(h => h.nifty && h.banknifty);
+  const history = loadHistory().filter(h => h.asml);
   if (!history.length) {
     document.getElementById('daily-progress-wrap').innerHTML =
       '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--t3);font-family:var(--fm);font-size:12px;">No history yet — data accumulates automatically each day you open this page.</div>';
     return;
   }
 
-  const labels  = history.map(h => h.date);
-  const netPnl  = history.map(h => (h.niftyPnl || 0) + (h.bnknPnl || 0));
-
-  const base0N = history[0].nifty;
-  const base0B = history[0].banknifty;
-  const base0A = history.find(h => h.asml)?.asml || null;
-  const niftyPct = history.map(h => +((h.nifty  / base0N - 1) * 100).toFixed(2));
-  const bnknPct  = history.map(h => +((h.banknifty / base0B - 1) * 100).toFixed(2));
-  const asmlPct  = base0A ? history.map(h => h.asml ? +((h.asml / base0A - 1) * 100).toFixed(2) : null) : null;
+  const labels = history.map(h => h.date);
+  const netPnl = history.map(h => (h.niftyPnl || 0) + (h.bnknPnl || 0));
+  const base0A = history[0].asml;
+  const asmlPct = history.map(h => +((h.asml / base0A - 1) * 100).toFixed(2));
 
   const pnlColors  = netPnl.map(v => v >= 0 ? 'rgba(26,107,60,0.75)'  : 'rgba(155,28,28,0.75)');
   const pnlBorders = netPnl.map(v => v >= 0 ? '#1A6B3C' : '#9B1C1C');
@@ -160,21 +239,11 @@ export function renderDailyProgress() {
           borderWidth: 1.5, borderRadius: 3, yAxisID: 'yPnl', order: 2,
         },
         {
-          type: 'line', label: 'NIFTY %', data: niftyPct,
-          borderColor: '#0056B8', backgroundColor: 'transparent',
-          borderWidth: 2, pointRadius: 3, pointHoverRadius: 5, tension: 0.3, yAxisID: 'yIdx', order: 1,
-        },
-        {
-          type: 'line', label: 'BANKNIFTY %', data: bnknPct,
-          borderColor: '#6B2FA0', backgroundColor: 'transparent',
-          borderWidth: 2, pointRadius: 3, pointHoverRadius: 5, tension: 0.3, yAxisID: 'yIdx', order: 1,
-        },
-        ...(asmlPct ? [{
           type: 'line', label: 'ASML %', data: asmlPct,
           borderColor: '#92480A', backgroundColor: 'transparent',
           borderWidth: 2, pointRadius: 3, pointHoverRadius: 5, tension: 0.3, yAxisID: 'yIdx', order: 1,
           spanGaps: true,
-        }] : []),
+        },
       ]
     },
     options: {
@@ -213,15 +282,3 @@ export function renderDailyProgress() {
   });
 }
 
-export function renderMovers() {
-  const filtered = activePositions();
-  const sorted = [...filtered].sort((a, b) => b.pnl - a.pnl);
-  const top3 = sorted.slice(0, 3);
-  const bot3 = sorted.slice(-3).reverse();
-  document.getElementById('movers-sub').textContent = state.currentUnd === 'ALL' ? 'All underlyings' : state.currentUnd + ' positions';
-  document.getElementById('movers-tbody').innerHTML = [
-    ...top3.map(p => `<tr><td>${p.full}</td><td><span class="exp-badge ${p.exp.toLowerCase()}">${p.exp}</span></td><td><span class="side-badge ${p.side.toLowerCase()}">${p.side}</span></td><td class="pos">${fmtPnl(p.pnl)}</td></tr>`),
-    `<tr><td colspan="4" style="padding:2px 12px;"><div style="border-top:1.5px dashed var(--border2);"></div></td></tr>`,
-    ...bot3.map(p => `<tr><td>${p.full}</td><td><span class="exp-badge ${p.exp.toLowerCase()}">${p.exp}</span></td><td><span class="side-badge ${p.side.toLowerCase()}">${p.side}</span></td><td class="neg">${fmtPnl(p.pnl)}</td></tr>`)
-  ].join('');
-}

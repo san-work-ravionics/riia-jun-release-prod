@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-05-26T13:30:42",
-  "total_runs": 63,
+  "generated_at": "2026-06-07T17:46:04",
+  "total_runs": 66,
   "per_role": {
     "pm": {
       "run_count": 28,
@@ -17,11 +17,11 @@
       "avg_token_cost": 11807
     },
     "engineer": {
-      "run_count": 28,
-      "avg_adherence_score": 0.913,
-      "first_pass_rate": 0.679,
+      "run_count": 29,
+      "avg_adherence_score": 0.916,
+      "first_pass_rate": 0.69,
       "recent_first_pass_rate": 0.8,
-      "avg_token_cost": 32836
+      "avg_token_cost": 31735
     },
     "qa": {
       "run_count": 28,
@@ -40,8 +40,8 @@
   },
   "per_app": {
     "rita": {
-      "run_count": 11,
-      "pass": 8,
+      "run_count": 12,
+      "pass": 9,
       "pass_with_warnings": 3,
       "fail": 0
     },
@@ -70,6 +70,12 @@
       "fail": 0
     },
     "fno": {
+      "run_count": 2,
+      "pass": 2,
+      "pass_with_warnings": 0,
+      "fail": 0
+    },
+    "ds+investor-flow": {
       "run_count": 1,
       "pass": 1,
       "pass_with_warnings": 0,
@@ -272,6 +278,13 @@
       "grounding_score": 1.0,
       "checks_passed": 20,
       "checks_total": 20
+    },
+    {
+      "run_id": "20260526-1900",
+      "app": "ds+investor-flow",
+      "grounding_score": 0.6,
+      "checks_passed": 3,
+      "checks_total": 5
     }
   ],
   "failure_modes": {
@@ -441,6 +454,12 @@
       ],
       "improvement_applied": "FC-HTML-CSS v1: Step 4b added with ops design system CSS class table (kpi-strip/kpi/kpi-ey/kpi-val/tbl-wrap), banned class list (kpi-row/kpi-card/data-table), no-display-none rule, SECTIONS array grep gate. 3 new DoD checklist items. Root cause: run-20260524-1517 engineer generated non-existent CSS classes; section invisible due to display:none; SECTIONS array not updated.",
       "before_first_pass_rate": 0.679,
+      "after_first_pass_rate": null
+    },
+    {
+      "skill_file": "project-office/skills/skill-fix-js-bug.md",
+      "improvement_applied": "CSAT v1: browser cache reminder added to DoD \u2014 after committing static JS/HTML changes engineer must tell user to hard-refresh (Cmd+Shift+R / Ctrl+Shift+R). Root cause: run-20260526-1900 csat=2, fix was correct on disk but user saw stale cached version and reported it as broken.",
+      "before_first_pass_rate": null,
       "after_first_pass_rate": null
     },
     {
@@ -721,20 +740,20 @@
     }
   ],
   "task_completion": {
-    "tsr": 0.841,
-    "first_attempt_success_rate": 0.841,
-    "partial_completion_rate": 0.143,
+    "tsr": 0.848,
+    "first_attempt_success_rate": 0.848,
+    "partial_completion_rate": 0.136,
     "abandonment_rate": 0.0
   },
   "quality": {
-    "avg_accuracy_score": 3.0,
+    "avg_accuracy_score": 2.94,
     "avg_relevance_score": 4.0,
-    "avg_csat": 3.0,
+    "avg_csat": 2.94,
     "recent_avg_csat": 2.67,
-    "csat_count": 13,
-    "planning_accuracy_rate": 0.769,
+    "csat_count": 16,
+    "planning_accuracy_rate": 0.812,
     "recent_planning_accuracy_rate": 1.0,
-    "grounding_pass_rate": 0.875
+    "grounding_pass_rate": 0.873
   },
   "token_forecasting": {
     "avg_forecast_error_pct": 16.2,
@@ -754,8 +773,8 @@
     },
     "by_feature_type": {
       "rita": {
-        "run_count": 11,
-        "avg_tokens": 107178,
+        "run_count": 12,
+        "avg_tokens": 98347,
         "modifier": 1.0
       },
       "ops": {
@@ -764,8 +783,8 @@
         "modifier": 0.6
       },
       "fno": {
-        "run_count": 1,
-        "avg_tokens": 69378,
+        "run_count": 2,
+        "avg_tokens": 35289,
         "modifier": 0.8
       },
       "invest-game": {
@@ -777,9 +796,9 @@
   },
   "efficiency": {
     "avg_duration_minutes": 28,
-    "avg_tokens_per_run": 49193,
+    "avg_tokens_per_run": 47007,
     "avg_retry_count": 0.03,
-    "avg_time_saved_hours": 8.7
+    "avg_time_saved_hours": 8.2
   },
   "reliability": {
     "error_recovery_rate": 0.8,
@@ -787,7 +806,7 @@
     "loop_event_total": 0
   },
   "hitl": {
-    "escalation_rate": 0.016,
+    "escalation_rate": 0.015,
     "avg_corrections_per_run": 0.03,
     "total_hitl_events": 2
   },
@@ -798,52 +817,52 @@
   },
   "api_metrics": {
     "available": true,
-    "total_calls": 1631,
-    "unique_endpoints": 67,
-    "overall_error_rate_pct": 2.21,
-    "error_rate_5xx_pct": 0.0,
+    "total_calls": 9926,
+    "unique_endpoints": 160,
+    "overall_error_rate_pct": 7.95,
+    "error_rate_5xx_pct": 0.36,
     "top_5_by_calls": [
+      {
+        "path": "/api/v1/experience/rita/geography-overview",
+        "method": "GET",
+        "count": 964,
+        "p50_ms": 110.8,
+        "p95_ms": 736.0,
+        "error_count": 0
+      },
       {
         "path": "/progress",
         "method": "GET",
-        "count": 516,
-        "p50_ms": 5.2,
-        "p95_ms": 66.7,
-        "error_count": 0
-      },
-      {
-        "path": "/api/v1/experience/rita/strategy-comparison",
-        "method": "GET",
-        "count": 119,
-        "p50_ms": 4.9,
-        "p95_ms": 88.6,
-        "error_count": 0
-      },
-      {
-        "path": "/api/experience/ops/functional-kpis",
-        "method": "GET",
-        "count": 107,
-        "p50_ms": 13.2,
-        "p95_ms": 343.8,
-        "error_count": 6
-      },
-      {
-        "path": "/api/experience/ops/metrics/summary",
-        "method": "GET",
-        "count": 104,
-        "p50_ms": 38.2,
-        "p95_ms": 160.0,
+        "count": 940,
+        "p50_ms": 5.6,
+        "p95_ms": 447.1,
         "error_count": 0
       },
       {
         "path": "/api/v1/commentary",
         "method": "POST",
-        "count": 94,
-        "p50_ms": 290.5,
-        "p95_ms": 1757.6,
+        "count": 573,
+        "p50_ms": 128.7,
+        "p95_ms": 3259.1,
+        "error_count": 72
+      },
+      {
+        "path": "/api/v1/market-signals",
+        "method": "GET",
+        "count": 479,
+        "p50_ms": 187.2,
+        "p95_ms": 898.8,
+        "error_count": 0
+      },
+      {
+        "path": "/api/v1/experience/rita/strategy-comparison",
+        "method": "GET",
+        "count": 429,
+        "p50_ms": 6.7,
+        "p95_ms": 37.0,
         "error_count": 0
       }
     ],
-    "generated_at": "2026-05-26T11:30:42.171771+00:00"
+    "generated_at": "2026-06-07T15:46:04.392609+00:00"
   }
 }

@@ -1,0 +1,103 @@
+{
+  "instruments": [
+    {
+      "symbol": "ZEEL",
+      "name": "Zee Entertainment",
+      "sl": 104,
+      "target": 123,
+      "status": "enabled",
+      "created_on": "2026-06-07"
+    },
+    {
+      "symbol": "JIOFIN",
+      "name": "Jio Financial Services",
+      "sl": 227,
+      "target": 287,
+      "status": "enabled",
+      "created_on": "2026-06-07"
+    },
+    {
+      "symbol": "ANANTRAJ",
+      "name": "Anant Raj Realty",
+      "sl": null,
+      "target": 744,
+      "status": "enabled",
+      "note": "SL at 547 triggered 2026-06-07",
+      "created_on": "2026-06-07"
+    },
+    {
+      "symbol": "NETWORK18",
+      "name": "Network18 Media",
+      "sl": 30.25,
+      "target": 45.8,
+      "status": "enabled",
+      "created_on": "2026-05-09"
+    },
+    {
+      "symbol": "ATHERENERG",
+      "name": "Ather Energy",
+      "sl": 986,
+      "target": 1160,
+      "status": "enabled",
+      "created_on": "2026-06-07"
+    },
+    {
+      "symbol": "HATHWAY",
+      "name": "Hathway Cable & Datacom",
+      "sl": 10.47,
+      "target": 13.5,
+      "status": "enabled",
+      "created_on": "2026-06-07"
+    },
+    {
+      "symbol": "TIPSMUSIC",
+      "name": "TIPS Music",
+      "sl": 482,
+      "target": null,
+      "status": "enabled",
+      "created_on": "2026-05-09"
+    },
+    {
+      "symbol": "DBCORP",
+      "name": "DB Corp",
+      "sl": 185,
+      "target": null,
+      "status": "enabled",
+      "created_on": "2026-05-09"
+    }
+  ],
+  "triggered": [
+    {
+      "symbol": "ANANTRAJ",
+      "alert_name": "Annatraj SL",
+      "sl": 547,
+      "target": null,
+      "triggered_count": 1,
+      "created_on": "2026-06-07"
+    },
+    {
+      "symbol": "ZEEL",
+      "alert_name": "Zee Ent Bull SL",
+      "sl": 84,
+      "target": null,
+      "triggered_count": 1,
+      "created_on": "2026-05-09"
+    },
+    {
+      "symbol": "HATHWAY",
+      "alert_name": "Hathway Bull SL",
+      "sl": 10.2,
+      "target": null,
+      "triggered_count": 1,
+      "created_on": "2026-05-09"
+    },
+    {
+      "symbol": "ANANTRAJ",
+      "alert_name": "AnantRaj Reality Bull SL",
+      "sl": 480,
+      "target": null,
+      "triggered_count": 1,
+      "created_on": "2026-05-09"
+    }
+  ]
+}

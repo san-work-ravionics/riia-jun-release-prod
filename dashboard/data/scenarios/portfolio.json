@@ -1,0 +1,71 @@
+{
+  "last_updated": "2026-06-09",
+  "holdings": [
+    {
+      "symbol": "ANANTRAJ",
+      "qty": 30,
+      "avg_cost": 521.07,
+      "ltp": 541.60,
+      "invested": 15632.00,
+      "cur_val": 16248.00,
+      "pnl": 616.00,
+      "net_chg_pct": 3.94,
+      "day_chg_pct": 0.75
+    },
+    {
+      "symbol": "ATHERENERG",
+      "qty": 35,
+      "avg_cost": 831.89,
+      "ltp": 1011.35,
+      "invested": 29116.00,
+      "cur_val": 35397.25,
+      "pnl": 6281.25,
+      "net_chg_pct": 21.57,
+      "day_chg_pct": 0.90
+    },
+    {
+      "symbol": "HATHWAY",
+      "qty": 350,
+      "avg_cost": 10.75,
+      "ltp": 10.75,
+      "invested": 3760.96,
+      "cur_val": 3762.50,
+      "pnl": 1.54,
+      "net_chg_pct": 0.04,
+      "day_chg_pct": -0.46
+    },
+    {
+      "symbol": "JIOFIN",
+      "qty": 5,
+      "avg_cost": 228.00,
+      "ltp": 232.95,
+      "invested": 1140.00,
+      "cur_val": 1164.75,
+      "pnl": 24.75,
+      "net_chg_pct": 2.17,
+      "day_chg_pct": 1.72
+    },
+    {
+      "symbol": "NETWORK18",
+      "qty": 100,
+      "avg_cost": 31.50,
+      "ltp": 31.88,
+      "invested": 3150.00,
+      "cur_val": 3188.00,
+      "pnl": 38.00,
+      "net_chg_pct": 1.21,
+      "day_chg_pct": 0.03
+    },
+    {
+      "symbol": "ZEEL",
+      "qty": 120,
+      "avg_cost": 91.09,
+      "ltp": 107.25,
+      "invested": 10931.09,
+      "cur_val": 12870.00,
+      "pnl": 1938.91,
+      "net_chg_pct": 17.74,
+      "day_chg_pct": -3.46
+    }
+  ]
+}

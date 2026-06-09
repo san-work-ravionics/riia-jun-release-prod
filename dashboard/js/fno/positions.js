@@ -1,4 +1,5 @@
 // ── Positions section ─────────────────────────────────────────────────────────
+import { t } from '../shared/i18n.js';
 import { state } from './state.js';
 import { fmt, pnlClass } from './utils.js';
 
@@ -36,8 +37,8 @@ export function renderPositionsKpis() {
   kpiEl.className = `kpi-row c${cols}`;
 
   if (entries.length === 0) {
-    const modeLabel = state.paperMode ? 'Paper' : 'Live';
-    kpiEl.innerHTML = `<div class="kpi"><div class="kpi-label">No ${modeLabel} Positions</div><div class="kpi-value" style="font-size:14px;">—</div><div class="kpi-sub">No positions found for current filter</div></div>`;
+    const modeLabel = state.paperMode ? t('pos.mode_paper') : t('pos.mode_live');
+    kpiEl.innerHTML = `<div class="kpi"><div class="kpi-label">${state.paperMode ? t('pos.no_paper_positions') : t('pos.no_live_positions')}</div><div class="kpi-value" style="font-size:14px;">—</div><div class="kpi-sub">${t('pos.no_positions_sub')}</div></div>`;
     return;
   }
 
@@ -45,7 +46,7 @@ export function renderPositionsKpis() {
     <div class="kpi">
       <div class="kpi-label">${g.label}</div>
       <div class="kpi-value ${pnlClass(g.pnl)}">${fmtAmt(g.pnl, g.currency)}</div>
-      <div class="kpi-sub">${g.count} position${g.count !== 1 ? 's' : ''}</div>
+      <div class="kpi-sub">${g.count} ${t('pos.position_label')}${g.count !== 1 ? 's' : ''}</div>
     </div>`).join('');
 }
 
@@ -110,17 +111,17 @@ export function renderPositionsTable() {
 
   const total = filtered.reduce((s, p) => s + p.pnl, 0);
   const currency = filtered.length ? (filtered[0].currency || 'INR') : 'INR';
-  document.getElementById('pos-count-lbl').textContent = `${filtered.length} position${filtered.length !== 1 ? 's' : ''}`;
+  document.getElementById('pos-count-lbl').textContent = `${filtered.length} ${t('pos.position_label')}${filtered.length !== 1 ? 's' : ''}`;
   const el = document.getElementById('pos-total');
   el.textContent = fmtAmt(total, currency);
   el.className = `val ${pnlClass(total)}`;
 
   // Update page sub-label
   const modeTag = state.paperMode
-    ? '<span style="font-family:var(--fm);font-size:10px;font-weight:600;color:var(--p03);background:var(--p03-bg);padding:1px 6px;border-radius:3px;margin-left:6px;">PAPER</span>'
-    : '<span style="font-family:var(--fm);font-size:10px;font-weight:600;color:var(--p01);background:var(--p01-bg);padding:1px 6px;border-radius:3px;margin-left:6px;">LIVE</span>';
+    ? `<span style="font-family:var(--fm);font-size:10px;font-weight:600;color:var(--p03);background:var(--p03-bg);padding:1px 6px;border-radius:3px;margin-left:6px;">${t('pos.mode_paper')}</span>`
+    : `<span style="font-family:var(--fm);font-size:10px;font-weight:600;color:var(--p01);background:var(--p01-bg);padding:1px 6px;border-radius:3px;margin-left:6px;">${t('pos.mode_live')}</span>`;
   const sub = document.getElementById('pos-page-sub');
-  if (sub) sub.innerHTML = `${filtered.length} active${modeTag}`;
+  if (sub) sub.innerHTML = `${filtered.length} ${t('pos.active_label')}${modeTag}`;
 }
 
 export function filterPos(f, btn) {

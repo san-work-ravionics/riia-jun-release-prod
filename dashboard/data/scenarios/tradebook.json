@@ -1,0 +1,22 @@
+{
+  "trades": [
+    { "symbol": "ATHERENERG", "exchange": "NSE", "trade_time": "2026-03-23T10:30:02", "type": "buy", "qty": 10, "price": 730.00 },
+    { "symbol": "ATHERENERG", "exchange": "NSE", "trade_time": "2026-03-30T14:39:17", "type": "buy", "qty": 10, "price": 748.90 },
+    { "symbol": "ZEEL",       "exchange": "NSE", "trade_time": "2026-05-11T09:15:14", "type": "buy", "qty": 50, "price": 93.98 },
+    { "symbol": "HATHWAY",    "exchange": "NSE", "trade_time": "2026-05-11T09:20:50", "type": "buy", "qty": 200, "price": 10.80 },
+    { "symbol": "ANANTRAJ",   "exchange": "NSE", "trade_time": "2026-05-11T10:43:48", "type": "buy", "qty": 10, "price": 538.55 },
+    { "symbol": "ANANTRAJ",   "exchange": "BSE", "trade_time": "2026-05-12T10:47:29", "type": "buy", "qty": 10, "price": 525.45 },
+    { "symbol": "ATHERENERG", "exchange": "BSE", "trade_time": "2026-05-12T10:48:02", "type": "buy", "qty": 5,  "price": 961.70 },
+    { "symbol": "HATHWAY",    "exchange": "BSE", "trade_time": "2026-05-12T10:48:22", "type": "buy", "qty": 100, "price": 10.68 },
+    { "symbol": "ZEEL",       "exchange": "NSE", "trade_time": "2026-05-12T10:48:38", "type": "buy", "qty": 1,  "price": 89.08 },
+    { "symbol": "ZEEL",       "exchange": "NSE", "trade_time": "2026-05-12T10:48:38", "type": "buy", "qty": 17, "price": 89.09 },
+    { "symbol": "ZEEL",       "exchange": "NSE", "trade_time": "2026-05-12T10:48:38", "type": "buy", "qty": 32, "price": 89.09 },
+    { "symbol": "ATHERENERG", "exchange": "NSE", "trade_time": "2026-05-13T15:29:16", "type": "buy", "qty": 10, "price": 951.85 },
+    { "symbol": "ANANTRAJ",   "exchange": "BSE", "trade_time": "2026-05-13T15:29:25", "type": "buy", "qty": 10, "price": 499.20 },
+    { "symbol": "HATHWAY",    "exchange": "BSE", "trade_time": "2026-05-13T15:29:36", "type": "buy", "qty": 4,  "price": 10.65 },
+    { "symbol": "HATHWAY",    "exchange": "BSE", "trade_time": "2026-05-13T15:29:36", "type": "buy", "qty": 46, "price": 10.66 },
+    { "symbol": "ZEEL",       "exchange": "BSE", "trade_time": "2026-05-13T15:29:46", "type": "buy", "qty": 20, "price": 88.88 },
+    { "symbol": "NETWORK18",  "exchange": "NSE", "trade_time": "2026-05-18T09:17:27", "type": "buy", "qty": 100, "price": 31.50 },
+    { "symbol": "JIOFIN",     "exchange": "NSE", "trade_time": "2026-05-18T09:45:17", "type": "buy", "qty": 5,  "price": 228.00 }
+  ]
+}

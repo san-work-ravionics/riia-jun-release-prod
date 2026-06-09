@@ -8,15 +8,18 @@ export function renderGoalResult(containerId, d) {
   const feasCls = {conservative:'ok', realistic:'ok', ambitious:'warn', unrealistic:'err'};
   const cls = feasCls[r.feasibility] || 'neu';
 
+  const avgReturn = r.yearly_returns && r.yearly_returns.length
+    ? r.yearly_returns.reduce((a, b) => a + b.return_pct, 0) / r.yearly_returns.length
+    : null;
   const metrics = [
     {label:'Target Return',      value: fv(r.target_return_pct, 1, '%')},
-    {label:'Time Horizon',       value: `${r.time_horizon_days ?? '—'}d (${fv(r.years, 2)}yr)`},
+    {label:'Time Horizon',       value: `${r.time_horizon_days ?? '—'}d`},
     {label:'Risk Tolerance',     value: r.risk_tolerance ? r.risk_tolerance.charAt(0).toUpperCase()+r.risk_tolerance.slice(1) : '—'},
-    {label:'Annualized Target',  value: fv(r.annualized_target_pct, 2, '%')},
-    {label:'Req. Monthly Ret.',  value: fv(r.required_monthly_return_pct, 3, '%')},
+    {label:'Annualised Target',  value: fv(r.annualised_target, 2, '%')},
+    {label:'Req. Monthly Ret.',  value: fv(r.required_monthly, 3, '%')},
     {label:'Feasibility',        value: r.feasibility || '—', badge: cls},
-    {label:'Suggested Target',   value: fv(r.suggested_realistic_target_pct, 1, '%')},
-    {label:'Last 12m Return',    value: fv(r.last_12m_return_pct, 1, '%')},
+    {label:'Suggested Target',   value: fv(avgReturn, 1, '%')},
+    {label:'Last 12m Return',    value: fv(r.last_12m_return, 1, '%')},
   ];
 
   const mkMetric = m => `<div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:8px 12px">
@@ -32,10 +35,11 @@ export function renderGoalResult(containerId, d) {
     </div>
     <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-bottom:10px">${metrics.map(mkMetric).join('')}</div>`;
 
-  // 15-year annual returns chart
+  // Annual returns chart
   if (r.yearly_returns && r.yearly_returns.length) {
-    html += `<div class="chart-wrap" style="margin:0"><div class="chart-title">Nifty 50 Annual Returns — Last ${r.yearly_returns.length} Years
-      <span style="font-weight:400;color:var(--t3);font-size:11px"> · <span style="color:var(--run)">─</span> Target <span style="color:var(--build)">─</span> Suggested</span>
+    const instLabel = r.instrument || 'Instrument';
+    html += `<div class="chart-wrap" style="margin:0"><div class="chart-title">${instLabel} Annual Returns — Last ${r.yearly_returns.length} Years
+      <span style="font-weight:400;color:var(--t3);font-size:11px"> · <span style="color:var(--run)">─</span> Target <span style="color:var(--build)">─</span> Avg</span>
     </div><div class="chart-box" style="height:200px"><canvas id="chart-goal-returns"></canvas></div></div>`;
   }
   html += '</div>';
@@ -58,8 +62,8 @@ export function renderGoalResult(containerId, d) {
         plugins: {
           legend: { display: false },
           annotation: { annotations: {
-            target:    { type:'line', yMin: r.target_return_pct,               yMax: r.target_return_pct,               borderColor: C.run,   borderWidth:1.5, borderDash:[5,3], label:{content:'Target',    display:true, position:'end', font:{size:10}} },
-            suggested: { type:'line', yMin: r.suggested_realistic_target_pct,  yMax: r.suggested_realistic_target_pct,  borderColor: C.build, borderWidth:1.5, borderDash:[5,3], label:{content:'Suggested', display:true, position:'end', font:{size:10}} },
+            target:    { type:'line', yMin: r.target_return_pct, yMax: r.target_return_pct, borderColor: C.run,   borderWidth:1.5, borderDash:[5,3], label:{content:'Target', display:true, position:'end', font:{size:10}} },
+            suggested: { type:'line', yMin: avgReturn,           yMax: avgReturn,           borderColor: C.build, borderWidth:1.5, borderDash:[5,3], label:{content:'Avg',    display:true, position:'end', font:{size:10}} },
           }}
         },
         scales: {
