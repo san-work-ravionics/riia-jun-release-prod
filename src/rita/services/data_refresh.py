@@ -121,11 +121,12 @@ def fetch_and_write_raw(instrument_id: str, yf_ticker: str, last_date: date | No
     raw_dir.mkdir(parents=True, exist_ok=True)
 
     if instrument_id in COMPANION_FILE_INSTRUMENTS:
-        filename = f"{instrument_id.lower()}_yf.csv"
+        raw_path = raw_dir / f"{instrument_id.lower()}_yf.csv"
     else:
-        filename = f"{instrument_id.lower()}_daily.csv"
-
-    raw_path = raw_dir / filename
+        # Append to the largest existing CSV (same file find_instrument_csv picks),
+        # so rebuild_input() always reads an up-to-date primary file.
+        existing = sorted(raw_dir.glob("*.csv"), key=lambda p: p.stat().st_size, reverse=True)
+        raw_path = existing[0] if existing else raw_dir / f"{instrument_id.lower()}_daily.csv"
 
     if last_date is not None:
         start_dt = last_date + timedelta(days=1)
@@ -169,8 +170,10 @@ def fetch_and_write_raw(instrument_id: str, yf_ticker: str, last_date: date | No
         existing_df = pd.read_csv(raw_path, index_col=0, parse_dates=True)
         combined = pd.concat([existing_df, df])
         combined = combined[~combined.index.duplicated(keep="last")].sort_index()
+        combined.index.name = "date"
         combined.to_csv(raw_path)
     else:
+        df.index.name = "date"
         df.to_csv(raw_path)
     log.info(
         "data_refresh.raw_appended",
