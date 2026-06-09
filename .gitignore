@@ -41,3 +41,8 @@ test-results/
 # OS
 .DS_Store
 Thumbs.db
+
+# Runtime logs (never commit — locked by server, runtime data only)
+logs/*.jsonl
+logs/*.log
+logs/*.csv
