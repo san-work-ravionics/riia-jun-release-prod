@@ -183,11 +183,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
           <span style="display:inline-block; width:9px; height:9px; background:var(--run); border-radius:50%; box-shadow: 0 0 6px var(--run);"></span> Google Auth Protected
         </div>
 
-        <!-- Dev Sandbox Flip Switch -->
-        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;" title="If disabled, clicking tiles navigates directly without auth limits">
-          <span style="font-family:var(--fm); font-size:10px; color:var(--t3); text-transform:uppercase; letter-spacing:0.08em; font-weight: 600;">Auth</span>
+        <!-- Demo / Live Auth Switch (Live = Google sign-in enforced) -->
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;" title="Live: Google sign-in enforced. Demo: shared demo account, no sign-in.">
+          <span style="font-family:var(--fm); font-size:10px; color:var(--t3); text-transform:uppercase; letter-spacing:0.08em; font-weight: 600;">Demo</span>
           <div style="position:relative; width:34px; height:18px;">
-            <input type="checkbox" id="auth-enforcer-toggle" style="opacity:0; width:0; height:0; position:absolute;">
+            <input type="checkbox" id="auth-enforcer-toggle" checked style="opacity:0; width:0; height:0; position:absolute;">
             <span class="auth-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; transition:.2s ease; border-radius:20px;"></span>
             <style>
               #auth-enforcer-toggle + .auth-slider { background-color: var(--border2); }
@@ -196,6 +196,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
               #auth-enforcer-toggle:checked + .auth-slider::before { transform: translateX(16px); }
             </style>
           </div>
+          <span style="font-family:var(--fm); font-size:10px; color:var(--run); text-transform:uppercase; letter-spacing:0.08em; font-weight: 600;">Live</span>
         </label>
       </div>
 
@@ -289,27 +290,57 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
     const protectedTiles = document.querySelectorAll('.protected-route');
     const enforcerToggle = document.getElementById('auth-enforcer-toggle');
 
+    const _LOCAL_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0'];
+    const _isLocalDev = () => _LOCAL_HOSTS.includes(window.location.hostname);
+    // Shared demo account. Treated as any other user — the row is seeded in DB
+    // and authenticates via /auth/token; no identity is hardcoded server-side.
+    const RITA_DEMO_USER = 'webmaster@ravionics.nl';
+
+    async function _mintDemoToken() {
+      const base = (window.RITA_API_BASE || '').replace(/\/$/, '');
+      try {
+        const r = await fetch(base + '/auth/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: RITA_DEMO_USER, password: 'rita-dev' }),
+        });
+        if (!r.ok) return null;
+        const data = await r.json();
+        return data.access_token || null;
+      } catch {
+        return null;
+      }
+    }
+
     protectedTiles.forEach(tile => {
       tile.addEventListener('click', function(e) {
+        const targetUrl = this.getAttribute('href');
 
-        // Return immediately if enforcer is switched off (Sandbox mode)
-        if (!enforcerToggle || !enforcerToggle.checked) {
+        // Local dev: destination page mints its own dev token — navigate directly.
+        if (_isLocalDev()) {
           return;
         }
 
-        e.preventDefault();
-        const targetUrl = this.getAttribute('href');
-
-        // Check if user holds a token, otherwise boot them to Google SSO
-        const authToken = sessionStorage.getItem('auth_token');
-        if (!authToken || authToken === 'null') {
-          // Stash the destination so we can route back to it eventually if desired (optional)
-          sessionStorage.setItem('return_url', targetUrl);
-          window.location.href = "/auth/google/login";
-        } else {
-          // Permitted routing
-          window.location.href = targetUrl;
+        // Live mode (toggle ON): enforce Google sign-in.
+        if (enforcerToggle && enforcerToggle.checked) {
+          e.preventDefault();
+          const authToken = sessionStorage.getItem('auth_token');
+          if (!authToken || authToken === 'null') {
+            // Stash the destination so we can route back to it eventually if desired (optional)
+            sessionStorage.setItem('return_url', targetUrl);
+            window.location.href = "/auth/google/login";
+          } else {
+            window.location.href = targetUrl;
+          }
+          return;
         }
+
+        // Demo mode (toggle OFF): proceed as the shared demo user.
+        e.preventDefault();
+        _mintDemoToken().then(tok => {
+          if (tok) sessionStorage.setItem('auth_token', tok);
+          window.location.href = targetUrl;
+        });
       });
     });
   });

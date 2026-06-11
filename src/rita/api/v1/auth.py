@@ -33,9 +33,23 @@ class TokenResponse(BaseModel):
 
 @router.post("/token", response_model=TokenResponse)
 @limiter.limit("10/minute")
-def login(request: Request, body: TokenRequest) -> TokenResponse:
+def login(request: Request, body: TokenRequest, db: Session = Depends(get_db)) -> TokenResponse:
     if body.password != "rita-dev":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+
+    # Record login activity for known users (e.g. the shared demo account
+    # webmaster@ravionics.nl), mirroring the Google OAuth callback. Unknown
+    # subjects (e.g. rita-dev in development) still receive a token but are not
+    # persisted here.
+    user = db.query(UserModel).filter(UserModel.id == body.username).first()
+    if user is not None:
+        now = datetime.datetime.utcnow()
+        user.last_login_date = now
+        if user.first_login_date is None:
+            user.first_login_date = now
+        db.add(LoginEventModel(id=str(uuid.uuid4()), user_id=user.id, logged_at=now))
+        db.commit()
+
     token = create_access_token(subject=body.username)
     return TokenResponse(access_token=token)
 
