@@ -23,6 +23,12 @@ from sentence_transformers import SentenceTransformer; \
 m = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2'); \
 m.save('/app/models/embed_model')" \
     || (pip show torch && python -c "import torch; print(torch.__version__)" && exit 1)
+# Ensure model files are world-readable: newer huggingface_hub/safetensors writes
+# model.safetensors as 0600, but the runtime container runs as non-root user `rita`
+# (uid 1000) and cannot read it → classifier load fails with a misleading
+# "No such file or directory". chmod -R a+rX makes every future image readable
+# regardless of the saver's umask. See DEPLOYMENT_KNOWLEDGE PATTERN-016.
+RUN chmod -R a+rX /app/models
 
 # Copy full source (overwrites the empty placeholder)
 COPY src/ src/
