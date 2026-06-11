@@ -37,18 +37,23 @@ def login(request: Request, body: TokenRequest, db: Session = Depends(get_db)) -
     if body.password != "rita-dev":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
-    # Record login activity for known users (e.g. the shared demo account
-    # webmaster@ravionics.nl), mirroring the Google OAuth callback. Unknown
-    # subjects (e.g. rita-dev in development) still receive a token but are not
-    # persisted here.
-    user = db.query(UserModel).filter(UserModel.id == body.username).first()
-    if user is not None:
-        now = datetime.datetime.utcnow()
-        user.last_login_date = now
-        if user.first_login_date is None:
-            user.first_login_date = now
-        db.add(LoginEventModel(id=str(uuid.uuid4()), user_id=user.id, logged_at=now))
-        db.commit()
+    # Best-effort login tracking for known users (e.g. the shared demo account
+    # webmaster@ravionics.nl), mirroring the Google OAuth callback. This must
+    # never block token issuance: the users table is created by create_all() at
+    # app startup and is absent in migration-only test DBs, so a lookup there
+    # raises OperationalError. Unknown subjects (e.g. rita-dev) get a token but
+    # are not persisted.
+    try:
+        user = db.query(UserModel).filter(UserModel.id == body.username).first()
+        if user is not None:
+            now = datetime.datetime.utcnow()
+            user.last_login_date = now
+            if user.first_login_date is None:
+                user.first_login_date = now
+            db.add(LoginEventModel(id=str(uuid.uuid4()), user_id=user.id, logged_at=now))
+            db.commit()
+    except Exception:
+        db.rollback()
 
     token = create_access_token(subject=body.username)
     return TokenResponse(access_token=token)
