@@ -24,6 +24,13 @@ DEMO_USER_ID = "webmaster@ravionics.nl"
 
 def upgrade() -> None:
     bind = op.get_bind()
+    # The `users` table is created by Base.metadata.create_all() at app startup,
+    # not by a migration. In CI the migration chain runs against a fresh DB with
+    # no create_all(), so the table is absent — skip seeding there (matches the
+    # try/except guards in the other user-touching migrations).
+    if "users" not in sa.inspect(bind).get_table_names():
+        return
+
     existing = bind.execute(
         sa.text("SELECT id FROM users WHERE id = :id"), {"id": DEMO_USER_ID}
     ).first()
@@ -38,6 +45,9 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    bind = op.get_bind()
+    if "users" not in sa.inspect(bind).get_table_names():
+        return
     op.execute(
         sa.text("DELETE FROM users WHERE id = :id").bindparams(id=DEMO_USER_ID)
     )
