@@ -18,7 +18,7 @@ export async function loadConcepts() {
   const statusEl = document.getElementById('concepts-status');
   if (statusEl) statusEl.innerHTML = '<span class="spinner"></span>Loading ASML…';
 
-  const [perfRes, dataRes, dsRes, progRes, histRes, stepRes, btdRes, shapRes, metricsRes] = await Promise.allSettled([
+  const [perfRes, dataRes, dsRes, progRes, histRes, stepRes, btdRes, shapRes, metricsRes, sigRes] = await Promise.allSettled([
     api('/api/v1/performance-summary'),
     api('/api/v1/data-understanding?instrument_id=ASML'),
     api('/api/experience/ds/?instrument=ASML'),
@@ -28,6 +28,7 @@ export async function loadConcepts() {
     api('/api/v1/experience/rita/backtest-daily?instrument=ASML').catch(() => null),
     api('/api/v1/shap').catch(() => null),
     api('/api/v1/training-metrics?instrument=ASML').catch(() => []),
+    api('/api/v1/market-signals?instrument=ASML&timeframe=daily&periods=0').catch(() => []),
   ]);
 
   const perf    = perfRes.status    === 'fulfilled' ? perfRes.value    : null;
@@ -39,12 +40,13 @@ export async function loadConcepts() {
   const btd     = btdRes.status     === 'fulfilled' ? btdRes.value     : null;
   const shap    = shapRes.status    === 'fulfilled' ? shapRes.value    : null;
   const metrics = metricsRes.status === 'fulfilled' && Array.isArray(metricsRes.value) ? metricsRes.value : [];
+  const sigRows = sigRes.status     === 'fulfilled' && Array.isArray(sigRes.value)     ? sigRes.value     : [];
 
   if (statusEl) statusEl.textContent = '';
 
   renderPhase1(perf, btd);
   renderPhase2(dataUnd);
-  renderPhase3(dataUnd, dsData);
+  renderPhase3(dataUnd, dsData, sigRows);
   renderPhase4(prog, shap, hist, metrics);
   renderPhase5(hist, btd);
   renderPhase6(steps, hist);
@@ -102,17 +104,55 @@ function renderPhase1(perf, btd) {
   set('cp1-ret-val',    fmtPctRaw(ret, 1));
   set('cp1-wr-val',     fmtPctRaw(winRt, 1));
 
-  // Chart 1 — Target vs Achieved grouped bar
+  // Chart 1a — Sharpe Ratio vs target ≥ 1.0
   mkChart('cp1-c1', {
     type: 'bar',
     data: {
-      labels: ['Sharpe Ratio', 'Win Rate %', 'CAGR %'],
+      labels: ['Achieved', 'Target'],
       datasets: [
-        { label: 'Target',   data: [1.0,    50,    12],   backgroundColor: C.dsBg,   borderColor: C.ds,    borderWidth: 1.5, borderRadius: 3 },
-        { label: 'Achieved', data: [sharpe, winRt, cagr], backgroundColor: C.buildBg, borderColor: C.build, borderWidth: 1.5, borderRadius: 3 },
+        { label: 'Sharpe Ratio', data: [sharpe, 1.0],
+          backgroundColor: [sharpe >= 1.0 ? C.buildBg : C.dangerBg, C.dsBg],
+          borderColor:     [sharpe >= 1.0 ? C.build   : C.danger,   C.ds],
+          borderWidth: 1.5, borderRadius: 4 }
       ]
     },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: LEG }, scales: mkScales() }
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        annotation: { annotations: {
+          goal: { type: 'line', yMin: 1.0, yMax: 1.0, borderColor: C.ds, borderWidth: 1.5, borderDash: [5, 3],
+                  label: { content: 'Goal ≥ 1.0', display: true, position: 'end',
+                           font: { family: "'IBM Plex Mono'", size: 9 }, backgroundColor: 'rgba(0,0,0,0)', color: C.ds } }
+        }}
+      },
+      scales: { ...mkScales(), y: { ...mkScales().y, min: 0, suggestedMax: Math.max(sharpe, 1.0) * 1.3 } }
+    }
+  });
+
+  // Chart 1b — Max Drawdown % vs limit ≤ 10%
+  mkChart('cp1-c1b', {
+    type: 'bar',
+    data: {
+      labels: ['Achieved', 'Limit'],
+      datasets: [
+        { label: 'Max Drawdown %', data: [mdd, 10],
+          backgroundColor: [mdd <= 10 ? C.buildBg : C.dangerBg, C.dsBg],
+          borderColor:     [mdd <= 10 ? C.build   : C.danger,   C.ds],
+          borderWidth: 1.5, borderRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        annotation: { annotations: {
+          limit: { type: 'line', yMin: 10, yMax: 10, borderColor: C.danger, borderWidth: 1.5, borderDash: [5, 3],
+                   label: { content: 'Limit ≤ 10%', display: true, position: 'end',
+                            font: { family: "'IBM Plex Mono'", size: 9 }, backgroundColor: 'rgba(0,0,0,0)', color: C.danger } }
+        }}
+      },
+      scales: { ...mkScales(), y: { ...mkScales().y, min: 0, suggestedMax: Math.max(mdd, 10) * 1.3,
+                ticks: { ...mkScales().y.ticks, callback: v => v + '%' } } }
+    }
   });
 
   // Chart 2 — DDQN vs Buy & Hold cumulative returns
@@ -134,28 +174,32 @@ function renderPhase1(perf, btd) {
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: LEG }, scales: mkScales() }
     });
 
-    // Chart 3 — Allocation doughnut
-    let a0 = 0, a50 = 0, a100 = 0;
-    days.forEach(d => {
-      const act = parseFloat(d.action ?? d.allocation ?? d.position ?? -1);
-      if (act === 0)   a0++;
-      else if (act === 1) a50++;
-      else if (act === 2) a100++;
-      else {
-        const pct = parseFloat(d.allocation_pct ?? d.alloc_pct ?? -1);
-        if (pct === 0)   a0++;
-        else if (pct === 50)  a50++;
-        else if (pct === 100) a100++;
-      }
+    // Chart 3 — Rolling 63d Sharpe (RL model decision plot)
+    const pv       = days.map(d => parseFloat(d.strategy_value ?? d.portfolio_value ?? 1) || 1);
+    const pvRets   = pv.map((v, i) => i === 0 ? 0 : (pv[i - 1] > 0 ? (v - pv[i - 1]) / pv[i - 1] : 0));
+    const rollSharpe = pvRets.map((_, i) => {
+      if (i < 2) return null;
+      const sl = pvRets.slice(Math.max(0, i - 63), i);
+      const mn = sl.reduce((a, b) => a + b, 0) / sl.length;
+      const sd = Math.sqrt(sl.map(x => (x - mn) ** 2).reduce((a, b) => a + b, 0) / sl.length);
+      return sd > 0 ? (mn / sd) * Math.sqrt(252) : null;
     });
-    if (a0 + a50 + a100 === 0) { a0 = 1; a50 = 1; a100 = 1; } // fallback placeholder
+    const [tl3, ts3] = thinLabeled(labels, rollSharpe);
     mkChart('cp1-c3', {
-      type: 'doughnut',
+      type: 'line',
       data: {
-        labels: ['Cash (0%)', 'Half (50%)', 'Full (100%)'],
-        datasets: [{ data: [a0, a50, a100], backgroundColor: [C.dangerBg, C.dsBg, C.buildBg], borderColor: [C.danger, C.ds, C.build], borderWidth: 2 }]
+        labels: tl3,
+        datasets: [{ label: 'Rolling 63d Sharpe', data: ts3, borderColor: C.ds, backgroundColor: C.dsBg, borderWidth: 1.5, pointRadius: 0, fill: true, tension: 0.2, spanGaps: false }]
       },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: LEG } }
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: LEG },
+        scales: {
+          ...mkScales(),
+          y: { grid: { color: C.grid }, ticks: { font: { family: "'IBM Plex Mono'", size: 9 }, color: C.t3 },
+               title: { display: true, text: 'Sharpe Ratio', color: C.ds, font: { size: 9, family: "'IBM Plex Mono'" } } }
+        }
+      }
     });
   } else {
     _noData('cp1-c2'); _noData('cp1-c3');
@@ -222,7 +266,7 @@ function renderPhase2(dataUnd) {
 }
 
 // ── Phase 3: Data Preparation ─────────────────────────────────────────────────
-function renderPhase3(dataUnd, dsData) {
+function renderPhase3(dataUnd, dsData, sigRows = []) {
   const ts     = dataUnd?.timeseries;
   const split  = dsData?.training_context?.split || {};
   const trainEnd = split.train_end;
@@ -231,101 +275,86 @@ function renderPhase3(dataUnd, dsData) {
   set('cp3-train-end', trainEnd ?? '—');
   set('cp3-val-start', split.val_start ?? '—');
 
-  if (!ts?.dates?.length) { _noData('cp3-c1'); _noData('cp3-c2'); _noData('cp3-c3'); return; }
+  // Charts 4-6 — Engineered feature indicators from market signals
+  if (!sigRows.length) { _noData('cp3-c4'); _noData('cp3-c5'); _noData('cp3-c6'); return; }
 
-  let splitIdx = Math.floor(ts.dates.length * 0.8);
-  if (trainEnd) {
-    for (let i = ts.dates.length - 1; i >= 0; i--) {
-      if (ts.dates[i] <= trainEnd) { splitIdx = i; break; }
-    }
-  }
+  const [sDates, sTrend, sAtrPct, sClose, sEma5, sEma13, sEma26, sEma50] = thinLabeled(
+    sigRows.map(r => r.date),
+    sigRows.map(r => r.trend_score != null ? +parseFloat(r.trend_score).toFixed(3) : null),
+    sigRows.map(r => { const a = parseFloat(r.atr_14), c = parseFloat(r.Close); return (!isNaN(a) && !isNaN(c) && c) ? +(a / c * 100).toFixed(3) : null; }),
+    sigRows.map(r => r.Close),
+    sigRows.map(r => r.ema_5),
+    sigRows.map(r => r.ema_13),
+    sigRows.map(r => r.ema_26),
+    sigRows.map(r => r.ema_50),
+  );
 
-  const splitLabel = ts.dates[splitIdx];
-  const splitAnnotation = splitLabel ? {
-    splitLine: {
-      type: 'line', xMin: splitLabel, xMax: splitLabel,
-      borderColor: 'rgba(155,28,28,.75)', borderWidth: 2, borderDash: [5, 4],
-      label: { content: '80/20 Split', display: true, position: 'start', font: M9, backgroundColor: 'rgba(155,28,28,.1)', color: C.danger }
-    }
-  } : {};
-
-  function splitSeries(arr) {
-    const train = arr.map((v, i) => (i <= splitIdx ? v : null));
-    const val   = arr.map((v, i) => (i >= splitIdx ? v : null));
-    return [train, val];
-  }
-
-  const [tl, tClose, tVol, tRsi] = thinLabeled(ts.dates, ts.close, ts.volume ?? [], ts.rsi ?? []);
-  // Recompute split after thinning
-  const thinSplitIdx = tl.findIndex(d => d >= (trainEnd || ''));
-  const splitIdxThin = thinSplitIdx >= 0 ? thinSplitIdx : Math.floor(tl.length * 0.8);
-
-  function splitThin(arr) {
-    return [arr.map((v, i) => (i <= splitIdxThin ? v : null)), arr.map((v, i) => (i >= splitIdxThin ? v : null))];
-  }
-
-  const [trainClose, valClose] = splitThin(tClose);
-  const [trainVol,   valVol  ] = splitThin(tVol);
-  const [trainRsi,   valRsi  ] = splitThin(tRsi);
-
-  const trainDs = (label, data, col) => ({ label, data, borderColor: col, backgroundColor: col.replace(')', ',.12)').replace('rgb', 'rgba'), borderWidth: 1.5, pointRadius: 0, fill: true, tension: 0.2, spanGaps: false });
-  const valDs   = (label, data, col) => ({ label, data, borderColor: col, backgroundColor: col.replace(')', ',.12)').replace('rgb', 'rgba'), borderWidth: 1.5, pointRadius: 0, fill: true, tension: 0.2, spanGaps: false });
-
-  // Chart 1 — Close price split
-  mkChart('cp3-c1', {
+  // Chart 4 — Trend Score [-1, +1]
+  mkChart('cp3-c4', {
     type: 'line',
     data: {
-      labels: tl,
-      datasets: [
-        { label: 'Training (80%)',      data: trainClose, borderColor: C.build,  backgroundColor: C.buildBg,  borderWidth: 1.5, pointRadius: 0, fill: true, tension: 0.2, spanGaps: false },
-        { label: 'Val/Backtest (20%)',  data: valClose,   borderColor: C.run,    backgroundColor: C.runBg,    borderWidth: 1.5, pointRadius: 0, fill: true, tension: 0.2, spanGaps: false },
-      ]
+      labels: sDates,
+      datasets: [{ label: 'Trend Score', data: sTrend, borderColor: '#7b3fb8', backgroundColor: 'rgba(107,47,160,0.07)', fill: 'origin', tension: 0.25, pointRadius: 0, borderWidth: 1.5 }]
     },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: LEG, annotation: { annotations: splitAnnotation } }, scales: mkScales() }
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: LEG, annotation: { annotations: {
+        zero:  { type: 'line', yMin: 0,    yMax: 0,    borderColor: 'rgba(0,0,0,0.3)',      borderWidth: 1.5 },
+        upStr: { type: 'line', yMin: 0.5,  yMax: 0.5,  borderColor: 'rgba(26,107,60,0.6)',  borderWidth: 1, borderDash: [4, 3] },
+        dnStr: { type: 'line', yMin: -0.5, yMax: -0.5, borderColor: 'rgba(155,28,28,0.6)',  borderWidth: 1, borderDash: [4, 3] },
+      }}},
+      scales: mkScales({}, { min: -1, max: 1 })
+    }
   });
 
-  // Chart 2 — Volume split (bar)
-  const hasVol = tVol.some(v => v != null && v > 0);
-  if (hasVol) {
-    mkChart('cp3-c2', {
-      type: 'bar',
-      data: {
-        labels: tl,
-        datasets: [
-          { label: 'Training (80%)',     data: trainVol, backgroundColor: C.buildBg, borderColor: C.build, borderWidth: 0.5, borderRadius: 1 },
-          { label: 'Val/Backtest (20%)', data: valVol,   backgroundColor: C.runBg,   borderColor: C.run,   borderWidth: 0.5, borderRadius: 1 },
-        ]
-      },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: LEG }, scales: mkScales() }
-    });
-  } else {
-    _noData('cp3-c2');
-  }
+  // Chart 5 — ATR%
+  mkChart('cp3-c5', {
+    type: 'line',
+    data: {
+      labels: sDates,
+      datasets: [{ label: 'ATR%', data: sAtrPct, borderColor: C.warn, backgroundColor: 'rgba(146,72,10,0.07)', fill: true, tension: 0.2, pointRadius: 0, borderWidth: 1.5 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: LEG, annotation: { annotations: {
+        hi: { type: 'line', yMin: 1.5, yMax: 1.5, borderColor: 'rgba(155,28,28,0.55)', borderWidth: 1, borderDash: [4, 3] },
+        lo: { type: 'line', yMin: 0.8, yMax: 0.8, borderColor: 'rgba(26,107,60,0.45)', borderWidth: 1, borderDash: [4, 3] },
+      }}},
+      scales: mkScales({}, { ticks: { callback: v => v.toFixed(1) + '%' } })
+    }
+  });
 
-  // Chart 3 — RSI split with 30/70 bands
-  const hasRsi = tRsi.some(v => v != null);
-  if (hasRsi) {
-    mkChart('cp3-c3', {
-      type: 'line',
-      data: {
-        labels: tl,
-        datasets: [
-          { label: 'RSI Training',    data: trainRsi, borderColor: C.build, backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 0, tension: 0.2, spanGaps: false },
-          { label: 'RSI Val/BT',      data: valRsi,   borderColor: C.run,   backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 0, tension: 0.2, spanGaps: false },
-        ]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: LEG, annotation: { annotations: {
-          ob: { type: 'line', yMin: 70, yMax: 70, borderColor: 'rgba(155,28,28,.4)', borderWidth: 1.5, borderDash: [4, 3] },
-          os: { type: 'line', yMin: 30, yMax: 30, borderColor: 'rgba(0,86,184,.4)',  borderWidth: 1.5, borderDash: [4, 3] },
-        }}},
-        scales: mkScales({}, { min: 0, max: 100 })
-      }
-    });
-  } else {
-    _noData('cp3-c3');
+  // Chart 6 — EMA crossover (compute crosses on full rows, then thin alongside EMA series)
+  const crossUpFull = new Array(sigRows.length).fill(null);
+  const crossDownFull = new Array(sigRows.length).fill(null);
+  for (let i = 1; i < sigRows.length; i++) {
+    const p = sigRows[i - 1], c = sigRows[i];
+    if (p.ema_5 != null && p.ema_13 != null && c.ema_5 != null && c.ema_13 != null) {
+      if (p.ema_5 <= p.ema_13 && c.ema_5 > c.ema_13)      crossUpFull[i]   = (c.ema_5 + c.ema_13) / 2;
+      else if (p.ema_5 >= p.ema_13 && c.ema_5 < c.ema_13) crossDownFull[i] = (c.ema_5 + c.ema_13) / 2;
+    }
   }
+  const [, sCrossUp, sCrossDown] = thinLabeled(sigRows.map(r => r.date), crossUpFull, crossDownFull);
+  mkChart('cp3-c6', {
+    type: 'line',
+    data: {
+      labels: sDates,
+      datasets: [
+        { label: 'Close',    data: sClose,     borderColor: 'rgba(100,181,246,0.7)', backgroundColor: 'transparent', pointRadius: 0, borderWidth: 1.5, borderDash: [3, 3] },
+        { label: 'EMA-5',   data: sEma5,      borderColor: '#9C27B0',               backgroundColor: 'transparent', pointRadius: 0, borderWidth: 1.2, borderDash: [2, 2] },
+        { label: 'EMA-13',  data: sEma13,     borderColor: C.build,                 backgroundColor: 'transparent', pointRadius: 0, borderWidth: 1.2, borderDash: [4, 2] },
+        { label: 'EMA-26',  data: sEma26,     borderColor: 'rgba(0,150,136,0.85)',  backgroundColor: 'transparent', pointRadius: 0, borderWidth: 1.5, borderDash: [4, 3] },
+        { label: 'EMA-50',  data: sEma50,     borderColor: C.warn,                  backgroundColor: 'transparent', pointRadius: 0, borderWidth: 1.5, borderDash: [6, 3] },
+        { label: '▲ Bull',  data: sCrossUp,   type: 'line', showLine: false, spanGaps: false, pointStyle: 'triangle', pointRadius: 5, rotation: 0,   borderColor: '#1a6b3c', backgroundColor: '#1a6b3c' },
+        { label: '▼ Bear',  data: sCrossDown, type: 'line', showLine: false, spanGaps: false, pointStyle: 'triangle', pointRadius: 5, rotation: 180, borderColor: '#9b1c1c', backgroundColor: '#9b1c1c' },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { ...LEG, position: 'top' } },
+      scales: mkScales()
+    }
+  });
 }
 
 // ── Phase 4: Modeling ─────────────────────────────────────────────────────────

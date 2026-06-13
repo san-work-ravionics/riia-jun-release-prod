@@ -89,5 +89,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   await checkStatus();
   setInterval(checkStatus, 30000);
   await loadActiveInstrument();
-  loadUnderstand();  // default landing section
+  loadConcepts();  // default landing section
 });

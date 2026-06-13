@@ -173,7 +173,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
 .chart-wrap{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:14px;box-shadow:var(--sh);margin-bottom:14px;}
 .chart-title{font-size:12px;font-weight:600;margin-bottom:10px;color:var(--t2);}
 .chart-box{position:relative;width:100%;}
-.h180{height:180px;} .h220{height:220px;} .h260{height:260px;} .h300{height:300px;} .h340{height:340px;}
+.h120{height:120px;} .h180{height:180px;} .h220{height:220px;} .h240{height:240px;} .h260{height:260px;} .h300{height:300px;} .h340{height:340px;}
 
 /* Tables */
 .tbl-wrap{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:auto;max-height:228px;box-shadow:var(--sh);margin-bottom:14px;}
@@ -340,13 +340,13 @@ tr:hover td{background:var(--surface2);}
 <nav class="sidebar">
   <div class="nav-section">
     <div class="nav-label">Concepts</div>
-    <div class="nav-item c-ds" data-s="concepts" onclick="show('concepts',this)">
+    <div class="nav-item c-ds active" data-s="concepts" onclick="show('concepts',this)">
       <span class="nav-icon">🎓</span> CRISP-DM
     </div>
   </div>
   <div class="nav-section">
     <div class="nav-label">Visualize</div>
-    <div class="nav-item c-ds active" data-s="understand" onclick="show('understand',this)">
+    <div class="nav-item c-ds" data-s="understand" onclick="show('understand',this)">
       <span class="nav-icon">🔬</span> <span data-i18n="nav.understand">Understand</span>
     </div>
   </div>
@@ -1050,7 +1050,7 @@ tr:hover td{background:var(--surface2);}
 <!-- ════════════════════════════════════════════════
      UNDERSTAND DATA
      ════════════════════════════════════════════════ -->
-<div id="s-understand" class="section active">
+<div id="s-understand" class="section">
   <div class="page-hdr">
     <div>
       <div class="page-title">Understand Data</div>
@@ -1352,7 +1352,7 @@ tr:hover td{background:var(--surface2);}
 <!-- ════════════════════════════════════════════════
      CRISP-DM CONCEPTS
      ════════════════════════════════════════════════ -->
-<div id="s-concepts" class="section">
+<div id="s-concepts" class="section active">
   <div class="page-hdr">
     <div>
       <div class="page-title">CRISP-DM Methodology</div>
@@ -1380,7 +1380,7 @@ tr:hover td{background:var(--surface2);}
         <div class="concept-title">Business Understanding</div>
       </div>
     </div>
-    <p class="concept-desc">RITA targets ASML Holding N.V. (ticker: ASML, Euronext Amsterdam), a global leader in semiconductor lithography equipment whose stock exhibits strong trending behaviour driven by semiconductor capex cycles. The business goal is to train a reinforcement learning agent that makes daily capital allocation decisions in ASML stock, achieving a Sharpe ratio above 1.0 and a maximum drawdown below 10% — constraints derived from real-world portfolio management tolerances. The investment decision is deliberately simplified to three discrete allocations — hold cash (0%), invest half (50%), or fully invest (100%) — so the model focuses entirely on timing entry and exit rather than optimising position size. Success is defined as consistent out-performance versus a passive buy-and-hold benchmark on a fully held-out backtest period that the model never saw during training or seed selection.</p>
+    <p class="concept-desc">RIIA stands for Risk Informed Investment Approach. This translates into the goal of ensuring the instrument or portfolio investment stays within a certain return range and the drawdown on the portfolio remains within acceptable limits. In the investment domain, the Sharpe ratio indicates how returns compare to the standard deviation of returns on the instrument or portfolio based on historical data. We therefore adopt Sharpe ratio and maximum drawdown as our core business goals.<br><br>RITA operationalises these goals by training a reinforcement learning agent that makes daily capital allocation decisions in ASML stock, targeting a Sharpe ratio above 1.0 and a maximum drawdown below 10%. The investment decision is simplified to three discrete allocations — hold cash (0%), invest half (50%), or fully invest (100%) — so the model focuses entirely on timing entry and exit.<br><br>Success is defined as consistent out-performance versus a passive buy-and-hold benchmark on a fully held-out backtest period the model never saw during training.</p>
     <div class="concept-block-label">Constraints &amp; Targets</div>
     <div class="concept-facts">
       <span class="fact-pill">Target Sharpe ≥ 1.0</span>
@@ -1398,17 +1398,22 @@ tr:hover td{background:var(--surface2);}
       <span class="fact-pill achieved">Win Rate: <strong id="cp1-wr-val">—</strong></span>
     </div>
     <div class="divider"></div>
-    <div class="concept-chart-grid">
+    <div class="concept-block-label" style="margin-bottom:10px">Project KPIs</div>
+    <div class="concept-chart-grid" style="grid-template-columns:repeat(4,1fr)">
       <div class="chart-wrap" style="margin-bottom:0">
-        <div class="chart-title">Target vs Achieved KPIs — ASML Backtest</div>
-        <div class="chart-box h240"><canvas id="cp1-c1"></canvas></div>
+        <div class="chart-title">Sharpe Ratio — Target ≥ 1.0</div>
+        <div class="chart-box h120"><canvas id="cp1-c1"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">Max Drawdown % — Limit ≤ 10%</div>
+        <div class="chart-box h120"><canvas id="cp1-c1b"></canvas></div>
       </div>
       <div class="chart-wrap" style="margin-bottom:0">
         <div class="chart-title">DDQN Strategy vs Buy &amp; Hold — Cumulative Returns (base 100)</div>
         <div class="chart-box h240"><canvas id="cp1-c2"></canvas></div>
       </div>
       <div class="chart-wrap" style="margin-bottom:0">
-        <div class="chart-title">Allocation Decision Distribution — 0% / 50% / 100%</div>
+        <div class="chart-title">Reinforcement Learning Model Decision Plot</div>
         <div class="chart-box h240"><canvas id="cp1-c3"></canvas></div>
       </div>
     </div>
@@ -1423,7 +1428,7 @@ tr:hover td{background:var(--surface2);}
         <div class="concept-title">Data Understanding</div>
       </div>
     </div>
-    <p class="concept-desc">The ASML dataset covers daily OHLCV price history from 2019 through mid-2025 — approximately 1,500 trading sessions spanning bull runs, the 2022 semiconductor correction, and subsequent recovery cycles, making it rich in both trending and mean-reverting regimes. From the raw OHLCV feed, eleven technical indicators are derived: RSI(14) for momentum extremes, MACD(12/26/9) and its signal line for trend momentum, Bollinger Band %B for price position relative to volatility bands, 20-day rolling volatility as a regime indicator, and daily log returns as the primary risk signal. K-Means clustering with k=3 on the full feature matrix reveals three distinct market regimes — bullish trending, sideways consolidation, and bearish stress — each characterised by different RSI and volatility profiles that require different allocation strategies. The feature correlation matrix confirms that RSI and MACD carry complementary but non-redundant momentum signals, while 20-day volatility is largely orthogonal to both, making all three dimensions genuinely informative for the DDQN state vector.</p>
+    <p class="concept-desc">The ASML dataset covers daily OHLCV price history from 2019 through mid-2025 — approximately 1,500 trading sessions spanning bull runs, the 2022 semiconductor correction, and subsequent recovery cycles, making it rich in both trending and mean-reverting regimes.<br><br>The publicly available data has 6 features, Date, Open, Close, High, Low and Volume. This is also called as OHLCV data for instruments. From this data, eleven technical indicators are derived: RSI(14) for momentum extremes, MACD(12/26/9) and its signal line for trend momentum, Bollinger Band %B for price position relative to volatility bands, 20-day rolling volatility as a regime indicator, and daily log returns as the primary risk signal.<br><br>K-Means clustering with k=3 on the full feature matrix reveals three distinct market regimes — bullish trending, sideways consolidation, and bearish stress — each characterised by different RSI and volatility profiles that require different allocation strategies. The feature correlation matrix confirms that RSI and MACD carry complementary but non-redundant momentum signals, while 20-day volatility is largely orthogonal to both, making all three dimensions genuinely informative for the DDQN state vector.</p>
     <div class="concept-block-label">Dataset Statistics</div>
     <div class="concept-facts">
       <span class="fact-pill">Rows: <strong id="cp2-rows">—</strong></span>
@@ -1469,7 +1474,7 @@ tr:hover td{background:var(--surface2);}
         <div class="concept-title">Data Preparation</div>
       </div>
     </div>
-    <p class="concept-desc">The full dataset is partitioned chronologically into training (80%) and validation/backtest (20%), preserving strict temporal ordering so that no future data ever influences past decisions — this is the critical safeguard against look-ahead bias in any time-series machine learning system. Feature normalisation applies z-score standardisation (zero mean, unit variance) computed exclusively on the training window, with the same mean and standard deviation then applied forward to validation and backtest windows to simulate the live inference setting. The DDQN state vector is constructed as a 14-day rolling window over all 11 normalised indicators, giving the model a short-term memory of recent market momentum at each daily step — long enough to capture a trading week's context without introducing excessive lag. Data preparation runs as Step 2 of the 8-step RITA pipeline and outputs a NumPy float32 array with shape (timesteps, 14, 11) consumed directly by the Stable-Baselines3 custom environment wrapper.</p>
+    <p class="concept-desc">Since the raw OHLCV dataset is already well-formed with negligible missing values and no duplicates, this phase focuses on feature engineering and structuring data for the model. The dataset start date must be set earlier than the intended modeling start so that look-back indicators such as MACD(12/26/9) have sufficient warm-up rows — starting too late pushes missing-value rates above 5%.<br><br>The correlation matrix reveals redundancy among MACD components and Stochastic oscillators; one representative per group is selected to keep the state vector non-redundant while retaining MACD as a trend-crossing signal and raw Close for portfolio tracking. All selected features are z-score normalised using parameters computed solely on the training window, then applied forward to validation and backtest windows to simulate the live inference setting. The final DDQN state vector combines non-redundant technical signals with normalised price data — not to predict Close, but to provide directional and momentum signals that guide the agent's discrete buy/hold/sell decisions.</p>
     <div class="concept-block-label">Split Configuration</div>
     <div class="concept-facts">
       <span class="fact-pill">Training: 80% — ends <strong id="cp3-train-end">—</strong></span>
@@ -1480,18 +1485,19 @@ tr:hover td{background:var(--surface2);}
       <span class="fact-pill">No shuffling — temporal order preserved</span>
     </div>
     <div class="divider"></div>
+    <div class="concept-block-label">Engineered Feature Indicators</div>
     <div class="concept-chart-grid">
       <div class="chart-wrap" style="margin-bottom:0">
-        <div class="chart-title">Close Price — Training (green) vs Val/Backtest (blue) Split</div>
-        <div class="chart-box h240"><canvas id="cp3-c1"></canvas></div>
+        <div class="chart-title">Trend Score — EMA-5/13/26 composite · [-1, +1]</div>
+        <div class="chart-box h240"><canvas id="cp3-c4"></canvas></div>
       </div>
       <div class="chart-wrap" style="margin-bottom:0">
-        <div class="chart-title">Volume — Same 80/20 Split Coloring</div>
-        <div class="chart-box h240"><canvas id="cp3-c2"></canvas></div>
+        <div class="chart-title">ATR% — Daily Volatility as % of Close</div>
+        <div class="chart-box h240"><canvas id="cp3-c5"></canvas></div>
       </div>
       <div class="chart-wrap" style="margin-bottom:0">
-        <div class="chart-title">RSI (14) — Same Split · 30/70 Bands</div>
-        <div class="chart-box h240"><canvas id="cp3-c3"></canvas></div>
+        <div class="chart-title">EMA Crossovers — EMA-5 / 13 / 26 / 50 with Bull/Bear Signals</div>
+        <div class="chart-box h240"><canvas id="cp3-c6"></canvas></div>
       </div>
     </div>
   </div>
@@ -1505,7 +1511,15 @@ tr:hover td{background:var(--surface2);}
         <div class="concept-title">Modeling</div>
       </div>
     </div>
-    <p class="concept-desc">The model is a Double Deep Q-Network (DDQN), implemented via Stable-Baselines3 DQN, with two hidden layers of 128 units each and ReLU activations — the double-network architecture decouples action selection from value estimation to reduce the overestimation bias inherent in vanilla DQN. The state space is the 11-dimensional normalised daily feature vector observed over a 14-day window; the action space has three discrete choices — hold cash (0%), invest half (50%), or fully invest (100%). The reward function is designed to balance return capture with capital preservation: <em>r = daily_PnL − 0.3 × max(0, drawdown − 0.05)</em>, where the second term imposes a graduated penalty for any portfolio drawdown beyond 5%, directly encoding the 10% maximum drawdown business constraint into the learning signal. Training runs for 100,000 timesteps with experience replay (buffer size 10,000) and a separate target network updated every 1,000 steps; three random seeds are trained and the seed with the highest validation Sharpe is promoted, preventing cherry-picking on the backtest set.</p>
+    <p class="concept-desc">The model uses a Double Deep Q-Network (DDQN), a reinforcement learning algorithm implemented with Stable-Baselines3. It learns from 11 market indicators observed over a 14-day period and can choose between three actions: holding cash, investing 50% of available capital, or investing 100%. The reward function encourages profitable trades while penalising portfolio drawdowns above 5%, helping the model manage risk.<br><br>Training is performed over 100,000 timesteps using experience replay and a separate target network to improve learning stability. To ensure robust results, the model is trained using three different random seeds. The seed with the highest validation Sharpe ratio is selected for final evaluation, reducing the risk of overfitting.</p>
+    <ul class="concept-desc" style="margin-top:10px;padding-left:20px;line-height:1.9">
+      <li><strong>Framework:</strong> Stable-Baselines3 DQN with Double-Q target correction, implemented in <code style="font-family:var(--fm);font-size:11px">core/trading_env.py</code>.</li>
+      <li><strong>State Space:</strong> 8–9 features — <code style="font-family:var(--fm);font-size:11px">daily_return, rsi_14, macd, bb_pct_b, trend_score, allocation, days_remaining, atr_ratio, ema_ratio</code>.</li>
+      <li><strong>Action Space:</strong> Discrete(3) — Cash (0%), Half (50%), Full (100%) invested; the agent learns when to scale in and out.</li>
+      <li><strong>Network:</strong> MlpPolicy with two hidden layers of 256 units; replay buffer holds 100,000 transitions for stable off-policy learning.</li>
+      <li><strong>Seed Search:</strong> <code style="font-family:var(--fm);font-size:11px">train_best_of_n</code> in <code style="font-family:var(--fm);font-size:11px">core/ml_dispatch.py</code> runs N seeds, validates each on a held-out period, keeps the best Sharpe winner.</li>
+      <li><strong>Persistence:</strong> The winning model is serialised as <code style="font-family:var(--fm);font-size:11px">{model_name}.zip</code> via SB3's <code style="font-family:var(--fm);font-size:11px">model.save()</code> and reloaded for inference via <code style="font-family:var(--fm);font-size:11px">load_agent()</code>.</li>
+    </ul>
     <div class="concept-block-label">Network Architecture</div>
     <div class="concept-facts">
       <span class="fact-pill">Algorithm: DDQN (Stable-Baselines3)</span>
@@ -1542,7 +1556,11 @@ tr:hover td{background:var(--surface2);}
         <div class="concept-title">Evaluation</div>
       </div>
     </div>
-    <p class="concept-desc">Each RITA model build is evaluated across three temporally disjoint windows: the in-sample training period, an out-of-sample validation window used only for seed selection, and a fully held-out backtest period that the model and the seed-selection process never saw — ensuring an unbiased estimate of real-world performance. The best seed is chosen by validation Sharpe ratio rather than backtest Sharpe to prevent the practitioner from overfitting the backtest through repeated runs. Four core metrics — Sharpe ratio, maximum drawdown, CAGR, and win rate — are evaluated against the business constraints from Phase 1; additionally, daily returns are compared to a passive buy-and-hold ASML strategy to confirm genuine alpha generation. SHAP attribution on the learned Q-values confirms RSI(14) and the MACD line as the dominant allocation signals, providing model interpretability alongside quantitative performance — a key CRISP-DM requirement before production promotion.</p>
+    <p class="concept-desc">
+      The DDQN Reinforcement Learning model is evaluated through three separate datasets: a training period where the model learns patterns, a validation period used to select the best random seed, and a completely unseen backtest period that is reserved for final evaluation.<br><br>
+      To reduce the risk of overfitting, the best seed is chosen using the validation Sharpe ratio rather than the backtest Sharpe ratio. Model performance is then assessed against the business requirements defined earlier in the project using four key metrics: Sharpe ratio (risk-adjusted return), maximum drawdown (largest loss from a peak), CAGR (annual growth rate), and win rate (percentage of profitable trades). Daily returns are also compared with a simple buy-and-hold investment in ASML to verify that the model generates genuine alpha rather than simply benefiting from overall market movements.<br><br>
+      To support model interpretability, SHAP analysis is applied to explain the model's decisions. The results show that RSI(14) and the MACD line are the most influential signals driving portfolio allocation decisions. This transparency, together with the quantitative performance results, satisfies an important CRISP-DM requirement before the model can be considered for production deployment.
+    </p>
     <div class="concept-block-label">Evaluation Metrics</div>
     <div class="concept-facts">
       <span class="fact-pill">Sharpe Ratio vs target ≥ 1.0</span>
@@ -1585,7 +1603,7 @@ tr:hover td{background:var(--surface2);}
         <div class="concept-title">Deployment</div>
       </div>
     </div>
-    <p class="concept-desc">RITA runs as a Dockerised FastAPI application on AWS EC2 (ap-south-1 / Mumbai), reverse-proxied through Nginx over HTTPS with Google OAuth JWT authentication for all dashboard endpoints. The 8-step training pipeline — data validation, feature engineering, model design, training, period configuration, backtesting, results extraction, and API hot-swap — is triggered from the Build section of this dashboard and executes asynchronously, with real-time step progress streamed back to the UI via polling. Model weights (Stable-Baselines3 PyTorch .zip artefacts) are persisted to a Docker volume mounted at <code style="font-family:var(--fm);font-size:11px">/app/data</code>, surviving container restarts and rolling deployments without requiring retraining — a critical operational requirement given 100k-timestep training cycles. The DS Lab, RITA main dashboard, FnO options dashboard, and Claude Desktop MCP server all share the same FastAPI origin, meaning every CRISP-DM artefact — raw data stats, SHAP values, backtest results — is immediately accessible across the entire platform without data duplication.</p>
+    <p class="concept-desc">RIIA runs as a Dockerised FastAPI application on a cloud VM, secured over HTTPS with OAuth-based authentication for all dashboard endpoints. The 8-step training pipeline — data validation, feature engineering, model design, training, period configuration, backtesting, results extraction, and API hot-swap — is triggered from the Build section of this dashboard and executes asynchronously, with real-time step progress streamed back to the UI via polling.<br><br>Model weights (Stable-Baselines3 PyTorch .zip artefacts) are persisted to a Docker volume, surviving container restarts and rolling deployments without requiring retraining — a critical operational requirement given 100k-timestep training cycles. The DS Lab, RITA main dashboard, FnO options dashboard, and Claude Desktop MCP server all share the same FastAPI origin, meaning every CRISP-DM artefact — raw data stats, SHAP values, backtest results — is immediately accessible across the entire platform without data duplication.</p>
     <div class="concept-block-label">Infrastructure</div>
     <div class="concept-facts">
       <span class="fact-pill">FastAPI + SQLite (SQLAlchemy 2.x)</span>

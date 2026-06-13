@@ -21,7 +21,7 @@ export function switchTrainTab(tab, el) {
 export async function loadTraining() {
   try {
     const [history, progress] = await Promise.all([
-      api('/api/v1/experience/rita/training-history').catch(()=>[]),
+      api('/api/v1/experience/rita/training-history?instrument=ASML').catch(()=>[]),
       api('/api/v1/training-progress').catch(()=>[])
     ]);
     const rows=Array.isArray(history)?history:(history.runs||[]);
@@ -39,12 +39,17 @@ export async function loadTraining() {
       const btSharpeData=rows.map(r=>parseFloat(r.backtest_sharpe??r.sharpe_ratio??r.sharpe??0)||null);
       const valSharpeData=rows.map(r=>{ const v=parseFloat(r.val_sharpe); return isNaN(v)||v===0?null:v; });
       const btMddData=rows.map(r=>Math.abs(parseFloat(r.backtest_mdd_pct??r.max_drawdown_pct??r.max_drawdown??0))||null);
+      const trSharpeData=rows.map(r=>{ const v=parseFloat(r.train_sharpe); return isNaN(v)||v===0?null:v; });
+      const trMddData=rows.map(r=>Math.abs(parseFloat(r.train_mdd_pct??0))||null);
 
+      // Training tab — use train_sharpe/train_mdd_pct when available; fall back to backtest metrics
+      const hasTrainSharpe=trSharpeData.some(v=>v!==null);
       mkChart('ch-tr-sharpe-t',{type:'line',data:{labels,datasets:[
-        {label:'Sharpe',data:btSharpeData,borderColor:C.build,backgroundColor:C.buildBg,borderWidth:2,pointRadius:5,fill:true,spanGaps:false}
+        {label:hasTrainSharpe?'Train Sharpe':'Backtest Sharpe (train metrics unavailable)',data:hasTrainSharpe?trSharpeData:btSharpeData,borderColor:C.build,backgroundColor:C.buildBg,borderWidth:2,pointRadius:5,fill:true,spanGaps:false}
       ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{family:"'IBM Plex Mono'",size:10},color:C.t2}}},scales:{x:{grid:{color:C.grid},ticks:{font:{family:"'IBM Plex Mono'",size:9},color:C.t3}},y:{grid:{color:C.grid},ticks:{font:{family:"'IBM Plex Mono'",size:9},color:C.t3}}}}});
+      const hasTrainMdd=trMddData.some(v=>v!==null);
       mkChart('ch-tr-mdd-t',{type:'line',data:{labels,datasets:[
-        {label:'Max DD %',data:btMddData,borderColor:C.danger,backgroundColor:C.dangerBg,borderWidth:2,pointRadius:5,fill:true,spanGaps:false}
+        {label:hasTrainMdd?'Train Max DD %':'Backtest Max DD % (train metrics unavailable)',data:hasTrainMdd?trMddData:btMddData,borderColor:C.danger,backgroundColor:C.dangerBg,borderWidth:2,pointRadius:5,fill:true,spanGaps:false}
       ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{family:"'IBM Plex Mono'",size:10},color:C.t2}}},scales:{x:{grid:{color:C.grid},ticks:{font:{family:"'IBM Plex Mono'",size:9},color:C.t3}},y:{grid:{color:C.grid},ticks:{font:{family:"'IBM Plex Mono'",size:9},color:C.t3}}}}});
 
       mkChart('ch-tr-sharpe',{type:'line',data:{labels,datasets:[
