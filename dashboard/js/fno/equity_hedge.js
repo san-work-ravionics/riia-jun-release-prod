@@ -51,8 +51,15 @@ function _fmtRange(start, end) {
   return (start && end) ? fmt(start) + ' – ' + fmt(end) : '—';
 }
 
+const _CCY_SYMBOL = { EUR: '€', INR: '₹', USD: '$' };
+
+function _fmtCcy(v, currency) {
+  const sym = _CCY_SYMBOL[currency] || '€';
+  return sym + Number(v).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 function _fmtEur(v) {
-  return '€' + Number(v).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return _fmtCcy(v, 'EUR');
 }
 
 function _parseStrike(label) {
@@ -79,6 +86,7 @@ export function injectAsmlToState() {
   state.positions = (state.positions || []).filter(pos => !pos._from_eq_hedge);
   state.marginData.by_position = (state.marginData.by_position || []).filter(m => !m._from_eq_hedge);
 
+  const currency         = p.currency || 'EUR';
   const ccPremiumPerShare = mb.total_premium_eur / nShares;
   const ppPremiumPerShare = Math.abs(sb.total_premium_eur) / nShares;
 
@@ -89,13 +97,13 @@ export function injectAsmlToState() {
       und: instrument, full: mb.strike_label, exp: expLabel, type: 'CE', side: 'Short',
       strike: _parseStrike(mb.strike_label), qty: nShares,
       avg: ccPremiumPerShare, ltp: ccPremiumPerShare, chg: 0,
-      pnl: mb.total_premium_eur, currency: 'EUR', _from_eq_hedge: true,
+      pnl: mb.total_premium_eur, currency, _from_eq_hedge: true,
     },
     {
       und: instrument, full: sb.strike_label, exp: expLabel, type: 'PE', side: 'Long',
       strike: _parseStrike(sb.strike_label), qty: nShares,
       avg: ppPremiumPerShare, ltp: ppPremiumPerShare, chg: 0,
-      pnl: -Math.abs(sb.total_premium_eur), currency: 'EUR', _from_eq_hedge: true,
+      pnl: -Math.abs(sb.total_premium_eur), currency, _from_eq_hedge: true,
     },
   ];
 
@@ -188,11 +196,14 @@ export async function loadEquityHedge(forceRefresh = false) {
 }
 
 export function renderEquityHedge(data) {
-  const p   = data.portfolio;
-  const hs  = data.hedge_scenarios;
-  const mb  = hs.mild_bearish;
-  const sb  = hs.strong_bearish;
-  const pc  = hs.payoff_curves;
+  const p          = data.portfolio;
+  const hs         = data.hedge_scenarios;
+  const mb         = hs.mild_bearish;
+  const sb         = hs.strong_bearish;
+  const pc         = hs.payoff_curves;
+  const ccy        = p.currency || 'EUR';
+  const fmt        = v => _fmtCcy(v, ccy);
+  const isNseLive  = hs.data_source === 'nse';
 
   // KPIs
   const startValue   = p.start_price * p.n_shares;
@@ -202,30 +213,41 @@ export function renderEquityHedge(data) {
   const hedgeClass   = hedgeRetPct >= 0 ? 'pos' : 'neg';
   const netClass     = netRetPct   >= 0 ? 'pos' : 'neg';
   const setKpi = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+  const ccySym = _CCY_SYMBOL[ccy] || ccy;
+  const chartTitle = document.getElementById('eh-portfolio-chart-title');
+  if (chartTitle) chartTitle.textContent = `Portfolio Value (${ccySym})`;
   const startD = p.daily?.[0]?.date || '';
   const endD   = p.daily?.[p.daily.length - 1]?.date || '';
   setKpi('eh-kpi-date-range',   `<div class="kpi-value" style="font-size:12px">${_fmtRange(startD, endD)}</div><div class="kpi-sub">${p.daily?.length || 0} trading days</div>`);
-  setKpi('eh-kpi-start-price',  `<div class="kpi-value">${_fmtEur(p.start_price)}</div><div class="kpi-sub">${startD}</div>`);
-  setKpi('eh-kpi-end-price',    `<div class="kpi-value">${_fmtEur(p.end_price)}</div><div class="kpi-sub">${endD}</div>`);
-  setKpi('eh-kpi-shares',       `<div class="kpi-value">${p.n_shares.toFixed(2)}</div><div class="kpi-sub">${_fmtEur(p.end_price * p.n_shares)} position</div>`);
+  setKpi('eh-kpi-start-price',  `<div class="kpi-value">${fmt(p.start_price)}</div><div class="kpi-sub">${startD}</div>`);
+  setKpi('eh-kpi-end-price',    `<div class="kpi-value">${fmt(p.end_price)}</div><div class="kpi-sub">${endD}</div>`);
+  setKpi('eh-kpi-shares',       `<div class="kpi-value">${p.n_shares.toFixed(2)}</div><div class="kpi-sub">${fmt(p.end_price * p.n_shares)} position</div>`);
   setKpi('eh-kpi-vol',          `<div class="kpi-value">${p.vol_30d_pct.toFixed(1)}%</div><div class="kpi-sub">annualised 30d</div>`);
   setKpi('eh-kpi-return',       `<div class="kpi-value ${retClass}">${p.return_pct >= 0 ? '+' : ''}${p.return_pct.toFixed(2)}%</div>`);
-  setKpi('eh-kpi-hedge-return', `<div class="kpi-value ${hedgeClass}">+${hedgeRetPct.toFixed(2)}%</div><div class="kpi-sub">${_fmtEur(mb.total_premium_eur)} premium</div>`);
+  setKpi('eh-kpi-hedge-return', `<div class="kpi-value ${hedgeClass}">+${hedgeRetPct.toFixed(2)}%</div><div class="kpi-sub">${fmt(mb.total_premium_eur)} premium</div>`);
   setKpi('eh-kpi-net-return',   `<div class="kpi-value ${netClass}">${netRetPct >= 0 ? '+' : ''}${netRetPct.toFixed(2)}%</div>`);
+
+  // Data source badge (NSE Live or Black-Scholes)
+  const srcBadge = isNseLive
+    ? '<span class="phase-tag p04" style="font-size:9px;padding:2px 6px;">NSE Live</span>'
+    : '<span class="phase-tag" style="font-size:9px;padding:2px 6px;background:var(--t3);color:#fff;">BSM Est.</span>';
+  const setBadge = id => { const el = document.getElementById(id); if (el) el.innerHTML = srcBadge; };
+  setBadge('eh-cc-source-badge');
+  setBadge('eh-pp-source-badge');
 
   // Covered Call card
   const setEl = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
   setEl('eh-cc-strike',    mb.strike_label);
-  setEl('eh-cc-premium',   _fmtEur(mb.total_premium_eur));
-  setEl('eh-cc-max-value', _fmtEur(mb.max_value_eur));
-  setEl('eh-cc-breakeven', _fmtEur(mb.breakeven_price));
+  setEl('eh-cc-premium',   fmt(mb.total_premium_eur));
+  setEl('eh-cc-max-value', fmt(mb.max_value_eur));
+  setEl('eh-cc-breakeven', fmt(mb.breakeven_price));
   setEl('eh-cc-desc',      mb.description);
 
   // Protective Put card
   setEl('eh-pp-strike',    sb.strike_label);
-  setEl('eh-pp-premium',   _fmtEur(sb.total_premium_eur));
-  setEl('eh-pp-floor',     _fmtEur(sb.floor_value_eur));
-  setEl('eh-pp-breakeven', _fmtEur(sb.breakeven_price));
+  setEl('eh-pp-premium',   fmt(sb.total_premium_eur));
+  setEl('eh-pp-floor',     fmt(sb.floor_value_eur));
+  setEl('eh-pp-breakeven', fmt(sb.breakeven_price));
   setEl('eh-pp-desc',      sb.description);
 
   // Portfolio value chart
@@ -249,7 +271,7 @@ export function renderEquityHedge(data) {
           plugins: { legend: { display: false } },
           scales: {
             x: { grid: { display: false }, ticks: { font: { family: 'IBM Plex Mono', size: 10 }, maxTicksLimit: 8 } },
-            y: { grid: { color: 'rgba(0,0,0,.05)' }, ticks: { font: { family: 'IBM Plex Mono', size: 10 }, callback: v => _fmtEur(v) } },
+            y: { grid: { color: 'rgba(0,0,0,.05)' }, ticks: { font: { family: 'IBM Plex Mono', size: 10 }, callback: v => fmt(v) } },
           },
         },
       });
@@ -262,7 +284,7 @@ export function renderEquityHedge(data) {
   if (payCtx) {
     requestAnimationFrame(() => {
       const instrument = _ehInstrument;
-      const xLabels = pc.price_range.map(v => _fmtEur(v));
+      const xLabels = pc.price_range.map(v => fmt(v));
       _payoffChart = new Chart(payCtx, {
         type: 'line',
         data: {
@@ -278,11 +300,11 @@ export function renderEquityHedge(data) {
           responsive: true, maintainAspectRatio: false,
           plugins: {
             legend: { position: 'top', labels: { font: { family: 'IBM Plex Mono', size: 11 }, boxWidth: 10 } },
-            tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${_fmtEur(ctx.raw)}` } },
+            tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${fmt(ctx.raw)}` } },
           },
           scales: {
             x: { grid: { display: false }, title: { display: true, text: `${instrument} price at expiry`, font: { family: 'IBM Plex Mono', size: 10 } }, ticks: { font: { family: 'IBM Plex Mono', size: 9 }, maxTicksLimit: 10 } },
-            y: { grid: { color: 'rgba(0,0,0,.05)' }, ticks: { font: { family: 'IBM Plex Mono', size: 10 }, callback: v => _fmtEur(v) } },
+            y: { grid: { color: 'rgba(0,0,0,.05)' }, ticks: { font: { family: 'IBM Plex Mono', size: 10 }, callback: v => fmt(v) } },
           },
         },
       });

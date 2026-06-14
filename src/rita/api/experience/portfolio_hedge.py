@@ -30,6 +30,7 @@ _FNO_ELIGIBLE: frozenset[str] = frozenset({
     "RELIANCE", "TATAMOTOR", "TCS", "INFY", "HDFCBANK", "WIPRO", "BAJFINANCE",
     "TATASTEEL", "SBIN", "ICICIBANK", "KOTAKBANK", "AXISBANK", "SUNPHARMA",
     "HCLTECH", "LT", "ONGC", "NTPC", "POWERGRID", "BPCL",
+    "MM",  # Mahindra & Mahindra — NSE F&O eligible
 })
 
 # US / international tickers whose instrument_id exceeds the 5-char heuristic below.

@@ -57,12 +57,43 @@ INSTRUMENT_CCY: dict[str, str] = {
     "TCS":       "INR",
     "HDFCBANK":  "INR",
     "INFY":      "INR",
+    "MM":        "INR",
+    # additional instruments
+    "AEX":       "EUR",
+    "ASRNL":     "EUR",
+    "ATO":       "EUR",
+    "DJI":       "USD",
+    "IXIC":      "USD",
+    "TRU":       "USD",
 }
+
+CCY_SYMBOL: dict[str, str] = {"EUR": "€", "INR": "₹", "USD": "$"}
+
+# NSE index option strike intervals (exchange-mandated, fixed)
+NSE_INDEX_STRIKE_INTERVAL: dict[str, float] = {"NIFTY": 50.0, "BANKNIFTY": 100.0}
+
+
+def _nse_stock_strike_interval(underlying_price: float) -> float:
+    """NSE equity option strike intervals per NSE master circular on F&O.
+
+    Applicable to all individual stock options (not indices).
+    Price bands as of NSE circular NSCCL/CMPT/43834 (2018) and subsequent updates.
+    """
+    if underlying_price <= 250:
+        return 5.0
+    if underlying_price <= 500:
+        return 10.0
+    if underlying_price <= 1000:
+        return 20.0
+    if underlying_price <= 2500:
+        return 50.0
+    return 100.0  # > ₹2500 (covers M&M, RELIANCE, etc.)
 
 INSTRUMENT_NAMES: dict[str, str] = {
     "NIFTY":     "NIFTY 50",
     "BANKNIFTY": "BANKNIFTY",
     "ASML":      "ASML",
+    "MM":        "Mahindra & Mahindra",
     "NVIDIA":    "NVIDIA",
     "SBIN":      "SBI",
     "RELIANCE":  "Reliance",
@@ -429,9 +460,23 @@ def equity_hedge_scenarios(
     r       = 0.03
     sigma   = vol_30d
 
+    uid      = instrument.upper()
+    currency = INSTRUMENT_CCY.get(uid, "EUR")
+    ccy      = CCY_SYMBOL.get(currency, "€")
+
     def _round_strike(k: float) -> float:
-        """Round to the nearest standard exchange strike interval."""
-        if k < 50:
+        """Round to nearest exchange-standard strike interval.
+
+        NSE indices: fixed intervals (50 for NIFTY, 100 for BANKNIFTY).
+        NSE stocks:  price-band intervals per NSE master circular (5/10/20/50/100).
+        Euronext / other: 25-pt for prices >= 1000, coarser below.
+        """
+        if uid in NSE_INDEX_STRIKE_INTERVAL:
+            interval = NSE_INDEX_STRIKE_INTERVAL[uid]
+        elif currency == "INR":
+            # NSE individual stock option intervals
+            interval = _nse_stock_strike_interval(S)
+        elif k < 50:
             interval = 1.0
         elif k < 200:
             interval = 5.0
@@ -461,6 +506,33 @@ def equity_hedge_scenarios(
 
     premium_call_per_share = _bs_call(S, K_call, T, sigma, r)
     premium_put_per_share  = _bs_put(S, K_put,  T, sigma, r)
+
+    # ── Try NSE live option chain for INR single-stock instruments ────────────
+    # Overrides BSM strikes + premiums with real exchange-listed values.
+    data_source   = "black_scholes"
+    nse_expiry    = None
+
+    if currency == "INR" and uid not in NSE_INDEX_STRIKE_INTERVAL:
+        try:
+            from rita.core.nse_api import fetch_nse_equity_option_chain
+            chain = fetch_nse_equity_option_chain(uid)
+            if chain:
+                spot_nse  = chain["spot"] or S
+                otm_calls = [c for c in chain["calls"] if c["strike"] > spot_nse]
+                otm_puts  = [p for p in chain["puts"]  if p["strike"] < spot_nse]
+                if otm_calls and otm_puts:
+                    # Pick the real strike nearest to the 1σ Black-Scholes target
+                    best_call = min(otm_calls, key=lambda x: abs(x["strike"] - K_call))
+                    best_put  = min(otm_puts,  key=lambda x: abs(x["strike"] - K_put))
+                    K_call                 = best_call["strike"]
+                    K_put                  = best_put["strike"]
+                    premium_call_per_share = best_call["ltp"]
+                    premium_put_per_share  = best_put["ltp"]
+                    data_source            = "nse"
+                    nse_expiry             = chain["expiry"]
+        except Exception:
+            pass  # silently fall back to BSM
+    # ─────────────────────────────────────────────────────────────────────────
 
     total_premium_call = round(premium_call_per_share * n_shares, 2)
     total_premium_put  = round(premium_put_per_share  * n_shares, 2)
@@ -501,45 +573,75 @@ def equity_hedge_scenarios(
         for d, p in zip(df_f.index, df_f["Close"])
     ]
 
+    # ── Build labels differently for NSE live data vs Black-Scholes fallback ──
+    is_nse = data_source == "nse"
+    expiry_tag = f" exp {nse_expiry}" if is_nse and nse_expiry else ""
+
+    if is_nse:
+        cc_strike_label = f"{ccy}{K_call:.0f}"
+        pp_strike_label = f"{ccy}{K_put:.0f}"
+        cc_desc = (
+            f"Sell {n_shares:.4g}× {uid} {K_call:.0f} CE{expiry_tag} — "
+            f"NSE LTP {ccy}{premium_call_per_share:.2f}/share. "
+            f"Total premium {ccy}{total_premium_call:.2f}. "
+            f"Upside capped at {ccy}{K_call:.0f}/share."
+        )
+        pp_desc = (
+            f"Buy {n_shares:.4g}× {uid} {K_put:.0f} PE{expiry_tag} — "
+            f"NSE LTP {ccy}{premium_put_per_share:.2f}/share. "
+            f"Total cost {ccy}{total_premium_put:.2f}. "
+            f"Portfolio floor at {ccy}{round(K_put * n_shares - total_premium_put, 2):.0f}."
+        )
+    else:
+        cc_strike_label = f"~{ccy}{K_call:.0f}"
+        pp_strike_label = f"~{ccy}{K_put:.0f}"
+        cc_desc = (
+            f"Sell {n_shares:.4g}× {uid} calls near {ccy}{K_call:.0f} "
+            f"(indicative, +1σ OTM — {sigma_move:.0f} above spot). "
+            f"~{ccy}{total_premium_call:.2f} premium income. "
+            f"Verify strike availability on exchange."
+        )
+        pp_desc = (
+            f"Buy {n_shares:.4g}× {uid} puts near {ccy}{K_put:.0f} "
+            f"(indicative, −1σ OTM — {sigma_move:.0f} below spot). "
+            f"~{ccy}{total_premium_put:.2f} premium cost. "
+            f"Floor near {ccy}{round(K_put * n_shares - total_premium_put, 2):.0f}. "
+            f"Verify strike availability on exchange."
+        )
+
     return {
         "portfolio": {
-            "instrument":     instrument.upper(),
-            "n_shares":       n_shares,
-            "start_price":    round(start_price, 2),
-            "end_price":      round(end_price, 2),
-            "return_pct":     return_pct,
-            "vol_30d_pct":    round(vol_30d * 100, 4),
+            "instrument":      uid,
+            "n_shares":        n_shares,
+            "start_price":     round(start_price, 2),
+            "end_price":       round(end_price, 2),
+            "return_pct":      return_pct,
+            "vol_30d_pct":     round(vol_30d * 100, 4),
             "portfolio_value": portfolio_value,
-            "daily":          daily,
+            "daily":           daily,
+            "currency":        currency,
         },
         "hedge_scenarios": {
+            "data_source": data_source,   # "nse" | "black_scholes"
             "mild_bearish": {
-                "strategy":         "covered_call",
-                "strike_label":     f"€{K_call:.2f}",
+                "strategy":          "covered_call",
+                "strike_label":      cc_strike_label,
                 "premium_per_share": round(premium_call_per_share, 4),
                 "total_premium_eur": total_premium_call,
-                "max_value_eur":    round(K_call * n_shares + total_premium_call, 2),
-                "breakeven_price":  round(S - premium_call_per_share, 2),
-                "description": (
-                    f"Sell {n_shares:.4g}× {instrument.upper()} calls @ €{K_call:.2f} "
-                    f"(+1σ OTM, {sigma_move:.2f} above spot). "
-                    f"Collect €{total_premium_call:.2f} premium. "
-                    f"Upside capped at €{K_call:.2f}/share."
-                ),
+                "max_value_eur":     round(K_call * n_shares + total_premium_call, 2),
+                "breakeven_price":   round(S - premium_call_per_share, 2),
+                "indicative":        not is_nse,
+                "description":       cc_desc,
             },
             "strong_bearish": {
-                "strategy":         "protective_put",
-                "strike_label":     f"€{K_put:.2f}",
+                "strategy":          "protective_put",
+                "strike_label":      pp_strike_label,
                 "premium_per_share": round(premium_put_per_share, 4),
                 "total_premium_eur": total_premium_put,
-                "floor_value_eur":  round(K_put * n_shares - total_premium_put, 2),
-                "breakeven_price":  round(S + premium_put_per_share, 2),
-                "description": (
-                    f"Buy {n_shares:.4g}× {instrument.upper()} puts @ €{K_put:.2f} "
-                    f"(−1σ OTM, {sigma_move:.2f} below spot). "
-                    f"Pay €{total_premium_put:.2f} premium. "
-                    f"Portfolio floor at €{round(K_put * n_shares - total_premium_put, 2):.2f}."
-                ),
+                "floor_value_eur":   round(K_put * n_shares - total_premium_put, 2),
+                "breakeven_price":   round(S + premium_put_per_share, 2),
+                "indicative":        not is_nse,
+                "description":       pp_desc,
             },
             "payoff_curves": payoff_curves,
         },
