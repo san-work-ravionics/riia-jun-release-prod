@@ -7,7 +7,7 @@ name = "rita"
 version = "1.0.0"
 requires-python = ">=3.11"
 dependencies = [
-    "fastapi>=0.111,<0.116",
+    "fastapi>=0.111",
     "uvicorn[standard]>=0.29",
     "pydantic>=2.7",
     "pydantic-settings>=2.3",
@@ -20,7 +20,7 @@ dependencies = [
     "sqlalchemy>=2.0",
     "alembic>=1.13",
     "structlog>=24.1",
-    "prometheus-fastapi-instrumentator>=6.1,<7.0",
+    "prometheus-fastapi-instrumentator>=6.1",
     "aiofiles>=23.2",
     "slowapi>=0.1.9,<0.1.10",
     "scikit-learn>=1.4",
