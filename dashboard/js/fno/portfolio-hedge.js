@@ -440,13 +440,14 @@ function _renderHedgeWidgets() {
 // ── Hedge-plan persistence helpers ───────────────────────────────────────────
 
 async function loadHedgePlan() {
-  try {
-    const plan = await api('/api/v1/experience/fno/hedge-plan');
+  const token = sessionStorage.getItem('auth_token');
+  const plan = await apiFetch('/api/v1/experience/fno/hedge-plan', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (plan) {
     _state.coverage     = plan.coverage;
     _state.hedgeChecked = new Set(plan.hedged_ids);
     _scenarioTab        = plan.scenario_tab;
-  } catch (e) {
-    console.warn('[PH] loadHedgePlan: no saved plan or error — using defaults', e);
   }
 }
 
