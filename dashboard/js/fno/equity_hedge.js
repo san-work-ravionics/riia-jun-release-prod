@@ -222,6 +222,10 @@ export function renderEquityHedge(data) {
   setKpi('eh-kpi-start-price',  `<div class="kpi-value">${fmt(p.start_price)}</div><div class="kpi-sub">${startD}</div>`);
   setKpi('eh-kpi-end-price',    `<div class="kpi-value">${fmt(p.end_price)}</div><div class="kpi-sub">${endD}</div>`);
   setKpi('eh-kpi-shares',       `<div class="kpi-value">${p.n_shares.toFixed(2)}</div><div class="kpi-sub">${fmt(p.end_price * p.n_shares)} position</div>`);
+  const lotHtml = p.lot_size
+    ? `<div class="kpi-value">${p.lot_size}</div><div class="kpi-sub">${p.n_contracts} contract${p.n_contracts !== 1 ? 's' : ''}</div>`
+    : `<div class="kpi-value">—</div><div class="kpi-sub">no F&amp;O lot</div>`;
+  setKpi('eh-kpi-lot', lotHtml);
   setKpi('eh-kpi-vol',          `<div class="kpi-value">${p.vol_30d_pct.toFixed(1)}%</div><div class="kpi-sub">annualised 30d</div>`);
   setKpi('eh-kpi-return',       `<div class="kpi-value ${retClass}">${p.return_pct >= 0 ? '+' : ''}${p.return_pct.toFixed(2)}%</div>`);
   setKpi('eh-kpi-hedge-return', `<div class="kpi-value ${hedgeClass}">+${hedgeRetPct.toFixed(2)}%</div><div class="kpi-sub">${fmt(mb.total_premium_eur)} premium</div>`);

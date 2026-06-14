@@ -89,6 +89,28 @@ def _nse_stock_strike_interval(underlying_price: float) -> float:
         return 50.0
     return 100.0  # > ₹2500 (covers M&M, RELIANCE, etc.)
 
+# NSE F&O lot sizes — number of shares per 1 contract (as per NSE circular)
+NSE_LOT_SIZE: dict[str, int] = {
+    "NIFTY":     75,
+    "BANKNIFTY": 30,
+    "MM":        700,
+    "RELIANCE":  250,
+    "SBIN":      1500,
+    "TCS":       150,
+    "INFY":      300,
+    "HDFCBANK":  550,
+    "WIPRO":     1500,
+    "BAJFINANCE": 125,
+    "AXISBANK":  625,
+    "ICICIBANK": 700,
+    "KOTAKBANK": 400,
+    "SUNPHARMA": 350,
+    "TATASTEEL": 5500,
+    "LT":        175,
+    "ONGC":      2750,
+    "NTPC":      2750,
+}
+
 INSTRUMENT_NAMES: dict[str, str] = {
     "NIFTY":     "NIFTY 50",
     "BANKNIFTY": "BANKNIFTY",
@@ -609,10 +631,15 @@ def equity_hedge_scenarios(
             f"Verify strike availability on exchange."
         )
 
+    lot_size   = NSE_LOT_SIZE.get(uid)
+    n_contracts = round(n_shares / lot_size, 2) if lot_size else None
+
     return {
         "portfolio": {
             "instrument":      uid,
             "n_shares":        n_shares,
+            "lot_size":        lot_size,
+            "n_contracts":     n_contracts,
             "start_price":     round(start_price, 2),
             "end_price":       round(end_price, 2),
             "return_pct":      return_pct,
