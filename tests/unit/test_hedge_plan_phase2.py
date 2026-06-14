@@ -27,7 +27,7 @@ Tests
   test_get_hedge_plan_restores_coverage         — coverage is an int
   test_get_hedge_plan_restores_hedged_ids        — hedged_ids is a list[str]
   test_put_hedge_plan_accepts_empty_hedged_ids  — PUT with [] succeeds (coverage=0 edge case)
-  test_get_hedge_plan_404_detail_message         — "No hedge plan found" in detail
+  test_get_hedge_plan_null_when_no_plan          — returns 200 null when no plan saved
 
 Mock patch paths match the exact imports in fno_hedge_plan.py:
   rita.api.experience.fno_hedge_plan.UserPortfolioKeyRepo
@@ -268,8 +268,8 @@ class TestGetHedgePlan404DetailMessage:
         yield
         _clear_auth()
 
-    def test_get_hedge_plan_404_detail_message(self, client):
-        """GET with existing portfolio key but no plan returns 404 with 'No hedge plan found'."""
+    def test_get_hedge_plan_null_when_no_plan(self, client):
+        """GET with existing portfolio key but no plan returns 200 null."""
         with (
             patch(_PATCH_KEY_REPO) as mock_key_cls,
             patch(_PATCH_HEDGE_REPO) as mock_hedge_cls,
@@ -279,12 +279,7 @@ class TestGetHedgePlan404DetailMessage:
 
             resp = client.get("/api/v1/experience/fno/hedge-plan")
 
-        assert resp.status_code == 404, (
-            f"Expected 404 when no plan exists, got {resp.status_code}: {resp.text}"
+        assert resp.status_code == 200, (
+            f"Expected 200 null when no plan exists, got {resp.status_code}: {resp.text}"
         )
-        detail = resp.json().get("detail", "")
-        assert "No hedge plan found" in detail, (
-            f"404 detail must contain 'No hedge plan found' so the JS catch "
-            f"block can distinguish this 404 from a portfolio-key 404; "
-            f"got detail={detail!r}"
-        )
+        assert resp.json() is None
