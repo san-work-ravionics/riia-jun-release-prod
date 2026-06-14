@@ -7,7 +7,7 @@ name = "rita"
 version = "1.0.0"
 requires-python = ">=3.11"
 dependencies = [
-    "fastapi>=0.111",
+    "fastapi>=0.111,<0.137",
     "uvicorn[standard]>=0.29",
     "pydantic>=2.7",
     "pydantic-settings>=2.3",
