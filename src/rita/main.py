@@ -31,6 +31,7 @@ from rita.exception_handlers import (
     validation_exception_handler,
 )
 from rita.logging_config import configure_logging
+from rita.metrics import instrument_app
 from rita.middleware import ApiCallLogMiddleware, TraceIDMiddleware
 from rita.repositories.base import RepositoryValidationError
 from rita.api.v1.auth import router as auth_router
@@ -402,6 +403,8 @@ app.include_router(commentary_router)
 # -- Portfolio -- cross-instrument overview + backtest (read-only, no auth) ----
 app.include_router(portfolio_router)
 
+# -- Prometheus metrics (must come after all routers are registered) -----------
+instrument_app(app)
 
 # -- Static files: dashboard UI (must be last — catch-all) --------------------
 _dashboard_dir = Path(__file__).parent.parent.parent / "dashboard"
