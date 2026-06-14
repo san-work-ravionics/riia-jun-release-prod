@@ -86,7 +86,7 @@ class TestEquityHedgeScenariosHappyPath:
             result = equity_hedge_scenarios("ASML", 10, "2025-01-01", "2025-01-31")
 
         hs = result["hedge_scenarios"]
-        assert set(hs.keys()) == {"mild_bearish", "strong_bearish", "payoff_curves"}
+        assert set(hs.keys()) == {"mild_bearish", "strong_bearish", "payoff_curves", "data_source"}
 
     def test_payoff_curves_array_length_33(self):
         df = _make_asml_df(25)
