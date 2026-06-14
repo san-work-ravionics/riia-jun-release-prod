@@ -148,8 +148,8 @@ class TestGetHedgePlan:
 
     # ── Test 1b — 404 when no plan found ───────────────────────────────────
 
-    def test_get_hedge_plan_404_when_no_plan(self, client):
-        """GET /hedge-plan returns 404 when portfolio key exists but no plan row."""
+    def test_get_hedge_plan_returns_null_when_no_plan(self, client):
+        """GET /hedge-plan returns 200 null when portfolio key exists but no plan row."""
         with (
             patch(_PATCH_KEY_REPO) as mock_key_cls,
             patch(_PATCH_HEDGE_REPO) as mock_hedge_cls,
@@ -159,15 +159,15 @@ class TestGetHedgePlan:
 
             resp = client.get("/api/v1/experience/fno/hedge-plan")
 
-        assert resp.status_code == 404, (
-            f"Expected 404 when no plan exists, got {resp.status_code}"
+        assert resp.status_code == 200, (
+            f"Expected 200 null when no plan exists, got {resp.status_code}"
         )
-        assert "No hedge plan found" in resp.json().get("detail", "")
+        assert resp.json() is None
 
-    # ── Test 1c — 404 when user has no portfolio key ────────────────────────
+    # ── Test 1c — null when user has no portfolio key ───────────────────────
 
-    def test_get_hedge_plan_404_when_no_portfolio_key(self, client):
-        """GET /hedge-plan returns 404 when the user has no portfolio key row."""
+    def test_get_hedge_plan_returns_null_when_no_portfolio_key(self, client):
+        """GET /hedge-plan returns 200 null when the user has no portfolio key row."""
         with (
             patch(_PATCH_KEY_REPO) as mock_key_cls,
             patch(_PATCH_HEDGE_REPO) as mock_hedge_cls,
@@ -177,10 +177,10 @@ class TestGetHedgePlan:
 
             resp = client.get("/api/v1/experience/fno/hedge-plan")
 
-        assert resp.status_code == 404, (
-            f"Expected 404 when no portfolio key, got {resp.status_code}"
+        assert resp.status_code == 200, (
+            f"Expected 200 null when no portfolio key, got {resp.status_code}"
         )
-        assert "No portfolio key found" in resp.json().get("detail", "")
+        assert resp.json() is None
 
 
 # ---------------------------------------------------------------------------
