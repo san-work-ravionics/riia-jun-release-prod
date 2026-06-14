@@ -226,6 +226,17 @@ export function renderEquityHedge(data) {
     ? `<div class="kpi-value">${p.lot_size}</div><div class="kpi-sub">${p.n_contracts} contract${p.n_contracts !== 1 ? 's' : ''}</div>`
     : `<div class="kpi-value">—</div><div class="kpi-sub">no F&amp;O lot</div>`;
   setKpi('eh-kpi-lot', lotHtml);
+
+  // Lot size banner inside Hedge Overview card
+  const lotEl = document.getElementById('eh-overview-lot');
+  if (lotEl) {
+    if (p.lot_size) {
+      lotEl.textContent = `Lot size: ${p.lot_size} shares/contract · ${p.n_contracts} contract${p.n_contracts !== 1 ? 's' : ''} (${p.n_shares} shares ÷ ${p.lot_size})`;
+      lotEl.style.display = 'block';
+    } else {
+      lotEl.style.display = 'none';
+    }
+  }
   setKpi('eh-kpi-vol',          `<div class="kpi-value">${p.vol_30d_pct.toFixed(1)}%</div><div class="kpi-sub">annualised 30d</div>`);
   setKpi('eh-kpi-return',       `<div class="kpi-value ${retClass}">${p.return_pct >= 0 ? '+' : ''}${p.return_pct.toFixed(2)}%</div>`);
   setKpi('eh-kpi-hedge-return', `<div class="kpi-value ${hedgeClass}">+${hedgeRetPct.toFixed(2)}%</div><div class="kpi-sub">${fmt(mb.total_premium_eur)} premium</div>`);
