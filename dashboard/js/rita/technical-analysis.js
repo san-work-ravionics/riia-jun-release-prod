@@ -38,7 +38,7 @@ export async function loadTechnicalAnalysis() {
 
   // ── Commentary panel ────────────────────────────────────
   try {
-    const commentary = await api(`/api/v1/experience/rita/technical-commentary?instrument=${inst}`);
+    const commentary = await api(`/api/v1/experience/rita/technical-commentary?instrument=${encodeURIComponent(inst)}`);
     if (commentary) {
       _renderCommentary(commentary);
     } else {
@@ -51,7 +51,7 @@ export async function loadTechnicalAnalysis() {
   // ── Chart data ───────────────────────────────────────────
   let rows = [];
   try {
-    rows = await api(`/api/v1/market-signals?instrument=${inst}&timeframe=daily&periods=90`);
+    rows = await api(`/api/v1/market-signals?instrument=${encodeURIComponent(inst)}&timeframe=daily&periods=90`);
   } catch (e) {
     rows = [];
   }

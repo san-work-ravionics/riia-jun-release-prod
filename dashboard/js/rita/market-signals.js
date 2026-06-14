@@ -15,7 +15,7 @@ function _getInstrument() {
 export async function loadGoalHint() {
   try {
     const inst = _getInstrument();
-    const rows = await api(`/api/v1/market-signals?timeframe=daily&periods=252&instrument=${inst}`);
+    const rows = await api(`/api/v1/market-signals?timeframe=daily&periods=252&instrument=${encodeURIComponent(inst)}`);
     if (!rows || rows.length < 2) return;
     const first = rows[0], last = rows[rows.length - 1];
     const ret12m = ((parseFloat(last.Close) / parseFloat(first.Close)) - 1) * 100;
@@ -40,7 +40,7 @@ export async function loadMarketSignals() {
   const inst = _getInstrument();
   setEl('ms-data-range', `Loading ${inst}…`);
   try {
-    const rows = await api(`/api/v1/market-signals?timeframe=${_msTimeframe}&periods=${periods}&instrument=${inst}`);
+    const rows = await api(`/api/v1/market-signals?timeframe=${_msTimeframe}&periods=${periods}&instrument=${encodeURIComponent(inst)}`);
     if (!rows || !rows.length) {
       setEl('ms-data-range', `No data available for ${inst}`);
       setEl('ms-last-updated', '—');

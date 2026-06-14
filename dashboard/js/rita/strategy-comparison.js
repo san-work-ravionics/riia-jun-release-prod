@@ -75,7 +75,7 @@ function _typewrite(el, text, speed = 16) {
 }
 
 async function _fetchAndRender() {
-  const url = `/api/v1/experience/rita/strategy-comparison?instrument=${_scInstrument}&year=${_scYear}`;
+  const url = `/api/v1/experience/rita/strategy-comparison?instrument=${encodeURIComponent(_scInstrument)}&year=${_scYear}`;
   const data = await apiFetch(url);
 
   if (!data || data.error || !data.dates || data.dates.length === 0) {

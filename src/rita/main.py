@@ -137,6 +137,7 @@ async def lifespan(app: FastAPI):
             # India — added 2026-05-20
             _Instrument(instrument_id="RELIANCE",  name="Reliance Industries",          exchange="NSE",    country_code="IN", lot_size=None, is_available=True,  yf_ticker="RELIANCE.NS", created_at=_dt.datetime.now(_dt.timezone.utc)),
             _Instrument(instrument_id="SBIN",      name="State Bank of India",          exchange="NSE",    country_code="IN", lot_size=None, is_available=True,  yf_ticker="SBIN.NS",     created_at=_dt.datetime.now(_dt.timezone.utc)),
+            _Instrument(instrument_id="M&M.NS",    name="Mahindra & Mahindra Limited",  exchange="NSE",    country_code="IN", lot_size=None, is_available=True,  yf_ticker="M&M.NS",      created_at=_dt.datetime.now(_dt.timezone.utc)),
             # EU — added 2026-05-20
             _Instrument(instrument_id="ASRNL",     name="ASR Nederland",                exchange="AMS",    country_code="NL", lot_size=None, is_available=True,  yf_ticker="ASRNL.AS",   created_at=_dt.datetime.now(_dt.timezone.utc)),
             _Instrument(instrument_id="ATO",       name="Atos SE",                      exchange="PAR",    country_code="FR", lot_size=None, is_available=True,  yf_ticker="ATO.PA",      created_at=_dt.datetime.now(_dt.timezone.utc)),
@@ -221,7 +222,7 @@ async def lifespan(app: FastAPI):
             repo = MarketDataCacheRepository(db)
             seeded = {r.underlying for r in repo.read_all()}
 
-            for _inst in ["NIFTY", "BANKNIFTY", "ASML", "NVIDIA", "RELIANCE", "SBIN", "ASRNL", "ATO", "AEX", "DJI", "IXIC"]:
+            for _inst in ["NIFTY", "BANKNIFTY", "ASML", "NVIDIA", "RELIANCE", "SBIN", "ASRNL", "ATO", "AEX", "DJI", "IXIC", "M&M.NS"]:
                 if _inst in seeded:
                     continue
                 try:

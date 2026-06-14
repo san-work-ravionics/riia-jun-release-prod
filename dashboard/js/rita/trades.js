@@ -18,10 +18,10 @@ export async function loadTrades() {
   try {
     const instrument = localStorage.getItem('ritaInstrument') || 'NIFTY';
     const [rows, history, perf, split] = await Promise.all([
-      cachedApi(`/api/v1/experience/rita/risk-timeline?phase=all&instrument=${instrument}`, 60000),
-      cachedApi(`/api/v1/experience/rita/training-history?instrument=${instrument}`, 120000).catch(() => []),
+      cachedApi(`/api/v1/experience/rita/risk-timeline?phase=all&instrument=${encodeURIComponent(instrument)}`, 60000),
+      cachedApi(`/api/v1/experience/rita/training-history?instrument=${encodeURIComponent(instrument)}`, 120000).catch(() => []),
       cachedApi('/api/v1/performance-summary', 120000).catch(() => null),
-      api(`/api/v1/training-split?instrument=${instrument}`).catch(() => null),
+      api(`/api/v1/training-split?instrument=${encodeURIComponent(instrument)}`).catch(() => null),
     ]);
     if (!rows || !rows.length) {
       setEl('trades-table-wrap', `<div class="empty">${t('trades.no_data')}</div>`);

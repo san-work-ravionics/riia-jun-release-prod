@@ -11,10 +11,10 @@ export async function loadExperimentResults() {
   try {
     const instrument = (state.activeInst?.id) || localStorage.getItem('ritaInstrument') || 'NIFTY';
     const [rows, history, perf, split] = await Promise.all([
-      api(`/api/v1/experience/rita/risk-timeline?phase=all&instrument=${instrument}`),
-      api(`/api/v1/experience/rita/training-history?instrument=${instrument}`).catch(() => []),
+      api(`/api/v1/experience/rita/risk-timeline?phase=all&instrument=${encodeURIComponent(instrument)}`),
+      api(`/api/v1/experience/rita/training-history?instrument=${encodeURIComponent(instrument)}`).catch(() => []),
       api('/api/v1/performance-summary').catch(() => null),
-      api(`/api/v1/training-split?instrument=${instrument}`).catch(() => null),
+      api(`/api/v1/training-split?instrument=${encodeURIComponent(instrument)}`).catch(() => null),
     ]);
     if (!rows || !rows.length) {
       wrap.innerHTML = '<div class="empty">No trade records found — run the pipeline first.</div>';

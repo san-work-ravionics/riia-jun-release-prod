@@ -11,7 +11,7 @@ export async function warmupChat(force = false) {
   _chatWarmedUp = true;
   try {
     const inst = (localStorage.getItem('ritaInstrument') || 'NIFTY').toUpperCase();
-    const res = await fetch(`${API}/api/v1/chat/warmup?instrument=${inst}`, { method: 'POST' });
+    const res = await fetch(`${API}/api/v1/chat/warmup?instrument=${encodeURIComponent(inst)}`, { method: 'POST' });
     if (!res.ok) return null;
     const data = await res.json();
     return { chips: data.chips || _fallbackChips(), alerts: data.alerts || null };
