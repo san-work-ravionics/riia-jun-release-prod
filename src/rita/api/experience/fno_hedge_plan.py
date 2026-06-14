@@ -10,6 +10,7 @@ Phase 2 consumer: portfolio-hedge.js — GET on load, PUT on user change (deboun
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -25,29 +26,24 @@ from rita.schemas.user_hedge_plan import HedgePlanCreate, HedgePlanOut
 router = APIRouter(prefix="/api/v1/experience/fno", tags=["experience:fno-hedge-plan"])
 
 
-@router.get("/hedge-plan", response_model=HedgePlanOut)
+@router.get("/hedge-plan", response_model=Optional[HedgePlanOut])
 def get_hedge_plan(
     current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
-) -> HedgePlanOut:
-    """Return the saved hedge plan for the authenticated user.
+) -> Optional[HedgePlanOut]:
+    """Return the saved hedge plan for the authenticated user, or null if none exists.
 
-    Returns HTTP 404 if no portfolio key or no hedge plan exists.
+    Returns null (HTTP 200) when no portfolio key or hedge plan has been saved yet —
+    this is a normal first-visit state, not an error.
     Does NOT auto-create a default row — read-only, no db.commit().
     """
     key = UserPortfolioKeyRepo(db).find_by_user_id(current_user.id)
     if key is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No portfolio key found",
-        )
+        return None
 
     plan = UserHedgePlanRepo(db).find_by_key_id(key.key_id)
     if plan is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No hedge plan found",
-        )
+        return None
 
     return HedgePlanOut.model_validate(plan)
 
