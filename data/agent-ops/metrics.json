@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-06-07T17:46:04",
-  "total_runs": 66,
+  "generated_at": "2026-06-09T21:18:43",
+  "total_runs": 67,
   "per_role": {
     "pm": {
       "run_count": 28,
@@ -40,8 +40,8 @@
   },
   "per_app": {
     "rita": {
-      "run_count": 12,
-      "pass": 9,
+      "run_count": 13,
+      "pass": 10,
       "pass_with_warnings": 3,
       "fail": 0
     },
@@ -375,7 +375,7 @@
       "recent_commits": [
         {
           "hash": "07a6aab",
-          "message": "feat(ops): Feature 18 complete \u2014 skill-based approach revision + drift API tier gap close"
+          "message": "feat(ops): Feature 18 complete \u00e2\u20ac\u201d skill-based approach revision + drift API tier gap close"
         },
         {
           "hash": "8419a21",
@@ -404,7 +404,7 @@
       "recent_commits": [
         {
           "hash": "07a6aab",
-          "message": "feat(ops): Feature 18 complete \u2014 skill-based approach revision + drift API tier gap close"
+          "message": "feat(ops): Feature 18 complete \u00e2\u20ac\u201d skill-based approach revision + drift API tier gap close"
         },
         {
           "hash": "8419a21",
@@ -433,11 +433,11 @@
       "recent_commits": [
         {
           "hash": "7b2b215",
-          "message": "fix(agent-ops): FC-HTML-CSS gates in ops skill \u2014 design system class ref + SECTIONS array + no-display-none"
+          "message": "fix(agent-ops): FC-HTML-CSS gates in ops skill \u00e2\u20ac\u201d design system class ref + SECTIONS array + no-display-none"
         },
         {
           "hash": "07a6aab",
-          "message": "feat(ops): Feature 18 complete \u2014 skill-based approach revision + drift API tier gap close"
+          "message": "feat(ops): Feature 18 complete \u00e2\u20ac\u201d skill-based approach revision + drift API tier gap close"
         },
         {
           "hash": "8419a21",
@@ -740,20 +740,20 @@
     }
   ],
   "task_completion": {
-    "tsr": 0.848,
-    "first_attempt_success_rate": 0.848,
-    "partial_completion_rate": 0.136,
+    "tsr": 0.851,
+    "first_attempt_success_rate": 0.851,
+    "partial_completion_rate": 0.134,
     "abandonment_rate": 0.0
   },
   "quality": {
-    "avg_accuracy_score": 2.94,
+    "avg_accuracy_score": 2.88,
     "avg_relevance_score": 4.0,
-    "avg_csat": 2.94,
+    "avg_csat": 2.88,
     "recent_avg_csat": 2.67,
-    "csat_count": 16,
-    "planning_accuracy_rate": 0.812,
+    "csat_count": 17,
+    "planning_accuracy_rate": 0.824,
     "recent_planning_accuracy_rate": 1.0,
-    "grounding_pass_rate": 0.873
+    "grounding_pass_rate": 0.872
   },
   "token_forecasting": {
     "avg_forecast_error_pct": 16.2,
@@ -773,8 +773,8 @@
     },
     "by_feature_type": {
       "rita": {
-        "run_count": 12,
-        "avg_tokens": 98347,
+        "run_count": 13,
+        "avg_tokens": 90874,
         "modifier": 1.0
       },
       "ops": {
@@ -796,9 +796,9 @@
   },
   "efficiency": {
     "avg_duration_minutes": 28,
-    "avg_tokens_per_run": 47007,
+    "avg_tokens_per_run": 46324,
     "avg_retry_count": 0.03,
-    "avg_time_saved_hours": 8.2
+    "avg_time_saved_hours": 7.7
   },
   "reliability": {
     "error_recovery_rate": 0.8,
@@ -817,52 +817,52 @@
   },
   "api_metrics": {
     "available": true,
-    "total_calls": 9926,
-    "unique_endpoints": 160,
-    "overall_error_rate_pct": 7.95,
-    "error_rate_5xx_pct": 0.36,
+    "total_calls": 3323,
+    "unique_endpoints": 158,
+    "overall_error_rate_pct": 9.81,
+    "error_rate_5xx_pct": 0.3,
     "top_5_by_calls": [
-      {
-        "path": "/api/v1/experience/rita/geography-overview",
-        "method": "GET",
-        "count": 964,
-        "p50_ms": 110.8,
-        "p95_ms": 736.0,
-        "error_count": 0
-      },
       {
         "path": "/progress",
         "method": "GET",
-        "count": 940,
-        "p50_ms": 5.6,
-        "p95_ms": 447.1,
+        "count": 391,
+        "p50_ms": 16.0,
+        "p95_ms": 735.0,
+        "error_count": 0
+      },
+      {
+        "path": "/api/v1/experience/rita/geography-overview",
+        "method": "GET",
+        "count": 374,
+        "p50_ms": 141.0,
+        "p95_ms": 1110.0,
+        "error_count": 0
+      },
+      {
+        "path": "/api/experience/invest-game/run-day",
+        "method": "POST",
+        "count": 249,
+        "p50_ms": 0.0,
+        "p95_ms": 16.0,
+        "error_count": 0
+      },
+      {
+        "path": "/api/v1/market-signals",
+        "method": "GET",
+        "count": 241,
+        "p50_ms": 203.0,
+        "p95_ms": 1344.0,
         "error_count": 0
       },
       {
         "path": "/api/v1/commentary",
         "method": "POST",
-        "count": 573,
-        "p50_ms": 128.7,
-        "p95_ms": 3259.1,
-        "error_count": 72
-      },
-      {
-        "path": "/api/v1/market-signals",
-        "method": "GET",
-        "count": 479,
-        "p50_ms": 187.2,
-        "p95_ms": 898.8,
-        "error_count": 0
-      },
-      {
-        "path": "/api/v1/experience/rita/strategy-comparison",
-        "method": "GET",
-        "count": 429,
-        "p50_ms": 6.7,
-        "p95_ms": 37.0,
-        "error_count": 0
+        "count": 236,
+        "p50_ms": 516.0,
+        "p95_ms": 8828.0,
+        "error_count": 18
       }
     ],
-    "generated_at": "2026-06-07T15:46:04.392609+00:00"
+    "generated_at": "2026-06-09T19:18:43.654333+00:00"
   }
 }

@@ -16,8 +16,7 @@ const MOCK_VOLATILE = {
         { date: '2025-07-18', close: 629.87 },
         { date: '2025-07-21', close: 620.52 },
         { date: '2025-07-22', close: 598.94 },
-        { date: '2025-07-23', close: 603.12 },
-        { date: '2025-07-24', close: 612.37 }
+        { date: '2025-07-23', close: 603.12 }
       ]
     },
     ai: [
@@ -25,7 +24,6 @@ const MOCK_VOLATILE = {
       { ai_action:'SELL', compliance_status:'flagged', compliance_rule:'Extreme volatility threshold', ai_insight:'Earnings shock: guidance cut confirmed — exiting on extreme volatility flag.' },
       { ai_action:'HOLD', compliance_status:'pass',    compliance_rule:'Drawdown gate',               ai_insight:'Relief bounce — monitoring for confirmation before re-entry.' },
       { ai_action:'HOLD', compliance_status:'pass',    compliance_rule:'Sector exposure check',       ai_insight:'Bounce fading — standing aside, no clear signal.' },
-      { ai_action:'HOLD', compliance_status:'pass',    compliance_rule:'Drawdown gate',               ai_insight:'Selling pressure continues — maintaining cash position.' },
       { ai_action:'BUY',  compliance_status:'pass',    compliance_rule:'Position limit check',        ai_insight:'Oversold at -14% off pre-earnings high — initiating position near support.' },
       { ai_action:'HOLD', compliance_status:'pass',    compliance_rule:'Sector exposure check',       ai_insight:'Stabilising — holding and monitoring for recovery signal.' },
       { ai_action:'SELL', compliance_status:'pass',    compliance_rule:'End-of-period gate',          ai_insight:'Period close — liquidating position at market.' }
@@ -45,8 +43,7 @@ const MOCK_VOLATILE = {
         { date: '2025-02-13', close: 124.10 },
         { date: '2025-02-14', close: 121.50 },
         { date: '2025-02-18', close: 116.20 },
-        { date: '2025-02-19', close: 111.80 },
-        { date: '2025-02-20', close: 108.40 }
+        { date: '2025-02-19', close: 111.80 }
       ]
     },
     ai: [
@@ -56,7 +53,6 @@ const MOCK_VOLATILE = {
       { ai_action:'SELL', compliance_status:'flagged', compliance_rule:'Consecutive loss gate', ai_insight:'Support broken — flagging and exiting to protect capital.' },
       { ai_action:'HOLD', compliance_status:'pass',    compliance_rule:'Drawdown gate',         ai_insight:'Consolidating — no clear entry signal yet.' },
       { ai_action:'BUY',  compliance_status:'pass',    compliance_rule:'Position limit check',  ai_insight:'Base forming — re-entering with tighter stop.' },
-      { ai_action:'HOLD', compliance_status:'pass',    compliance_rule:'Sector exposure check', ai_insight:'Holding — monitoring for recovery confirmation.' },
       { ai_action:'SELL', compliance_status:'pass',    compliance_rule:'End-of-period gate',    ai_insight:'Period close — liquidating all positions at market.' }
     ]
   }
@@ -92,10 +88,7 @@ const MOCK_DAYS = {
     { date: '2025-01-13', close: 685.40 },
     { date: '2025-01-14', close: 679.90 },
     { date: '2025-01-15', close: 692.20 },
-    { date: '2025-01-16', close: 688.70 },
-    { date: '2025-01-17', close: 695.00 },
-    { date: '2025-01-20', close: 701.50 },
-    { date: '2025-01-21', close: 698.30 }
+    { date: '2025-01-16', close: 688.70 }
   ]
 };
 
@@ -105,10 +98,7 @@ const MOCK_AI = [
   { ai_action: 'BUY',  compliance_status: 'pass',    compliance_rule: 'Position limit check',  ai_insight: 'Momentum recovering — re-entering long.' },
   { ai_action: 'HOLD', compliance_status: 'pass',    compliance_rule: 'Sector exposure check', ai_insight: 'No new signal — holding current position.' },
   { ai_action: 'SELL', compliance_status: 'pass',    compliance_rule: 'Drawdown gate',         ai_insight: 'Profit target reached — exiting position.' },
-  { ai_action: 'BUY',  compliance_status: 'pass',    compliance_rule: 'Position limit check',  ai_insight: 'New breakout signal — entering long.' },
   { ai_action: 'HOLD', compliance_status: 'flagged', compliance_rule: 'Consecutive loss gate', ai_insight: 'Signal strength marginal — flagged for review but action recorded.' },
-  { ai_action: 'SELL', compliance_status: 'pass',    compliance_rule: 'Drawdown gate',         ai_insight: 'Volatility spike detected — reducing exposure.' },
-  { ai_action: 'SELL', compliance_status: 'pass',    compliance_rule: 'Position limit check',  ai_insight: 'Trend weakening — taking defensive position.' },
   { ai_action: 'SELL', compliance_status: 'pass',    compliance_rule: 'End-of-period gate',    ai_insight: 'Final day — closing all positions at market.' }
 ];
 

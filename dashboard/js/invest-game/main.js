@@ -13,10 +13,10 @@ const gameState = {
   currentDayIndex: 0,
   started: false,
   volatileMode: false,
-  buysLeft: 4,
-  sellsLeft: 4,
-  aiBuysLeft: 4,
-  aiSellsLeft: 4,
+  buysLeft: 3,
+  sellsLeft: 3,
+  aiBuysLeft: 3,
+  aiSellsLeft: 3,
   user: { position: 'flat', cash: 5000, shares: 0, entryPrice: 0, portfolio: 0, cumCosts: 0, cumTax: 0, netValue: 5000, prevNetValue: 5000 },
   ai:   { position: 'flat', cash: 5000, shares: 0, entryPrice: 0, portfolio: 0, cumCosts: 0, cumTax: 0, netValue: 5000, prevNetValue: 5000 }
 };
@@ -32,7 +32,7 @@ function fmtSigned(value) {
 }
 
 function calculateDay(actor, action, closePrice) {
-  const tranche = gameState.startingCapital / 4;
+  const tranche = gameState.startingCapital / 3;
 
   if (action === 'BUY' && actor.cash > 0) {
     const invest   = Math.min(tranche, actor.cash);
@@ -118,12 +118,17 @@ function showDayBar(n) {
   holdBtn.onclick = () => handleUserAction(n, 'HOLD');
 }
 
-function setEndDateMax() {
-  const d = new Date();
-  d.setMonth(d.getMonth() - 3);
-  const el = document.getElementById('end-date');
-  el.max = d.toISOString().split('T')[0];
-  el.value = el.max;
+function setDateDefaults() {
+  const end = new Date();
+  end.setDate(end.getDate() - 7);
+  const endEl = document.getElementById('end-date');
+  endEl.max = end.toISOString().split('T')[0];
+  endEl.value = endEl.max;
+
+  const start = new Date(end);
+  start.setDate(start.getDate() - 21);
+  const startEl = document.getElementById('start-date');
+  startEl.value = start.toISOString().split('T')[0];
 }
 
 function validateDates() {
@@ -145,8 +150,19 @@ function renderWarmupRows() {
   const s = sym();
   [1, 2].forEach((n, i) => {
     const d = gameState.warmupDays[i];
-    document.getElementById(`dbar-date-${n}`).textContent  = d.date;
-    document.getElementById(`dbar-price-${n}`).textContent = s + d.close.toFixed(2);
+    document.getElementById(`dbar-date-${n}`).textContent = d.date;
+    const priceEl = document.getElementById(`dbar-price-${n}`);
+    if (i === 0) {
+      priceEl.innerHTML = s + d.close.toFixed(2);
+    } else {
+      const prev  = gameState.warmupDays[i - 1].close;
+      const pct   = (d.close - prev) / prev * 100;
+      const isUp  = pct >= 0;
+      const arrow = isUp ? '▲' : '▼';
+      const color = isUp ? 'var(--pos)' : 'var(--neg)';
+      const sign  = isUp ? '+' : '';
+      priceEl.innerHTML = `${s}${d.close.toFixed(2)} <span style="font-size:0.8em;color:${color};white-space:nowrap">${arrow} ${sign}${pct.toFixed(2)}%</span>`;
+    }
   });
   document.getElementById('day-action-bar').style.display = '';
 }
@@ -168,14 +184,14 @@ function populateActiveRowData(n) {
 function unlockRow(n) {
   populateActiveRowData(n);
 
-  if (n === 10) {
+  if (n === 9) {
     showDayBar(n);
     ['dbar-buy', 'dbar-sell', 'dbar-hold'].forEach(id => {
       document.getElementById(id).disabled = true;
     });
     setTimeout(() => {
       const action = gameState.user.position === 'long' ? 'SELL' : 'HOLD';
-      handleUserAction(10, action);
+      handleUserAction(9, action);
     }, 700);
     return;
   }
@@ -184,7 +200,7 @@ function unlockRow(n) {
 }
 
 function showAllGreyed() {
-  for (let n = 3; n <= 10; n++) {
+  for (let n = 3; n <= 9; n++) {
     document.querySelectorAll(`[data-day="${n}"]`).forEach(el => {
       el.style.display = '';
       el.classList.add('greyed-out');
@@ -257,13 +273,13 @@ async function handleUserAction(n, action) {
   renderPnLCards();
   renderBudgetDisplay();
 
-  const pct = ((dayIndex + 1) / 8) * 100;
+  const pct = ((dayIndex + 1) / 7) * 100;
   document.getElementById('progress-fill').style.width       = `${pct}%`;
-  document.getElementById('progress-label-text').textContent = `Day ${dayIndex + 1} of 8`;
+  document.getElementById('progress-label-text').textContent = `Day ${dayIndex + 1} of 7`;
 
   renderComplianceRow(n, result);
 
-  if (n < 10) {
+  if (n < 9) {
     revealDay(n + 1);
   } else {
     await endGame();
@@ -278,7 +294,9 @@ function renderComplianceRow(n, result) {
 }
 
 async function endGame() {
-  try { await getResult(gameState.gameId); } catch (e) { console.error('getResult error', e); }
+  if (!gameState.volatileMode) {
+    try { await getResult(gameState.gameId); } catch (e) { console.error('getResult error', e); }
+  }
 }
 
 function resetGame() {
@@ -287,7 +305,7 @@ function resetGame() {
   Object.assign(gameState, {
     gameId: null, instrument: 'ASML', currency: 'EUR', startingCapital: cap,
     warmupDays: [], gameDays: [], currentDayIndex: 0, started: false, volatileMode: false,
-    buysLeft: 4, sellsLeft: 4, aiBuysLeft: 4, aiSellsLeft: 4,
+    buysLeft: 3, sellsLeft: 3, aiBuysLeft: 3, aiSellsLeft: 3,
     user: freshActor(), ai: freshActor()
   });
 
@@ -326,7 +344,7 @@ function resetGame() {
   document.getElementById('winner-badge').textContent        = '—';
   document.getElementById('winner-badge').className          = '';
   document.getElementById('progress-fill').style.width       = '0%';
-  document.getElementById('progress-label-text').textContent = 'Day 0 of 8';
+  document.getElementById('progress-label-text').textContent = 'Day 0 of 7';
   document.getElementById('row-performance').style.display   = 'none';
 
   // Day action bar
@@ -341,7 +359,7 @@ function resetGame() {
   });
 
   // Active columns
-  for (let n = 3; n <= 10; n++) {
+  for (let n = 3; n <= 9; n++) {
     document.querySelectorAll(`[data-day="${n}"]`).forEach(el => { el.classList.add('greyed-out'); });
     document.getElementById(`game-row-${n}`).classList.remove('active-col');
     const actionCell = document.getElementById(`action-label-${n}`);
@@ -358,7 +376,7 @@ function resetGame() {
 }
 
 function initControls() {
-  setEndDateMax();
+  setDateDefaults();
   validateDates();
 
   document.getElementById('pill-asml').addEventListener('click', () => {
@@ -408,11 +426,11 @@ function initControls() {
     document.getElementById('selected-instrument').textContent = data.instrument;
     document.getElementById('selected-range-text').textContent =
       data.game_days[0].date + ' — ' + data.game_days[data.game_days.length - 1].date;
-    document.getElementById('selected-days-count').textContent = '8 trading days';
+    document.getElementById('selected-days-count').textContent = '7 trading days';
     document.getElementById('selection-label').style.display   = '';
     document.getElementById('row-performance').style.display   = '';
     document.getElementById('progress-fill').style.width       = '0%';
-    document.getElementById('progress-label-text').textContent = 'Day 0 of 8';
+    document.getElementById('progress-label-text').textContent = 'Day 0 of 7';
 
     renderPnLCards();
     renderBudgetDisplay();
@@ -455,11 +473,11 @@ function initControls() {
     document.getElementById('selected-instrument').textContent = data.instrument;
     document.getElementById('selected-range-text').textContent =
       data.game_days[0].date + ' — ' + data.game_days[data.game_days.length - 1].date;
-    document.getElementById('selected-days-count').textContent = '8 volatile days';
+    document.getElementById('selected-days-count').textContent = '7 volatile days';
     document.getElementById('selection-label').style.display   = '';
     document.getElementById('row-performance').style.display   = '';
     document.getElementById('progress-fill').style.width       = '0%';
-    document.getElementById('progress-label-text').textContent = 'Day 0 of 8';
+    document.getElementById('progress-label-text').textContent = 'Day 0 of 7';
 
     renderPnLCards();
     renderBudgetDisplay();

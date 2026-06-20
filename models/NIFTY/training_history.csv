@@ -20,3 +20,4 @@ round,timestamp,timesteps,source,val_sharpe,val_mdd_pct,val_cagr_pct,val_constra
 19,2026-04-17 17:33:32,1000,trained,1.42,-12.0,0.0,False,1.42,-12.0,28.0,28.0,0,False,run_id=2bb0de8c
 20,2026-04-18 18:04:19,100000,trained,-0.459,-8.11,0.0,False,-0.459,-8.11,25.72,25.72,0,False,run_id=b95b97f2
 21,2026-04-25 09:48:46,1000,trained,1.42,-12.0,28.0,False,1.42,-12.0,28.0,28.0,0,False,run_id=8ca29edb
+22,2026-06-09 19:50:14,1000,trained,1.42,-12.0,28.0,False,1.42,-12.0,28.0,28.0,0,False,run_id=e655aac0
