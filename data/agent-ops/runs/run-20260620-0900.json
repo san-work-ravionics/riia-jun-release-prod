@@ -1,0 +1,39 @@
+{
+  "run_id": "20260620-0900",
+  "app": "ops",
+  "request": "Production deploy: Invest Game v2 updates + instrument data refresh",
+  "skill_file": "skill-ops-engineer.md",
+  "agents": [
+    {
+      "role": "engineer",
+      "status": "pass",
+      "steps_required": 7,
+      "steps_completed": 7,
+      "adherence_score": 1.0,
+      "token_estimate": 800,
+      "grounding_checks": {
+        "branch_created": false,
+        "code_changed": false,
+        "spec_updated": false,
+        "ruff_passed": true,
+        "contract_matches_architect": true
+      },
+      "failure_modes": ["GHCR_PAT expired — PATTERN-003 recurrence; rotated and retried"],
+      "notes": "7-phase deploy. First push 23af176 failed at Pull Image (GHCR_PAT expired). Rotated secret via API, retrigger 88b1aa6 green. Knowledge base updated."
+    }
+  ],
+  "overall_status": "pass",
+  "total_tokens_estimated": 800,
+  "duration_minutes": 15,
+  "branch": "master",
+  "merge_status": "merged",
+  "merge_commit": "88b1aa6",
+  "human_score": {
+    "accuracy": 3,
+    "relevance": 4,
+    "csat": 3,
+    "planning_ok": true,
+    "time_saved_hours": 5,
+    "notes": ""
+  }
+}

@@ -436,6 +436,57 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
 .es-loading{padding:32px;text-align:center;color:var(--t3);font-size:12px;}
 .load-err{padding:12px 16px;color:var(--neg);background:var(--neg-bg);font-family:var(--fm);font-size:12px;}
 @media(max-width:860px){.es-kpi-strip{grid-template-columns:1fr 1fr;}.sc-table thead th:nth-child(6){display:none;}.sc-row td:nth-child(6){display:none;}}
+
+/* ── Hedge Advisor (Feature 31) ─────────────────────────── */
+.ha-controls{display:flex;align-items:center;gap:8px;}
+.ha-select{font-family:var(--fm);font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);}
+.ha-btn{font-family:var(--fm);font-size:11px;padding:4px 12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface2);color:var(--text);cursor:pointer;}
+.ha-btn:hover{background:var(--border);}
+.ha-btn--skip{background:var(--p04-bg);color:var(--p04);border-color:var(--p04-bd);}
+.ha-btn--skip:hover{background:var(--p04-bd);}
+.ha-loading{padding:24px;text-align:center;color:var(--t3);font-family:var(--fm);font-size:12px;}
+.ha-spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--border2);border-top-color:var(--p04);border-radius:50%;animation:ha-spin .6s linear infinite;}
+@keyframes ha-spin{to{transform:rotate(360deg)}}
+.ha-timestamp{font-family:var(--fm);font-size:10px;color:var(--t4);margin-bottom:12px;}
+.ha-steps-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px;}
+.ha-steps-grid .reasoning-connector{display:none;}
+.reasoning-step{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:0;display:flex;flex-direction:column;min-width:0;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.reasoning-step-title{font-family:var(--fd);font-size:11px;font-weight:600;color:var(--text);margin-bottom:6px;line-height:1.3;}
+.reasoning-step-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.reasoning-agent{font-family:var(--fm);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--t2);}
+.reasoning-verdict{font-family:var(--fm);font-size:10px;font-weight:600;padding:2px 8px;border-radius:100px;transition:opacity 200ms, transform 200ms;}
+.reasoning-verdict--positive{background:var(--p01-bg);color:var(--p01);}
+.reasoning-verdict--negative{background:var(--neg-bg);color:var(--neg);}
+.reasoning-verdict--warning{background:var(--p03-bg);color:var(--p03);}
+.reasoning-verdict--neutral{background:var(--surface);color:var(--t3);}
+.reasoning-narrative{font-family:var(--fd);font-size:11px;line-height:1.5;color:var(--t2);min-height:18px;margin-bottom:6px;}
+.reasoning-data{margin-top:8px;transition:opacity 200ms;}
+.reasoning-data-row{display:flex;flex-direction:column;gap:3px;margin-bottom:4px;}
+.reasoning-kpi{font-family:var(--fm);font-size:10px;color:var(--t3);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2px 8px;}
+.reasoning-kpi strong{color:var(--text);font-weight:600;}
+.reasoning-kpi--total{background:var(--p01-bg);border-color:var(--p01-bd);}
+.reasoning-indicator--positive{border-color:var(--p01-bd);background:var(--p01-bg);}
+.reasoning-indicator--negative{border-color:var(--neg-bd);background:var(--neg-bg);}
+.reasoning-indicator--neutral{border-color:var(--border);}
+.reasoning-rules{margin-top:4px;}
+.reasoning-rule{font-family:var(--fm);font-size:10px;color:var(--t3);}
+.reasoning-rule--pass{color:var(--pos);}
+.reasoning-rule--fail{color:var(--neg);}
+.reasoning-connector{width:1px;height:12px;background:var(--border2);margin:0 auto;}
+.reasoning-strategy-cards{display:flex;flex-direction:column;gap:6px;margin-top:6px;}
+.reasoning-card{border:1px solid var(--border);border-radius:var(--r);padding:8px;background:var(--surface);}
+.reasoning-card--primary{border-color:var(--p01-bd);background:var(--p01-bg);}
+.reasoning-card-title{font-family:var(--fm);font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.reasoning-card-detail{font-family:var(--fm);font-size:10px;color:var(--t3);margin-bottom:2px;}
+.ha-chart-section{margin-top:16px;background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.ha-chart-section .chart-wrap{height:220px;position:relative;}
+.reasoning-no-chart{padding:32px;text-align:center;color:var(--t3);font-family:var(--fm);font-size:12px;}
+.ha-final-section{margin-top:16px;display:flex;align-items:center;gap:12px;justify-content:center;background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.reasoning-final-verdict{font-family:var(--fm);font-size:14px;font-weight:700;padding:6px 16px;border-radius:var(--r);}
+.reasoning-final-verdict--call-sell{background:var(--p01-bg);color:var(--p01);border:1px solid var(--p01-bd);}
+.reasoning-final-verdict--put-buy{background:var(--p04-bg);color:var(--p04);border:1px solid var(--p04-bd);}
+.reasoning-final-verdict--no-hedge{background:var(--surface2);color:var(--t3);border:1px solid var(--border);}
+.ha-confidence{font-family:var(--fm);font-size:11px;color:var(--t3);}
 </style>
 <link rel="stylesheet" href="css/responsive.css">
 </head>
@@ -513,6 +564,10 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     </div>
     <div class="nav-item p03" data-page="manoeuvre">
       <span class="nav-icon">⟳</span> Manoeuvre
+    </div>
+    <div class="nav-item p04" data-page="hedge-advisor">
+      <span class="nav-icon">&#9670;</span> Hedge Advisor
+      <span style="margin-left:auto;background:var(--p04-bg);color:var(--p04);font-family:var(--fm);font-size:9px;font-weight:600;padding:1px 6px;border-radius:100px;">F31</span>
     </div>
   </div>
 
@@ -1215,6 +1270,111 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     <div class="es-section-block">
       <div class="es-section-title">Triggered Alerts — Historical</div>
       <div class="triggered-row" id="triggered-grid"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       HEDGE ADVISOR — Agent Reasoning (Feature 31 Phase 2)
+  ════════════════════════════════════════════════ -->
+  <div class="section" id="page-hedge-advisor">
+    <div class="page-hdr">
+      <div>
+        <div class="page-title">Hedge Advisor</div>
+        <div class="page-sub">6-agent reasoning chain — regime, technicals, sentiment, allocation, volatility, hedge (indicative)</div>
+      </div>
+      <div class="ha-controls">
+        <select id="ha-instrument-select" class="ha-select" onchange="haAnalyse()"></select>
+        <button id="ha-analyse-btn" class="ha-btn" onclick="haAnalyse()">Analyse</button>
+        <button id="ha-skip-btn" class="ha-btn ha-btn--skip" onclick="haSkipToVerdict()" style="display:none">Skip to Verdict</button>
+      </div>
+    </div>
+
+    <div id="ha-loading" class="ha-loading" style="display:none">
+      <span class="ha-spinner"></span> Running reasoning chain...
+    </div>
+    <div id="ha-error" class="load-err" style="display:none"></div>
+
+    <div id="ha-results" style="display:none">
+      <div class="ha-timestamp" id="ha-timestamp"></div>
+
+      <div class="ha-steps-grid">
+      <div class="reasoning-step" id="ha-step-0" style="display:none;opacity:0">
+        <div class="reasoning-step-hdr">
+          <span class="reasoning-agent">REGIME ANALYST</span>
+          <span class="reasoning-verdict" id="ha-step-0-verdict" style="opacity:0;transform:scale(0)"></span>
+        </div>
+        <div class="reasoning-step-title">Market Regime Analysis</div>
+        <div class="reasoning-narrative" id="ha-step-0-narrative"></div>
+        <div class="reasoning-data" id="ha-step-0-data" style="opacity:0"></div>
+      </div>
+      <div class="reasoning-connector"></div>
+
+      <div class="reasoning-step" id="ha-step-1" style="display:none;opacity:0">
+        <div class="reasoning-step-hdr">
+          <span class="reasoning-agent">TECHNICAL ANALYST</span>
+          <span class="reasoning-verdict" id="ha-step-1-verdict" style="opacity:0;transform:scale(0)"></span>
+        </div>
+        <div class="reasoning-step-title">Technical Indicator Reading</div>
+        <div class="reasoning-narrative" id="ha-step-1-narrative"></div>
+        <div class="reasoning-data" id="ha-step-1-data" style="opacity:0"></div>
+      </div>
+      <div class="reasoning-connector"></div>
+
+      <div class="reasoning-step" id="ha-step-2" style="display:none;opacity:0">
+        <div class="reasoning-step-hdr">
+          <span class="reasoning-agent">SENTIMENT SCORER</span>
+          <span class="reasoning-verdict" id="ha-step-2-verdict" style="opacity:0;transform:scale(0)"></span>
+        </div>
+        <div class="reasoning-step-title">Sentiment Score Calculation</div>
+        <div class="reasoning-narrative" id="ha-step-2-narrative"></div>
+        <div class="reasoning-data" id="ha-step-2-data" style="opacity:0"></div>
+      </div>
+      <div class="reasoning-connector"></div>
+
+      <div class="reasoning-step" id="ha-step-3" style="display:none;opacity:0">
+        <div class="reasoning-step-hdr">
+          <span class="reasoning-agent">ALLOCATION ENGINE</span>
+          <span class="reasoning-verdict" id="ha-step-3-verdict" style="opacity:0;transform:scale(0)"></span>
+        </div>
+        <div class="reasoning-step-title">Allocation Recommendation</div>
+        <div class="reasoning-narrative" id="ha-step-3-narrative"></div>
+        <div class="reasoning-data" id="ha-step-3-data" style="opacity:0"></div>
+      </div>
+      <div class="reasoning-connector"></div>
+
+      <div class="reasoning-step" id="ha-step-4" style="display:none;opacity:0">
+        <div class="reasoning-step-hdr">
+          <span class="reasoning-agent">VOLATILITY ASSESSOR</span>
+          <span class="reasoning-verdict" id="ha-step-4-verdict" style="opacity:0;transform:scale(0)"></span>
+        </div>
+        <div class="reasoning-step-title">Volatility &amp; Premium Assessment</div>
+        <div class="reasoning-narrative" id="ha-step-4-narrative"></div>
+        <div class="reasoning-data" id="ha-step-4-data" style="opacity:0"></div>
+      </div>
+      <div class="reasoning-connector"></div>
+
+      <div class="reasoning-step" id="ha-step-5" style="display:none;opacity:0">
+        <div class="reasoning-step-hdr">
+          <span class="reasoning-agent">HEDGE ADVISOR</span>
+          <span class="reasoning-verdict" id="ha-step-5-verdict" style="opacity:0;transform:scale(0)"></span>
+        </div>
+        <div class="reasoning-step-title">Hedge Recommendation</div>
+        <div class="reasoning-narrative" id="ha-step-5-narrative"></div>
+        <div class="reasoning-data" id="ha-step-5-data" style="opacity:0"></div>
+      </div>
+      </div><!-- /ha-steps-grid -->
+
+      <div class="ha-chart-section">
+        <div class="chart-wrap">
+          <div class="chart-title">Payoff Comparison (indicative)</div>
+          <canvas id="ha-payoff-chart" height="200"></canvas>
+        </div>
+      </div>
+
+      <div class="ha-final-section">
+        <div class="reasoning-final-verdict" id="ha-final-verdict"></div>
+        <div class="ha-confidence" id="ha-confidence"></div>
+      </div>
     </div>
   </div>
 

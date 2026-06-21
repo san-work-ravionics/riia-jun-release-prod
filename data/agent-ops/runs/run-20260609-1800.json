@@ -1,0 +1,39 @@
+{
+  "run_id": "20260609-1800",
+  "app": "rita",
+  "request": "Invest Game: Jul 2025 ASML earnings shock volatile preset + price row % move indicator",
+  "skill_file": "n/a",
+  "agents": [
+    {
+      "role": "engineer",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 1200,
+      "grounding_checks": {
+        "branch_created": false,
+        "code_changed": true,
+        "spec_updated": false,
+        "ruff_passed": true,
+        "contract_matches_architect": true
+      },
+      "failure_modes": [],
+      "notes": "volatile ASML preset updated to Jul 11-28 2025 (−11.37% Day 2 earnings crash); price row % move indicator (▲/▼) added to populateActiveRowData(); deployed bd8a2f7"
+    }
+  ],
+  "overall_status": "pass",
+  "total_tokens_estimated": 1200,
+  "duration_minutes": 45,
+  "branch": "master",
+  "merge_status": "merged",
+  "merge_commit": "bd8a2f7",
+  "human_score": {
+    "accuracy": 2,
+    "relevance": 4,
+    "csat": 2,
+    "planning_ok": true,
+    "time_saved_hours": 0.5,
+    "notes": ""
+  }
+}

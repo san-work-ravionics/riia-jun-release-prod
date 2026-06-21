@@ -87,6 +87,7 @@ import { loadEquityHedge } from './equity_hedge.js';
 import { init as loadEquityScenarios } from '../scenarios/equity-scenarios.js';
 import { initI18n, setLanguage, applyTranslations } from '../shared/i18n.js';
 import { loadPortfolioHedge, phSetCoverage, phSetDuration, phToggleHedge, phPickStrategy, phSetScenarioTab } from './portfolio-hedge.js';
+import { loadHedgeAdvisor, haAnalyse, haSkipToVerdict } from './hedge-reasoning.js';
 
 window.setLanguage        = setLanguage;
 window.loadEquityHedge      = loadEquityHedge;
@@ -101,6 +102,12 @@ window.phSetDuration      = phSetDuration;
 window.phToggleHedge      = phToggleHedge;
 window.phPickStrategy     = phPickStrategy;
 window.phSetScenarioTab   = phSetScenarioTab;
+
+// Hedge Advisor reasoning page
+_sectionLoaders['hedge-advisor'] = loadHedgeAdvisor;
+window.loadHedgeAdvisor   = loadHedgeAdvisor;
+window.haAnalyse          = haAnalyse;
+window.haSkipToVerdict    = haSkipToVerdict;
 
 // My Portfolio CTA — navigates to portfolio-hedge section from Overview
 window.fnoMpGoHedge = function () {
