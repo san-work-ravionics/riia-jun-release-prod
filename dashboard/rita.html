@@ -292,6 +292,18 @@ canvas,.chart-canvas{display:block;}
 /* Chart.js requires a position:relative parent with explicit height when maintainAspectRatio=false */
 .chart-box{position:relative;height:220px;width:100%;}
 
+/* ── Investment Workflow & Agents — tabbed concepts (ported from DS Lab CRISP-DM page) ── */
+.concept-tab-bar{display:flex;flex-wrap:wrap;width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:22px;}
+.concept-tab{flex:1;min-width:120px;text-align:center;font-family:var(--fd);font-size:12px;font-weight:500;padding:9px 6px;border:none;border-right:1px solid var(--border);cursor:pointer;background:transparent;color:var(--t2);transition:background .12s,color .12s;white-space:nowrap;}
+.concept-tab:last-child{border-right:none;}
+.concept-tab:hover{background:var(--surface2);color:var(--text);}
+.concept-tab.active{background:var(--run-bg);color:var(--run);font-weight:700;}
+.concept-panel{display:block;}
+.concept-panel.hidden{display:none;}
+.concept-desc{font-size:12.5px;color:var(--t2);line-height:1.78;margin-bottom:16px;}
+.concept-chart-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+@media(max-width:760px){.concept-chart-grid{grid-template-columns:1fr;}}
+
 /* Table */
 .tbl-wrap{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow-x:hidden;overflow-y:auto;max-height:260px;box-shadow:var(--sh);margin-bottom:16px;}
 table{width:100%;border-collapse:collapse;}
@@ -1323,6 +1335,142 @@ tr:hover td{background:var(--surface2);}
     <div id="learn-body-trends" class="card-body">
       <div style="height:220px;margin-bottom:16px"><canvas id="chart-learn-price"></canvas></div>
       <div style="height:160px"><canvas id="chart-learn-rsi"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ════════ Investment Workflow & Agents ════════ -->
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-body">
+      <h2 style="font-family:var(--fs);font-size:22px;margin:0 0 10px;color:var(--text)">How Professional Investment Firms Invest</h2>
+      <p style="font-size:13px;color:var(--t2);line-height:1.8;margin-bottom:14px">
+        In a professionally run investment firm, highly sophisticated quantitative finance tools and Risk / Reward
+        processes are used by smart professionals. They use these to evaluate various investment opportunities,
+        calculate the Risk / Reward and, as appropriate, hedge them with appropriate derivatives product(s).
+        For the purpose of this project, we look at a specific workflow — shown below — which depicts a typical
+        set-up for such an investment firm.
+      </p>
+
+      <div class="tbl-wrap" style="max-height:none;margin-bottom:16px">
+        <table>
+          <thead>
+            <tr><th>Step</th><th>Purpose / Role</th><th>Scope</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Initiation</strong></td><td>Financial Goal</td><td>To define a clear, quantitative financial goal for a time period</td></tr>
+            <tr><td><strong>Research</strong></td><td>Research Analyst</td><td>Focus at macro-economic trends, Goods flow and Demand / Supply to arrive at growth projections</td></tr>
+            <tr><td><strong>Research</strong></td><td>Sentiment Analyst</td><td>Look at present market conditions, public news and investor sentiments</td></tr>
+            <tr><td><strong>Research</strong></td><td>Technical Analyst</td><td>Use of Technical Indicators such as Candlestick patterns, charts, MACD, RSI, Stochastic indicators</td></tr>
+            <tr><td><strong>Design</strong></td><td>Strategy Analyst</td><td>Decide on the strategy approach such as Value Investing (Buy cheap), Momentum Investing (Trade on strong upside / downside), Long Term Horizon (3 to 5 years)</td></tr>
+            <tr><td><strong>Evaluation</strong></td><td>Scenario Analyst</td><td>Evaluate the portfolio performance through various scenarios over a short-term horizon. Any expectations of maximum drawdown (MDD) on the portfolio can trigger derivatives trade</td></tr>
+            <tr><td><strong>Execution</strong></td><td>Execution Analyst</td><td>Take the appropriate investment and balance it with right derivatives trade</td></tr>
+            <tr><td><strong>Feedback</strong></td><td>Outcome Analyst</td><td>Build a Closed Loop system such that the result from each trade (profit / loss) is fed back to the initial phases. This then can be used to fine-tune the investment approach</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p style="font-size:13px;color:var(--t2);line-height:1.8;margin-bottom:12px">
+        As shown above, there are a few activities, and a great deal of data processing is required before taking any
+        trades. But such knowledge and especially data processing expertise is not available with a retail trader.
+        Unhedged exposure during events that go against trader views can lead to a significant impact to the portfolio
+        value. They are thus at a very significant disadvantage. This can be attempted to solve using a data Science
+        approach and an Agentic AI framework.
+      </p>
+      <p style="font-size:13px;color:var(--t2);line-height:1.8;margin-bottom:12px">
+        By applying <strong>data science methods</strong>, the time-series market data can be transformed into actionable
+        intelligence, achieving both stable performance and risk control. With <strong>Agentic AI</strong>, a certain
+        Risk/Reward policy can be set against which AI agents can validate the trades / portfolio and provide a Risk
+        Informed view. These two elements become the core of the proposed
+        <strong>Risk Informed Investment Approach (RIIA)</strong>. With rich time-series data availability and applying
+        data science concepts, machine learning models can be built to do several key tasks, namely:
+      </p>
+      <ul style="font-size:13px;color:var(--t2);line-height:1.8;margin:0 0 4px 18px">
+        <li>Interpreting market volatility conditions using hybrid time-series and ML techniques.</li>
+        <li>Modelling risk exposures through dynamic simulations.</li>
+        <li>Identifying flow patterns that limits excessive leverage buildup.</li>
+        <li>Optimizing trade sizing and execution under capital and margin constraints.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Agent tabs — one per workflow step, following the DS Lab CRISP-DM tab pattern -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <span style="font-size:12px;font-weight:700;color:var(--t2)">Agents &amp; Linked Analytics</span>
+    <span id="aw-status" style="font-size:11px;color:var(--t3)"></span>
+  </div>
+
+  <div class="concept-tab-bar">
+    <button class="concept-tab active" onclick="switchAgentTab('a1', this)">Initiation / Financial Goal</button>
+    <button class="concept-tab" onclick="switchAgentTab('a2', this)">Research Analyst</button>
+    <button class="concept-tab" onclick="switchAgentTab('a3', this)">Sentiment Analyst</button>
+    <button class="concept-tab" onclick="switchAgentTab('a4', this)">Technical Analyst</button>
+    <button class="concept-tab" onclick="switchAgentTab('a5', this)">Strategy Analyst</button>
+    <button class="concept-tab" onclick="switchAgentTab('a6', this)">Scenario Analyst</button>
+    <button class="concept-tab" onclick="switchAgentTab('a7', this)">Execution Analyst</button>
+    <button class="concept-tab" onclick="switchAgentTab('a8', this)">Outcome Analyst</button>
+  </div>
+
+  <!-- a1 — Initiation / Financial Goal -->
+  <div id="aw-a1" class="concept-panel">
+    <p class="concept-desc">The <strong>Financial Goal</strong> step sets a clear, quantitative target (e.g. a Sharpe ratio, a return level, a drawdown ceiling) for the time period. RITA frames the learned strategy against these targets — the bars below compare achieved Sharpe, Max Drawdown, Win Rate and Return against representative goal levels.</p>
+    <div class="concept-chart-grid">
+      <div class="chart-wrap"><div class="chart-title">Achieved vs Target KPIs</div><div class="chart-box" style="height:240px"><canvas id="aw-a1-c1"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- a2 — Research Analyst -->
+  <div id="aw-a2" class="concept-panel hidden">
+    <p class="concept-desc">The <strong>Research Analyst</strong> studies macro-economic trends, goods flow and demand / supply to arrive at growth projections. As a proxy, RITA tracks the underlying instrument's price trajectory — the long-horizon close-price trend the model learns from.</p>
+    <div class="concept-chart-grid">
+      <div class="chart-wrap"><div class="chart-title">NIFTY Close — Price Trend</div><div class="chart-box" style="height:240px"><canvas id="aw-a2-c1"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- a3 — Sentiment Analyst -->
+  <div id="aw-a3" class="concept-panel hidden">
+    <p class="concept-desc">The <strong>Sentiment Analyst</strong> reads present market conditions, public news and investor sentiment. RITA approximates market regime / sentiment with a composite trend score derived from the signal pipeline — rising scores indicate constructive regimes, falling scores indicate caution.</p>
+    <div class="concept-chart-grid">
+      <div class="chart-wrap"><div class="chart-title">Market Regime — Trend Score</div><div class="chart-box" style="height:240px"><canvas id="aw-a3-c1"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- a4 — Technical Analyst -->
+  <div id="aw-a4" class="concept-panel hidden">
+    <p class="concept-desc">The <strong>Technical Analyst</strong> applies technical indicators — candlestick patterns, charts, MACD, RSI and stochastic indicators. RITA computes these as model features; below are RSI(14) with overbought/oversold bands and the MACD line.</p>
+    <div class="concept-chart-grid">
+      <div class="chart-wrap"><div class="chart-title">RSI (14) with 60 / 30 bands</div><div class="chart-box" style="height:240px"><canvas id="aw-a4-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-title">MACD (12 / 26)</div><div class="chart-box" style="height:240px"><canvas id="aw-a4-c2"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- a5 — Strategy Analyst -->
+  <div id="aw-a5" class="concept-panel hidden">
+    <p class="concept-desc">The <strong>Strategy Analyst</strong> decides the approach — Value Investing (buy cheap), Momentum Investing (trade strong upside / downside) or a Long-Term Horizon. RITA's momentum view is captured by the EMA stack; crossovers of fast over slow EMAs flag trend changes.</p>
+    <div class="concept-chart-grid">
+      <div class="chart-wrap"><div class="chart-title">EMA Crossover (5 / 13 / 26 / 50)</div><div class="chart-box" style="height:240px"><canvas id="aw-a5-c1"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- a6 — Scenario Analyst -->
+  <div id="aw-a6" class="concept-panel hidden">
+    <p class="concept-desc">The <strong>Scenario Analyst</strong> evaluates portfolio performance through various scenarios over a short-term horizon. Expectations of maximum drawdown (MDD) can trigger a derivatives trade. The backtest below compares the DDQN strategy against a Buy &amp; Hold benchmark — divergence and drawdowns mark where hedging matters.</p>
+    <div class="concept-chart-grid">
+      <div class="chart-wrap"><div class="chart-title">DDQN Strategy vs Buy &amp; Hold</div><div class="chart-box" style="height:240px"><canvas id="aw-a6-c1"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- a7 — Execution Analyst -->
+  <div id="aw-a7" class="concept-panel hidden">
+    <p class="concept-desc">The <strong>Execution Analyst</strong> takes the appropriate investment and balances it with the right derivatives trade. The SHAP feature-importance chart shows which signals most drive RITA's allocation decisions at execution time.</p>
+    <div class="concept-chart-grid">
+      <div class="chart-wrap"><div class="chart-title">Feature Importance — SHAP |Overall|</div><div class="chart-box" style="height:240px"><canvas id="aw-a7-c1"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- a8 — Outcome Analyst -->
+  <div id="aw-a8" class="concept-panel hidden">
+    <p class="concept-desc">The <strong>Outcome Analyst</strong> builds a closed-loop system: the result from each trade (profit / loss) is fed back to the initial phases to fine-tune the investment approach. The chart tracks backtest return and Sharpe across successive training rounds — the closed loop improving over time.</p>
+    <div class="concept-chart-grid">
+      <div class="chart-wrap"><div class="chart-title">Closed-Loop — Backtest Return &amp; Sharpe by Round</div><div class="chart-box" style="height:240px"><canvas id="aw-a8-c1"></canvas></div></div>
     </div>
   </div>
 

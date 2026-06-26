@@ -21,7 +21,7 @@ import { loadScenarios, runScenarioBacktest, setScenarioPeriod } from './scenari
 import { loadAgentPanel, agentPanelStep, resetAgentPanel, approveAgentProposal, rejectAgentProposal } from './agent-panel.js';
 import { loadAiCompliance, switchAcTab } from './ai-compliance.js';
 import { loadTechnicalAnalysis } from './technical-analysis.js';
-import { loadLearnings, toggleLearnCard } from './learnings.js';
+import { loadLearnings, toggleLearnCard, switchAgentTab } from './learnings.js';
 import { loadStrategyComparison, scSelectInstrument, scSelectYear } from './strategy-comparison.js';
 import { useChip, sendChatMsg, clearChat, updateChips, showAlerts, refreshChatChips } from './chat.js';
 import { openChartModal, closeChartModal } from './chart-modal.js';
@@ -82,6 +82,7 @@ window.loadTrades         = loadTrades;
 window.loadTechnicalAnalysis = loadTechnicalAnalysis;
 window.loadLearnings      = loadLearnings;
 window.toggleLearnCard          = toggleLearnCard;
+window.switchAgentTab           = switchAgentTab;
 window.loadStrategyComparison   = loadStrategyComparison;
 window.scSelectInstrument       = scSelectInstrument;
 window.scSelectYear             = scSelectYear;
