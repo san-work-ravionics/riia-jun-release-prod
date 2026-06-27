@@ -20,10 +20,14 @@ from __future__ import annotations
 
 import csv
 import os
+import threading
 from dataclasses import dataclass, field
 from typing import Optional
 
 import numpy as np
+import structlog
+
+_perf_log = structlog.get_logger()
 
 
 # ── Singleton model ───────────────────────────────────────────────────────────
@@ -526,6 +530,110 @@ def classify(query: str, threshold: float = CONFIDENCE_THRESHOLD) -> IntentResul
         confidence=confidence,
         low_confidence=confidence < threshold,
     )
+
+
+# ── Agent performance instrumentation (Feature 32) ─────────────────────────────
+#
+# Records one agent_performance row per resolved investment-workflow agent intent.
+# The 7 canonical agent_name values below are reused verbatim by the Phase 2
+# dashboard endpoint so it always shows all 7 agents even with zero rows.
+
+CANONICAL_AGENTS: list[str] = [
+    "Financial Goal",
+    "Sentiment Analyst",
+    "Technical Analyst",
+    "Strategy Analyst",
+    "Scenario Analyst",
+    "Execution Analyst",
+    "Outcome Analyst",
+]
+
+# Maps a classifier intent.name (the actual resolved-intent identifier) to one of
+# the 7 canonical agent names. Intents not present here are non-agent intents and
+# are skipped silently by the hook.
+INTENT_TO_AGENT: dict[str, str] = {
+    # Financial Goal — return expectations / goal planning
+    "return_1m": "Financial Goal",
+    "return_3m": "Financial Goal",
+    "return_6m": "Financial Goal",
+    "return_1y": "Financial Goal",
+    "return_3y": "Financial Goal",
+    "return_5y": "Financial Goal",
+    # Sentiment Analyst — overall market sentiment / mood
+    "market_sentiment": "Sentiment Analyst",
+    # Technical Analyst — technical indicators
+    "trend_direction": "Technical Analyst",
+    "rsi_reading": "Technical Analyst",
+    "volatility_check": "Technical Analyst",
+    # Strategy Analyst — allocation strategy / portfolio comparison
+    "allocation_level": "Strategy Analyst",
+    "conservative_strategy": "Strategy Analyst",
+    "aggressive_strategy": "Strategy Analyst",
+    "portfolio_compare": "Strategy Analyst",
+    # Scenario Analyst — stress scenarios
+    "stress_crash_10": "Scenario Analyst",
+    "stress_crash_20": "Scenario Analyst",
+    "stress_rally_10": "Scenario Analyst",
+    "stress_flat": "Scenario Analyst",
+    # Execution Analyst — entry / execution decisions
+    "invest_now": "Execution Analyst",
+    "explain_decision": "Execution Analyst",
+    # Outcome Analyst — realized / backtested performance outcome
+    "backtest_performance": "Outcome Analyst",
+    "backtest_1y_return": "Outcome Analyst",
+}
+
+
+def _agent_perf_worker(
+    agent_name: str,
+    intent_name: str,
+    recommendation: Optional[str],
+    training_run_id: Optional[str],
+) -> None:
+    """Background-thread writer — opens its own session, never shares the request's."""
+    from rita.database import SessionLocal
+    from rita.repositories.agent_performance import AgentPerformanceRepository
+
+    db = SessionLocal()
+    try:
+        AgentPerformanceRepository(db).record(
+            agent_name=agent_name,
+            intent=intent_name,
+            recommendation=recommendation,
+            outcome_status=None,
+            training_run_id=training_run_id,
+        )
+    except Exception:  # noqa: BLE001 — fire-and-forget, swallow everything
+        _perf_log.debug("agent_perf.write_failed", agent=agent_name, intent=intent_name, exc_info=True)
+    finally:
+        db.close()
+
+
+def record_agent_performance(
+    result: "IntentResult",
+    *,
+    recommendation: Optional[str] = None,
+    training_run_id: Optional[str] = None,
+) -> None:
+    """Fire-and-forget instrumentation hook.
+
+    Records one agent_performance row for the resolved agent intent on a daemon
+    background thread. Wrapped so any failure is swallowed and logged at debug —
+    it never raises, never adds request latency, and never alters the chat
+    response. Intents that map to no agent are skipped silently.
+    """
+    try:
+        intent_name = result.intent.name
+        agent_name = INTENT_TO_AGENT.get(intent_name)
+        if agent_name is None:
+            return  # non-agent intent — skip silently
+        threading.Thread(
+            target=_agent_perf_worker,
+            args=(agent_name, intent_name, recommendation, training_run_id),
+            daemon=True,
+        ).start()
+    except Exception:  # noqa: BLE001 — fire-and-forget, never break the chat path
+        _perf_log.debug("agent_perf.hook_failed", exc_info=True)
 
 
 # ── Dispatch ──────────────────────────────────────────────────────────────────

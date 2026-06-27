@@ -248,6 +248,16 @@ input[type="date"].ig-date:focus{border-color:var(--game);}
 .card-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px;}
 .card-row-2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:16px;}
 .card-row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px;}
+/* Agent Performance scorecards (Feature 32) — mirrors Ops Agent Builds layout */
+.agp-sc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.agp-sc{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r);padding:12px 14px;}
+.agp-sc-role{font-family:var(--fm);font-size:11px;font-weight:700;color:var(--build);margin-bottom:9px;display:flex;align-items:center;justify-content:space-between;gap:6px;}
+.agp-sc-row{display:flex;justify-content:space-between;align-items:center;font-size:11px;margin-bottom:6px;gap:8px;}
+.agp-sc-lbl{color:var(--t3);}
+.agp-sc-val{font-weight:600;color:var(--t2);font-family:var(--fm);white-space:nowrap;}
+.agp-bar-wrap{background:var(--border);border-radius:3px;height:5px;overflow:hidden;width:50px;display:inline-block;vertical-align:middle;}
+.agp-bar{background:var(--build);height:100%;border-radius:3px;transition:width .4s;}
+@media(max-width:1100px){.agp-sc-grid{grid-template-columns:repeat(2,1fr);}}
 
 /* HMC — horizontal metric cards */
 .hmc-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
@@ -476,6 +486,9 @@ tr:hover td{background:var(--surface2);}
     </div>
     <div class="nav-item p00" data-s="strategy-compare" onclick="show('strategy-compare',this)">
       <span class="nav-icon">⊞</span> Strategy Compare
+    </div>
+    <div class="nav-item p00" data-s="agent-performance" onclick="show('agent-performance',this)">
+      <span class="nav-icon">▤</span> Agent Performance
     </div>
     <div class="nav-item p00" data-s="agent-panel" onclick="show('agent-panel',this)">
       <span class="nav-icon">◈</span> Agent Panel
@@ -1559,6 +1572,82 @@ tr:hover td{background:var(--surface2);}
     </div>
   </div>
 
+</section>
+
+
+<!-- ── Agent Performance (Feature 32) ────────────────────── -->
+<section class="section" id="sec-agent-performance">
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">Agent Performance</div>
+      <div class="page-sub">Per-agent KPIs for the 7 investment-workflow agents — the trading-decision pipeline</div>
+    </div>
+    <div class="hdr-actions">
+      <span class="badge warn" title="Illustrative metrics — live RL-agent scoring lands with Phases 3–5">Demo data</span>
+      <span style="font-size:11px;color:var(--t3);align-self:center">Updated: <span id="agent-perf-updated">—</span></span>
+      <button class="btn btn-ghost btn-sm" onclick="loadAgentPerformance()">↺ Refresh</button>
+    </div>
+  </div>
+
+  <!-- Aggregate KPI cards -->
+  <div class="kpi-row-4">
+    <div class="card">
+      <div class="kpi-label">Total Invocations (30d)</div>
+      <div class="kpi-value" id="agent-perf-total">—</div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">Avg Outcome Match</div>
+      <div class="kpi-value neu" id="agent-perf-match">—</div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">Avg RL Reward</div>
+      <div class="kpi-value" id="agent-perf-reward">—</div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">Avg Data Coverage</div>
+      <div class="kpi-value" id="agent-perf-coverage">—</div>
+    </div>
+  </div>
+
+  <!-- Agent scorecards — one panel per agent, 4 measurable parameters (mirrors Ops Agent Builds) -->
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">Agent Scorecards</span>
+      <span class="card-sub">Outcome Match · Avg RL Reward · Data Coverage · Invocations (30d)</span>
+    </div>
+    <div class="agp-sc-grid" id="agent-perf-scorecards">
+      <div class="empty">Loading…</div>
+    </div>
+  </div>
+
+  <!-- Invocations chart (40%) + per-agent detail table (60%) in one row -->
+  <div style="display:grid;grid-template-columns:2fr 3fr;gap:14px;align-items:start">
+    <div class="chart-wrap" style="margin-bottom:0">
+      <div class="chart-title">Invocations by Agent — last 30 days</div>
+      <div class="chart-box" style="height:320px"><canvas id="agent-perf-chart"></canvas></div>
+    </div>
+
+    <div class="card" style="margin-bottom:0">
+      <div class="card-hdr"><span class="card-title">Per-Agent Detail</span></div>
+      <div class="tbl-wrap" style="max-height:320px">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Agent</th>
+              <th style="text-align:right">Outcome Match</th>
+              <th style="text-align:right">Avg RL Reward</th>
+              <th style="text-align:right">Data Coverage</th>
+              <th style="text-align:right">Invocations (30d)</th>
+              <th style="text-align:right">Trend vs Prior 30d</th>
+            </tr>
+          </thead>
+          <tbody id="agent-perf-table">
+            <tr><td colspan="6" class="empty">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </section>
 
 

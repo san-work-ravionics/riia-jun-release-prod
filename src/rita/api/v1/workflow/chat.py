@@ -209,7 +209,7 @@ def chat(req: ChatRequest, db: Session = Depends(get_db)) -> dict:
     20 fixed investment scenarios, then runs the matching core handler against
     live data for the selected instrument.
     """
-    from rita.core.classifier import classify, dispatch
+    from rita.core.classifier import classify, dispatch, record_agent_performance
     from rita.core.chat_monitor import log_query as _log_query
     from rita.api.v1.workflow.pipeline import _get_active_instrument_id
     from pathlib import Path as _Path
@@ -249,6 +249,12 @@ def chat(req: ChatRequest, db: Session = Depends(get_db)) -> dict:
         confidence=round(result.confidence, 3),
         duration_ms=round(classify_ms, 1),
     )
+
+    # Feature 32 — fire-and-forget agent performance instrumentation.
+    # Off the critical path (background thread), swallows all errors, never
+    # mutates the response below. Only fires for the 7 mapped agent intents.
+    if not result.low_confidence:
+        record_agent_performance(result)
 
     latency_ms = (_time.perf_counter() - t0) * 1000
     status = "low_confidence" if result.low_confidence else "success"

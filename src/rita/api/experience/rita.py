@@ -36,6 +36,9 @@ from rita.schemas.strategy_comparison import (
     StrategyResult,
     StrategySummaryRow,
 )
+from rita.repositories.agent_performance import AgentPerformanceRepository
+from rita.schemas.agent_performance import AgentKpi, AgentPerformanceSummaryResponse
+from rita.core.classifier import CANONICAL_AGENTS
 
 log = structlog.get_logger()
 
@@ -1991,3 +1994,55 @@ def experience_strategy_comparison(
         sources={"csv": {"status": "ok" if not result.error else "error"}},
     )
     return result
+
+
+# ── GET /api/v1/experience/rita/agent-performance ─────────────────────────────
+
+# Static gap status — in Phases 1+2 invocations are instrumented but realized
+# outcomes are not yet backfilled, so the gap is "pending-backfill" for all agents.
+_AGENT_GAP_STATUS = "pending-backfill"
+
+
+@router.get(
+    "/experience/rita/agent-performance",
+    summary="Per-agent KPI summary for the 7 investment-workflow agents",
+    response_model=AgentPerformanceSummaryResponse,
+)
+def agent_performance(db: Session = Depends(get_db)) -> AgentPerformanceSummaryResponse:
+    """Read-only per-agent KPI summary (Feature 32).
+
+    Always returns exactly 7 agents (the canonical investment-workflow agents).
+    Agents with no recorded rows return invocation_count_30d=0,
+    outcome_match_rate=None, trend_vs_prior_30d=None so the dashboard renders
+    a dash instead of a misleading 0%. No db.commit() — Experience tier.
+    """
+    _start = time.monotonic()
+
+    try:
+        summary = AgentPerformanceRepository(db).summary_for_agents(CANONICAL_AGENTS)
+        status = "ok"
+    except Exception as exc:
+        summary = {}
+        status = "error"
+        log.error("agent_performance.failed", error=str(exc), exc_info=True)
+
+    agents = [
+        AgentKpi(
+            agent_name=name,
+            gap_status=_AGENT_GAP_STATUS,
+            invocation_count_30d=summary.get(name, {}).get("invocation_count_30d", 0),
+            outcome_match_rate=summary.get(name, {}).get("outcome_match_rate"),
+            trend_vs_prior_30d=summary.get(name, {}).get("trend_vs_prior_30d"),
+        )
+        for name in CANONICAL_AGENTS
+    ]
+
+    log_event(
+        log, "info", "experience.compose",
+        handler="agent_performance",
+        duration_ms=int((time.monotonic() - _start) * 1000),
+        overall_status=status,
+        response_keys=["agents"],
+        sources={"agent_performance": {"status": status, "record_count": len(summary)}},
+    )
+    return AgentPerformanceSummaryResponse(agents=agents)

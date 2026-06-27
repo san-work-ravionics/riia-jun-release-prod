@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 import rita.models  # noqa: F401 -- registers all ORM models with Base.metadata
+from rita.models.agent_performance import AgentPerformance  # noqa: F401 -- Feature 32 create_all
 from rita.auth import get_current_user
 from rita.config import get_settings
 from rita.limiter import limiter
