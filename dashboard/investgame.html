@@ -173,6 +173,14 @@ input[type="date"]:focus{border-color:var(--game);}
 .pnl-cell.neg{color:var(--danger);}
 .gate-cell{display:flex;flex-direction:column;gap:2px;align-items:center;}
 .gate-rule{font-family:var(--fm);font-size:11px;color:var(--t3);white-space:normal;text-align:center;max-width:120px;}
+/* ── Journal column colours ── */
+[data-day="3"]{background:#FAFAE4 !important;}
+[data-day="4"]{background:#E4F0FA !important;}
+[data-day="5"]{background:#FAFAE4 !important;}
+[data-day="6"]{background:#E4F0FA !important;}
+[data-day="7"]{background:#FAFAE4 !important;}
+[data-day="8"]{background:#E4F0FA !important;}
+[data-day="9"]{background:#FAFAE4 !important;}
 .comp-insight{font-size:12px;color:var(--t3);font-style:italic;white-space:normal;text-align:center;max-width:130px;}
 #game-table tbody td.comp-insight{white-space:normal;min-width:130px;max-width:180px;line-height:1.4;padding:8px 14px;}
 .status-badge{display:inline-flex;align-items:center;font-family:var(--fm);font-size:9px;font-weight:500;padding:2px 7px;border-radius:3px;border:1px solid;text-transform:uppercase;letter-spacing:.04em;}
@@ -208,7 +216,7 @@ input[type="date"]:focus{border-color:var(--game);}
 <main class="game-main">
 
   <div class="top-row-grid">
-    <section id="row-controls" class="game-row">
+    <section id="row-controls" class="game-row" style="background:#FAEFE0">
       <div class="row-hdr">
         <h2>Configure Your Game</h2>
         <span class="row-badge">Setup</span>
@@ -262,7 +270,7 @@ input[type="date"]:focus{border-color:var(--game);}
       </div>
     </section>
 
-    <section id="row-performance" class="game-row" style="display:none">
+    <section id="row-performance" class="game-row" style="display:none;background:#E3EBFA">
       <table class="pnl-table">
         <thead>
           <tr>
@@ -302,7 +310,7 @@ input[type="date"]:focus{border-color:var(--game);}
   </div>
 
   <!-- Investing Journal — days = columns (3–10 active, 1–2 warmup) -->
-  <section id="row-game-table" class="card">
+  <section id="row-game-table" class="card" style="background:#FFFFFF">
     <div class="card-hdr">
       <span class="card-title">Investing Journal</span>
       <span class="card-sub" id="journal-sub">—</span>
