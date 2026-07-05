@@ -188,7 +188,7 @@ input[type="date"]:focus{border-color:var(--game);}
       <svg width="15" height="15" viewBox="0 0 16 16"><path d="M8 1L1 5v6l7 4 7-4V5L8 1zm0 1.8L13.5 6 8 9.2 2.5 6 8 2.8zM2 7.1l5.5 3.2v3.9L2 11V7.1zm7.5 7.1v-3.9L15 7.1V11l-5.5 3.2z"/></svg>
     </div>
     <span class="logo-name">RIIA</span>
-    <span class="logo-sub">v1.0.0</span>
+    <span class="logo-sub app-ver">v…</span>
   </a>
   <div class="t-sep"></div>
   <span class="t-crumb">Trial Invest Game</span>
@@ -387,5 +387,6 @@ input[type="date"]:focus{border-color:var(--game);}
 </main>
 
 <script type="module" src="js/invest-game/main.js"></script>
+<script>fetch('/health').then(r=>r.json()).then(d=>{document.querySelectorAll('.app-ver').forEach(e=>e.textContent='v'+d.version)}).catch(()=>{})</script>
 </body>
 </html>
