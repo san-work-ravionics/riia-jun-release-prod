@@ -49,6 +49,7 @@ WORKDIR /app
 COPY --from=builder /app/venv /app/venv
 
 # Copy application source, config, and pre-built embed model
+COPY VERSION /app/VERSION
 COPY src/ /app/src/
 COPY config/ /app/config/
 COPY --from=builder /app/models /app/models
