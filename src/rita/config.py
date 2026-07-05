@@ -27,9 +27,18 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # ---------------------------------------------------------------------------
 # Config directory resolution
 # ---------------------------------------------------------------------------
-# __file__ = riia-jun-release/src/rita/config.py
-# .parent = rita/  .parent = src/  .parent = riia-jun-release/
-_CONFIG_DIR: Path = Path(__file__).parent.parent.parent / "config"
+# __file__ = riia-aug-release/src/rita/config.py
+# .parent = rita/  .parent = src/  .parent = riia-aug-release/
+_PROJECT_ROOT: Path = Path(__file__).parent.parent.parent
+_CONFIG_DIR: Path = _PROJECT_ROOT / "config"
+
+
+def _read_version() -> str:
+    """Read version from VERSION file at project root."""
+    version_file = _PROJECT_ROOT / "VERSION"
+    if version_file.exists():
+        return version_file.read_text().strip()
+    return "0.0.0"
 
 
 # ---------------------------------------------------------------------------
@@ -55,7 +64,7 @@ class AppSettings(BaseSettings):
     model_config = SettingsConfigDict(extra="forbid")
 
     name: str = "rita"
-    version: str = "1.0.0"
+    version: str = Field(default_factory=_read_version)
 
 
 class ServerSettings(BaseSettings):
