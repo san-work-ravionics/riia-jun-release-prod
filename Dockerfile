@@ -7,13 +7,15 @@ WORKDIR /app
 RUN python -m venv /app/venv
 ENV PATH="/app/venv/bin:$PATH"
 
-COPY pyproject.toml .
+COPY pyproject.toml constraints-prod.txt ./
 # Use extra-index-url (not index-url) so PyPI remains available for all other packages.
 # This ensures pip finds the CPU-only torch wheel and won't pull in the 7 GB NVIDIA CUDA stack.
+# constraints-prod.txt pins the ML stack to the model-training versions so
+# image builds are reproducible — see the header of that file.
 ARG PIP_EXTRA_INDEX_URL=https://download.pytorch.org/whl/cpu
-RUN pip install --no-cache-dir torch --extra-index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir -c constraints-prod.txt torch --extra-index-url https://download.pytorch.org/whl/cpu
 # Install project deps; pip sees torch already satisfied so does not re-resolve to CUDA.
-RUN mkdir -p src && pip install --no-cache-dir -e ".[dev,interfaces]"
+RUN mkdir -p src && pip install --no-cache-dir -c constraints-prod.txt -e ".[dev,interfaces]"
 
 # Pre-download sentence-transformer model so the runtime image has no HuggingFace dependency.
 # Placed after pip install but before COPY src/ so this layer is cached unless dependencies change.

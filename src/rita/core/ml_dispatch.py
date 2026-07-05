@@ -115,6 +115,17 @@ def train(config: TrainingConfig, progress_fn=None) -> TrainingOutcome:
     from rita.core.technical_analyzer import calculate_indicators
     from rita.core.trading_env import train_agent, train_best_of_n, run_episode
 
+    # Feature 32 Phase 3 — route to the V2 env trainer when model_version is a V2
+    # stem. Golden trainers are left bound for all other versions (unchanged).
+    _is_v2 = config.model_version.startswith("rita_ddqn_v2")
+    if _is_v2:
+        from rita.core.trading_env_v2 import (
+            train_agent_v2 as train_agent,
+            train_best_of_n_v2 as train_best_of_n,
+            run_episode_v2 as run_episode,
+            temporal_split,
+        )
+
     # ── 1. Load OHLCV data ────────────────────────────────────────────────────
     log.info("ml_dispatch.load_data", instrument=config.instrument)
     csv_path = find_instrument_csv(config.instrument)
@@ -125,17 +136,21 @@ def train(config: TrainingConfig, progress_fn=None) -> TrainingOutcome:
     df = calculate_indicators(df)
     log.info("ml_dispatch.indicators_computed", rows=len(df))
 
-    # ── 3. Train / validation split (80 / 20 by date) ─────────────────────────
-    split_idx = int(len(df) * 0.8)
-    train_df = df.iloc[:split_idx]
-    val_df   = df.iloc[split_idx:]
+    # ── 3. Train / validation (/ test) split ────────────────────────────────────
+    test_df = None
+    if _is_v2:
+        train_df, val_df, test_df = temporal_split(df)
+    else:
+        split_idx = int(len(df) * 0.8)
+        train_df = df.iloc[:split_idx]
+        val_df   = df.iloc[split_idx:]
 
     # ── 4. Train ──────────────────────────────────────────────────────────────
     model_name = f"{config.model_version}_{config.run_id[:8]}"
     log.info("ml_dispatch.training_start", run_id=config.run_id, timesteps=config.timesteps, n_seeds=config.n_seeds)
     seed_results_dict: dict = {}
 
-    if config.n_seeds > 1:
+    if config.n_seeds > 1 and train_best_of_n is not None:
         # Multi-seed: pick best model by validation Sharpe
         model, progress_cb, seed_results_dict = train_best_of_n(
             train_df=train_df,
@@ -171,8 +186,9 @@ def train(config: TrainingConfig, progress_fn=None) -> TrainingOutcome:
     mdd = 0.0
     total_return = 0.0
     val_trades = 0
+    eval_df = test_df if _is_v2 else val_df
     try:
-        val_result = run_episode(model, val_df)
+        val_result = run_episode(model, eval_df)
         perf = val_result["performance"]
         sharpe       = perf["sharpe_ratio"]
         mdd          = perf["max_drawdown_pct"] / 100.0

@@ -128,7 +128,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
   </a>
   <div class="topbar-center">Risk Informed Investment Approach</div>
   <div class="topbar-right">
-    <a id="nav-onboarding" href="#" class="t-nav-link">Onboarding</a>
     <div class="status-pill">
       <span class="status-dot"></span>
       <span>System ready</span>
@@ -153,12 +152,26 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
   <div class="zones" style="display:flex; gap:20px; max-width:1160px; width:100%; align-items: stretch; flex-wrap: wrap;">
 
     <!-- Left Zone: Open Access -->
-    <div class="zone open-access" style="flex:1; min-width:260px; border: 2.5px dashed var(--build-bd); border-radius:12px; padding:20px; display:flex; flex-direction:column; background: linear-gradient(180deg, var(--build-bg) 0%, transparent 100%);">
+    <div class="zone open-access" style="flex:2; min-width:440px; border: 2.5px dashed var(--build-bd); border-radius:12px; padding:20px; display:flex; flex-direction:column; background: linear-gradient(180deg, var(--build-bg) 0%, transparent 100%);">
       <div style="font-family:var(--fm); font-size:12px; font-weight:600; text-transform:uppercase; color:var(--build); margin-bottom:15px; letter-spacing:.08em; display:flex; align-items:center; gap:8px;">
         <span style="display:inline-block; width:9px; height:9px; background:var(--build); border-radius:50%; box-shadow: 0 0 6px var(--build);"></span> Open Access
       </div>
 
-      <div class="tiles" style="grid-template-columns: 1fr; gap:20px; display:grid;">
+      <div class="tiles" style="grid-template-columns: repeat(2, 1fr); gap:20px; display:grid;">
+        <!-- Tile : Invest Game -->
+        <a class="tile research" href="investgame-app.html" style="margin-bottom:0; height:100%">
+          <div class="tile-accent"></div>
+          <div class="tile-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+          </div>
+          <span class="tile-tag">Learning</span>
+          <div class="tile-title">Invest Game</div>
+          <p class="tile-desc">Learn investment concepts through AI-guided market analysis, CRISP-DM methodology, and performance analytics.</p>
+          <span class="tile-cta">Explore <span class="tile-arrow">→</span></span>
+        </a>
+
         <!-- Tile : Build a Portfolio -->
         <a class="tile build" href="rita.html" style="margin-bottom:0; height:100%">
           <div class="tile-accent"></div>
@@ -200,7 +213,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
         </label>
       </div>
 
-      <div class="tiles" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:20px; display:grid; height:100%">
+      <div class="tiles" style="grid-template-columns: repeat(3, 1fr); gap:20px; display:grid; height:100%">
         <!-- Tile : Review My Portfolio -->
         <a class="tile review protected-route" href="fno.html#positions">
           <div class="tile-accent"></div>
@@ -284,9 +297,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
 
   // Intercept clicks on Google Auth Protected modules
   document.addEventListener("DOMContentLoaded", function() {
-    const navOnboarding = document.getElementById('nav-onboarding');
-    if (navOnboarding) navOnboarding.href = window.location.origin + '/onboarding';
-
     const protectedTiles = document.querySelectorAll('.protected-route');
     const enforcerToggle = document.getElementById('auth-enforcer-toggle');
 

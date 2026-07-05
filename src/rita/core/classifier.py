@@ -422,6 +422,23 @@ INTENTS: list[Intent] = [
         template="",   # handler builds the response directly
     ),
 
+    # ── Execution Analyst — RL hedge advisory (Feature 32 Phase 3) ───────────
+    Intent(
+        name="hedge_advice",
+        seeds=[
+            "should I hedge my position now",
+            "do I need downside protection right now",
+            "is it time to hedge against a drawdown",
+            "should I buy a protective hedge",
+            "how should I protect my portfolio from a fall",
+            "does RITA suggest hedging today",
+            "should I add a hedge given the drawdown",
+            "is my position at risk — should I hedge",
+        ],
+        handler="execution_hedge",
+        template="",   # handler builds the response directly (recommendation-only)
+    ),
+
     # ── Performance & Portfolio (2 intents) ──────────────────────────────────
 
     Intent(
@@ -578,6 +595,7 @@ INTENT_TO_AGENT: dict[str, str] = {
     # Execution Analyst — entry / execution decisions
     "invest_now": "Execution Analyst",
     "explain_decision": "Execution Analyst",
+    "hedge_advice": "Execution Analyst",
     # Outcome Analyst — realized / backtested performance outcome
     "backtest_performance": "Outcome Analyst",
     "backtest_1y_return": "Outcome Analyst",
@@ -777,6 +795,41 @@ def dispatch(
             lines += ["", f"**Override applied:** {rec['override_reason']}"]
         lines += ["", f"**Next trigger:** {rec['upgrade_trigger'] if rec['action_code'] < 2 else rec['downgrade_trigger']}"]
         return "\n".join(lines)
+
+    # ── Execution Analyst — RL hedge advisory (Phase 3, recommendation-only) ──
+    elif h == "execution_hedge":
+        import glob
+        from rita.core.trading_env_v2 import recommend_hedge
+
+        # The V2 policy is offline/experimental — surfaces only if an artifact
+        # exists. NEVER places an order; degrades gracefully when untrained.
+        candidates = sorted(glob.glob(os.path.join(output_dir, "rita_ddqn_v2*.zip")))
+        if not candidates:
+            return (
+                "The RL hedge advisor (RIIA V2) is not yet trained for this "
+                "instrument, so I can't give a model-based hedge recommendation "
+                "yet. This is an experimental, advisory-only feature."
+            )
+        try:
+            from rita.core.trading_env_v2 import load_agent_v2
+            model = load_agent_v2(candidates[-1])
+            rec = recommend_hedge(df, model, risk_tolerance="medium")
+        except Exception as exc:  # noqa: BLE001 — advisory must never hard-fail the chat
+            _perf_log.warning("execution_hedge.failed", error=str(exc))
+            return "The RL hedge advisor is temporarily unavailable. No action taken."
+
+        breach_note = (
+            f"Drawdown **{rec['drawdown_pct']:.1f}%** is past your tolerance "
+            f"(**{rec['mdd_tolerance_pct']:.0f}%**)."
+            if rec["breach"]
+            else f"Drawdown **{rec['drawdown_pct']:.1f}%** is within your tolerance "
+                 f"(**{rec['mdd_tolerance_pct']:.0f}%**)."
+        )
+        return (
+            f"**RIIA hedge advisor (experimental):** {breach_note} "
+            f"The policy suggests you **{rec['label']}** — {rec['detail']}. "
+            f"_This is advisory only; no order has been placed._"
+        )
 
     # ── Performance feedback ──────────────────────────────────────────────────
     elif h == "performance_feedback":

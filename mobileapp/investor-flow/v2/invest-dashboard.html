@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RIIA — Investor Onboarding Flow</title>
+<title>RIIA — Investor Journey</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500&family=Epilogue:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -449,6 +449,12 @@ body{
 </head>
 <body>
 
+<script>
+// Hide the standalone topbar when embedded inside the Invest Game app iframe.
+if (window.self !== window.top) document.documentElement.classList.add('embedded');
+</script>
+<style>html.embedded .topbar{display:none;}</style>
+
 <!-- ── RITA Topbar ── -->
 <header class="topbar">
   <a class="logo" href="/dashboard/index.html">
@@ -459,7 +465,7 @@ body{
     <span class="logo-sub" style="margin-left:2px;">v1.0</span>
   </a>
   <div class="t-sep"></div>
-  <div class="t-crumb">Portfolio &rsaquo; <span>Investor Onboarding</span></div>
+  <div class="t-crumb">Invest Game &rsaquo; <span>Journey</span></div>
   <div class="t-right">
     <a id="topbar-game-link" class="t-nav-link game" href="#">&#9654; Try Invest Game</a>
     <div class="status-pill"><div class="status-dot ok"></div>Demo &middot; 7 steps</div>

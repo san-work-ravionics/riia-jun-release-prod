@@ -32,6 +32,10 @@ class AgentKpi(BaseModel):
     invocation_count_30d: int = Field(ge=0)
     outcome_match_rate:   float | None = None
     trend_vs_prior_30d:   float | None = None
+    # Phase 3 RL bridge — populated for agents with a trained V2 policy
+    # (e.g. Execution Analyst). None elsewhere → dashboard keeps its baseline.
+    avg_reward:           float | None = None
+    data_coverage:        float | None = None
 
     model_config = {"from_attributes": True}
 

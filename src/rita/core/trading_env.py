@@ -350,7 +350,9 @@ def validate_agent(model: DQN, val_df: pd.DataFrame) -> dict:
 
 def load_agent(model_path: str) -> DQN:
     """Load a saved DDQN model from disk."""
-    return DQN.load(model_path)
+    from rita.core.model_compat import load_dqn_compat
+
+    return load_dqn_compat(model_path)
 
 
 # ── Multi-seed training ───────────────────────────────────────────────────────

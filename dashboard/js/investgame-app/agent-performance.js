@@ -1,8 +1,7 @@
-// ── Agent Performance (Feature 32) ──────────────────────────
-// Per-agent scorecards, KPI cards, invocation chart, and detail table for the
-// 7 investment-workflow (RL trading-decision) agents. Visual language mirrors
-// the Ops "Agent Builds" page: one scorecard panel per agent measured on four
-// improvable parameters, plus a click-to-expand chart and a detail table.
+// ── Invest Game App — Agent Performance ──────────────────────────────────────
+// Full port of rita/agent-performance.js (Feature 32) — same markup IDs, same
+// visual language: per-agent scorecards, KPI cards, invocation chart, detail
+// table, and the Performance Over Period timeline.
 //
 // DEMO DATA: realized RL-agent scoring (Outcome Match, Avg RL Reward, Data
 // Coverage) is produced by Phases 3–5, which are not yet built. Until then we
@@ -10,9 +9,9 @@
 // live endpoint is still queried and, where it already has rows, its real
 // invocation count / outcome-match rate override the mock values per agent —
 // so the page upgrades itself to live data as instrumentation accrues.
-import { api } from './api.js';
-import { setEl, badge } from './utils.js';
-import { mkChart, C } from './charts.js';
+import { api } from '../shared/api.js';
+import { setEl } from '../shared/utils.js';
+import { mkChart, C } from '../shared/charts.js';
 
 // One stable colour per agent slot (same hue in chart + scorecards).
 const AGENT_PALETTE = [C.run, C.build, C.mon, C.warn, '#0E7490', '#BE185D', C.danger];

@@ -28,7 +28,7 @@ import { openChartModal, closeChartModal } from './chart-modal.js';
 import { initI18n, setLanguage, applyTranslations } from '../shared/i18n.js';
 import { ensureDevToken } from '../shared/dev-auth.js';
 import { loadMyPortfolio, savePortfolio } from './my-portfolio.js';
-import { loadAgentPerformance } from './agent-performance.js';
+import { loadAgentPerformance, setAgentPerfPeriod, loadAgentPerfTimeline } from './agent-performance.js';
 import { loadPortfolioBuilder, pbToggleInstrument, pbSelectAllRegion, pbClearAllRegion, pbSortTable, pbApplyGoalPreset, pbToggleDraftItem, pbBuildFromDraft, pbClearBasket, pbBuildPortfolio, pbSetAlloc } from './portfolio-builder.js?v=4';
 
 // ── Populate section loaders map ───────────────────────────
@@ -93,6 +93,8 @@ window.loadMyPortfolio    = loadMyPortfolio;
 window.savePortfolio      = savePortfolio;
 window.loadPortfolioBuilder = loadPortfolioBuilder;
 window.loadAgentPerformance = loadAgentPerformance;
+window.setAgentPerfPeriod = setAgentPerfPeriod;
+window.loadAgentPerfTimeline = loadAgentPerfTimeline;
 window.pbToggleInstrument   = pbToggleInstrument;
 window.pbSelectAllRegion    = pbSelectAllRegion;
 window.pbClearAllRegion     = pbClearAllRegion;

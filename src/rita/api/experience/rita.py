@@ -13,7 +13,7 @@ from functools import lru_cache as _lru_cache
 from typing import Any, Optional
 
 import structlog
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from rita.config import get_settings
@@ -2003,6 +2003,33 @@ def experience_strategy_comparison(
 _AGENT_GAP_STATUS = "pending-backfill"
 
 
+def _load_v2_agent_metrics() -> dict:
+    """Phase 3 RL bridge — read agent_perf_v2_*.json written by training runs.
+
+    Returns {agent_name: {...}} for agents that have a trained V2 policy
+    (e.g. Execution Analyst). Best-effort and read-only — any failure yields an
+    empty dict so the dashboard simply keeps its baseline.
+    """
+    import glob
+    import json
+    from pathlib import Path
+
+    out: dict = {}
+    try:
+        app_root = Path(__file__).resolve().parents[4]   # …/riia-jun-release
+        for fp in glob.glob(str(app_root / "rita_output" / "models_v2" / "agent_perf_v2_*.json")):
+            try:
+                d = json.loads(Path(fp).read_text())
+            except Exception:
+                continue
+            name = d.get("agent_name")
+            if name:
+                out[name] = d
+    except Exception:
+        return {}
+    return out
+
+
 @router.get(
     "/experience/rita/agent-performance",
     summary="Per-agent KPI summary for the 7 investment-workflow agents",
@@ -2026,16 +2053,31 @@ def agent_performance(db: Session = Depends(get_db)) -> AgentPerformanceSummaryR
         status = "error"
         log.error("agent_performance.failed", error=str(exc), exc_info=True)
 
-    agents = [
-        AgentKpi(
+    v2 = _load_v2_agent_metrics()
+
+    def _kpi(name: str) -> AgentKpi:
+        s = summary.get(name, {})
+        m = v2.get(name)
+        if m:
+            # Trained V2 policy → surface real RL metrics for this agent.
+            return AgentKpi(
+                agent_name=name,
+                gap_status="live-rl",
+                invocation_count_30d=m.get("invocations") or s.get("invocation_count_30d", 0),
+                outcome_match_rate=m.get("outcome_match", s.get("outcome_match_rate")),
+                trend_vs_prior_30d=s.get("trend_vs_prior_30d"),
+                avg_reward=m.get("avg_reward"),
+                data_coverage=m.get("data_coverage"),
+            )
+        return AgentKpi(
             agent_name=name,
             gap_status=_AGENT_GAP_STATUS,
-            invocation_count_30d=summary.get(name, {}).get("invocation_count_30d", 0),
-            outcome_match_rate=summary.get(name, {}).get("outcome_match_rate"),
-            trend_vs_prior_30d=summary.get(name, {}).get("trend_vs_prior_30d"),
+            invocation_count_30d=s.get("invocation_count_30d", 0),
+            outcome_match_rate=s.get("outcome_match_rate"),
+            trend_vs_prior_30d=s.get("trend_vs_prior_30d"),
         )
-        for name in CANONICAL_AGENTS
-    ]
+
+    agents = [_kpi(name) for name in CANONICAL_AGENTS]
 
     log_event(
         log, "info", "experience.compose",
@@ -2046,3 +2088,40 @@ def agent_performance(db: Session = Depends(get_db)) -> AgentPerformanceSummaryR
         sources={"agent_performance": {"status": status, "record_count": len(summary)}},
     )
     return AgentPerformanceSummaryResponse(agents=agents)
+
+
+# ── GET /api/v1/experience/rita/agent-performance-timeline ────────────────────
+
+@router.get(
+    "/experience/rita/agent-performance-timeline",
+    summary="Bucketed agent-team performance over a custom date range",
+)
+def agent_performance_timeline(
+    from_: str = Query(..., alias="from", description="start date YYYY-MM-DD"),
+    to: str = Query(..., description="end date YYYY-MM-DD"),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Team activity + outcome-match over [from, to], bucketed for a timeline plot.
+
+    Bucket width auto-scales with the range (weekly up to ~6 months, else monthly)
+    so the chart stays readable. Read-only — no commit (Experience tier).
+    """
+    from datetime import datetime, timezone
+
+    def _parse(d: str) -> datetime:
+        return datetime.strptime(d, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+
+    try:
+        start, end = _parse(from_), _parse(to)
+    except ValueError:
+        return {"error": "dates must be YYYY-MM-DD", "buckets": []}
+    if end < start:
+        start, end = end, start
+
+    span_days = (end - start).days
+    bucket_days = 7 if span_days <= 200 else 30
+
+    from rita.services.agent_performance_analytics import performance_timeline
+    result = performance_timeline(db, start, end, bucket_days)
+    result["from"], result["to"] = from_, to
+    return result

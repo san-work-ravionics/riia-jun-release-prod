@@ -1,0 +1,29 @@
+# Production ML-stack pins — applied via `pip install -c` in the Dockerfile ONLY.
+#
+# Why a constraints file and not pyproject pins: the local Intel Mac dev
+# machine is capped at torch 2.2.2 / numpy 1.26 (last x86_64 macOS wheels),
+# while production (linux) and the Windows training machine run the modern
+# stack. Pinning in pyproject would break the Mac install; constraints only
+# bind what pip resolves inside the Docker build.
+#
+# Versions match the model-training machine (recorded in each model zip's
+# system_info.txt: numpy 2.4.2 / SB3 2.7.1 / gymnasium 1.2.3 / torch 2.10 /
+# cloudpickle 3.1.2) so DQN.load in prod is same-version — rita/core/
+# model_compat.py stays a no-op there. The embedding stack is the combo
+# verified mutually compatible on 2026-07-05.
+#
+# When retraining models under newer libraries, update these pins in the
+# same commit that ships the new model zips.
+
+# ── RL / model serialization ────────────────────────────────────────────
+torch==2.10.0
+numpy==2.4.2
+stable-baselines3==2.7.1
+gymnasium==1.2.3
+cloudpickle==3.1.2
+
+# ── Chat embedding stack ────────────────────────────────────────────────
+sentence-transformers==5.5.1
+transformers==5.9.0
+tokenizers==0.22.2
+huggingface-hub==1.16.1

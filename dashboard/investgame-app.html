@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+(function(){
+  var p = new URLSearchParams(location.search);
+  if (p.get('desktop') === '1') { sessionStorage.setItem('mobileBypass','1'); return; }
+  if (sessionStorage.getItem('mobileBypass') === '1') return;
+  var mobile = /Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  var narrow = window.innerWidth < 768 && window.matchMedia('(pointer:coarse)').matches;
+  if (mobile || narrow) location.replace('/mobile?from=investgame-app');
+})();
+</script>
+<title>RITA — Invest Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500&family=Epilogue:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+<link rel="stylesheet" href="css/responsive.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+:root{
+  --bg:#F5F3EE;--surface:#FFFFFF;--surface2:#F9F8F5;--border:#E4E0D8;--border2:#D0CBBC;
+  --text:#1A1814;--t2:#4A4640;--t3:#8C877A;--t4:#B8B2A6;
+  --ok:#1A6B3C;--ok-bg:#EDF7F2;--ok-bd:#B6DEC9;
+  --build:#1A6B3C;--build-bg:#EDF7F2;--build-bd:#B6DEC9;
+  --run:#0056B8;--run-bg:#EDF4FF;--run-bd:#AECBF5;
+  --mon:#6B2FA0;--mon-bg:#F5EFFE;--mon-bd:#CFADF0;
+  --warn:#92480A;--warn-bg:#FEF4EB;--warn-bd:#F5C99A;
+  --danger:#9B1C1C;--danger-bg:#FEF2F2;--danger-bd:#FCA5A5;
+  --game:#B45309;--game-bg:#FEF3C7;--game-bd:#FCD34D;--game-light:#FFFBEB;--info:#0056B8;
+  --accelerate:#6B2FA0;--accelerate-bg:#F5EFFE;--accelerate-bd:#CFADF0;
+  --pos:#1A6B3C;--neg:#9B1C1C;--neg-bg:#FEF2F2;--neg-bd:#FCA5A5;
+  --fd:'Epilogue',sans-serif;--fm:'IBM Plex Mono',monospace;--fs:'Instrument Serif',serif;
+  --r:6px;--sh:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+  --shm:0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.05);
+}
+body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px;line-height:1.5;min-height:100vh;}
+
+/* ── Shell ──────────────────────────────────────────────── */
+.shell{display:grid;grid-template-columns:224px 1fr;grid-template-rows:52px 1fr;min-height:100vh;transition:grid-template-columns .22s cubic-bezier(.4,0,.2,1);}
+.shell.nav-collapsed{grid-template-columns:0px 1fr;}
+.shell.nav-collapsed .sidebar{overflow:hidden;border-right:none;}
+
+/* ── Topbar ──────────────────────────────────────────────── */
+.topbar{grid-column:1/-1;background:var(--surface);border-bottom:1.5px solid var(--border);display:flex;align-items:center;padding:0 20px;position:sticky;top:0;z-index:200;box-shadow:var(--sh);}
+.logo{display:flex;align-items:center;gap:9px;min-width:206px;text-decoration:none;color:inherit;}
+.logo-icon{width:26px;height:26px;background:var(--text);border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.logo-icon svg{fill:var(--surface);}
+.logo-name{font-family:var(--fs);font-size:16px;letter-spacing:-.01em;}
+.logo-sub{color:var(--t3);font-size:10px;font-family:var(--fm);}
+.t-sep{width:1px;height:24px;background:var(--border);margin:0 14px;}
+.t-crumb{font-family:var(--fm);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+.home-link{font-family:var(--fm);font-size:11px;font-weight:500;color:var(--t2);text-decoration:none;padding:4px 10px;border:1px solid var(--border);border-radius:4px;transition:border-color .15s;}
+.home-link:hover{border-color:var(--build);color:var(--build);}
+
+/* ── Sidebar ─────────────────────────────────────────────── */
+.sidebar{grid-row:2;background:var(--surface);border-right:1.5px solid var(--border);padding:18px 0;overflow-y:auto;position:sticky;top:52px;height:calc(100vh - 52px);}
+.nav-section{padding:0 14px;margin-bottom:16px;}
+.nav-label{font-family:var(--fm);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--t4);padding:0 10px;margin-bottom:6px;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--r);cursor:pointer;font-size:12px;font-weight:500;color:var(--t2);transition:background .12s,color .12s;}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:var(--build-bg);color:var(--build);font-weight:600;}
+.nav-icon{width:16px;text-align:center;font-size:13px;flex-shrink:0;}
+
+/* ── Main content ────────────────────────────────────────── */
+.content{grid-row:2;padding:24px 28px 40px;overflow-y:auto;}
+.section{display:none;}
+.section.active{display:block;}
+
+/* ── Page Headers ────────────────────────────────────────── */
+.page-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.page-title{font-family:var(--fs);font-size:24px;letter-spacing:-.01em;}
+.page-sub{font-family:var(--fm);font-size:11px;color:var(--t3);margin-top:3px;}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.card-body{padding-top:0;}
+
+/* ── Cards / Panels ──────────────────────────────────────── */
+.card{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:20px 22px;margin-bottom:16px;box-shadow:var(--sh);}
+.card-title{font-family:var(--fs);font-size:18px;margin-bottom:10px;}
+.card-subtitle{font-family:var(--fm);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:14px;}
+
+/* ── Badges ──────────────────────────────────────────────── */
+.badge{display:inline-block;font-family:var(--fm);font-size:10px;font-weight:500;padding:2px 8px;border-radius:4px;line-height:1.4;}
+.badge.ok{background:var(--ok-bg);color:var(--ok);border:1px solid var(--ok-bd);}
+.badge.warn{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-bd);}
+.badge.err{background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger-bd);}
+.badge.run{background:var(--run-bg);color:var(--run);border:1px solid var(--run-bd);}
+.badge.neu{background:var(--surface2);color:var(--t3);border:1px solid var(--border);}
+
+/* ── Charts ──────────────────────────────────────────────── */
+.chart-wrap{position:relative;margin:10px 0;}
+.chart-box{position:relative;width:100%;}
+.chart-title{font-size:12px;font-weight:600;margin-bottom:10px;color:var(--t2);}
+.h120{height:120px;} .h180{height:180px;} .h220{height:220px;} .h240{height:240px;} .h260{height:260px;} .h300{height:300px;}
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0;}
+
+/* ── Tabs ────────────────────────────────────────────────── */
+.tab-bar{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px;}
+.concept-tab-bar{display:flex;flex-wrap:wrap;width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:22px;}
+.concept-tab,.crisp-tab{font-family:var(--fm);font-size:10px;font-weight:500;padding:5px 10px;border-radius:4px;cursor:pointer;background:var(--surface2);border:1px solid var(--border);color:var(--t2);transition:all .12s;}
+.concept-tab:hover,.crisp-tab:hover{border-color:var(--build-bd);color:var(--build);}
+.concept-tab.active,.crisp-tab.active{background:var(--build);color:#fff;border-color:var(--build);}
+.concept-tab-bar .concept-tab,.concept-tab-bar .crisp-tab{flex:1;min-width:120px;text-align:center;font-family:var(--fd);font-size:12px;font-weight:500;padding:9px 6px;border:none;border-right:1px solid var(--border);border-radius:0;cursor:pointer;background:transparent;color:var(--t2);transition:background .12s,color .12s;white-space:nowrap;}
+.concept-tab-bar .concept-tab:last-child,.concept-tab-bar .crisp-tab:last-child{border-right:none;}
+.concept-tab-bar .concept-tab:hover,.concept-tab-bar .crisp-tab:hover{background:var(--surface2);color:var(--text);}
+.concept-tab-bar .concept-tab.active,.concept-tab-bar .crisp-tab.active{background:var(--run-bg);color:var(--run);font-weight:700;}
+.concept-panel,.crisp-panel{display:block;}
+.concept-panel.hidden,.crisp-panel.hidden{display:none;}
+
+/* ── CRISP-DM Phase Styling ─────────────────────────────── */
+.crisp-panel{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:24px 26px;box-shadow:var(--sh);}
+.crisp-panel.hidden{display:none;}
+.concept-phase-hdr{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px;}
+.concept-num{width:42px;height:42px;border-radius:50%;background:var(--build);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--fm);font-size:17px;font-weight:700;flex-shrink:0;margin-top:3px;}
+.concept-title{font-family:var(--fs);font-size:19px;letter-spacing:-.01em;margin-top:4px;color:var(--text);}
+.concept-desc{font-size:12.5px;color:var(--t2);line-height:1.78;margin-bottom:16px;}
+.concept-block-label{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--t4);margin-bottom:7px;}
+.concept-facts{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px;}
+.fact-pill{font-family:var(--fm);font-size:11px;padding:4px 12px;border-radius:100px;background:var(--build-bg);color:var(--build);border:1px solid var(--build-bd);white-space:nowrap;}
+.fact-pill.achieved{background:var(--ok-bg);color:var(--ok);border-color:var(--ok-bd);}
+.concept-chart-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+@media(max-width:760px){.concept-panel .concept-chart-grid{grid-template-columns:1fr;}}
+.chart-col-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--t4);margin-bottom:6px;}
+.concept-panel .chart-wrap{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--sh);margin-bottom:16px;}
+.concept-panel .chart-title{margin-bottom:14px;}
+
+/* ── Agent Performance Scorecards ────────────────────────── */
+.agp-sc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;}
+.agp-sc{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;}
+.agp-sc-role{display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:8px;}
+.agp-sc-row{display:flex;align-items:center;justify-content:space-between;font-size:11px;margin-bottom:4px;}
+.agp-sc-lbl{color:var(--t3);}
+.agp-sc-val{font-family:var(--fm);font-size:11px;display:flex;align-items:center;gap:4px;}
+.agp-bar-wrap{width:48px;height:5px;background:var(--border);border-radius:3px;overflow:hidden;display:inline-block;}
+.agp-bar{height:100%;background:var(--build);border-radius:3px;transition:width .3s;}
+
+/* ── RITA look parity (scoped via .rita-parity on sections ported from rita.html) ── */
+.hdr-actions{display:flex;gap:8px;flex-shrink:0;}
+.h220{height:220px;}
+.rita-parity .kpi-row-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.rita-parity .kpi-row-4 .card{margin-bottom:0;padding:16px 18px;}
+.rita-parity .kpi-label{font-family:var(--fm);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-bottom:4px;}
+.rita-parity .kpi-value{font-family:var(--fm);font-size:22px;font-weight:500;letter-spacing:-.02em;line-height:1.1;}
+.rita-parity .kpi-value.neu{color:var(--run);}
+.rita-parity .card-hdr{margin-bottom:14px;}
+.rita-parity .card-title{font-family:var(--fd);font-size:13px;font-weight:600;color:var(--text);margin-bottom:0;}
+.rita-parity .card-sub{font-size:11px;color:var(--t3);}
+.rita-parity .agp-sc-grid{grid-template-columns:repeat(4,1fr);}
+.rita-parity .agp-sc{border-width:1.5px;}
+.rita-parity .agp-sc-role{font-family:var(--fm);font-size:11px;font-weight:700;color:var(--build);margin-bottom:9px;gap:6px;}
+.rita-parity .chart-wrap{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--sh);margin:0 0 16px;}
+.rita-parity .chart-title{margin-bottom:14px;}
+.rita-parity .tbl-wrap{margin-top:0;overflow-y:auto;}
+.rita-parity .form-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px;}
+.rita-parity .form-group{display:flex;flex-direction:column;gap:5px;}
+.rita-parity .form-label{font-size:11px;font-weight:600;color:var(--t2);}
+.rita-parity .form-input{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r);padding:8px 10px;font-family:var(--fd);font-size:13px;color:var(--text);outline:none;transition:border-color .12s;}
+.rita-parity .form-input:focus{border-color:var(--run);}
+.rita-parity .btn-build{background:var(--build);color:#fff;border-color:var(--build);}
+.rita-parity .btn-build:hover{opacity:.88;}
+.rita-parity .btn-sm{padding:4px 10px;font-size:11px;}
+.rita-parity .badge{text-transform:uppercase;letter-spacing:.04em;border-radius:3px;padding:2px 7px;display:inline-flex;align-items:center;}
+@media(max-width:1100px){
+  .rita-parity .agp-sc-grid{grid-template-columns:repeat(2,1fr);}
+  .rita-parity .kpi-row-4{grid-template-columns:repeat(2,1fr);}
+}
+
+/* ── Agent Builds ────────────────────────────────────────── */
+/* Agent Builds — mirrors ops.html */
+.ab-grid{display:flex;flex-direction:column;gap:16px;}
+.ab-row{display:grid;gap:16px;align-items:start;}
+.ab-row-2{grid-template-columns:1fr 1fr;}
+.ab-row-3{grid-template-columns:1fr 1fr 1fr;}
+.ab-row-2-75{grid-template-columns:3fr 1fr;}
+.ab-panel{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--sh);min-width:0;overflow:hidden;}
+.ab-sc-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:0 10px;margin-top:4px;}
+.ab-hm-grid{display:grid;grid-template-columns:150px repeat(5,1fr);gap:0;margin-top:4px;}
+.ab-sc{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r);padding:11px 13px;}
+.ab-sc-role{font-family:var(--fm);font-size:11px;font-weight:700;color:var(--accelerate);text-transform:capitalize;margin-bottom:8px;}
+.ab-sc-row{display:flex;justify-content:space-between;align-items:center;font-size:11px;margin-bottom:5px;gap:8px;}
+.ab-sc-lbl{color:var(--t3);}
+.ab-sc-val{font-weight:600;color:var(--t2);font-family:var(--fm);white-space:nowrap;}
+.ab-bar-wrap{background:var(--border);border-radius:3px;height:5px;overflow:hidden;width:52px;display:inline-block;vertical-align:middle;}
+.ab-bar{background:var(--accelerate);height:100%;border-radius:3px;transition:width .4s;}
+.ab-heatmap th{text-align:center;}
+.ab-heatmap td{text-align:center;min-width:58px;font-family:var(--fm);font-size:11px;}
+.ab-chart-wrap{position:relative;height:180px;margin-top:4px;}
+.heat-0{background:var(--surface);color:var(--t4);}
+.heat-1{background:var(--warn-bg);color:var(--warn);font-weight:600;}
+.heat-2{background:var(--danger-bg);color:var(--danger);font-weight:600;}
+.heat-3{background:rgba(155,28,28,.22);color:var(--danger);font-weight:700;}
+.badge.danger{background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger-bd);}
+.c-ey{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--t4);margin-bottom:8px;display:flex;align-items:center;gap:5px;}
+.ey-d{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+
+/* ── Tables ──────────────────────────────────────────────── */
+/* Table — mirrors rita.html: highlighted sticky heading + scroll box (~6 rows) */
+.tbl-wrap{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow-x:auto;overflow-y:auto;max-height:260px;box-shadow:var(--sh);margin-bottom:16px;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{position:sticky;top:0;z-index:1;background:var(--surface2);font-family:var(--fm);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);padding:9px 14px;text-align:left;border-bottom:1px solid var(--border);}
+td{padding:8px 14px;border-bottom:1px solid var(--border);color:var(--t2);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface2);}
+
+/* ── Agent Panel ─────────────────────────────────────────── */
+
+/* ── KPI Row ─────────────────────────────────────────────── */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;}
+.kpi-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;text-align:center;}
+.kpi-card .kpi-val{font-family:var(--fm);font-size:16px;font-weight:600;color:var(--text);}
+.kpi-card .kpi-lbl{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin-top:3px;}
+
+/* ── Utilities ───────────────────────────────────────────── */
+.empty{text-align:center;color:var(--t3);font-family:var(--fm);font-size:11px;padding:24px 0;}
+.loading{text-align:center;color:var(--t3);font-family:var(--fm);font-size:11px;padding:24px 0;}
+.hidden{display:none!important;}
+
+/* ── Intro section ───────────────────────────────────────── */
+.intro-card{background:var(--surface);border:1.5px solid var(--build-bd);border-radius:10px;padding:32px;text-align:center;max-width:560px;margin:40px auto;}
+.intro-card h2{font-family:var(--fs);font-size:26px;margin-bottom:10px;}
+.intro-card p{color:var(--t2);font-size:13px;line-height:1.7;margin-bottom:20px;}
+.btn-play{display:inline-flex;align-items:center;gap:8px;background:var(--build);color:#fff;font-family:var(--fd);font-size:13px;font-weight:600;padding:10px 22px;border-radius:var(--r);border:none;cursor:pointer;transition:opacity .12s;}
+.btn-play:hover{opacity:.85;}
+
+/* ── Invest Game (embedded game) ────────────────────────── */
+.game-row{background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:16px;box-shadow:var(--sh);}
+.top-row-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.top-row-grid .game-row{margin-bottom:0;}
+.row-hdr{display:flex;align-items:center;gap:10px;margin-bottom:18px;}
+.row-hdr h2{font-family:var(--fs);font-size:18px;font-weight:400;}
+.row-badge{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.1em;padding:2px 9px;border-radius:100px;background:var(--game-bg);border:1px solid var(--game-bd);color:var(--game);}
+.controls-body{display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap;}
+.ctrl-group{display:flex;flex-direction:column;gap:6px;}
+.ctrl-group label{font-family:var(--fm);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;}
+.pill-group{display:flex;border:1.5px solid var(--border);border-radius:100px;overflow:hidden;}
+.pill{padding:7px 18px;border:none;background:transparent;font-family:var(--fd);font-size:12px;font-weight:500;color:var(--t3);cursor:pointer;transition:all .12s;display:flex;align-items:center;gap:6px;}
+.pill:first-child{border-right:1.5px solid var(--border);}
+.pill.active{background:var(--game-bg);color:var(--game);}
+.pill-ccy{font-family:var(--fm);font-size:10px;color:var(--t4);}
+.pill.active .pill-ccy{color:var(--game);opacity:.7;}
+#sec-investgame input[type="date"]{font-family:var(--fm);font-size:12px;color:var(--text);background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:6px 10px;outline:none;transition:border-color .12s;}
+#sec-investgame input[type="date"]:focus{border-color:var(--game);}
+.ctrl-actions{flex-direction:row;gap:8px;align-items:flex-end;}
+.btn{padding:7px 18px;border-radius:var(--r);border:1.5px solid transparent;font-family:var(--fd);font-size:12px;font-weight:600;cursor:pointer;transition:all .14s;}
+.btn-primary{background:var(--game);color:#fff;border-color:var(--game);}
+.btn-primary:hover:not(:disabled){background:#92400E;}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed;}
+.btn-ghost{background:var(--surface2);color:var(--t2);border-color:var(--border);}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text);}
+.selected-range-info{display:flex;align-items:center;gap:8px;margin-top:12px;font-family:var(--fm);font-size:11px;color:var(--ok);background:var(--ok-bg);border:1px solid var(--ok-bd);border-radius:var(--r);padding:6px 14px;}
+.selected-range-info .range-label{color:var(--t3);font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin-right:4px;}
+.progress-wrap{display:flex;align-items:center;gap:12px;}
+.progress-bar{flex:1;height:8px;background:var(--border);border-radius:100px;overflow:hidden;}
+#progress-fill{height:100%;background:linear-gradient(90deg,var(--game),#F59E0B);border-radius:100px;transition:width .4s ease;}
+#progress-label-text{font-family:var(--fm);font-size:10px;color:var(--t3);white-space:nowrap;}
+.pnl-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px;}
+.pnl-table th{position:static;font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.1em;padding:6px 12px;text-align:left;border-bottom:1.5px solid var(--border);background:var(--surface2);}
+.pnl-table td{padding:6px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.pnl-metric-col{width:110px;}
+.pnl-you-hdr{color:var(--info);}
+.pnl-ai-hdr{color:var(--game);}
+.pnl-row-label{font-family:var(--fm);font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;}
+.pnl-sep{color:var(--t4);margin:0 5px;font-family:var(--fm);font-size:10px;}
+.pnl-value{font-family:var(--fm);font-size:12px;color:var(--text);font-weight:500;}
+.pnl-value.pos{color:var(--ok);}
+.pnl-value.neg{color:var(--danger);}
+.pnl-value.cost{color:var(--t3);}
+.pnl-net-row td{background:var(--surface2);border-top:1.5px solid var(--border);border-bottom:none;}
+.pnl-net-row .pnl-value{font-size:14px;font-weight:700;}
+.ig-winner-banner{display:flex;align-items:center;justify-content:center;gap:14px;padding:10px 28px;margin-bottom:16px;border:2px solid var(--game-bd);background:var(--game-bg);border-radius:var(--r);}
+.ig-winner-banner .winner-banner-label{font-family:var(--fs);font-size:16px;color:var(--game);}
+#winner-badge{display:inline-block;padding:5px 22px;border-radius:100px;font-family:var(--fd);font-size:13px;font-weight:700;}
+#winner-badge.you-win{background:var(--ok);color:#fff;}
+#winner-badge.ai-wins{background:var(--danger);color:#fff;}
+#winner-badge.tie{background:var(--game);color:#fff;}
+.day-action-bar{display:flex;align-items:stretch;margin-top:12px;background:var(--game-light);border:1px solid var(--game-bd);border-radius:var(--r);overflow:hidden;}
+.dbar-day{width:25%;display:flex;flex-direction:column;justify-content:center;gap:3px;padding:12px 20px;}
+.dbar-day-lbl{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--game);font-weight:600;}
+.dbar-day-date{font-family:var(--fm);font-size:10px;color:var(--t3);}
+.dbar-day-price{font-family:var(--fm);font-size:16px;font-weight:700;color:var(--text);line-height:1.1;}
+.dbar-sep{width:1px;background:var(--game-bd);flex-shrink:0;}
+.dbar-actions{width:50%;display:flex;align-items:center;justify-content:center;gap:20px;padding:14px 20px;}
+.arc-btn{border-radius:100px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:8px 20px;transition:transform .09s,box-shadow .09s;user-select:none;-webkit-tap-highlight-color:transparent;}
+.arc-btn-lbl{font-family:var(--fd);font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;line-height:1;}
+.arc-buy{background:radial-gradient(circle at 35% 30%,#60a5fa,#1d4ed8);color:#fff;box-shadow:0 5px 0 #1e3a8a,0 6px 8px rgba(0,0,0,.28);}
+.arc-buy:hover:not(:disabled){background:radial-gradient(circle at 35% 30%,#93c5fd,#2563eb);}
+.arc-buy:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 #1e3a8a,0 2px 4px rgba(0,0,0,.2);}
+.arc-hold{background:radial-gradient(circle at 35% 30%,#ffffff,#e2e8f0);color:#374151;box-shadow:0 5px 0 #94a3b8,0 6px 8px rgba(0,0,0,.22);}
+.arc-hold:hover:not(:disabled){background:radial-gradient(circle at 35% 30%,#ffffff,#f1f5f9);}
+.arc-hold:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 #94a3b8,0 2px 4px rgba(0,0,0,.15);}
+.arc-sell{background:radial-gradient(circle at 35% 30%,#fb923c,#ea580c);color:#fff;box-shadow:0 5px 0 #9a3412,0 6px 8px rgba(0,0,0,.28);}
+.arc-sell:hover:not(:disabled){background:radial-gradient(circle at 35% 30%,#fdba74,#f97316);}
+.arc-sell:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 #9a3412,0 2px 4px rgba(0,0,0,.2);}
+.arc-btn:disabled{opacity:.28;cursor:not-allowed;box-shadow:0 2px 0 rgba(0,0,0,.15);}
+#game-table{border-collapse:collapse;font-size:14px;width:100%;}
+#game-table thead th{font-family:var(--fm);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);background:var(--surface2);padding:8px 12px;text-align:center;position:sticky;top:0;z-index:2;border-bottom:1px solid var(--border);white-space:nowrap;}
+#game-table tbody tr{border-bottom:1px solid var(--border);}
+#game-table tbody tr:last-child{border-bottom:none;}
+#game-table tbody tr:hover{background:var(--surface2);}
+#game-table tbody td{padding:8px 12px;color:var(--t2);white-space:nowrap;text-align:center;vertical-align:middle;}
+.row-label{font-family:var(--fm);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);background:var(--surface2);padding:8px 12px;text-align:left;position:sticky;left:0;z-index:1;min-width:80px;border-right:1px solid var(--border);}
+.day-col{font-family:var(--fm);font-size:10px;font-weight:500;color:var(--text);padding:8px 12px;text-align:center;background:var(--surface2);min-width:100px;}
+.greyed-out{opacity:.25;pointer-events:none;}
+.day-col.active-col{background:var(--warn-bg);color:var(--warn);}
+.day-data{padding:8px 12px;text-align:center;vertical-align:middle;font-family:var(--fm);font-size:13px;color:var(--t2);min-width:100px;}
+.day-data.active-col{background:var(--warn-bg);}
+.action-label{display:inline-flex;align-items:center;padding:3px 10px;border-radius:4px;border:1.5px solid;font-family:var(--fd);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+.action-label.buy{background:var(--ok-bg);color:var(--ok);border-color:var(--ok-bd);}
+.action-label.sell{background:var(--danger-bg);color:var(--danger);border-color:var(--danger-bd);}
+.action-label.hold{background:var(--surface2);color:var(--t2);border-color:var(--border2);}
+.ai-cell{font-family:var(--fm);font-size:13px;font-weight:500;}
+.ai-cell.ai-buy{color:var(--ok);}
+.ai-cell.ai-sell{color:var(--danger);}
+.ai-cell.ai-hold{color:var(--t2);}
+.gate-cell{display:flex;flex-direction:column;gap:2px;align-items:center;}
+.gate-rule{font-family:var(--fm);font-size:11px;color:var(--t3);white-space:normal;text-align:center;max-width:120px;}
+.comp-insight{font-size:12px;color:var(--t3);font-style:italic;white-space:normal;text-align:center;max-width:130px;}
+#game-table tbody td.comp-insight{white-space:normal;min-width:130px;max-width:180px;line-height:1.4;padding:8px 14px;}
+.status-badge{display:inline-flex;align-items:center;font-family:var(--fm);font-size:9px;font-weight:500;padding:2px 7px;border-radius:3px;border:1px solid;text-transform:uppercase;letter-spacing:.04em;}
+.status-badge.ok{background:var(--ok-bg);color:var(--ok);border-color:var(--ok-bd);}
+.status-badge.flag{background:var(--danger-bg);color:var(--danger);border-color:var(--danger-bd);}
+.day-tag{display:block;font-size:8px;font-weight:400;color:var(--t4);text-transform:uppercase;letter-spacing:.05em;margin-top:1px;}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media(max-width:768px){
+  .shell{grid-template-columns:1fr;}
+  .sidebar{display:none;position:fixed;top:52px;left:0;width:260px;height:calc(100vh - 52px);z-index:300;box-shadow:var(--shm);}
+  .sidebar.open{display:block;}
+  .content{padding:16px;}
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+<!-- Topbar -->
+<header class="topbar">
+  <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+      <line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="14" y2="12"/>
+    </svg>
+  </button>
+  <a class="logo" href="index.html">
+    <div class="logo-icon">
+      <svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 2h4v4H2zM8 2h4v4H8zM2 8h4v4H2zM8 8h4v4H8z"/></svg>
+    </div>
+    <span class="logo-name">RITA</span>
+    <span class="logo-sub">v1.0</span>
+  </a>
+  <div class="t-sep"></div>
+  <span class="t-crumb">Invest Game</span>
+  <div class="topbar-right">
+    <a class="home-link" href="index.html">Home</a>
+  </div>
+</header>
+
+<!-- Sidebar -->
+<nav class="sidebar" id="sidebar">
+  <div class="nav-section">
+    <div class="nav-label">Invest Game</div>
+    <div class="nav-item active" data-s="investgame" onclick="show('investgame',this)">
+      <span class="nav-icon">🎮</span> Invest Game
+    </div>
+    <div class="nav-item" data-s="journey" onclick="show('journey',this)">
+      <span class="nav-icon">🧭</span> Journey
+    </div>
+    <div class="nav-item" data-s="concepts" onclick="show('concepts',this)">
+      <span class="nav-icon">📚</span> Concepts
+    </div>
+    <div class="nav-item" data-s="crisp-dm" onclick="show('crisp-dm',this)">
+      <span class="nav-icon">🔬</span> CRISP-DM
+    </div>
+    <div class="nav-item" data-s="agent-performance" onclick="show('agent-performance',this)">
+      <span class="nav-icon">📊</span> Agent Performance
+    </div>
+    <div class="nav-item" data-s="agent-builds" onclick="show('agent-builds',this)">
+      <span class="nav-icon">🏗</span> Agent Builds
+    </div>
+    <div class="nav-item" data-s="agent-panel" onclick="show('agent-panel',this)">
+      <span class="nav-icon">◈</span> Agent Panel
+    </div>
+  </div>
+</nav>
+
+<!-- Sidebar overlay for mobile -->
+<div id="sidebar-overlay" style="display:none;position:fixed;inset:0;top:52px;background:rgba(0,0,0,.3);z-index:250;" onclick="toggleSidebar()"></div>
+
+<!-- Main Content -->
+<main class="content">
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Section: Invest Game
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="section active" id="sec-investgame">
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">Invest Game</div>
+      <div class="page-sub">Step through real market data alongside AI trading agents</div>
+    </div>
+  </div>
+
+  <div id="winner-banner" class="ig-winner-banner" style="display:none">
+    <span class="winner-banner-label">Game Over</span>
+    <div id="winner-badge">—</div>
+  </div>
+
+  <div class="top-row-grid">
+    <div id="row-controls" class="game-row">
+      <div class="row-hdr">
+        <h2>Configure Your Game</h2>
+        <span class="row-badge">Setup</span>
+      </div>
+      <div class="controls-body">
+        <div class="ctrl-group">
+          <label>Instrument</label>
+          <div class="pill-group">
+            <button id="pill-asml" class="pill active">ASML <span class="pill-ccy">EUR</span></button>
+            <button id="pill-nvidia" class="pill">NVIDIA <span class="pill-ccy">USD</span></button>
+          </div>
+        </div>
+        <div class="ctrl-group">
+          <label>Start Date</label>
+          <input type="date" id="start-date">
+        </div>
+        <div class="ctrl-group">
+          <label>End Date</label>
+          <input type="date" id="end-date">
+        </div>
+        <div class="ctrl-group ctrl-actions">
+          <button id="btn-select-days" class="btn btn-primary" disabled>Select</button>
+          <button id="btn-new-game" class="btn btn-ghost" style="display:none">&#8635; New Game</button>
+          <button id="btn-volatile-days" class="btn btn-ghost">&#9889; Volatile</button>
+        </div>
+      </div>
+      <div id="selection-label" class="selected-range-info" style="display:none">
+        <span class="range-label">Selected</span>
+        <span id="selected-instrument">—</span> &mdash;
+        <span id="selected-range-text">—</span> &nbsp;·&nbsp;
+        <span id="selected-days-count">7 trading days</span>
+      </div>
+      <div id="day-action-bar" class="day-action-bar" style="display:none">
+        <div class="dbar-day">
+          <span class="dbar-day-lbl">Day 1</span>
+          <span class="dbar-day-date" id="dbar-date-1">—</span>
+          <span class="dbar-day-price" id="dbar-price-1">—</span>
+        </div>
+        <div class="dbar-sep"></div>
+        <div class="dbar-day">
+          <span class="dbar-day-lbl">Day 2</span>
+          <span class="dbar-day-date" id="dbar-date-2">—</span>
+          <span class="dbar-day-price" id="dbar-price-2">—</span>
+        </div>
+        <div class="dbar-sep"></div>
+        <div class="dbar-actions">
+          <button id="dbar-buy" class="arc-btn arc-buy" disabled><span class="arc-btn-lbl">Buy</span></button>
+          <button id="dbar-hold" class="arc-btn arc-hold" disabled><span class="arc-btn-lbl">Hold</span></button>
+          <button id="dbar-sell" class="arc-btn arc-sell" disabled><span class="arc-btn-lbl">Sell</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="row-performance" class="game-row" style="display:none">
+      <table class="pnl-table">
+        <thead>
+          <tr>
+            <th class="pnl-metric-col"></th>
+            <th class="pnl-you-hdr">You</th>
+            <th class="pnl-ai-hdr">AI Agent</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="pnl-row-label">Cash / Portfolio</td>
+            <td><span id="user-cash" class="pnl-value">€5,000.00</span><span class="pnl-sep">/</span><span id="user-portfolio" class="pnl-value">€0.00</span></td>
+            <td><span id="ai-cash" class="pnl-value">€5,000.00</span><span class="pnl-sep">/</span><span id="ai-portfolio" class="pnl-value">€0.00</span></td>
+          </tr>
+          <tr>
+            <td class="pnl-row-label">Costs / Tax</td>
+            <td><span id="user-costs" class="pnl-value cost">−€0.00</span><span class="pnl-sep">/</span><span id="user-tax" class="pnl-value cost">−€0.00</span></td>
+            <td><span id="ai-costs" class="pnl-value cost">−€0.00</span><span class="pnl-sep">/</span><span id="ai-tax" class="pnl-value cost">−€0.00</span></td>
+          </tr>
+          <tr class="pnl-net-row">
+            <td class="pnl-row-label">Net Value</td>
+            <td><span id="user-net" class="pnl-value">€5,000.00</span></td>
+            <td><span id="ai-net" class="pnl-value">€5,000.00</span></td>
+          </tr>
+          <tr id="budget-row" style="display:none">
+            <td class="pnl-row-label">Budget</td>
+            <td><div id="budget-display" style="font-family:var(--fm);font-size:11px;display:flex;gap:10px;align-items:center"></div></td>
+            <td><div id="ai-budget-display" style="font-family:var(--fm);font-size:11px;display:flex;gap:10px;align-items:center"></div></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="progress-wrap">
+        <div class="progress-bar"><div id="progress-fill" style="width:0%"></div></div>
+        <span id="progress-label-text">Day 0 of 7</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="row-game-table" class="card" style="padding:0">
+    <div class="card-hdr" style="padding:12px 16px;border-bottom:1px solid var(--border);margin-bottom:0">
+      <span class="card-title" style="font-size:13px;font-weight:600;font-family:var(--fd);margin-bottom:0">Investing Journal</span>
+      <span style="font-size:11px;color:var(--t3)" id="journal-sub">—</span>
+    </div>
+    <div style="padding:0">
+    <div class="tbl-wrap" style="overflow-y:auto;max-height:360px;margin:0;border:none;box-shadow:none;border-radius:0">
+      <table id="game-table">
+        <thead>
+          <tr>
+            <th class="row-label"></th>
+            <th id="game-row-3" class="day-col" data-day="3" style="display:none">3</th>
+            <th id="game-row-4" class="day-col" data-day="4" style="display:none">4</th>
+            <th id="game-row-5" class="day-col" data-day="5" style="display:none">5</th>
+            <th id="game-row-6" class="day-col" data-day="6" style="display:none">6</th>
+            <th id="game-row-7" class="day-col" data-day="7" style="display:none">7</th>
+            <th id="game-row-8" class="day-col" data-day="8" style="display:none">8</th>
+            <th id="game-row-9" class="day-col" data-day="9" style="display:none">9</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="row-label">Price</td>
+            <td id="row3-price" class="day-data" data-day="3" style="display:none">—</td>
+            <td id="row4-price" class="day-data" data-day="4" style="display:none">—</td>
+            <td id="row5-price" class="day-data" data-day="5" style="display:none">—</td>
+            <td id="row6-price" class="day-data" data-day="6" style="display:none">—</td>
+            <td id="row7-price" class="day-data" data-day="7" style="display:none">—</td>
+            <td id="row8-price" class="day-data" data-day="8" style="display:none">—</td>
+            <td id="row9-price" class="day-data" data-day="9" style="display:none">—</td>
+          </tr>
+          <tr>
+            <td class="row-label">Action</td>
+            <td id="action-label-3" class="day-data" data-day="3" style="display:none">—</td>
+            <td id="action-label-4" class="day-data" data-day="4" style="display:none">—</td>
+            <td id="action-label-5" class="day-data" data-day="5" style="display:none">—</td>
+            <td id="action-label-6" class="day-data" data-day="6" style="display:none">—</td>
+            <td id="action-label-7" class="day-data" data-day="7" style="display:none">—</td>
+            <td id="action-label-8" class="day-data" data-day="8" style="display:none">—</td>
+            <td id="action-label-9" class="day-data" data-day="9" style="display:none">—</td>
+          </tr>
+          <tr>
+            <td class="row-label">AI Action</td>
+            <td id="ai-cell-3" class="day-data ai-cell" data-day="3" style="display:none">—</td>
+            <td id="ai-cell-4" class="day-data ai-cell" data-day="4" style="display:none">—</td>
+            <td id="ai-cell-5" class="day-data ai-cell" data-day="5" style="display:none">—</td>
+            <td id="ai-cell-6" class="day-data ai-cell" data-day="6" style="display:none">—</td>
+            <td id="ai-cell-7" class="day-data ai-cell" data-day="7" style="display:none">—</td>
+            <td id="ai-cell-8" class="day-data ai-cell" data-day="8" style="display:none">—</td>
+            <td id="ai-cell-9" class="day-data ai-cell" data-day="9" style="display:none">—</td>
+          </tr>
+          <tr>
+            <td class="row-label">Gate</td>
+            <td class="day-data" data-day="3" style="display:none"><div class="gate-cell"><span id="comp-status-3">—</span><span id="comp-rule-3" class="gate-rule">—</span></div></td>
+            <td class="day-data" data-day="4" style="display:none"><div class="gate-cell"><span id="comp-status-4">—</span><span id="comp-rule-4" class="gate-rule">—</span></div></td>
+            <td class="day-data" data-day="5" style="display:none"><div class="gate-cell"><span id="comp-status-5">—</span><span id="comp-rule-5" class="gate-rule">—</span></div></td>
+            <td class="day-data" data-day="6" style="display:none"><div class="gate-cell"><span id="comp-status-6">—</span><span id="comp-rule-6" class="gate-rule">—</span></div></td>
+            <td class="day-data" data-day="7" style="display:none"><div class="gate-cell"><span id="comp-status-7">—</span><span id="comp-rule-7" class="gate-rule">—</span></div></td>
+            <td class="day-data" data-day="8" style="display:none"><div class="gate-cell"><span id="comp-status-8">—</span><span id="comp-rule-8" class="gate-rule">—</span></div></td>
+            <td class="day-data" data-day="9" style="display:none"><div class="gate-cell"><span id="comp-status-9">—</span><span id="comp-rule-9" class="gate-rule">—</span></div></td>
+          </tr>
+          <tr>
+            <td class="row-label">Insight</td>
+            <td id="comp-insight-3" class="day-data comp-insight" data-day="3" style="display:none">—</td>
+            <td id="comp-insight-4" class="day-data comp-insight" data-day="4" style="display:none">—</td>
+            <td id="comp-insight-5" class="day-data comp-insight" data-day="5" style="display:none">—</td>
+            <td id="comp-insight-6" class="day-data comp-insight" data-day="6" style="display:none">—</td>
+            <td id="comp-insight-7" class="day-data comp-insight" data-day="7" style="display:none">—</td>
+            <td id="comp-insight-8" class="day-data comp-insight" data-day="8" style="display:none">—</td>
+            <td id="comp-insight-9" class="day-data comp-insight" data-day="9" style="display:none">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Section: Journey (embedded investor journey flow — /journey)
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="section" id="sec-journey">
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">Journey</div>
+      <div class="page-sub">Set your goals, timeline &amp; risk profile — your path into the Invest Game</div>
+    </div>
+  </div>
+  <iframe id="journey-frame" data-src="/journey" title="Investor Journey"
+          style="width:100%;height:calc(100vh - 190px);min-height:520px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--surface);"></iframe>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Section: Concepts (Investment Workflow & Agents — 8 tabs)
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="section" id="sec-concepts">
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">Concepts</div>
+      <div class="page-sub">Investment philosophy and how professional firms approach markets</div>
+    </div>
+  </div>
+
+  <!-- Cards 1–2: Investment Philosophies + Why Retail — side by side -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+    <div class="card">
+      <div class="card-hdr" style="cursor:pointer" onclick="document.getElementById('cb-philosophies').style.display=document.getElementById('cb-philosophies').style.display==='none'?'block':'none'">
+        <span class="card-title">Investment Philosophies</span>
+        <span style="color:var(--t3)">▼</span>
+      </div>
+      <div id="cb-philosophies" class="card-body" style="font-size:13px;line-height:1.7;color:var(--t2)">
+        <p>Investing is not a single strategy but a spectrum of philosophies, each built on a different theory of where value comes from and how price and value eventually converge. Value investors, in the tradition of Benjamin Graham and Warren Buffett, seek assets trading below their intrinsic worth and hold patiently for the market to correct the mispricing. Growth investors are willing to pay premium valuations today in exchange for the compounding power of above-average earnings expansion tomorrow.</p>
+        <p style="margin-top:8px">Momentum investors take a different view entirely — they follow price itself, buying strength and selling weakness on the premise that trends persist longer than intuition suggests. Quantitative investing elevates any of these philosophies into a rules-based system, using data and models to generate signals free from emotional interference. What unifies the best practitioners across all schools is a shared commitment to risk-adjusted thinking: the goal is never maximum return in isolation, but the highest possible return per unit of risk accepted.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr" style="cursor:pointer" onclick="document.getElementById('cb-retail').style.display=document.getElementById('cb-retail').style.display==='none'?'block':'none'">
+        <span class="card-title">Why Retail Investors Lose Money</span>
+        <span style="color:var(--t3)">▼</span>
+      </div>
+      <div id="cb-retail" class="card-body" style="font-size:13px;line-height:1.7;color:var(--t2)">
+        <p>Most retail investors do not lose because markets are unfair — they lose because human psychology is systematically mismatched with what markets demand. At emotional extremes, fear and greed take over: investors buy enthusiastically near peaks and sell in panic near troughs, locking in the exact pattern that destroys wealth over time. Overtrading compounds the problem, as each unnecessary transaction extracts a small cost in commissions, taxes, and slippage.</p>
+        <p style="margin-top:8px">Recency bias keeps retail investors perpetually a step behind: treating whatever happened recently as representative of what will happen next. Without a systematic edge, trades entered on headlines or emotion compete directly against institutional algorithms. Position sizing is rarely taught yet equally important — risking too large a fraction on any single trade means one bad outcome can erase months of discipline. And the most universal failure is simply having no exit plan.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 3: How Professional Investment Firms Invest -->
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-hdr" style="cursor:pointer" onclick="document.getElementById('cb-workflow-intro').style.display=document.getElementById('cb-workflow-intro').style.display==='none'?'block':'none'">
+      <span class="card-title">How Professional Investment Firms Invest</span>
+      <span style="color:var(--t3)">▼</span>
+    </div>
+    <div id="cb-workflow-intro" class="card-body" style="font-size:13px;line-height:1.7;color:var(--t2)">
+      <p>In a professionally run investment firm, highly sophisticated quantitative finance tools and Risk / Reward processes are used by smart professionals. They use these to evaluate various investment opportunities, calculate the Risk / Reward and, as appropriate, hedge them with appropriate derivatives product(s).</p>
+      <div class="tbl-wrap" style="margin-top:10px;margin-bottom:10px">
+        <table>
+          <thead><tr><th>Step</th><th>Purpose / Role</th><th>Scope</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Initiation</strong></td><td>Financial Goal</td><td>Define a clear, quantitative financial goal for a time period</td></tr>
+            <tr><td><strong>Research</strong></td><td>Research Analyst</td><td>Macro-economic trends, goods flow and demand/supply for growth projections</td></tr>
+            <tr><td><strong>Research</strong></td><td>Sentiment Analyst</td><td>Present market conditions, public news and investor sentiments</td></tr>
+            <tr><td><strong>Research</strong></td><td>Technical Analyst</td><td>Technical Indicators: candlestick patterns, MACD, RSI, stochastic indicators</td></tr>
+            <tr><td><strong>Design</strong></td><td>Strategy Analyst</td><td>Strategy approach: Value Investing, Momentum Investing, Long Term Horizon</td></tr>
+            <tr><td><strong>Evaluation</strong></td><td>Scenario Analyst</td><td>Evaluate portfolio performance through scenarios; MDD triggers derivatives trade</td></tr>
+            <tr><td><strong>Execution</strong></td><td>Execution Analyst</td><td>Take appropriate investment and balance with derivatives trade</td></tr>
+            <tr><td><strong>Feedback</strong></td><td>Outcome Analyst</td><td>Closed loop: result from each trade fed back to fine-tune the approach</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>By applying <strong>data science methods</strong>, time-series market data can be transformed into actionable intelligence. With <strong>Agentic AI</strong>, a Risk/Reward policy can be set against which AI agents validate trades and provide a Risk Informed view. These two elements become the core of the <strong>Risk Informed Investment Approach (RIIA)</strong>.</p>
+    </div>
+  </div>
+
+  <!-- Agent tabs — one per workflow step -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <span style="font-size:12px;font-weight:700;color:var(--t2)">Agents &amp; Linked Analytics</span>
+    <span id="aw-status" style="font-size:11px;color:var(--t3)"></span>
+  </div>
+
+  <div class="concept-tab-bar">
+    <button class="concept-tab active" onclick="switchAgentTab('a1',this)">Initiation / Financial Goal</button>
+    <button class="concept-tab" onclick="switchAgentTab('a2',this)">Research Analyst</button>
+    <button class="concept-tab" onclick="switchAgentTab('a3',this)">Sentiment Analyst</button>
+    <button class="concept-tab" onclick="switchAgentTab('a4',this)">Technical Analyst</button>
+    <button class="concept-tab" onclick="switchAgentTab('a5',this)">Strategy Analyst</button>
+    <button class="concept-tab" onclick="switchAgentTab('a6',this)">Scenario Analyst</button>
+    <button class="concept-tab" onclick="switchAgentTab('a7',this)">Execution Analyst</button>
+    <button class="concept-tab" onclick="switchAgentTab('a8',this)">Outcome Analyst</button>
+  </div>
+
+  <!-- a1 — Initiation / Financial Goal -->
+  <div id="aw-a1" class="concept-panel">
+    <p class="concept-desc">The <strong>Financial Goal</strong> step sets a clear, quantitative target (e.g. a Sharpe ratio, a return level, a drawdown ceiling) for the time period. RITA frames the learned strategy against these targets — the bars below compare achieved Sharpe, Max Drawdown, Win Rate and Return against representative goal levels.</p>
+    <div class="concept-chart-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="chart-wrap"><div class="chart-col-label">Agent</div><div class="chart-title">Achieved vs Target KPIs</div><div class="chart-box" style="height:240px"><canvas id="aw-a1-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Linked Analytics</div><div class="chart-title">Daily Return Distribution</div><div class="chart-box" style="height:240px"><canvas id="aw-a1-c2"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- a2 — Research Analyst -->
+  <div id="aw-a2" class="concept-panel hidden">
+    <p class="concept-desc">The <strong>Research Analyst</strong> studies macro-economic trends, goods flow and demand / supply to arrive at growth projections. As a proxy, RITA tracks the underlying instrument's price trajectory — the long-horizon close-price trend the model learns from.</p>
+    <div class="concept-chart-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="chart-wrap"><div class="chart-col-label">Agent</div><div class="chart-title">Close — Price Trend</div><div class="chart-box" style="height:240px"><canvas id="aw-a2-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Linked Analytics</div><div class="chart-title">Trading Volume</div><div class="chart-box" style="height:240px"><canvas id="aw-a2-c2"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- a3 — Sentiment Analyst -->
+  <div id="aw-a3" class="concept-panel hidden">
+    <p class="concept-desc">The <strong>Sentiment Analyst</strong> reads present market conditions, public news and investor sentiment. RITA approximates market regime / sentiment with a composite trend score derived from the signal pipeline — rising scores indicate constructive regimes, falling scores indicate caution.</p>
+    <div class="concept-chart-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="chart-wrap"><div class="chart-col-label">Agent</div><div class="chart-title">Market Regime — Trend Score</div><div class="chart-box" style="height:240px"><canvas id="aw-a3-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Linked Analytics</div><div class="chart-title">Bollinger Band %B</div><div class="chart-box" style="height:240px"><canvas id="aw-a3-c2"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- a4 — Technical Analyst -->
+  <div id="aw-a4" class="concept-panel hidden">
+    <p class="concept-desc">The <strong>Technical Analyst</strong> applies technical indicators — candlestick patterns, charts, MACD, RSI and stochastic indicators. RITA computes these as model features; below are RSI(14) with overbought/oversold bands and the MACD line.</p>
+    <div class="concept-chart-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="chart-wrap"><div class="chart-col-label">Agent</div><div class="chart-title">RSI (14) with 60 / 30 bands</div><div class="chart-box" style="height:240px"><canvas id="aw-a4-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Linked Analytics</div><div class="chart-title">MACD (12 / 26)</div><div class="chart-box" style="height:240px"><canvas id="aw-a4-c2"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- a5 — Strategy Analyst -->
+  <div id="aw-a5" class="concept-panel hidden">
+    <p class="concept-desc">The <strong>Strategy Analyst</strong> decides the approach — Value Investing (buy cheap), Momentum Investing (trade strong upside / downside) or a Long-Term Horizon. RITA's momentum view is captured by the EMA stack; crossovers of fast over slow EMAs flag trend changes.</p>
+    <div class="concept-chart-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="chart-wrap"><div class="chart-col-label">Agent</div><div class="chart-title">EMA Crossover (5 / 13 / 26 / 50)</div><div class="chart-box" style="height:240px"><canvas id="aw-a5-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Linked Analytics</div><div class="chart-title">ATR% — Volatility</div><div class="chart-box" style="height:240px"><canvas id="aw-a5-c2"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- a6 — Scenario Analyst -->
+  <div id="aw-a6" class="concept-panel hidden">
+    <p class="concept-desc">The <strong>Scenario Analyst</strong> evaluates portfolio performance through various scenarios over a short-term horizon. Expectations of maximum drawdown (MDD) can trigger a derivatives trade. The backtest below compares the DDQN strategy against a Buy &amp; Hold benchmark — divergence and drawdowns mark where hedging matters.</p>
+    <div class="concept-chart-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="chart-wrap"><div class="chart-col-label">Agent</div><div class="chart-title">DDQN Strategy vs Buy &amp; Hold</div><div class="chart-box" style="height:240px"><canvas id="aw-a6-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Linked Analytics</div><div class="chart-title">Drawdown %</div><div class="chart-box" style="height:240px"><canvas id="aw-a6-c2"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- a7 — Execution Analyst -->
+  <div id="aw-a7" class="concept-panel hidden">
+    <p class="concept-desc">The <strong>Execution Analyst</strong> takes the appropriate investment and balances it with the right derivatives trade. The SHAP feature-importance chart shows which signals most drive RITA's allocation decisions at execution time.</p>
+    <div class="concept-chart-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="chart-wrap"><div class="chart-col-label">Agent</div><div class="chart-title">Feature Importance — SHAP |Overall|</div><div class="chart-box" style="height:240px"><canvas id="aw-a7-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Linked Analytics</div><div class="chart-title">Allocation Timeline</div><div class="chart-box" style="height:240px"><canvas id="aw-a7-c2"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- a8 — Outcome Analyst -->
+  <div id="aw-a8" class="concept-panel hidden">
+    <p class="concept-desc">The <strong>Outcome Analyst</strong> builds a closed-loop system: the result from each trade (profit / loss) is fed back to the initial phases to fine-tune the investment approach. The chart tracks backtest return and Sharpe across successive training rounds — the closed loop improving over time.</p>
+    <div class="concept-chart-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="chart-wrap"><div class="chart-col-label">Agent</div><div class="chart-title">Backtest Return &amp; Sharpe by Round</div><div class="chart-box" style="height:240px"><canvas id="aw-a8-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Linked Analytics</div><div class="chart-title">Win Rate by Round</div><div class="chart-box" style="height:240px"><canvas id="aw-a8-c2"></canvas></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Section: CRISP-DM
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="section" id="sec-crisp-dm">
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">CRISP-DM</div>
+      <div class="page-sub">Cross-Industry Standard Process for Data Mining <span id="crisp-status"></span></div>
+    </div>
+  </div>
+
+  <div class="concept-tab-bar">
+    <button class="crisp-tab active" onclick="switchCrispTab('p1',this)">① Business Understanding</button>
+    <button class="crisp-tab" onclick="switchCrispTab('p2',this)">② Data Understanding</button>
+    <button class="crisp-tab" onclick="switchCrispTab('p3',this)">③ Data Preparation</button>
+    <button class="crisp-tab" onclick="switchCrispTab('p4',this)">④ Modeling</button>
+    <button class="crisp-tab" onclick="switchCrispTab('p5',this)">⑤ Evaluation</button>
+    <button class="crisp-tab" onclick="switchCrispTab('p6',this)">⑥ Deployment</button>
+  </div>
+
+  <!-- Phase 1: Business Understanding -->
+  <div class="crisp-panel" id="crisp-p1">
+    <div class="concept-phase-hdr">
+      <div class="concept-num">1</div>
+      <div>
+        <span class="badge ok">CRISP-DM Phase 1</span>
+        <div class="concept-title">Business Understanding</div>
+      </div>
+    </div>
+    <p class="concept-desc">RIIA stands for Risk Informed Investment Approach. This translates into the goal of ensuring the instrument or portfolio investment stays within a certain return range and the drawdown on the portfolio remains within acceptable limits. In the investment domain, the Sharpe ratio indicates how returns compare to the standard deviation of returns on the instrument or portfolio based on historical data. We therefore adopt Sharpe ratio and maximum drawdown as our core business goals.<br><br>RITA operationalises these goals by training a reinforcement learning agent that makes daily capital allocation decisions in ASML stock, targeting a Sharpe ratio above 1.0 and a maximum drawdown below 10%. The investment decision is simplified to three discrete allocations — hold cash (0%), invest half (50%), or fully invest (100%) — so the model focuses entirely on timing entry and exit.<br><br>Success is defined as consistent out-performance versus a passive buy-and-hold benchmark on a fully held-out backtest period the model never saw during training.</p>
+    <div class="concept-block-label">Constraints &amp; Targets</div>
+    <div class="concept-facts">
+      <span class="fact-pill">Target Sharpe ≥ 1.0</span>
+      <span class="fact-pill">Max Drawdown ≤ 10%</span>
+      <span class="fact-pill">Actions: {0%, 50%, 100%}</span>
+      <span class="fact-pill">Instrument: ASML (AEX)</span>
+      <span class="fact-pill">Beat Buy &amp; Hold</span>
+      <span class="fact-pill">Daily decision frequency</span>
+    </div>
+    <div class="concept-block-label" style="margin-top:10px">Achieved (ASML Backtest)</div>
+    <div class="concept-facts">
+      <span class="fact-pill achieved">Sharpe: <strong id="crisp-p1-sharpe">—</strong></span>
+      <span class="fact-pill achieved">Max DD: <strong id="crisp-p1-mdd">—</strong></span>
+      <span class="fact-pill achieved">Total Return: <strong id="crisp-p1-ret">—</strong></span>
+      <span class="fact-pill achieved">Win Rate: <strong id="crisp-p1-wr">—</strong></span>
+    </div>
+    <div class="divider"></div>
+    <div class="concept-block-label" style="margin-bottom:10px">Project KPIs</div>
+    <div class="concept-chart-grid" style="grid-template-columns:repeat(4,1fr)">
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">Sharpe Ratio — Target ≥ 1.0</div>
+        <div class="chart-box h120"><canvas id="crisp-p1-c1"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">Max Drawdown % — Limit ≤ 10%</div>
+        <div class="chart-box h120"><canvas id="crisp-p1-c1b"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">DDQN Strategy vs Buy &amp; Hold — Cumulative Returns (base 100)</div>
+        <div class="chart-box h240"><canvas id="crisp-p1-c2"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">Reinforcement Learning Model Decision Plot</div>
+        <div class="chart-box h240"><canvas id="crisp-p1-c3"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 2: Data Understanding -->
+  <div class="crisp-panel hidden" id="crisp-p2">
+    <div class="concept-phase-hdr">
+      <div class="concept-num">2</div>
+      <div>
+        <span class="badge ok">CRISP-DM Phase 2</span>
+        <div class="concept-title">Data Understanding</div>
+      </div>
+    </div>
+    <p class="concept-desc">The ASML dataset covers daily OHLCV price history from 2019 through mid-2025 — approximately 1,500 trading sessions spanning bull runs, corrections, and recovery cycles, making it rich in both trending and mean-reverting regimes.<br><br>The publicly available data has 6 features: Date, Open, Close, High, Low and Volume. This is also called OHLCV data for instruments. From this data, eleven technical indicators are derived: RSI(14) for momentum extremes, MACD(12/26/9) and its signal line for trend momentum, Bollinger Band %B for price position relative to volatility bands, 20-day rolling volatility as a regime indicator, and daily log returns as the primary risk signal.<br><br>K-Means clustering with k=3 on the full feature matrix reveals three distinct market regimes — bullish trending, sideways consolidation, and bearish stress — each characterised by different RSI and volatility profiles that require different allocation strategies. The feature correlation matrix confirms that RSI and MACD carry complementary but non-redundant momentum signals, while 20-day volatility is largely orthogonal to both, making all three dimensions genuinely informative for the DDQN state vector.</p>
+    <div class="concept-block-label">Dataset Statistics</div>
+    <div class="concept-facts">
+      <span class="fact-pill">Rows: <strong id="crisp-p2-rows">—</strong></span>
+      <span class="fact-pill">Features: <strong id="crisp-p2-feats">—</strong></span>
+      <span class="fact-pill">From: <strong id="crisp-p2-from">—</strong></span>
+      <span class="fact-pill">To: <strong id="crisp-p2-to">—</strong></span>
+      <span class="fact-pill">Missing: 0%</span>
+      <span class="fact-pill">Market Regimes: 3</span>
+    </div>
+    <div class="concept-block-label" style="margin-top:10px">Engineered Features</div>
+    <div class="concept-facts">
+      <span class="fact-pill">RSI (14)</span>
+      <span class="fact-pill">MACD (12/26/9)</span>
+      <span class="fact-pill">MACD Histogram</span>
+      <span class="fact-pill">BB %B</span>
+      <span class="fact-pill">Volatility 20d</span>
+      <span class="fact-pill">Daily Return</span>
+      <span class="fact-pill">Log Return</span>
+    </div>
+    <div class="divider"></div>
+    <div class="concept-chart-grid">
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">ASML Close Price (€) — Full 2019–2025 History</div>
+        <div class="chart-box h240"><canvas id="crisp-p2-c1"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">RSI (14) — Overbought (70) &amp; Oversold (30) Bands</div>
+        <div class="chart-box h240"><canvas id="crisp-p2-c2"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">MACD Line (12/26) — Momentum Signal</div>
+        <div class="chart-box h240"><canvas id="crisp-p2-c3"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 3: Data Preparation -->
+  <div class="crisp-panel hidden" id="crisp-p3">
+    <div class="concept-phase-hdr">
+      <div class="concept-num">3</div>
+      <div>
+        <span class="badge ok">CRISP-DM Phase 3</span>
+        <div class="concept-title">Data Preparation</div>
+      </div>
+    </div>
+    <p class="concept-desc">Since the raw OHLCV dataset is already well-formed with negligible missing values and no duplicates, this phase focuses on feature engineering and structuring data for the model. The dataset start date must be set earlier than the intended modeling start so that look-back indicators such as MACD(12/26/9) have sufficient warm-up rows — starting too late pushes missing-value rates above 5%.<br><br>The correlation matrix reveals redundancy among MACD components and Stochastic oscillators; one representative per group is selected to keep the state vector non-redundant while retaining MACD as a trend-crossing signal and raw Close for portfolio tracking. All selected features are z-score normalised using parameters computed solely on the training window, then applied forward to validation and backtest windows to simulate the live inference setting. The final DDQN state vector combines non-redundant technical signals with normalised price data — not to predict Close, but to provide directional and momentum signals that guide the agent's discrete buy/hold/sell decisions.</p>
+    <div class="concept-block-label">Split Configuration</div>
+    <div class="concept-facts">
+      <span class="fact-pill">Training: 80% — ends <strong id="crisp-p3-train-end">—</strong></span>
+      <span class="fact-pill">Val/BT: 20% — from <strong id="crisp-p3-val-start">—</strong></span>
+      <span class="fact-pill">Total Rows: <strong id="crisp-p3-rows">—</strong></span>
+      <span class="fact-pill">Normalisation: z-score (train params only)</span>
+      <span class="fact-pill">State Window: 14 days</span>
+      <span class="fact-pill">No shuffling — temporal order preserved</span>
+    </div>
+    <div class="divider"></div>
+    <div class="concept-block-label">Engineered Feature Indicators</div>
+    <div class="concept-chart-grid">
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">Trend Score — EMA-5/13/26 composite · [-1, +1]</div>
+        <div class="chart-box h240"><canvas id="crisp-p3-c1"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">ATR% — Daily Volatility as % of Close</div>
+        <div class="chart-box h240"><canvas id="crisp-p3-c2"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">EMA Crossovers — EMA-5 / 13 / 26 / 50 with Bull/Bear Signals</div>
+        <div class="chart-box h240"><canvas id="crisp-p3-c3"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 4: Modeling -->
+  <div class="crisp-panel hidden" id="crisp-p4">
+    <div class="concept-phase-hdr">
+      <div class="concept-num">4</div>
+      <div>
+        <span class="badge ok">CRISP-DM Phase 4</span>
+        <div class="concept-title">Modeling</div>
+      </div>
+    </div>
+    <p class="concept-desc">The model uses a Double Deep Q-Network (DDQN), a reinforcement learning algorithm implemented with Stable-Baselines3. It learns from 11 market indicators observed over a 14-day period and can choose between three actions: holding cash, investing 50% of available capital, or investing 100%. The reward function encourages profitable trades while penalising portfolio drawdowns above 5%, helping the model manage risk.<br><br>Training is performed over 100,000 timesteps using experience replay and a separate target network to improve learning stability. To ensure robust results, the model is trained using three different random seeds. The seed with the highest validation Sharpe ratio is selected for final evaluation, reducing the risk of overfitting.</p>
+    <ul class="concept-desc" style="margin-top:10px;padding-left:20px;line-height:1.9">
+      <li><strong>Framework:</strong> Stable-Baselines3 DQN with Double-Q target correction.</li>
+      <li><strong>State Space:</strong> 8–9 features — <code style="font-family:var(--fm);font-size:11px">daily_return, rsi_14, macd, bb_pct_b, trend_score, allocation, days_remaining, atr_ratio, ema_ratio</code>.</li>
+      <li><strong>Action Space:</strong> Discrete(3) — Cash (0%), Half (50%), Full (100%) invested; the agent learns when to scale in and out.</li>
+      <li><strong>Network:</strong> MlpPolicy with two hidden layers of 256 units; replay buffer holds 100,000 transitions for stable off-policy learning.</li>
+      <li><strong>Seed Search:</strong> train_best_of_n runs N seeds, validates each on a held-out period, keeps the best Sharpe winner.</li>
+      <li><strong>Persistence:</strong> The winning model is serialised as a .zip via SB3's model.save() and reloaded for inference.</li>
+    </ul>
+    <div class="concept-block-label">Network Architecture</div>
+    <div class="concept-facts">
+      <span class="fact-pill">Algorithm: DDQN (Stable-Baselines3)</span>
+      <span class="fact-pill">2 Hidden Layers × 128 units</span>
+      <span class="fact-pill">Activation: ReLU</span>
+      <span class="fact-pill">Optimizer: Adam lr=1e-4</span>
+      <span class="fact-pill">Replay Buffer: 10,000 transitions</span>
+      <span class="fact-pill">Target Update: every 1,000 steps</span>
+      <span class="fact-pill">Timesteps: 100k per seed · Seeds: best-of-3</span>
+    </div>
+    <div class="divider"></div>
+    <div class="concept-chart-grid">
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">TD Loss over Timesteps — Learning Convergence</div>
+        <div class="chart-box h240"><canvas id="crisp-p4-c1"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">Policy Improvement — Backtest Sharpe per Round</div>
+        <div class="chart-box h240"><canvas id="crisp-p4-c2"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">SHAP Feature Importance — Top 8 Drivers (all actions)</div>
+        <div class="chart-box h240"><canvas id="crisp-p4-c3"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 5: Evaluation -->
+  <div class="crisp-panel hidden" id="crisp-p5">
+    <div class="concept-phase-hdr">
+      <div class="concept-num">5</div>
+      <div>
+        <span class="badge ok">CRISP-DM Phase 5</span>
+        <div class="concept-title">Evaluation</div>
+      </div>
+    </div>
+    <p class="concept-desc">The DDQN Reinforcement Learning model is evaluated through three separate datasets: a training period where the model learns patterns, a validation period used to select the best random seed, and a completely unseen backtest period that is reserved for final evaluation.<br><br>To reduce the risk of overfitting, the best seed is chosen using the validation Sharpe ratio rather than the backtest Sharpe ratio. Model performance is then assessed against the business requirements defined earlier in the project using four key metrics: Sharpe ratio (risk-adjusted return), maximum drawdown (largest loss from a peak), CAGR (annual growth rate), and win rate (percentage of profitable trades). Daily returns are also compared with a simple buy-and-hold investment in ASML to verify that the model generates genuine alpha rather than simply benefiting from overall market movements.<br><br>To support model interpretability, SHAP analysis is applied to explain the model's decisions. The results show that RSI(14) and the MACD line are the most influential signals driving portfolio allocation decisions. This transparency, together with the quantitative performance results, satisfies an important CRISP-DM requirement before the model can be considered for production deployment.</p>
+    <div class="concept-block-label">Evaluation Metrics</div>
+    <div class="concept-facts">
+      <span class="fact-pill">Sharpe Ratio vs target ≥ 1.0</span>
+      <span class="fact-pill">Max Drawdown vs limit ≤ 10%</span>
+      <span class="fact-pill">CAGR %</span>
+      <span class="fact-pill">Win Rate %</span>
+      <span class="fact-pill">vs Buy &amp; Hold benchmark</span>
+      <span class="fact-pill">SHAP interpretability</span>
+    </div>
+    <div class="concept-block-label" style="margin-top:10px">Best ASML Run</div>
+    <div class="concept-facts">
+      <span class="fact-pill">Runs recorded: <strong id="crisp-p5-runs">—</strong></span>
+      <span class="fact-pill achieved">Best Sharpe: <strong id="crisp-p5-best-sharpe">—</strong></span>
+      <span class="fact-pill achieved">Best MDD: <strong id="crisp-p5-best-mdd">—</strong></span>
+      <span class="fact-pill achieved">Best Return: <strong id="crisp-p5-best-ret">—</strong></span>
+    </div>
+    <div class="divider"></div>
+    <div class="concept-chart-grid">
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">Backtest Sharpe Across Runs — vs Target 1.0</div>
+        <div class="chart-box h240"><canvas id="crisp-p5-c1"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">Max Drawdown % Across Runs — vs 10% Limit</div>
+        <div class="chart-box h240"><canvas id="crisp-p5-c2"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">DDQN vs Buy &amp; Hold — Backtest Cumulative Returns</div>
+        <div class="chart-box h240"><canvas id="crisp-p5-c3"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 6: Deployment -->
+  <div class="crisp-panel hidden" id="crisp-p6">
+    <div class="concept-phase-hdr">
+      <div class="concept-num">6</div>
+      <div>
+        <span class="badge ok">CRISP-DM Phase 6</span>
+        <div class="concept-title">Deployment</div>
+      </div>
+    </div>
+    <p class="concept-desc">RIIA runs as a Dockerised FastAPI application on a cloud VM, secured over HTTPS with OAuth-based authentication for all dashboard endpoints. The 8-step training pipeline — data validation, feature engineering, model design, training, period configuration, backtesting, results extraction, and API hot-swap — is triggered from the Build section of this dashboard and executes asynchronously, with real-time step progress streamed back to the UI via polling.<br><br>Model weights (Stable-Baselines3 PyTorch .zip artefacts) are persisted to a Docker volume, surviving container restarts and rolling deployments without requiring retraining — a critical operational requirement given 100k-timestep training cycles. The DS Lab, RITA main dashboard, FnO options dashboard, and Claude Desktop MCP server all share the same FastAPI origin, meaning every CRISP-DM artefact — raw data stats, SHAP values, backtest results — is immediately accessible across the entire platform without data duplication.</p>
+    <div class="concept-block-label">Infrastructure</div>
+    <div class="concept-facts">
+      <span class="fact-pill">FastAPI + SQLite (SQLAlchemy 2.x)</span>
+      <span class="fact-pill">Docker + Nginx (HTTPS)</span>
+      <span class="fact-pill">AWS EC2 (ap-south-1)</span>
+      <span class="fact-pill">Google OAuth + JWT</span>
+      <span class="fact-pill">8-step async pipeline</span>
+      <span class="fact-pill">Model volume: /app/data</span>
+    </div>
+    <div class="concept-block-label" style="margin-top:10px">Pipeline Observability</div>
+    <div class="concept-facts">
+      <span class="fact-pill">Steps Logged: <strong id="crisp-p6-total-steps">—</strong></span>
+      <span class="fact-pill">Failed Steps: <strong id="crisp-p6-failed-steps">—</strong></span>
+    </div>
+    <div class="divider"></div>
+    <div class="concept-chart-grid">
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">Avg Step Duration (s) — 8-Step Pipeline</div>
+        <div class="chart-box h240"><canvas id="crisp-p6-c1"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">Pass vs Fail Count per Pipeline Step</div>
+        <div class="chart-box h240"><canvas id="crisp-p6-c2"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">Deployment Impact — Backtest Return % &amp; Sharpe Across Training Rounds</div>
+        <div class="chart-box h240"><canvas id="crisp-p6-c3"></canvas></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Section: Agent Performance
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="section rita-parity" id="sec-agent-performance">
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">Agent Performance</div>
+      <div class="page-sub">Per-agent KPIs for the 7 investment-workflow agents — the trading-decision pipeline</div>
+    </div>
+    <div class="hdr-actions">
+      <span id="agent-perf-mode" class="badge warn" title="Agents without a trained RL policy use illustrative baseline data">Demo data</span>
+      <span style="font-size:11px;color:var(--t3);align-self:center">Updated: <span id="agent-perf-updated">—</span></span>
+      <button class="btn btn-ghost btn-sm" onclick="loadAgentPerformance()">↺ Refresh</button>
+    </div>
+  </div>
+
+  <!-- Aggregate KPI cards -->
+  <div class="kpi-row-4">
+    <div class="card">
+      <div class="kpi-label">Total Invocations (30d)</div>
+      <div class="kpi-value" id="agent-perf-total">—</div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">Avg Outcome Match</div>
+      <div class="kpi-value neu" id="agent-perf-match">—</div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">Avg RL Reward</div>
+      <div class="kpi-value" id="agent-perf-reward">—</div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">Avg Data Coverage</div>
+      <div class="kpi-value" id="agent-perf-coverage">—</div>
+    </div>
+  </div>
+
+  <!-- Agent scorecards — one panel per agent, 4 measurable parameters (mirrors Ops Agent Builds) -->
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">Agent Scorecards</span>
+      <span class="card-sub">Outcome Match · Avg RL Reward · Data Coverage · Invocations (30d)</span>
+    </div>
+    <div class="agp-sc-grid" id="agent-perf-scorecards">
+      <div class="empty">Loading…</div>
+    </div>
+  </div>
+
+  <!-- Invocations chart (40%) + per-agent detail table (60%) in one row -->
+  <div style="display:grid;grid-template-columns:2fr 3fr;gap:14px;align-items:start">
+    <div class="chart-wrap" style="margin-bottom:0">
+      <div class="chart-title">Invocations by Agent — last 30 days</div>
+      <div class="chart-box" style="height:320px"><canvas id="agent-perf-chart"></canvas></div>
+    </div>
+
+    <div class="card" style="margin-bottom:0">
+      <div class="card-hdr"><span class="card-title">Per-Agent Detail</span></div>
+      <div class="tbl-wrap" style="max-height:320px">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Agent</th>
+              <th style="text-align:right">Outcome Match</th>
+              <th style="text-align:right">Avg RL Reward</th>
+              <th style="text-align:right">Data Coverage</th>
+              <th style="text-align:right">Invocations (30d)</th>
+              <th style="text-align:right">Trend vs Prior 30d</th>
+            </tr>
+          </thead>
+          <tbody id="agent-perf-table">
+            <tr><td colspan="6" class="empty">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Performance over a custom period (reuses the Scenarios date-selector pattern) -->
+  <div class="card" style="margin-top:14px">
+    <div class="card-hdr">
+      <span class="card-title">Performance Over Period</span>
+      <span class="card-sub">Team invocations &amp; outcome-match across a date range</span>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+      <span style="font-size:11px;color:var(--t3);align-self:center">Quick select:</span>
+      <button class="btn btn-ghost btn-sm" onclick="setAgentPerfPeriod('2025-01-01','2025-03-31')">Q1 2025</button>
+      <button class="btn btn-ghost btn-sm" onclick="setAgentPerfPeriod('2025-04-01','2025-06-30')">Q2 2025</button>
+      <button class="btn btn-ghost btn-sm" onclick="setAgentPerfPeriod('2025-07-01','2025-09-30')">Q3 2025</button>
+      <button class="btn btn-ghost btn-sm" onclick="setAgentPerfPeriod('2025-10-01','2025-12-31')">Q4 2025</button>
+      <button class="btn btn-ghost btn-sm" onclick="setAgentPerfPeriod('2025-01-01','2026-06-30')">2025–26</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">From Date</label>
+        <input class="form-input" type="date" id="inp-ap-from" value="2025-01-01" min="2001-01-01" max="2026-12-31">
+      </div>
+      <div class="form-group">
+        <label class="form-label">To Date</label>
+        <input class="form-input" type="date" id="inp-ap-to" value="2026-06-30" min="2001-01-01" max="2026-12-31">
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px">
+      <button class="btn btn-build" onclick="loadAgentPerfTimeline()" id="btn-ap-timeline">▶ Show</button>
+      <span id="agent-perf-timeline-summary" style="font-size:12px;color:var(--t3);font-family:var(--fm)"></span>
+    </div>
+    <div class="chart-wrap" style="margin-bottom:0;margin-top:8px">
+      <div class="chart-title">Team Performance Timeline — invocations &amp; outcome-match</div>
+      <div class="chart-box" style="height:300px"><canvas id="agent-perf-timeline-chart"></canvas></div>
+    </div>
+    <div id="agent-perf-timeline-empty" class="empty" style="display:none">No agent activity recorded in this period.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Section: Agent Builds
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="section" id="sec-agent-builds">
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">Agent Builds</div>
+      <div class="page-sub">AgentOps run history, scorecards, grounding trend, failure heatmap, token usage, skill versions</div>
+    </div>
+  </div>
+  <div id="ab-grid" class="ab-grid">
+    <div class="loading">Loading…</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Section: Agent Panel (16-day simulation)
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="section rita-parity" id="sec-agent-panel">
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">Agent Panel</div>
+      <div class="page-sub">Step through a multi-agent investment decision on ASML — April 2026</div>
+    </div>
+    <div class="hdr-actions">
+      <span id="agent-panel-status" class="badge neu">Ready</span>
+    </div>
+  </div>
+
+  <!-- Narrator (50% width) + 5 agent-state widgets — single row -->
+  <div style="display:grid;grid-template-columns:15fr 2fr 2fr 2fr 2fr 2fr;gap:10px;margin-bottom:14px;align-items:stretch">
+    <div id="ap-narrator-card" class="card">
+      <div class="card-hdr">
+        <span class="card-title" id="ap-narrator-title">ABOUT THIS DEMO</span>
+      </div>
+      <div id="ap-narrator-text" class="card-body" style="font-size:12px;line-height:1.5;color:var(--t2);min-height:32px"></div>
+    </div>
+    <div class="card" style="padding:8px">
+      <div class="card-title" style="font-size:0.7rem;margin-bottom:3px">Compliance Gate</div>
+      <div id="ap-compliance" style="font-weight:700;font-size:0.85rem">PENDING</div>
+    </div>
+    <div class="card" style="padding:8px">
+      <div class="card-title" style="font-size:0.7rem;margin-bottom:3px">Context</div>
+      <div id="ap-regime" style="font-size:11px;color:var(--t2)">—</div>
+    </div>
+    <div class="card" style="padding:8px">
+      <div class="card-title" style="font-size:0.7rem;margin-bottom:3px">Strategy</div>
+      <div id="ap-policy" style="font-size:10px;color:var(--t2)">—</div>
+    </div>
+    <div class="card" style="padding:8px">
+      <div class="card-title" style="font-size:0.7rem;margin-bottom:3px">Probability</div>
+      <div id="ap-probability" style="font-size:13px;font-weight:700">—</div>
+    </div>
+    <div class="card" style="padding:8px">
+      <div class="card-title" style="font-size:0.7rem;margin-bottom:3px">Agent Decision</div>
+      <div id="ap-proposal" style="font-size:12px;font-weight:700">—</div>
+    </div>
+  </div>
+
+  <!-- Chart + Right panel row -->
+  <div style="display:grid;grid-template-columns:1fr 280px;gap:14px;margin-bottom:14px">
+    <div class="card">
+      <div class="chart-box h220"><canvas id="ap-chart"></canvas></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <!-- Run Date + controls in one card -->
+      <div class="card" style="padding:10px">
+        <div class="card-title" style="font-size:0.7rem;margin-bottom:4px">Run Date</div>
+        <div id="ap-run-date" style="font-size:13px;font-weight:700;color:var(--t2);margin-bottom:10px">—</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-build btn-sm" id="ap-run-btn" onclick="agentPanelStep()">▶ Run Day</button>
+          <button class="btn btn-ghost btn-sm" onclick="resetAgentPanel()">↺ Reset</button>
+        </div>
+      </div>
+      <!-- HITL — shown only when PM proposes a BUY -->
+      <div id="ap-hitl-panel" style="display:none">
+        <div class="card" style="border-color:var(--warn-bd);background:var(--warn-bg)">
+          <div class="card-hdr">
+            <span class="card-title" style="color:var(--warn);font-size:0.75rem">◈ Human-in-the-Loop</span>
+          </div>
+          <div id="ap-hitl-summary" style="font-size:12px;color:var(--t2);margin-bottom:10px;line-height:1.5"></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-build btn-sm" onclick="approveAgentProposal()">✓ Approve</button>
+            <button class="btn btn-ghost btn-sm" style="border-color:var(--danger-bd);color:var(--danger)" onclick="rejectAgentProposal()">✕ Reject</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audit table -->
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">Reasoning Audit Trail</span></div>
+    <div class="tbl-wrap">
+      <table class="data-table">
+        <thead><tr>
+          <th>Date</th><th>Context</th><th>Strategy</th><th>Probability</th><th>Portfolio Manager</th><th>Compliance</th>
+        </tr></thead>
+        <tbody id="ap-audit-body"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<!-- Chart expand modal -->
+<div id="chart-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);align-items:center;justify-content:center;cursor:pointer;" onclick="this.style.display='none'">
+  <div style="background:var(--surface);border-radius:10px;padding:20px;max-width:90vw;max-height:90vh;overflow:auto;" onclick="event.stopPropagation()">
+    <div id="chart-modal-title" style="font-family:var(--fm);font-size:11px;color:var(--t3);margin-bottom:10px;"></div>
+    <img id="chart-modal-img" style="max-width:100%;border-radius:6px;">
+  </div>
+</div>
+
+<!-- Agent Builds chart expand modal (mirrors ops.html) -->
+<div id="ab-chart-modal" onclick="closeChartModal()" style="
+  display:none;position:fixed;inset:0;z-index:9999;
+  background:rgba(0,0,0,0.72);
+  align-items:center;justify-content:center;cursor:zoom-out;">
+  <div onclick="event.stopPropagation()" style="
+    background:var(--surface);border-radius:var(--r);
+    padding:24px;width:94vw;max-width:94vw;max-height:96vh;
+    overflow:auto;position:relative;box-sizing:border-box;">
+    <button onclick="closeChartModal()" style="
+      position:absolute;top:10px;right:14px;
+      background:none;border:none;font-size:22px;
+      cursor:pointer;color:var(--t2);line-height:1;">✕</button>
+    <div id="ab-chart-modal-title" style="font-family:var(--fs);font-size:16px;font-weight:600;margin-bottom:16px;padding-right:28px;color:var(--t1)"></div>
+    <img id="ab-chart-modal-img" style="width:100%;max-height:88vh;display:block;border-radius:4px;object-fit:contain;" />
+  </div>
+</div>
+<script>document.addEventListener('keydown', e => { if (e.key === 'Escape' && window.closeChartModal) closeChartModal(); });</script>
+
+<script>
+(function(){
+  var KEY='rita_nav_collapsed';
+  var btn=document.getElementById('nav-toggle');
+  var shell=document.querySelector('.shell');
+  var sidebar=document.querySelector('.sidebar');
+  if(!btn||!shell||!sidebar)return;
+  if(window.innerWidth>768&&localStorage.getItem(KEY)==='1')shell.classList.add('nav-collapsed');
+  btn.addEventListener('click',function(){
+    if(window.innerWidth>768){
+      var c=shell.classList.toggle('nav-collapsed');
+      localStorage.setItem(KEY,c?'1':'0');
+    } else {
+      sidebar.classList.toggle('open');
+      document.body.classList.toggle('nav-open');
+    }
+  });
+  document.addEventListener('click',function(e){
+    if(document.body.classList.contains('nav-open')&&!sidebar.contains(e.target)&&e.target!==btn){
+      sidebar.classList.remove('open');document.body.classList.remove('nav-open');
+    }
+  });
+})();
+</script>
+<script type="module" src="./js/invest-game/main.js"></script>
+<script type="module" src="./js/investgame-app/main.js"></script>
+</body>
+</html>

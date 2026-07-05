@@ -94,8 +94,14 @@ def test_endpoint_counts_recorded_invocations(client, db_session):
 # ---------------------------------------------------------------------------
 
 def test_empty_table_all_seven_with_null_rate_not_zero(client):
-    """Empty agent_performance → 7 agents, count 0, rate None (NOT 0.0)."""
-    resp = client.get(_ENDPOINT)
+    """Empty agent_performance → 7 agents, count 0, rate None (NOT 0.0).
+
+    Isolated from the Phase 3 RL bridge: a trained-policy metrics file on disk
+    (agent_perf_v2_*.json) would otherwise surface live invocations for the
+    Execution Analyst, so we stub the loader to validate the pure empty-DB path.
+    """
+    with patch("rita.api.experience.rita._load_v2_agent_metrics", return_value={}):
+        resp = client.get(_ENDPOINT)
     assert resp.status_code == 200
     agents = resp.json()["agents"]
     assert len(agents) == 7

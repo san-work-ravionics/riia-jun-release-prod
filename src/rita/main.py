@@ -441,10 +441,16 @@ def mobile():
     return FileResponse(_path)
 
 
-@app.get("/onboarding", include_in_schema=False)
-def onboarding():
+@app.get("/journey", include_in_schema=False)
+def journey():
     _path = Path(__file__).parent.parent.parent / "mobileapp" / "investor-flow" / "v2" / "invest-dashboard.html"
     return FileResponse(_path)
+
+
+@app.get("/onboarding", include_in_schema=False)
+def onboarding_redirect():
+    # Legacy path — the page now lives inside the Invest Game app as "Journey".
+    return RedirectResponse(url="/journey", status_code=301)
 
 
 @app.get("/health", tags=["observability"])

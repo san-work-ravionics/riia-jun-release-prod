@@ -253,8 +253,15 @@ def chat(req: ChatRequest, db: Session = Depends(get_db)) -> dict:
     # Feature 32 — fire-and-forget agent performance instrumentation.
     # Off the critical path (background thread), swallows all errors, never
     # mutates the response below. Only fires for the 7 mapped agent intents.
+    # Phase 4: capture the implied directional call (+ instrument) so the outcome
+    # backfill can later judge whether the recommendation came true.
     if not result.low_confidence:
-        record_agent_performance(result)
+        try:
+            from rita.core.agent_outcomes import derive_recommendation
+            recommendation = derive_recommendation(result.intent.name, inst, df)
+        except Exception:
+            recommendation = None
+        record_agent_performance(result, recommendation=recommendation)
 
     latency_ms = (_time.perf_counter() - t0) * 1000
     status = "low_confidence" if result.low_confidence else "success"

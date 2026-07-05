@@ -98,7 +98,7 @@ class ChatSettings(BaseSettings):
     model_config = SettingsConfigDict(extra="forbid")
 
     # Local path to the sentence-transformers/all-MiniLM-L6-v2 snapshot.
-    # Override via RITA_CHAT__EMBED_MODEL_PATH env var or base.yaml.
+    # Override via RITA_CHAT_EMBED_MODEL_PATH env var or base.yaml.
     # When set to a local directory SentenceTransformer() loads offline — no
     # HuggingFace network call is ever made.
     embed_model_path: str = (
@@ -209,6 +209,8 @@ class Settings(BaseSettings):
             merged.setdefault("data", {})["output_dir"] = v
         if (v := os.environ.get("RITA_MODEL_PATH")):
             merged.setdefault("model", {})["path"] = v
+        if (v := os.environ.get("RITA_CHAT_EMBED_MODEL_PATH")):
+            merged.setdefault("chat", {})["embed_model_path"] = v
 
         merged["env"] = rita_env
         return merged

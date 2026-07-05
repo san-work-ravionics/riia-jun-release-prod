@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-06-21T18:25:15",
-  "total_runs": 72,
+  "generated_at": "2026-07-05T07:57:46",
+  "total_runs": 76,
   "per_role": {
     "pm": {
       "run_count": 30,
@@ -60,8 +60,8 @@
       "fail": 0
     },
     "invest-game": {
-      "run_count": 36,
-      "pass": 34,
+      "run_count": 40,
+      "pass": 38,
       "pass_with_warnings": 1,
       "fail": 1
     },
@@ -402,7 +402,7 @@
         "engineer": 1
       }
     },
-    "GHCR_PAT expired \u00e2\u20ac\u201d PATTERN-003 recurrence; rotated and retried": {
+    "GHCR_PAT expired \u2014 PATTERN-003 recurrence; rotated and retried": {
       "total": 1,
       "recent_fires": 1,
       "by_role": {
@@ -427,27 +427,11 @@
   "skill_version_history": [
     {
       "skill_file": "project-office/skills/skill-add-rita-feature.md",
-      "last_updated": "07a6aab",
+      "last_updated": "a6dc791",
       "recent_commits": [
         {
-          "hash": "07a6aab",
-          "message": "feat(ops): Feature 18 complete \u00e2\u20ac\u201d skill-based approach revision + drift API tier gap close"
-        },
-        {
-          "hash": "8419a21",
-          "message": "fix(agent-ops): extend FC-TIER + FC-API-SIG gates to rita/fno/ops skills; add mobile relocation gate"
-        },
-        {
-          "hash": "1442756",
-          "message": "fix(agent-ops): FC-001 self-verify grep + FC-IMP path-depth check in all 3 skill files"
-        },
-        {
-          "hash": "2f09e2c",
-          "message": "fix(agent-ops): improve skill rules for FC-001, engineer first-pass, CSAT"
-        },
-        {
-          "hash": "9f306e4",
-          "message": "chore(skills): add FC-MERGE gate to all 3 dashboard skill DoDs"
+          "hash": "a6dc791",
+          "message": "Initial Aug release: Feature 32 Phases 3-5 workspace"
         }
       ],
       "improvement_applied": "FC-001 v4: self-verify grep added to spec-update step. FC-IMP v3: path-depth verification added. FC-TIER v1 + FC-API-SIG v1: system-tier banned-endpoint grep gate and api() POST positional-signature gate added before git add (matches ds skill). Root cause: FC-TIER and FC-API-SIG were ds-only; extended to all 3 dashboard skills.",
@@ -456,27 +440,11 @@
     },
     {
       "skill_file": "project-office/skills/skill-add-fno-feature.md",
-      "last_updated": "07a6aab",
+      "last_updated": "a6dc791",
       "recent_commits": [
         {
-          "hash": "07a6aab",
-          "message": "feat(ops): Feature 18 complete \u00e2\u20ac\u201d skill-based approach revision + drift API tier gap close"
-        },
-        {
-          "hash": "8419a21",
-          "message": "fix(agent-ops): extend FC-TIER + FC-API-SIG gates to rita/fno/ops skills; add mobile relocation gate"
-        },
-        {
-          "hash": "1442756",
-          "message": "fix(agent-ops): FC-001 self-verify grep + FC-IMP path-depth check in all 3 skill files"
-        },
-        {
-          "hash": "2f09e2c",
-          "message": "fix(agent-ops): improve skill rules for FC-001, engineer first-pass, CSAT"
-        },
-        {
-          "hash": "9f306e4",
-          "message": "chore(skills): add FC-MERGE gate to all 3 dashboard skill DoDs"
+          "hash": "a6dc791",
+          "message": "Initial Aug release: Feature 32 Phases 3-5 workspace"
         }
       ],
       "improvement_applied": "FC-001 v4: self-verify grep. FC-IMP v3: path-depth check. FC-TIER v1 + FC-API-SIG v1: banned system-tier endpoint grep gate + api() POST signature gate added (matches ds skill).",
@@ -485,27 +453,11 @@
     },
     {
       "skill_file": "project-office/skills/skill-add-ops-feature.md",
-      "last_updated": "7b2b215",
+      "last_updated": "a6dc791",
       "recent_commits": [
         {
-          "hash": "7b2b215",
-          "message": "fix(agent-ops): FC-HTML-CSS gates in ops skill \u00e2\u20ac\u201d design system class ref + SECTIONS array + no-display-none"
-        },
-        {
-          "hash": "07a6aab",
-          "message": "feat(ops): Feature 18 complete \u00e2\u20ac\u201d skill-based approach revision + drift API tier gap close"
-        },
-        {
-          "hash": "8419a21",
-          "message": "fix(agent-ops): extend FC-TIER + FC-API-SIG gates to rita/fno/ops skills; add mobile relocation gate"
-        },
-        {
-          "hash": "1442756",
-          "message": "fix(agent-ops): FC-001 self-verify grep + FC-IMP path-depth check in all 3 skill files"
-        },
-        {
-          "hash": "2f09e2c",
-          "message": "fix(agent-ops): improve skill rules for FC-001, engineer first-pass, CSAT"
+          "hash": "a6dc791",
+          "message": "Initial Aug release: Feature 32 Phases 3-5 workspace"
         }
       ],
       "improvement_applied": "FC-HTML-CSS v1: Step 4b added with ops design system CSS class table (kpi-strip/kpi/kpi-ey/kpi-val/tbl-wrap), banned class list (kpi-row/kpi-card/data-table), no-display-none rule, SECTIONS array grep gate. 3 new DoD checklist items. Root cause: run-20260524-1517 engineer generated non-existent CSS classes; section invisible due to display:none; SECTIONS array not updated.",
@@ -538,6 +490,38 @@
     }
   ],
   "game_sessions": [
+    {
+      "run_id": "20260705-0531",
+      "request": "Invest game: ASML over 7 days",
+      "overall_status": "pass",
+      "duration_minutes": 0.1,
+      "day_count": 7,
+      "flagged_count": 0
+    },
+    {
+      "run_id": "20260705-0517",
+      "request": "Invest game: ASML over 7 days",
+      "overall_status": "pass",
+      "duration_minutes": 0.1,
+      "day_count": 7,
+      "flagged_count": 0
+    },
+    {
+      "run_id": "20260705-0514",
+      "request": "Invest game: NVIDIA over 7 days",
+      "overall_status": "pass",
+      "duration_minutes": 0.2,
+      "day_count": 7,
+      "flagged_count": 0
+    },
+    {
+      "run_id": "20260704-2341",
+      "request": "Invest game: ASML over 7 days",
+      "overall_status": "pass",
+      "duration_minutes": 0.1,
+      "day_count": 7,
+      "flagged_count": 0
+    },
     {
       "run_id": "20260620-0832",
       "request": "Invest game: ASML over 7 days",
@@ -812,9 +796,9 @@
     }
   ],
   "task_completion": {
-    "tsr": 0.861,
-    "first_attempt_success_rate": 0.861,
-    "partial_completion_rate": 0.125,
+    "tsr": 0.868,
+    "first_attempt_success_rate": 0.868,
+    "partial_completion_rate": 0.118,
     "abandonment_rate": 0.0
   },
   "quality": {
@@ -825,7 +809,7 @@
     "csat_count": 18,
     "planning_accuracy_rate": 0.833,
     "recent_planning_accuracy_rate": 1.0,
-    "grounding_pass_rate": 0.88
+    "grounding_pass_rate": 0.886
   },
   "token_forecasting": {
     "avg_forecast_error_pct": 15.7,
@@ -860,15 +844,15 @@
         "modifier": 0.8
       },
       "invest-game": {
-        "run_count": 36,
-        "avg_tokens": 7700,
+        "run_count": 40,
+        "avg_tokens": 7230,
         "modifier": 1.1
       }
     }
   },
   "efficiency": {
-    "avg_duration_minutes": 27,
-    "avg_tokens_per_run": 49808,
+    "avg_duration_minutes": 26,
+    "avg_tokens_per_run": 47345,
     "avg_retry_count": 0.03,
     "avg_time_saved_hours": 7.6
   },
@@ -878,7 +862,7 @@
     "loop_event_total": 0
   },
   "hitl": {
-    "escalation_rate": 0.014,
+    "escalation_rate": 0.013,
     "avg_corrections_per_run": 0.03,
     "total_hitl_events": 2
   },
@@ -889,52 +873,52 @@
   },
   "api_metrics": {
     "available": true,
-    "total_calls": 3400,
-    "unique_endpoints": 162,
-    "overall_error_rate_pct": 10.06,
-    "error_rate_5xx_pct": 0.29,
+    "total_calls": 13777,
+    "unique_endpoints": 176,
+    "overall_error_rate_pct": 8.33,
+    "error_rate_5xx_pct": 0.44,
     "top_5_by_calls": [
-      {
-        "path": "/progress",
-        "method": "GET",
-        "count": 393,
-        "p50_ms": 16.0,
-        "p95_ms": 735.0,
-        "error_count": 0
-      },
       {
         "path": "/api/v1/experience/rita/geography-overview",
         "method": "GET",
-        "count": 378,
-        "p50_ms": 141.0,
-        "p95_ms": 1110.0,
+        "count": 1352,
+        "p50_ms": 9.7,
+        "p95_ms": 721.2,
         "error_count": 0
       },
       {
-        "path": "/api/experience/invest-game/run-day",
-        "method": "POST",
-        "count": 261,
-        "p50_ms": 0.0,
-        "p95_ms": 16.0,
-        "error_count": 0
-      },
-      {
-        "path": "/api/v1/market-signals",
+        "path": "/progress",
         "method": "GET",
-        "count": 247,
-        "p50_ms": 203.0,
-        "p95_ms": 1344.0,
+        "count": 1163,
+        "p50_ms": 5.7,
+        "p95_ms": 447.1,
         "error_count": 0
       },
       {
         "path": "/api/v1/commentary",
         "method": "POST",
-        "count": 238,
-        "p50_ms": 516.0,
-        "p95_ms": 8844.0,
-        "error_count": 18
+        "count": 798,
+        "p50_ms": 127.2,
+        "p95_ms": 2895.6,
+        "error_count": 108
+      },
+      {
+        "path": "/api/v1/market-signals",
+        "method": "GET",
+        "count": 723,
+        "p50_ms": 187.0,
+        "p95_ms": 862.7,
+        "error_count": 0
+      },
+      {
+        "path": "/api/v1/experience/rita/strategy-comparison",
+        "method": "GET",
+        "count": 556,
+        "p50_ms": 6.9,
+        "p95_ms": 16.9,
+        "error_count": 0
       }
     ],
-    "generated_at": "2026-06-21T16:25:15.271517+00:00"
+    "generated_at": "2026-07-05T05:57:46.159090+00:00"
   }
 }

@@ -1,27 +1,7 @@
-// ── Learnings ───────────────────────────────────────────────
-import { api } from './api.js';
-import { mkChart, C } from './charts.js';
-
-export function toggleLearnCard(id) {
-  const body = document.getElementById('learn-body-' + id);
-  const chev = document.getElementById('learn-chevron-' + id);
-  if (!body) return;
-  const open = body.style.display !== 'none';
-  body.style.display = open ? 'none' : 'block';
-  if (chev) chev.textContent = open ? '▶' : '▼';
-}
-
-export async function loadLearnings() {
-  try {
-    await loadAgentWorkflow();
-  } catch (e) {
-    console.warn('agent-workflow render error', e);
-  }
-}
-
-// ── Investment Workflow & Agents ─────────────────────────────
-// Mirrors the DS Lab CRISP-DM tab pattern (switchConceptTab / _noData),
-// but targets the `aw-` prefixed panels inside #sec-learnings.
+// ── Invest Game App — Concepts (Investment Workflow & Agents) ─────────────────
+// Ported from rita/learnings.js — agent workflow section (8 tabs, 2 charts each).
+import { api } from '../shared/api.js';
+import { mkChart, C } from '../shared/charts.js';
 
 export function switchAgentTab(agentKey, el) {
   document.querySelectorAll('.concept-tab').forEach(t => t.classList.remove('active'));
@@ -41,8 +21,6 @@ function _scales(extraX = {}, extraY = {}) {
   };
 }
 
-// Defensive numeric coalescing: returns null (not 0) for missing/blank so
-// Chart.js renders gaps when spanGaps:false.
 function _num(v) {
   if (v == null || v === '') return null;
   const n = parseFloat(v);
@@ -68,38 +46,42 @@ function _histogram(vals, nBins) {
   return { labels, counts };
 }
 
-async function loadAgentWorkflow() {
+export async function loadConcepts() {
   const statusEl = document.getElementById('aw-status');
-  if (statusEl) statusEl.textContent = 'Loading…';
+  if (statusEl) statusEl.textContent = 'Loading...';
 
-  const inst = (localStorage.getItem('ritaInstrument') || 'ASML').toUpperCase();
-  const [perfRes, sigRes, btdRes, shapRes, histRes] = await Promise.allSettled([
-    api('/api/v1/performance-summary'),
-    api(`/api/v1/market-signals?timeframe=daily&periods=252&instrument=${inst}`),
-    api(`/api/v1/experience/rita/backtest-daily?instrument=${inst}`),
-    api('/api/v1/shap'),
-    api(`/api/v1/experience/rita/training-history?instrument=${inst}`),
-  ]);
+  try {
+    const inst = (localStorage.getItem('ritaInstrument') || 'ASML').toUpperCase();
+    const [perfRes, sigRes, btdRes, shapRes, histRes] = await Promise.allSettled([
+      api('/api/v1/performance-summary'),
+      api(`/api/v1/market-signals?timeframe=daily&periods=252&instrument=${inst}`),
+      api(`/api/v1/experience/rita/backtest-daily?instrument=${inst}`),
+      api('/api/v1/shap'),
+      api(`/api/v1/experience/rita/training-history?instrument=${inst}`),
+    ]);
 
-  const perf = perfRes.status === 'fulfilled' ? perfRes.value : null;
-  const sig  = sigRes.status === 'fulfilled' && Array.isArray(sigRes.value) ? sigRes.value : [];
-  const btd  = btdRes.status === 'fulfilled' ? btdRes.value : null;
-  const shap = shapRes.status === 'fulfilled' ? shapRes.value : null;
-  const hist = histRes.status === 'fulfilled' && Array.isArray(histRes.value) ? histRes.value : [];
+    const perf = perfRes.status === 'fulfilled' ? perfRes.value : null;
+    const sig  = sigRes.status === 'fulfilled' && Array.isArray(sigRes.value) ? sigRes.value : [];
+    const btd  = btdRes.status === 'fulfilled' ? btdRes.value : null;
+    const shap = shapRes.status === 'fulfilled' ? shapRes.value : null;
+    const hist = histRes.status === 'fulfilled' && Array.isArray(histRes.value) ? histRes.value : [];
 
-  if (statusEl) statusEl.textContent = '';
+    if (statusEl) statusEl.textContent = '';
 
-  renderGoal(perf, sig);
-  renderResearch(sig);
-  renderSentiment(sig);
-  renderTechnical(sig);
-  renderStrategy(sig);
-  renderScenario(btd);
-  renderExecution(shap, btd);
-  renderOutcome(hist);
+    renderGoal(perf, sig);
+    renderResearch(sig);
+    renderSentiment(sig);
+    renderTechnical(sig);
+    renderStrategy(sig);
+    renderScenario(btd);
+    renderExecution(shap, btd);
+    renderOutcome(hist);
+  } catch (e) {
+    if (statusEl) statusEl.textContent = 'Failed to load data';
+  }
 }
 
-// a1 — Initiation / Financial Goal: achieved Sharpe & Max DD vs targets
+// a1 — Initiation / Financial Goal
 function renderGoal(perf, sig) {
   const p = perf?.performance || perf || {};
   const sharpe = _num(p.sharpe_ratio ?? p.sharpe) ?? 0;
@@ -132,7 +114,7 @@ function renderGoal(perf, sig) {
   });
 }
 
-// a2 — Research Analyst: instrument close price trend + volume
+// a2 — Research Analyst
 function renderResearch(sig) {
   if (!sig.length) { _noData('aw-a2-c1'); _noData('aw-a2-c2'); return; }
   const labels = sig.map(r => r.date);
@@ -156,7 +138,7 @@ function renderResearch(sig) {
   });
 }
 
-// a3 — Sentiment Analyst: market regime via trend_score + Bollinger Band %B
+// a3 — Sentiment Analyst
 function renderSentiment(sig) {
   if (!sig.length) { _noData('aw-a3-c1'); _noData('aw-a3-c2'); return; }
   const labels = sig.map(r => r.date);
@@ -184,7 +166,7 @@ function renderSentiment(sig) {
   });
 }
 
-// a4 — Technical Analyst: RSI(14) with 60/30 bands + MACD line
+// a4 — Technical Analyst
 function renderTechnical(sig) {
   if (!sig.length) { _noData('aw-a4-c1'); _noData('aw-a4-c2'); return; }
   const labels = sig.map(r => r.date);
@@ -212,7 +194,7 @@ function renderTechnical(sig) {
   });
 }
 
-// a5 — Strategy Analyst: EMA crossover signal + ATR volatility
+// a5 — Strategy Analyst
 function renderStrategy(sig) {
   if (!sig.length) { _noData('aw-a5-c1'); _noData('aw-a5-c2'); return; }
   const labels = sig.map(r => r.date);
@@ -246,7 +228,7 @@ function renderStrategy(sig) {
   });
 }
 
-// a6 — Scenario Analyst: DDQN strategy vs Buy & Hold + drawdown
+// a6 — Scenario Analyst
 function renderScenario(btd) {
   const days = Array.isArray(btd) ? btd : (btd?.daily ?? []);
   if (!days.length) { _noData('aw-a6-c1'); _noData('aw-a6-c2'); return; }
@@ -275,7 +257,7 @@ function renderScenario(btd) {
   });
 }
 
-// a7 — Execution Analyst: feature importance (SHAP) + allocation timeline
+// a7 — Execution Analyst
 function renderExecution(shap, btd) {
   const rows = Array.isArray(shap) ? shap : (shap?.features ?? shap?.shap_values ?? []);
   if (!rows.length) { _noData('aw-a7-c1'); } else {
@@ -313,7 +295,7 @@ function renderExecution(shap, btd) {
   });
 }
 
-// a8 — Outcome Analyst: closed-loop backtest Sharpe/return + win rate across rounds
+// a8 — Outcome Analyst
 function renderOutcome(hist) {
   if (!hist.length) { _noData('aw-a8-c1'); _noData('aw-a8-c2'); return; }
   const labels = hist.map((r, i) => `R${r.round ?? i + 1}`);
@@ -348,7 +330,7 @@ function renderOutcome(hist) {
   });
 }
 
-// ── Empty-state placeholder (ported from ds/concepts.js) ─────
+// Empty-state placeholder
 function _noData(canvasId) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
@@ -360,5 +342,5 @@ function _noData(canvasId) {
   ctx.fillStyle = '#8C877A';
   ctx.font = "11px 'IBM Plex Mono', monospace";
   ctx.textAlign = 'center';
-  ctx.fillText('No data — run the NIFTY pipeline first', canvas.width / 2, canvas.height / 2);
+  ctx.fillText('No data — run the pipeline first', canvas.width / 2, canvas.height / 2);
 }
