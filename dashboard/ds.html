@@ -316,6 +316,7 @@ tr:hover td{background:var(--surface2);}
     </div>
     <span class="logo-name">RITA</span>
     <span class="logo-sub">DS Lab</span>
+    <span class="logo-sub app-ver">v…</span>
   </a>
   <div class="topbar-mid">
     <span style="font-family:var(--fm);font-size:11px;color:var(--t3)">Data Scientist Workspace · Double DQN · Model Training · Analytics</span>
@@ -1703,5 +1704,6 @@ tr:hover td{background:var(--surface2);}
   });
 })();
 </script>
+<script>fetch('/health').then(r=>r.json()).then(d=>{document.querySelectorAll('.app-ver').forEach(e=>e.textContent='v'+d.version)}).catch(()=>{})</script>
 </body>
 </html>

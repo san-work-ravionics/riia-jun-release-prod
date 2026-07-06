@@ -462,7 +462,7 @@ if (window.self !== window.top) document.documentElement.classList.add('embedded
       <svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 2h4v4H2zM8 2h4v4H8zM2 8h4v4H2zM8 8h4v4H8z"/></svg>
     </div>
     <span class="logo-name">RITA</span>
-    <span class="logo-sub" style="margin-left:2px;">v1.0</span>
+    <span class="logo-sub app-ver" style="margin-left:2px;">v…</span>
   </a>
   <div class="t-sep"></div>
   <div class="t-crumb">Invest Game &rsaquo; <span>Journey</span></div>
@@ -1195,5 +1195,6 @@ if (window.self !== window.top) document.documentElement.classList.add('embedded
   go();
 </script>
 
+<script>fetch('/health').then(r=>r.json()).then(d=>{document.querySelectorAll('.app-ver').forEach(e=>e.textContent='v'+d.version)}).catch(()=>{})</script>
 </body>
 </html>

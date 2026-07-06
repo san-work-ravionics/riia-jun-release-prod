@@ -124,7 +124,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
       <svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 2h4v4H2zM8 2h4v4H8zM2 8h4v4H2zM8 8h4v4H8z"/></svg>
     </div>
     <span class="logo-name">RITA</span>
-    <span class="logo-ver">v1.0</span>
+    <span class="logo-ver app-ver">v…</span>
   </a>
   <div class="topbar-center">Risk Informed Investment Approach</div>
   <div class="topbar-right">
@@ -358,8 +358,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
 
 <!-- Footer -->
 <footer class="footer">
-  RITA v1.0 &nbsp;·&nbsp; Nifty 50 Double DQN &nbsp;·&nbsp; &copy; 2026 Ravionics
+  RITA <span class="app-ver">v…</span> &nbsp;·&nbsp; Nifty 50 Double DQN &nbsp;·&nbsp; &copy; 2026 Ravionics
 </footer>
 
+<script>fetch('/health').then(r=>r.json()).then(d=>{document.querySelectorAll('.app-ver').forEach(e=>e.textContent='v'+d.version)}).catch(()=>{})</script>
 </body>
 </html>
