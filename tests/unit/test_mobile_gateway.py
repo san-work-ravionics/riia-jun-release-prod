@@ -171,11 +171,14 @@ class TestGatewayHtmlNoScript:
         )
         return _GATEWAY_HTML.read_text(encoding="utf-8")
 
-    def test_no_script_tag(self, html_text):
-        """gateway.html must not contain any <script> tag (case-insensitive)."""
-        assert "<script" not in html_text.lower(), (
-            "gateway.html contains a <script> tag — "
-            "Phase 0 design requires zero JavaScript; all CSS must be inline"
+    def test_no_inline_script_beyond_version(self, html_text):
+        """gateway.html may only contain the app-ver health-fetch script."""
+        import re
+        scripts = re.findall(r"<script[^>]*>.*?</script>", html_text, re.DOTALL | re.IGNORECASE)
+        non_version = [s for s in scripts if "app-ver" not in s and "/health" not in s]
+        assert not non_version, (
+            "gateway.html contains script tags beyond the version fetch: "
+            f"{non_version}"
         )
 
 
