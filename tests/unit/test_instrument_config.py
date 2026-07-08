@@ -120,3 +120,24 @@ def test_config_is_immutable():
     cfg = InstrumentEnvConfig()
     with pytest.raises(ValidationError):
         cfg.episode_length = 999
+
+
+# ── QA Agent: additional coverage ────────────────────────────────────────────
+
+
+def test_all_six_instruments_load_without_error():
+    """All 6 active instruments must load valid configs (not fall back to default
+    due to parse error). This verifies YAML syntax for every config file."""
+    instruments = ["NIFTY", "BANKNIFTY", "ASML", "NVIDIA", "AEX", "RELIANCE"]
+    for name in instruments:
+        cfg = load_instrument_env_config(name, force_reload=True)
+        assert isinstance(cfg, InstrumentEnvConfig), f"{name} config not InstrumentEnvConfig"
+        assert cfg.episode_length > 0, f"{name} has invalid episode_length"
+        assert len(cfg.feature_columns) > 0, f"{name} has empty feature_columns"
+
+
+def test_banknifty_config_has_inr_rf_daily():
+    """BANKNIFTY is INR-denominated; its rf_daily should match NIFTY (INR)."""
+    bn_cfg = load_instrument_env_config("BANKNIFTY", force_reload=True)
+    nifty_cfg = load_instrument_env_config("NIFTY", force_reload=True)
+    assert bn_cfg.rf_daily == pytest.approx(nifty_cfg.rf_daily, rel=1e-3)

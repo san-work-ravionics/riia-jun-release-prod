@@ -205,3 +205,33 @@ def test_t5_info_insufficient_data():
     sc["technical"]["T5_per_regime_action_distribution"] = {"regime_blind": None}
     insight = next(i for i in generate_insights(sc) if i["parameter"] == "T5")
     assert insight["severity"] == "info"
+
+
+# ── QA Agent: additional path coverage ───────────────────────────────────────
+
+
+def test_f3_warn_over_hedging_bear_better_than_bull():
+    """F3 warn path: bear Sharpe > bull Sharpe indicates over-hedging outside
+    downturns — a distinct warn from poor-bear-Sharpe."""
+    sc = _base_scorecard()
+    sc["functional"]["F3_market_regime_performance"]["bear"] = {"sharpe": 1.5, "n_days": 30, "note": None}
+    sc["functional"]["F3_market_regime_performance"]["bull"] = {"sharpe": 0.5, "n_days": 40, "note": None}
+    insight = next(i for i in generate_insights(sc) if i["parameter"] == "F3")
+    assert insight["severity"] == "warn"
+    assert "over-hedging" in insight["message"].lower()
+
+
+def test_f2_boundary_exactly_minus_10pct():
+    """F2: MDD exactly at -10% boundary must be fail (v <= -0.10 in code)."""
+    sc = _base_scorecard()
+    sc["functional"]["F2_max_drawdown_test"] = {"value": -0.10, "healthy": False}
+    insight = next(i for i in generate_insights(sc) if i["parameter"] == "F2")
+    assert insight["severity"] == "fail"
+
+
+def test_all_insights_have_required_keys():
+    """Every insight dict must have parameter, label, severity, message."""
+    required_keys = {"parameter", "label", "severity", "message"}
+    insights = generate_insights(_base_scorecard())
+    for insight in insights:
+        assert required_keys.issubset(insight.keys()), f"Missing keys in {insight}"

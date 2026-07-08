@@ -103,3 +103,39 @@ def test_derives_daily_return_when_missing():
     out = classify_regimes(df, window=20)
     assert "market_regime" in out.columns
     assert out["market_regime"].isna().sum() == 0
+
+
+# ── QA Agent: additional edge-case coverage ──────────────────────────────────
+
+
+def test_all_nan_close_values_all_sideways():
+    """Edge case: all-NaN Close values must not raise and label everything sideways."""
+    idx = pd.date_range("2020-01-01", periods=60, freq="D")
+    df = pd.DataFrame({
+        "Close": np.full(60, np.nan),
+        "daily_return": np.full(60, np.nan),
+    }, index=idx)
+    out = classify_regimes(df, window=20)
+    assert "market_regime" in out.columns
+    assert (out["market_regime"] == REGIME_SIDEWAYS).all()
+
+
+def test_constant_close_all_sideways():
+    """Constant price -> zero daily_return -> zero SMA trend -> flat threshold
+    met -> all sideways. Must not divide by zero in trend computation."""
+    df = _make_price_path([100.0] * 60)
+    out = classify_regimes(df, window=20)
+    # After warm-up, trend is 0.0 -> flat -> sideways (pre-window rows are also sideways)
+    assert (out["market_regime"] == REGIME_SIDEWAYS).all()
+
+
+def test_single_regime_pure_bull():
+    """A smooth, sustained uptrend with low noise should produce only bull
+    labels (or bull + initial sideways warm-up). No bear labels expected."""
+    n = 200
+    prices = [100.0 * (1.001 ** i) for i in range(n)]
+    df = _make_price_path(prices)
+    out = classify_regimes(df, window=20)
+    # After the expanding-median has stabilized (~2x window), should be all bull or sideways
+    tail = out["market_regime"].iloc[80:]
+    assert REGIME_BEAR not in tail.values, f"pure uptrend should have no bear labels, got {tail.value_counts()}"
