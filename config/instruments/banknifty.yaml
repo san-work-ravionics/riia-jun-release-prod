@@ -10,6 +10,35 @@ training:
   n_seeds: 3
   episode_length: 252       # 1 trading year
 
+# Phase 3.6 (F32) — RIIATradingEnvV2 per-instrument hyperparameters.
+# INR instrument -> rf_daily = 7% annualised. Higher hedge cost + wider hedge
+# floor than NIFTY to reflect BANKNIFTY's higher intra-day volatility (index
+# swings breach the hedge floor faster than the broader market index).
+env:
+  hedge_cost_per_day: 0.0045
+  hedge_daily_floor: -0.02
+  dsr_eta: 0.004
+  rf_daily: 0.0002777777777777778   # 0.07 / 252
+  hard_mdd_limit: -0.10
+  mdd_terminal_penalty: -5.0
+  risk_tolerance_mdd:
+    low: -0.08
+    medium: -0.15
+    high: -0.25
+  episode_length: 252
+  feature_columns:
+    - daily_return
+    - rsi_14
+    - macd
+    - macd_signal
+    - bb_pct_b
+    - trend_score
+    - Close
+    - atr_14
+    - ema_ratio
+
 notes: >
   Higher intra-day volatility than NIFTY. Slightly higher exploration_pct
   to avoid the agent locking into a single allocation too early.
+  Phase 3.6: hedge_cost_per_day and hedge_daily_floor widened relative to
+  NIFTY's baseline to price in BANKNIFTY's higher realised volatility.

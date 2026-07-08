@@ -10,6 +10,34 @@ training:
   n_seeds: 3
   episode_length: 252       # 1 trading year
 
+# Phase 3.6 (F32) — RIIATradingEnvV2 per-instrument hyperparameters.
+# INR instrument -> rf_daily = 7% annualised (India 10Y govt bond yield proxy).
+env:
+  hedge_cost_per_day: 0.0036
+  hedge_daily_floor: -0.015
+  dsr_eta: 0.004
+  rf_daily: 0.0002777777777777778   # 0.07 / 252
+  hard_mdd_limit: -0.10
+  mdd_terminal_penalty: -5.0
+  risk_tolerance_mdd:
+    low: -0.08
+    medium: -0.15
+    high: -0.25
+  episode_length: 252
+  feature_columns:
+    - daily_return
+    - rsi_14
+    - macd
+    - macd_signal
+    - bb_pct_b
+    - trend_score
+    - Close
+    - atr_14
+    - ema_ratio
+
 notes: >
   Indian index. Trend-following regime; RSI and MACD signals historically
   reliable. Higher timesteps justified by the longer history (~6 000 rows).
+  Phase 3.6: baseline env config (matches pre-3.6 shared defaults) — NIFTY was
+  the closest to passing the 3.5.7 gate (Sharpe 0.611, MDD -8.4%), so its
+  calibration is the reference point for the other instruments.

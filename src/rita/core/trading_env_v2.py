@@ -1,4 +1,4 @@
-"""RITA Core — Trading Environment V2 (Feature 32, Phase 3 + 3.5)
+"""RITA Core — Trading Environment V2 (Feature 32, Phase 3 + 3.5 + 3.6)
 
 Scenario → Execution bridge. A SEPARATE, parallel environment to the golden
 ``RIIATradingEnv`` (``trading_env.py``) — which is the frozen June-release
@@ -22,6 +22,23 @@ Phase 3.5 reward realignment (2026-06-28):
   * Obs extended +2: running EMA moments (A, B) so the policy perceives the
     Sharpe state it is graded on (fixes POMDP F5).
 
+Phase 3.6 per-instrument config (2026-07-08):
+  * Trigger: Phase 3.5.7 retrain gate failed 0/4 instruments — a single set of
+    shared hyperparameters cannot capture the different market microstructures
+    across instruments (AEX mean-reverts, NIFTY trends, RELIANCE is high-vol
+    INR, ASML has an earnings-shock regime).
+  * ``__init__`` (and every V2 train/eval function) now accepts an optional
+    ``env_config: InstrumentEnvConfig | None``. All hyperparameters that were
+    module-level constants (hedge cost/floor, DSR eta, risk-free rate, hard MDD
+    limit + penalty, risk-tolerance thresholds, episode length, feature
+    columns) are read from ``self._config`` (or the equivalent local ``cfg``
+    in the standalone eval functions) instead.
+  * The module-level constants below are KEPT for backward compatibility —
+    they are what ``rita.core.instrument_config.DEFAULT_ENV_CONFIG`` is built
+    from, and ``env_config=None`` (the default everywhere) resolves to
+    exactly that default, so all pre-3.6 call sites and the existing 33 V2
+    tests behave identically.
+
 The golden ``train_agent`` / ``run_episode`` hardcode ``RIIATradingEnv`` and the
 3-action map, so V2 ships its OWN ``train_agent_v2`` / ``train_best_of_n_v2`` /
 ``run_episode_v2``. The shared, env-agnostic ``TrainingProgressCallback`` and
@@ -43,6 +60,7 @@ from gymnasium import spaces
 from stable_baselines3 import DQN
 from stable_baselines3.common.monitor import Monitor
 
+from rita.core.instrument_config import DEFAULT_ENV_CONFIG, InstrumentEnvConfig
 from rita.core.performance import compute_all_metrics
 from rita.core.trading_env import TrainingProgressCallback  # shared, env-agnostic
 from rita.logging_config import log_event
@@ -51,6 +69,12 @@ log = structlog.get_logger(__name__)
 
 
 # ── Reward / hedge hyper-params (calibration defaults — tunable) ───────────────
+# Phase 3.6: these are now DEFAULTS ONLY — ``instrument_config.DEFAULT_ENV_CONFIG``
+# is built from them, and every function below reads its actual working values
+# from an ``InstrumentEnvConfig`` (``self._config`` / local ``cfg``), never from
+# these module names directly. Kept in place for backward compatibility (some
+# tests import them directly) and as the single source of truth for the default.
+#
 # Map the Financial Goal categorical risk_tolerance → a max-drawdown threshold.
 # Used ONLY for tolerance_norm conditioning — the BREACH point is HARD_MDD_LIMIT.
 RISK_TOLERANCE_MDD = {"low": -0.08, "medium": -0.15, "high": -0.25}
@@ -67,7 +91,9 @@ MDD_TERMINAL_PENALTY = -5.0
 
 # Differential Sharpe Ratio (Moody & Saffell 1998) hyper-params.
 ETA      = 0.004    # EMA decay for running moments (A, B)
-DSR_EPS  = 1e-12    # variance floor to avoid division by zero at episode start
+DSR_EPS  = 1e-12    # variance floor to avoid division by zero at episode start — not
+                     # per-instrument configurable (numerical safety constant, not a
+                     # calibration hyper-param).
 RF_DAILY = 0.07 / 252  # daily risk-free rate (annualised 7%)
 
 # Normalised tolerance feature for the observation so the policy can CONDITION on the
@@ -101,6 +127,27 @@ _ACTION_LABEL = {
     3: ("apply a protective hedge", "stay invested but add downside protection"),
 }
 
+# Structural indicator columns the observation formula is hard-coded against.
+# Always required (dropna) regardless of instrument feature_columns config —
+# only the OPTIONAL ema_ratio 9th feature is gated by feature_columns (Phase 3.6).
+_STRUCTURAL_BASE_COLS = [
+    "daily_return", "rsi_14", "macd", "macd_signal",
+    "bb_pct_b", "trend_score", "Close", "atr_14",
+]
+
+
+def _ema_ratio_enabled(df: pd.DataFrame, cfg: InstrumentEnvConfig) -> bool:
+    """Whether the optional ema_ratio 9th feature is usable for this df + config.
+
+    Phase 3.6: instruments where ema_ratio isn't predictive can drop it via
+    ``feature_columns`` (design decision — see instrument_config.py docstring).
+    """
+    return (
+        "ema_ratio" in df.columns
+        and not df["ema_ratio"].isna().all()
+        and "ema_ratio" in cfg.feature_columns
+    )
+
 
 # ── Gymnasium trading environment V2 ──────────────────────────────────────────
 
@@ -124,26 +171,35 @@ class RIIATradingEnvV2(gym.Env):
         Differential Sharpe Ratio (Moody & Saffell 1998) — dense per-step
         signal that directly optimises the Sharpe ratio. Hard episode
         termination with MDD_TERMINAL_PENALTY at HARD_MDD_LIMIT (-10%).
+
+    Phase 3.6: all calibration hyper-params come from ``env_config``
+    (an ``InstrumentEnvConfig``) instead of module-level constants.
+    ``env_config=None`` (the default) resolves to
+    ``instrument_config.DEFAULT_ENV_CONFIG`` — numerically identical to the
+    pre-3.6 module constants, so existing callers are unaffected.
     """
 
     metadata = {"render_modes": []}
 
-    def __init__(self, df: pd.DataFrame, episode_length: int = 252,
-                 fixed_tolerance: str | None = None):
+    def __init__(self, df: pd.DataFrame, episode_length: int | None = None,
+                 fixed_tolerance: str | None = None,
+                 env_config: InstrumentEnvConfig | None = None):
         super().__init__()
 
-        self._base_cols = [
-            "daily_return", "rsi_14", "macd", "macd_signal",
-            "bb_pct_b", "trend_score", "Close", "atr_14",
-        ]
-        has_ema_ratio = "ema_ratio" in df.columns and not df["ema_ratio"].isna().all()
+        self._config = env_config or DEFAULT_ENV_CONFIG
+
+        self._base_cols = list(_STRUCTURAL_BASE_COLS)
+        has_ema_ratio = _ema_ratio_enabled(df, self._config)
         self._use_ema_ratio = has_ema_ratio
         # golden 8 (or 9 w/ ema) + A + B + dd_vs_hard_limit + is_hedged + tolerance_norm
         self._n_features = (9 if has_ema_ratio else 8) + 5
 
         required_cols = self._base_cols + (["ema_ratio"] if has_ema_ratio else [])
         self.df = df.dropna(subset=required_cols).copy()
-        self.episode_length = min(episode_length, len(self.df) - 2)
+        effective_episode_length = (
+            episode_length if episode_length is not None else self._config.episode_length
+        )
+        self.episode_length = min(effective_episode_length, len(self.df) - 2)
 
         # fixed_tolerance pins the risk level (used for deterministic eval);
         # None → sampled per episode in reset() so the policy generalises.
@@ -163,7 +219,7 @@ class RIIATradingEnvV2(gym.Env):
         self._peak_value = 1.0
         self._current_allocation = 0.0
         self._is_hedged = 0.0
-        self._mdd_tolerance = RISK_TOLERANCE_MDD["medium"]
+        self._mdd_tolerance = self._config.risk_tolerance_mdd["medium"]
         self._tolerance_level = "medium"
         self._portfolio_history: list[float] = []
         self._A = 0.0  # DSR running mean of excess returns
@@ -190,7 +246,7 @@ class RIIATradingEnvV2(gym.Env):
         obs_list.append(float(np.clip(self._A * 100, -3, 3)))
         obs_list.append(float(np.clip(self._B * 1000, 0, 3)))
         # Drawdown relative to the hard MDD limit (both negative → positive ratio).
-        dd_vs_limit = self._current_drawdown() / HARD_MDD_LIMIT
+        dd_vs_limit = self._current_drawdown() / self._config.hard_mdd_limit
         obs_list.append(float(np.clip(dd_vs_limit, 0, 3)))
         obs_list.append(float(self._is_hedged))
         obs_list.append(_tol_norm(self._mdd_tolerance))
@@ -211,7 +267,7 @@ class RIIATradingEnvV2(gym.Env):
         # risk levels and dd_vs_tolerance carries real signal.
         level = self._fixed_tolerance or _TOLERANCE_LEVELS[int(self.np_random.integers(0, 3))]
         self._tolerance_level = level
-        self._mdd_tolerance = RISK_TOLERANCE_MDD[level]
+        self._mdd_tolerance = self._config.risk_tolerance_mdd[level]
         self._portfolio_history = [1.0]
         return self._get_obs(), {}
 
@@ -227,8 +283,8 @@ class RIIATradingEnvV2(gym.Env):
         # Hedged: truncate per-day downside (protective-put payoff approx) and pay
         # the amortised carry. Unhedged: raw exposure.
         if hedged:
-            effective_ret = max(daily_ret, HEDGE_DAILY_FLOOR)
-            portfolio_ret = allocation * effective_ret - HEDGE_COST_PER_DAY
+            effective_ret = max(daily_ret, self._config.hedge_daily_floor)
+            portfolio_ret = allocation * effective_ret - self._config.hedge_cost_per_day
         else:
             portfolio_ret = allocation * daily_ret
 
@@ -240,7 +296,7 @@ class RIIATradingEnvV2(gym.Env):
         self._peak_value = max(self._peak_value, self._portfolio_value)
 
         # Phase 3.5 (F1+F5): Differential Sharpe Ratio reward.
-        R_t = portfolio_ret - RF_DAILY
+        R_t = portfolio_ret - self._config.rf_daily
         delta_A = R_t - self._A
         var = self._B - self._A ** 2
         if var > DSR_EPS:
@@ -249,15 +305,15 @@ class RIIATradingEnvV2(gym.Env):
             reward = 0.0
 
         # Update running moments.
-        self._A += ETA * (R_t - self._A)
-        self._B += ETA * (R_t ** 2 - self._B)
+        self._A += self._config.dsr_eta * (R_t - self._A)
+        self._B += self._config.dsr_eta * (R_t ** 2 - self._B)
 
-        # Phase 3.5 (F3): hard MDD constraint at -10%.
+        # Phase 3.5 (F3): hard MDD constraint at -10% (per-instrument configurable).
         current_dd = self._current_drawdown()
         terminated = False
-        if current_dd <= HARD_MDD_LIMIT:
+        if current_dd <= self._config.hard_mdd_limit:
             terminated = True
-            reward = MDD_TERMINAL_PENALTY
+            reward = self._config.mdd_terminal_penalty
 
         self._step_idx += 1
         if not terminated and self._step_idx >= self.episode_length:
@@ -295,15 +351,18 @@ def train_agent_v2(
     seed: int = 42,
     model_name: str = "rita_ddqn_v2_model",
     progress_fn=None,
+    env_config: InstrumentEnvConfig | None = None,
 ) -> Tuple[DQN, TrainingProgressCallback]:
     """Train a Double-DQN agent on RIIATradingEnvV2 and save the model.
 
     Mirrors golden ``train_agent`` but binds ``RIIATradingEnvV2`` (4 actions).
+    ``env_config`` (Phase 3.6) is forwarded to the env constructor; ``None``
+    resolves to ``DEFAULT_ENV_CONFIG`` inside the env.
     """
     os.makedirs(output_dir, exist_ok=True)
     model_path = os.path.join(output_dir, model_name)
 
-    env = Monitor(RIIATradingEnvV2(train_df))
+    env = Monitor(RIIATradingEnvV2(train_df, env_config=env_config))
 
     model = DQN(
         policy="MlpPolicy",
@@ -344,6 +403,7 @@ def train_best_of_n_v2(
     progress_fn=None,
     eval_tolerance: str = "medium",
     test_df: pd.DataFrame | None = None,
+    env_config: InstrumentEnvConfig | None = None,
 ) -> "tuple[DQN, TrainingProgressCallback, dict]":
     """Train ``n_seeds`` V2 policies; keep the one with the best validation Sharpe.
 
@@ -353,6 +413,9 @@ def train_best_of_n_v2(
 
     If ``test_df`` is provided, the winner is also evaluated on the held-out test
     set and test metrics are included in the return dict (honest evaluation, F4).
+
+    ``env_config`` (Phase 3.6) is forwarded to every seed's training AND every
+    evaluation call — training/eval consistency (same config both paths).
     """
     best_sharpe = -float("inf")
     best_model = None
@@ -372,8 +435,9 @@ def train_best_of_n_v2(
             seed=seed,
             model_name=model_name,
             progress_fn=progress_fn,
+            env_config=env_config,
         )
-        res = run_episode_v2(model, val_df, risk_tolerance=eval_tolerance)
+        res = run_episode_v2(model, val_df, risk_tolerance=eval_tolerance, env_config=env_config)
         val_sharpe = float(res["performance"].get("sharpe_ratio", 0.0))
         seed_results.append({
             "seed": seed,
@@ -396,7 +460,7 @@ def train_best_of_n_v2(
 
     # Phase 3.5 (F4): honest held-out evaluation on test set.
     if test_df is not None:
-        test_res = run_episode_v2(best_model, test_df, risk_tolerance=eval_tolerance)
+        test_res = run_episode_v2(best_model, test_df, risk_tolerance=eval_tolerance, env_config=env_config)
         test_perf = test_res["performance"]
         result_dict["test_sharpe"] = round(float(test_perf.get("sharpe_ratio", 0.0)), 4)
         result_dict["test_mdd"] = round(float(test_perf.get("max_drawdown_pct", 0.0)) / 100.0, 4)
@@ -417,21 +481,28 @@ def load_agent_v2(model_path: str) -> DQN:
     return load_dqn_compat(model_path)
 
 
-def run_episode_v2(model: DQN, df: pd.DataFrame, risk_tolerance: str = "medium") -> dict:
+def run_episode_v2(
+    model: DQN,
+    df: pd.DataFrame,
+    risk_tolerance: str = "medium",
+    env_config: InstrumentEnvConfig | None = None,
+) -> dict:
     """Run the V2 model deterministically through the full DataFrame.
 
     ``risk_tolerance`` pins the tolerance for evaluation (one of low/medium/high)
     so tolerance_norm is computed consistently. Returns the same shape as golden
     ``run_episode`` plus ``hedged_steps`` / ``hedge_usage_pct``.
-    """
-    n_obs = model.observation_space.shape[0]
-    mdd_tol = RISK_TOLERANCE_MDD.get(risk_tolerance, RISK_TOLERANCE_MDD["medium"])
 
-    required = [
-        "daily_return", "rsi_14", "macd", "macd_signal",
-        "bb_pct_b", "trend_score", "Close", "atr_14",
-    ]
-    has_ema = "ema_ratio" in df.columns and not df["ema_ratio"].isna().all()
+    ``env_config`` (Phase 3.6) must be the SAME config used to train ``model``
+    for the observation encoding and reward/eval mechanics to line up —
+    train/eval consistency.
+    """
+    cfg = env_config or DEFAULT_ENV_CONFIG
+    n_obs = model.observation_space.shape[0]
+    mdd_tol = cfg.risk_tolerance_mdd.get(risk_tolerance, cfg.risk_tolerance_mdd["medium"])
+
+    required = list(_STRUCTURAL_BASE_COLS)
+    has_ema = _ema_ratio_enabled(df, cfg)
     if n_obs >= 14 and has_ema:
         required.append("ema_ratio")
 
@@ -473,7 +544,7 @@ def run_episode_v2(model: DQN, df: pd.DataFrame, risk_tolerance: str = "medium")
         obs_list.append(float(np.clip(A * 100, -3, 3)))
         obs_list.append(float(np.clip(B * 1000, 0, 3)))
         # Drawdown relative to hard MDD limit.
-        obs_list.append(float(np.clip(current_dd / HARD_MDD_LIMIT, 0, 3)))
+        obs_list.append(float(np.clip(current_dd / cfg.hard_mdd_limit, 0, 3)))
         obs_list.append(float(prev_hedged))
         obs_list.append(tol_feat)
 
@@ -484,17 +555,17 @@ def run_episode_v2(model: DQN, df: pd.DataFrame, risk_tolerance: str = "medium")
         next_row = data.iloc[i + 1]
         daily_ret = float(next_row["daily_return"])
         if hedged:
-            effective_ret = max(daily_ret, HEDGE_DAILY_FLOOR)
-            portfolio_ret = allocation * effective_ret - HEDGE_COST_PER_DAY
+            effective_ret = max(daily_ret, cfg.hedge_daily_floor)
+            portfolio_ret = allocation * effective_ret - cfg.hedge_cost_per_day
         else:
             portfolio_ret = allocation * daily_ret
         portfolio_value *= (1 + portfolio_ret)
         peak_value = max(peak_value, portfolio_value)
 
         # Update running moments for DSR obs alignment with training.
-        R_t = portfolio_ret - RF_DAILY
-        A += ETA * (R_t - A)
-        B += ETA * (R_t ** 2 - B)
+        R_t = portfolio_ret - cfg.rf_daily
+        A += cfg.dsr_eta * (R_t - A)
+        B += cfg.dsr_eta * (R_t ** 2 - B)
 
         bench_value = benchmark_values[-1] * (1 + daily_ret)
 
@@ -531,7 +602,11 @@ def run_episode_v2(model: DQN, df: pd.DataFrame, risk_tolerance: str = "medium")
 
 # ── Static-threshold baseline (Phase 3 acceptance gate) ───────────────────────
 
-def run_static_baseline_v2(df: pd.DataFrame, risk_tolerance: str = "medium") -> dict:
+def run_static_baseline_v2(
+    df: pd.DataFrame,
+    risk_tolerance: str = "medium",
+    env_config: InstrumentEnvConfig | None = None,
+) -> dict:
     """Rule-based hedge baseline — the incumbent the RL policy must beat.
 
     The classic static rule: stay FULLY INVESTED and switch on a protective
@@ -540,13 +615,15 @@ def run_static_baseline_v2(df: pd.DataFrame, risk_tolerance: str = "medium") -> 
     learning — it only reacts after the breach, whereas the RL policy can hedge
     pre-emptively. Identical per-step return mechanics to ``run_episode_v2`` so
     the two are directly comparable on the same DataFrame; same result shape.
-    """
-    mdd_tol = RISK_TOLERANCE_MDD.get(risk_tolerance, RISK_TOLERANCE_MDD["medium"])
 
-    required = [
-        "daily_return", "rsi_14", "macd", "macd_signal",
-        "bb_pct_b", "trend_score", "Close", "atr_14",
-    ]
+    ``env_config`` (Phase 3.6) supplies the same per-instrument hedge cost/floor
+    and tolerance thresholds used by the RL policy, so F5 (baseline-relative
+    performance) compares like-for-like.
+    """
+    cfg = env_config or DEFAULT_ENV_CONFIG
+    mdd_tol = cfg.risk_tolerance_mdd.get(risk_tolerance, cfg.risk_tolerance_mdd["medium"])
+
+    required = list(_STRUCTURAL_BASE_COLS)
     data = df.dropna(subset=required).copy()
     if len(data) == 0:
         raise ValueError("DataFrame has no valid rows after dropping NaN indicators.")
@@ -569,8 +646,8 @@ def run_static_baseline_v2(df: pd.DataFrame, risk_tolerance: str = "medium") -> 
         next_row = data.iloc[i + 1]
         daily_ret = float(next_row["daily_return"])
         if hedged:
-            effective_ret = max(daily_ret, HEDGE_DAILY_FLOOR)
-            portfolio_ret = allocation * effective_ret - HEDGE_COST_PER_DAY
+            effective_ret = max(daily_ret, cfg.hedge_daily_floor)
+            portfolio_ret = allocation * effective_ret - cfg.hedge_cost_per_day
         else:
             portfolio_ret = allocation * daily_ret
         portfolio_value *= (1 + portfolio_ret)
@@ -614,6 +691,7 @@ def recommend_hedge(
     model: DQN,
     risk_tolerance: str = "medium",
     lookback: int = 60,
+    env_config: InstrumentEnvConfig | None = None,
 ) -> dict:
     """Single-shot hedge recommendation from a trained V2 policy.
 
@@ -623,15 +701,16 @@ def recommend_hedge(
     Drawdown is proxied from the instrument's own recent ``lookback`` closes
     (peak-to-current) since live portfolio state isn't available in the chat
     path. Returns: action, label, detail, drawdown_pct, mdd_tolerance_pct, breach.
-    """
-    n_obs = model.observation_space.shape[0]
-    mdd_tol = RISK_TOLERANCE_MDD.get(risk_tolerance, RISK_TOLERANCE_MDD["medium"])
 
-    required = [
-        "daily_return", "rsi_14", "macd", "macd_signal",
-        "bb_pct_b", "trend_score", "Close", "atr_14",
-    ]
-    has_ema = "ema_ratio" in df.columns and not df["ema_ratio"].isna().all()
+    ``env_config`` (Phase 3.6) should match the config the served ``model`` was
+    trained with, so the tolerance/MDD-limit framing is consistent.
+    """
+    cfg = env_config or DEFAULT_ENV_CONFIG
+    n_obs = model.observation_space.shape[0]
+    mdd_tol = cfg.risk_tolerance_mdd.get(risk_tolerance, cfg.risk_tolerance_mdd["medium"])
+
+    required = list(_STRUCTURAL_BASE_COLS)
+    has_ema = _ema_ratio_enabled(df, cfg)
     if n_obs >= 14 and has_ema:
         required.append("ema_ratio")
 
@@ -661,7 +740,7 @@ def recommend_hedge(
     # No episode context for A/B — use zeros (point-in-time advisory).
     obs_list.append(0.0)                       # running_sharpe_A
     obs_list.append(0.0)                       # running_sharpe_B
-    obs_list.append(float(np.clip(current_dd / HARD_MDD_LIMIT, 0, 3)))
+    obs_list.append(float(np.clip(current_dd / cfg.hard_mdd_limit, 0, 3)))
     obs_list.append(0.0)                       # is_hedged
     obs_list.append(_tol_norm(mdd_tol))        # tolerance_norm
 

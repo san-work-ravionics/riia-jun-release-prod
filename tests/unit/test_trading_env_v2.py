@@ -440,6 +440,151 @@ def test_recommend_hedge_obs_matches_env_dimension():
         assert "breach" in rec
 
 
+# ── Phase 3.6 — per-instrument env_config tests ──────────────────────────────
+
+def test_env_config_none_behaves_identically_to_default():
+    """env_config=None must resolve to DEFAULT_ENV_CONFIG — numerically
+    identical to the pre-3.6 hardcoded constants (backward compatibility)."""
+    from rita.core.instrument_config import DEFAULT_ENV_CONFIG
+    df = _make_df(daily_return=0.01, n=300)
+    env_default = RIIATradingEnvV2(df, fixed_tolerance="medium")
+    env_explicit = RIIATradingEnvV2(df, fixed_tolerance="medium", env_config=DEFAULT_ENV_CONFIG)
+    assert env_default._config == env_explicit._config
+    env_default.reset(seed=0)
+    env_explicit.reset(seed=0)
+    obs1, r1, t1, _, _ = env_default.step(2)
+    obs2, r2, t2, _, _ = env_explicit.step(2)
+    assert np.allclose(obs1, obs2)
+    assert r1 == pytest.approx(r2)
+    assert t1 == t2
+
+
+def test_custom_env_config_changes_hard_mdd_behaviour():
+    """A tighter hard_mdd_limit in a custom config must terminate sooner than
+    the default -10% limit, for the identical underlying data."""
+    from rita.core.instrument_config import InstrumentEnvConfig
+
+    tight_cfg = InstrumentEnvConfig(hard_mdd_limit=-0.03, mdd_terminal_penalty=-9.0)
+    df = _make_df(daily_return=-0.02, n=300)
+
+    env_tight = RIIATradingEnvV2(df, fixed_tolerance="medium", env_config=tight_cfg)
+    env_tight.reset(seed=0)
+    steps_to_terminate_tight = 0
+    for _ in range(20):
+        _, reward, term, _, _ = env_tight.step(2)
+        steps_to_terminate_tight += 1
+        if term:
+            break
+    assert reward == pytest.approx(-9.0)
+
+    env_default = RIIATradingEnvV2(df, fixed_tolerance="medium")
+    env_default.reset(seed=0)
+    steps_to_terminate_default = 0
+    for _ in range(20):
+        _, reward, term, _, _ = env_default.step(2)
+        steps_to_terminate_default += 1
+        if term:
+            break
+    assert reward == pytest.approx(-5.0)
+
+    # Tighter limit (-3%) must breach in fewer or equal steps than -10%.
+    assert steps_to_terminate_tight <= steps_to_terminate_default
+
+
+def test_custom_env_config_changes_episode_length_default():
+    """episode_length should come from env_config when not passed explicitly."""
+    from rita.core.instrument_config import InstrumentEnvConfig
+
+    cfg = InstrumentEnvConfig(episode_length=50)
+    df = _make_df(daily_return=0.001, n=300)
+    env = RIIATradingEnvV2(df, env_config=cfg)  # no explicit episode_length
+    assert env.episode_length == 50
+
+
+def test_explicit_episode_length_overrides_env_config():
+    from rita.core.instrument_config import InstrumentEnvConfig
+
+    cfg = InstrumentEnvConfig(episode_length=50)
+    df = _make_df(daily_return=0.001, n=300)
+    env = RIIATradingEnvV2(df, episode_length=100, env_config=cfg)
+    assert env.episode_length == 100
+
+
+def test_custom_hedge_cost_changes_hedged_step_payoff():
+    from rita.core.instrument_config import InstrumentEnvConfig
+
+    cfg = InstrumentEnvConfig(hedge_cost_per_day=0.02, hedge_daily_floor=-0.05)
+    df = _make_df(daily_return=-0.10, n=300)
+    env = RIIATradingEnvV2(df, fixed_tolerance="high", env_config=cfg)
+    env.reset(seed=0)
+    _, _, _, _, info = env.step(3)  # hedged
+    expected_ret = max(-0.10, cfg.hedge_daily_floor) - cfg.hedge_cost_per_day
+    assert env._portfolio_value == pytest.approx(1 + expected_ret, abs=1e-9)
+
+
+def test_run_episode_v2_accepts_env_config():
+    from rita.core.instrument_config import InstrumentEnvConfig
+
+    cfg = InstrumentEnvConfig()
+    df = _make_df(daily_return=0.001, n=100)
+    model = _StubModel(action=2, n_obs=13)
+    result = run_episode_v2(model, df, risk_tolerance="medium", env_config=cfg)
+    assert "performance" in result
+
+
+def test_run_static_baseline_v2_accepts_env_config():
+    from rita.core.instrument_config import InstrumentEnvConfig
+    from rita.core.trading_env_v2 import run_static_baseline_v2
+
+    cfg = InstrumentEnvConfig(hedge_cost_per_day=0.01)
+    df = _make_df(daily_return=0.001, n=100)
+    result = run_static_baseline_v2(df, risk_tolerance="medium", env_config=cfg)
+    assert "performance" in result
+
+
+def test_recommend_hedge_accepts_env_config():
+    from rita.core.instrument_config import InstrumentEnvConfig
+    from rita.core.trading_env_v2 import recommend_hedge
+
+    cfg = InstrumentEnvConfig()
+    df = _make_df(daily_return=-0.01, n=100)
+    model = _StubModel(action=3, n_obs=13)
+    rec = recommend_hedge(df, model, risk_tolerance="medium", env_config=cfg)
+    assert "action" in rec
+
+
+def test_train_agent_v2_accepts_env_config():
+    """Smoke test: a custom env_config must not break the SB3 training path."""
+    import tempfile
+    from rita.core.instrument_config import InstrumentEnvConfig
+    from rita.core.trading_env_v2 import train_agent_v2
+
+    cfg = InstrumentEnvConfig(episode_length=30)
+    df = _make_df(daily_return=0.001, n=320)
+    with tempfile.TemporaryDirectory() as d:
+        model, cb = train_agent_v2(
+            train_df=df, output_dir=d, timesteps=200,
+            model_name="v2_env_config_test", env_config=cfg,
+        )
+    assert model is not None
+
+
+def test_train_best_of_n_v2_accepts_env_config():
+    import tempfile
+    from rita.core.instrument_config import InstrumentEnvConfig
+    from rita.core.trading_env_v2 import train_best_of_n_v2
+
+    cfg = InstrumentEnvConfig(episode_length=30)
+    df = _make_df(daily_return=0.001, n=320)
+    with tempfile.TemporaryDirectory() as d:
+        _model, _cb, info = train_best_of_n_v2(
+            train_df=df, val_df=df, output_dir=d,
+            timesteps=200, n_seeds=2, model_name="v2_best_of_n_env_config_test",
+            env_config=cfg,
+        )
+    assert info["n_seeds_tried"] == 2
+
+
 def test_train_best_of_n_v2_with_test_df_returns_test_metrics():
     """When test_df is provided, result dict must include test_sharpe/mdd/return."""
     import tempfile

@@ -10,7 +10,37 @@ training:
   n_seeds: 3
   episode_length: 126       # ~6 months; shorter window suits high-vol stock
 
+# Phase 3.6 (F32) — RIIATradingEnvV2 per-instrument hyperparameters.
+# USD instrument -> rf_daily = 5% annualised (US T-Bill proxy). Highest hedge
+# cost + widest hedge floor of the 6 instruments to price in NVIDIA's high
+# momentum-driven volatility; episode_length matches the ~6-month training
+# window above so the RL episode horizon doesn't span multiple bull/bear cycles.
+env:
+  hedge_cost_per_day: 0.005
+  hedge_daily_floor: -0.025
+  dsr_eta: 0.004
+  rf_daily: 0.00019841269841269841   # 0.05 / 252
+  hard_mdd_limit: -0.10
+  mdd_terminal_penalty: -5.0
+  risk_tolerance_mdd:
+    low: -0.08
+    medium: -0.15
+    high: -0.25
+  episode_length: 126
+  feature_columns:
+    - daily_return
+    - rsi_14
+    - macd
+    - macd_signal
+    - bb_pct_b
+    - trend_score
+    - Close
+    - atr_14
+    - ema_ratio
+
 notes: >
   Momentum and earnings-event driven. Shorter episode window avoids the agent
   over-fitting to a single bull or bear cycle. Higher LR suits the fast-moving
   price action. Consider re-tuning after each major product cycle.
+  Phase 3.6: highest hedge_cost_per_day / widest hedge_daily_floor of the 6
+  instruments — NVIDIA's realised volatility is the highest in the gate set.

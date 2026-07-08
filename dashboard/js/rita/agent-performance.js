@@ -141,6 +141,93 @@ export async function loadAgentPerformance() {
 
   // Load the performance-over-period timeline with the current selector values.
   loadAgentPerfTimeline();
+
+  // Phase 3.6 (F32) — per-instrument RL diagnostic scorecards.
+  loadRLScorecards();
+}
+
+// ── RL Diagnostic Scorecards (Feature 32, Phase 3.6) ─────────────────────────
+// Per-instrument 10-parameter scorecard (F1-F5 functional + T1-T5 technical)
+// with rule-based diagnostic insights. Reads the read-only Experience-tier
+// endpoint backed by persisted scorecard JSON artifacts — one card per
+// instrument that has completed a Phase 3.6 training run.
+
+const _SEVERITY_BADGE = { fail: 'err', warn: 'warn', pass: 'ok', info: 'neu' };
+
+function _severityBadge(status) {
+  const cls = _SEVERITY_BADGE[status] || 'neu';
+  return `<span class="badge ${cls}" style="font-size:9px;vertical-align:middle">${(status || 'unknown').toUpperCase()}</span>`;
+}
+
+export async function loadRLScorecards() {
+  const grid = document.getElementById('rl-scorecard-grid');
+  if (!grid) return; // section not present on this page build
+
+  let data;
+  try {
+    data = await api('/api/v1/experience/rita/agent-performance/scorecards');
+  } catch (e) {
+    setEl('rl-scorecard-grid', '<div class="empty">RL scorecards unavailable.</div>');
+    return;
+  }
+
+  const scorecards = (data && data.scorecards) || [];
+  if (!scorecards.length) {
+    setEl('rl-scorecard-grid',
+      '<div class="empty">No RL scorecards yet — run a Phase 3.6 per-instrument training job to populate this view.</div>');
+    return;
+  }
+
+  const cards = scorecards.map(sc => {
+    const f = sc.functional || {};
+    const t = sc.technical || {};
+    const sharpe   = f.F1_sharpe_test?.value;
+    const mdd      = f.F2_max_drawdown_test?.value;
+    const winRate  = f.F4_win_rate?.value;
+    const baseline = f.F5_baseline_relative?.overall;
+    const entropy  = t.T1_action_entropy?.value;
+    const gap      = t.T2_train_test_sharpe_gap?.value;
+
+    const actionable = (sc.insights || [])
+      .filter(i => i.severity === 'fail' || i.severity === 'warn')
+      .slice(0, 3);
+
+    return `<div class="agp-sc">
+      <div class="agp-sc-role">
+        <span>${sc.instrument} ${_severityBadge(sc.overall_status)}</span>
+        <span style="font-size:9px;color:var(--t3);font-family:var(--fm)" title="run id">${sc.run_id || '—'}</span>
+      </div>
+      <div class="agp-sc-row">
+        <span class="agp-sc-lbl">Sharpe (Test)</span>
+        <span class="agp-sc-val">${sharpe != null ? sharpe.toFixed(3) : '—'}</span>
+      </div>
+      <div class="agp-sc-row">
+        <span class="agp-sc-lbl">Max Drawdown</span>
+        <span class="agp-sc-val">${mdd != null ? (mdd * 100).toFixed(1) + '%' : '—'}</span>
+      </div>
+      <div class="agp-sc-row">
+        <span class="agp-sc-lbl">Win Rate</span>
+        <span class="agp-sc-val">${winRate != null ? (winRate * 100).toFixed(1) + '%' : '—'}</span>
+      </div>
+      <div class="agp-sc-row">
+        <span class="agp-sc-lbl">Baseline Relative</span>
+        <span class="agp-sc-val">${baseline != null ? baseline.toFixed(2) : '—'}</span>
+      </div>
+      <div class="agp-sc-row">
+        <span class="agp-sc-lbl">Action Entropy</span>
+        <span class="agp-sc-val">${entropy != null ? entropy.toFixed(2) + ' / 2.00' : '—'}</span>
+      </div>
+      <div class="agp-sc-row">
+        <span class="agp-sc-lbl">Train-Test Gap</span>
+        <span class="agp-sc-val">${gap != null ? gap.toFixed(2) : '—'}</span>
+      </div>
+      ${actionable.length ? `<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border);font-size:10px;color:var(--t3);line-height:1.5">
+        ${actionable.map(i => `<div>${i.severity === 'fail' ? '✖' : '⚠'} <b>${i.parameter}</b> — ${i.message}</div>`).join('')}
+      </div>` : ''}
+    </div>`;
+  }).join('');
+
+  setEl('rl-scorecard-grid', cards);
 }
 
 // ── Performance over a custom period (timeline) ─────────────────────────────

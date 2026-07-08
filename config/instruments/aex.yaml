@@ -1,0 +1,50 @@
+# AEX (Euronext Amsterdam 25) — Fine-tuning defaults
+# Dutch blue-chip index; historically mean-reverting rather than trending.
+# New in Phase 3.6 (F32) — one of the 3.5.7 gate instruments (0/4 passed).
+instrument: AEX
+
+training:
+  timesteps: 300000
+  learning_rate: 0.0001
+  buffer_size: 100000
+  exploration_pct: 0.50
+  n_seeds: 3
+  episode_length: 252       # 1 trading year; index-level, not single-stock
+
+# Phase 3.6 (F32) — RIIATradingEnvV2 per-instrument hyperparameters.
+# EUR instrument -> rf_daily = 3.5% annualised. AEX mean-reverts rather than
+# trends (Phase 3.5.7 root cause: the shared config was calibrated for none of
+# the 4 gate instruments specifically, and AEX/NIFTY both learned 0% hedge
+# usage). Baseline hedge cost/floor kept at the NIFTY reference point since
+# AEX's realised volatility is broadly similar to a diversified index; the
+# dsr_eta and hard MDD limit stay at project defaults.
+env:
+  hedge_cost_per_day: 0.0038
+  hedge_daily_floor: -0.016
+  dsr_eta: 0.004
+  rf_daily: 0.0001388888888888889   # 0.035 / 252
+  hard_mdd_limit: -0.10
+  mdd_terminal_penalty: -5.0
+  risk_tolerance_mdd:
+    low: -0.08
+    medium: -0.15
+    high: -0.25
+  episode_length: 252
+  feature_columns:
+    - daily_return
+    - rsi_14
+    - macd
+    - macd_signal
+    - bb_pct_b
+    - trend_score
+    - Close
+    - atr_14
+    - ema_ratio
+
+notes: >
+  Mean-reverting index — trend_score and bb_pct_b (Bollinger %B) carry more
+  signal than momentum indicators for a mean-reversion regime. One of the 4
+  instruments that failed the Phase 3.5.7 retrain gate; this per-instrument
+  config is the direct Phase 3.6 remediation for that failure. Re-tune after
+  the first independent Phase 3.6 training run (task 3.6.10) produces a
+  scorecard profile to compare against the 3.5.7 baseline.

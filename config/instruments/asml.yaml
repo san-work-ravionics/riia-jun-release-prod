@@ -11,7 +11,38 @@ training:
   n_seeds: 3
   episode_length: 189       # ~9 months; aligns with semiconductor order cycles
 
+# Phase 3.6 (F32) — RIIATradingEnvV2 per-instrument hyperparameters.
+# EUR instrument -> rf_daily = 3.5% annualised (ECB-anchored proxy). Higher
+# hedge cost than NIFTY to price in the earnings-shock regime (order-cycle
+# driven gaps); episode_length matches the ~9-month order-cycle window above
+# so the RL episode horizon aligns with the instrument's natural regime length.
+env:
+  hedge_cost_per_day: 0.0042
+  hedge_daily_floor: -0.018
+  dsr_eta: 0.004
+  rf_daily: 0.0001388888888888889   # 0.035 / 252
+  hard_mdd_limit: -0.10
+  mdd_terminal_penalty: -5.0
+  risk_tolerance_mdd:
+    low: -0.08
+    medium: -0.15
+    high: -0.25
+  episode_length: 189
+  feature_columns:
+    - daily_return
+    - rsi_14
+    - macd
+    - macd_signal
+    - bb_pct_b
+    - trend_score
+    - Close
+    - atr_14
+    - ema_ratio
+
 notes: >
   Order-cycle driven. Macro-rate sensitivity means trend_score and EMA-ratio
   features carry more signal than RSI. Consider adding macro overlay features
   in a future sprint. Re-tune when a new EUV generation ships.
+  Phase 3.6: hedge_cost_per_day raised above NIFTY's baseline to price in the
+  earnings-shock regime; episode_length=189 (from the training section above)
+  now also drives the RL env's episode window, not just SB3 training loop config.

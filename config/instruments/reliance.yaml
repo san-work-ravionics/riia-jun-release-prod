@@ -1,0 +1,50 @@
+# RELIANCE Industries — Fine-tuning defaults
+# Indian large-cap conglomerate; high single-stock volatility vs the NIFTY
+# index, INR-denominated. New in Phase 3.6 (F32) — one of the 3.5.7 gate
+# instruments (0/4 passed); the static baseline itself broke on RELIANCE
+# (carry-cost death spiral), motivating a shorter episode window and a
+# higher hedge cost than the index instruments.
+instrument: RELIANCE
+
+training:
+  timesteps: 250000
+  learning_rate: 0.0002
+  buffer_size: 75000
+  exploration_pct: 0.55
+  n_seeds: 3
+  episode_length: 126       # ~6 months; high single-stock vol suits a shorter window
+
+# Phase 3.6 (F32) — RIIATradingEnvV2 per-instrument hyperparameters.
+# INR instrument -> rf_daily = 7% annualised. High-vol single stock: shorter
+# episode_length (vs NIFTY's 252) so episodes don't span multiple regime
+# swings, and a higher hedge cost to reflect RELIANCE's larger realised
+# volatility relative to the broad index.
+env:
+  hedge_cost_per_day: 0.0048
+  hedge_daily_floor: -0.022
+  dsr_eta: 0.004
+  rf_daily: 0.0002777777777777778   # 0.07 / 252
+  hard_mdd_limit: -0.10
+  mdd_terminal_penalty: -5.0
+  risk_tolerance_mdd:
+    low: -0.08
+    medium: -0.15
+    high: -0.25
+  episode_length: 126
+  feature_columns:
+    - daily_return
+    - rsi_14
+    - macd
+    - macd_signal
+    - bb_pct_b
+    - trend_score
+    - Close
+    - atr_14
+    - ema_ratio
+
+notes: >
+  High single-stock volatility relative to the NIFTY index. Phase 3.5.7 found
+  the static baseline itself broke on RELIANCE (carry-cost death spiral),
+  proving even simple strategies need per-instrument tuning — the direct
+  trigger for this Phase 3.6 config. Shorter episode_length (126 vs NIFTY's
+  252) avoids over-fitting the policy to a single volatility regime.

@@ -39,6 +39,8 @@ from rita.schemas.strategy_comparison import (
 from rita.repositories.agent_performance import AgentPerformanceRepository
 from rita.schemas.agent_performance import AgentKpi, AgentPerformanceSummaryResponse
 from rita.core.classifier import CANONICAL_AGENTS
+from rita.core.rl_diagnostics import generate_insights
+from rita.schemas.rl_scorecard import InstrumentScorecard, RLScorecardResponse
 
 log = structlog.get_logger()
 
@@ -2088,6 +2090,109 @@ def agent_performance(db: Session = Depends(get_db)) -> AgentPerformanceSummaryR
         sources={"agent_performance": {"status": status, "record_count": len(summary)}},
     )
     return AgentPerformanceSummaryResponse(agents=agents)
+
+
+# ── GET /api/v1/experience/rita/agent-performance/scorecards ──────────────────
+# Feature 32, Phase 3.6 — 10-parameter RL diagnostic scorecard per instrument.
+
+_SEVERITY_ORDER = {"fail": 0, "warn": 1, "info": 2, "pass": 3}
+
+
+def _load_rl_scorecards() -> list[dict]:
+    """Read the most recent persisted scorecard JSON per instrument.
+
+    Scorecards are written by the training pipeline (``rl_scorecard.save_scorecard``)
+    to ``rita_output/models_v2/{instrument}/scorecard_{run_id}_{timestamp}.json`` —
+    a training artifact, same pattern as the model .zip files. This route only
+    READS those files (ADR-002: Experience tier is read-only composition; the
+    scorecard is computed once, at training time, in core — never inline here).
+    Best-effort: any glob/parse failure is swallowed per-file so one bad file
+    can't blank out the whole response.
+    """
+    import glob
+    import json
+    from pathlib import Path
+
+    app_root = Path(__file__).resolve().parents[4]
+    pattern = str(app_root / "rita_output" / "models_v2" / "*" / "scorecard_*.json")
+
+    by_instrument: dict[str, tuple[str, dict]] = {}
+    for fp in sorted(glob.glob(pattern)):
+        try:
+            data = json.loads(Path(fp).read_text())
+        except Exception:
+            continue
+        instrument = data.get("instrument")
+        if not instrument:
+            continue
+        # Filenames sort lexicographically by timestamp (scorecard_{run_id}_{ts}.json,
+        # ts = ISO-like YYYYMMDDTHHMMSSZ) — the last one wins as "most recent".
+        by_instrument[instrument] = (fp, data)
+
+    return [data for _fp, data in by_instrument.values()]
+
+
+@router.get(
+    "/experience/rita/agent-performance/scorecards",
+    summary="10-parameter RL diagnostic scorecard per instrument (Phase 3.6)",
+    response_model=RLScorecardResponse,
+)
+def agent_performance_scorecards() -> RLScorecardResponse:
+    """Read-only per-instrument RL diagnostic scorecard (Feature 32, Phase 3.6).
+
+    Surfaces the 10-parameter scorecard (F1-F5 functional + T1-T5 technical)
+    computed after each V2 training run, plus rule-based diagnostic insights
+    (``rl_diagnostics.generate_insights``) and a collapsed ``overall_status``
+    (pass/warn/fail = worst insight severity) for the dashboard's colour badge.
+    Returns an empty list (never an error) when no instrument has a persisted
+    scorecard yet — a fresh deployment before any Phase 3.6 training run.
+    """
+    _start = time.monotonic()
+    status = "ok"
+    try:
+        raw_scorecards = _load_rl_scorecards()
+    except Exception as exc:
+        raw_scorecards = []
+        status = "error"
+        log.error("agent_performance_scorecards.failed", error=str(exc), exc_info=True)
+
+    scorecards: list[InstrumentScorecard] = []
+    for raw in raw_scorecards:
+        try:
+            insights = generate_insights(raw)
+        except Exception as exc:
+            log.warning("agent_performance_scorecards.insights_failed",
+                        instrument=raw.get("instrument"), error=str(exc))
+            insights = []
+
+        worst = min(
+            (i["severity"] for i in insights),
+            key=lambda s: _SEVERITY_ORDER.get(s, 99),
+            default="pass",
+        )
+        overall = "pass" if worst in ("pass", "info") else worst
+
+        scorecards.append(InstrumentScorecard(
+            instrument=raw.get("instrument", "UNKNOWN"),
+            run_id=raw.get("run_id", ""),
+            config_source=raw.get("config_source", "default"),
+            regime_window=raw.get("regime_window", 20),
+            generated_at=raw.get("generated_at", ""),
+            functional=raw.get("functional", {}),
+            technical=raw.get("technical", {}),
+            insights=insights,
+            overall_status=overall,
+        ))
+
+    log_event(
+        log, "info", "experience.compose",
+        handler="agent_performance_scorecards",
+        duration_ms=int((time.monotonic() - _start) * 1000),
+        overall_status=status,
+        response_keys=["scorecards"],
+        sources={"rl_scorecards": {"status": status, "record_count": len(scorecards)}},
+    )
+    return RLScorecardResponse(scorecards=scorecards)
 
 
 # ── GET /api/v1/experience/rita/agent-performance-timeline ────────────────────

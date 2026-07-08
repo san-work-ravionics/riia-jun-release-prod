@@ -1483,6 +1483,21 @@ tr:hover td{background:var(--surface2);}
     </div>
   </div>
 
+  <!-- RL Diagnostic Scorecards (Feature 32, Phase 3.6) — per-instrument 10-parameter
+       scorecard (5 Functional + 5 Technical) with pass/warn/fail colour coding and
+       rule-based diagnostic insights. Populated once a Phase 3.6 training run has
+       persisted a scorecard JSON artifact for that instrument. -->
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">RL Diagnostic Scorecards</span>
+      <span class="card-sub">Per-instrument · Sharpe · Max Drawdown · Win Rate · Baseline Relative · Action Entropy · Train-Test Gap</span>
+      <button class="btn btn-ghost btn-sm" onclick="loadRLScorecards()">↺ Refresh</button>
+    </div>
+    <div class="agp-sc-grid" id="rl-scorecard-grid">
+      <div class="empty">Loading…</div>
+    </div>
+  </div>
+
   <!-- Invocations chart (40%) + per-agent detail table (60%) in one row -->
   <div style="display:grid;grid-template-columns:2fr 3fr;gap:14px;align-items:start">
     <div class="chart-wrap" style="margin-bottom:0">
