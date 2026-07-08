@@ -29,6 +29,7 @@ import { initI18n, setLanguage, applyTranslations } from '../shared/i18n.js';
 import { ensureDevToken } from '../shared/dev-auth.js';
 import { loadMyPortfolio, savePortfolio } from './my-portfolio.js';
 import { loadAgentPerformance, setAgentPerfPeriod, loadAgentPerfTimeline, loadRLScorecards } from './agent-performance.js';
+import { loadModelEval, meSelectInstrument } from './model-eval.js';
 import { loadPortfolioBuilder, pbToggleInstrument, pbSelectAllRegion, pbClearAllRegion, pbSortTable, pbApplyGoalPreset, pbToggleDraftItem, pbBuildFromDraft, pbClearBasket, pbBuildPortfolio, pbSetAlloc } from './portfolio-builder.js?v=4';
 
 // ── Populate section loaders map ───────────────────────────
@@ -49,6 +50,7 @@ _sectionLoaders['strategy-compare']    = loadStrategyComparison;
 _sectionLoaders['my-portfolio']        = loadMyPortfolio;
 _sectionLoaders['portfolio-builder']   = loadPortfolioBuilder;
 _sectionLoaders['agent-performance']   = loadAgentPerformance;
+_sectionLoaders['model-eval']          = loadModelEval;
 
 // ── Expose to window for inline HTML onclick attributes ────
 window.show                = show;
@@ -96,6 +98,8 @@ window.loadAgentPerformance = loadAgentPerformance;
 window.setAgentPerfPeriod = setAgentPerfPeriod;
 window.loadAgentPerfTimeline = loadAgentPerfTimeline;
 window.loadRLScorecards = loadRLScorecards;
+window.loadModelEval = loadModelEval;
+window.meSelectInstrument = meSelectInstrument;
 window.pbToggleInstrument   = pbToggleInstrument;
 window.pbSelectAllRegion    = pbSelectAllRegion;
 window.pbClearAllRegion     = pbClearAllRegion;
@@ -130,7 +134,7 @@ async function selectGeoInstrument(id) {
     if (data) { updateChips(data.chips); showAlerts(data.alerts); }
   }
   await loadActiveInstrument();
-  const instrumentSections = new Set(['trades', 'performance', 'scenarios', 'risk', 'market-signals', 'diagnostics', 'explain', 'technical-analysis', 'learnings', 'strategy-compare']);
+  const instrumentSections = new Set(['trades', 'performance', 'scenarios', 'risk', 'market-signals', 'diagnostics', 'explain', 'technical-analysis', 'learnings', 'strategy-compare', 'model-eval']);
   await Promise.all([
     loadHealth(), loadPerfSummary(), loadDrift(), loadProgress(), loadMarketSignals(),
     ...(instrumentSections.has(section) && _sectionLoaders[section] ? [_sectionLoaders[section]()] : []),

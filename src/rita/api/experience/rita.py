@@ -2114,10 +2114,10 @@ def _load_rl_scorecards() -> list[dict]:
     from pathlib import Path
 
     app_root = Path(__file__).resolve().parents[4]
-    pattern = str(app_root / "rita_output" / "models_v2" / "*" / "scorecard_*.json")
+    pattern = str(app_root / "rita_output" / "models_v2" / "**" / "scorecard_*.json")
 
     by_instrument: dict[str, tuple[str, dict]] = {}
-    for fp in sorted(glob.glob(pattern)):
+    for fp in sorted(glob.glob(pattern, recursive=True)):
         try:
             data = json.loads(Path(fp).read_text())
         except Exception:

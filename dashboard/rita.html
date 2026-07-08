@@ -303,6 +303,11 @@ tr:hover td{background:var(--surface2);}
 .geo-kpi{cursor:pointer;border:1.5px solid transparent;border-radius:var(--r);transition:border-color .15s,background .15s;}
 .geo-kpi:hover{border-color:var(--border2);background:var(--surface2);}
 .geo-kpi-active{border-color:var(--run) !important;background:var(--run-bg) !important;}
+
+/* ── Model Evaluation instrument tiles ─────────────────────── */
+.me-inst-tile{cursor:pointer;border:1.5px solid transparent;border-radius:var(--r);transition:border-color .15s,background .15s;}
+.me-inst-tile:hover{border-color:var(--border2);background:var(--surface2);}
+.me-inst-active{border-color:var(--mon) !important;background:rgba(107,47,160,0.06) !important;}
 </style>
 <link rel="stylesheet" href="css/responsive.css">
 </head>
@@ -399,6 +404,9 @@ tr:hover td{background:var(--surface2);}
     </div>
     <div class="nav-item p03" data-s="explain" onclick="show('explain',this)">
       <span class="nav-icon">◎</span> <span data-i18n="heading.explainability">Explainability</span>
+    </div>
+    <div class="nav-item p03" data-s="model-eval" onclick="show('model-eval',this)">
+      <span class="nav-icon">◎</span> Model Evaluation
     </div>
   </div>
 
@@ -962,6 +970,17 @@ tr:hover td{background:var(--surface2);}
   <div class="tbl-wrap" id="shap-table-wrap" style="margin-top:16px">
     <div class="empty">Loading...</div>
   </div>
+</section>
+
+<!-- ════════════════ MODEL EVALUATION ════════════════ -->
+<section class="section" id="sec-model-eval">
+  <div class="page-hdr">
+    <div><div class="page-title">Model Evaluation</div><div class="page-sub">Per-instrument RL diagnostic scorecard — 10-parameter assessment</div></div>
+    <div class="hdr-actions"><button class="btn btn-ghost btn-sm" onclick="loadModelEval()">↺ Reload</button></div>
+  </div>
+
+  <div id="me-instrument-bar" class="card-row" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px"></div>
+  <div id="me-content"><div class="empty">Loading...</div></div>
 </section>
 
 <!-- ════════════════ RISK VIEW ════════════════ -->

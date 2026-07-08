@@ -118,6 +118,7 @@ def train(config: TrainingConfig, progress_fn=None) -> TrainingOutcome:
     # Feature 32 Phase 3 — route to the V2 env trainer when model_version is a V2
     # stem. Golden trainers are left bound for all other versions (unchanged).
     _is_v2 = config.model_version.startswith("rita_ddqn_v2")
+    env_config = None
     if _is_v2:
         from rita.core.trading_env_v2 import (
             train_agent_v2 as train_agent,
@@ -125,6 +126,11 @@ def train(config: TrainingConfig, progress_fn=None) -> TrainingOutcome:
             run_episode_v2 as run_episode,
             temporal_split,
         )
+        from rita.core.instrument_config import load_instrument_env_config
+        from rita.core.rl_scorecard import compute_scorecard, save_scorecard
+        env_config = load_instrument_env_config(config.instrument)
+        log.info("ml_dispatch.env_config_loaded", instrument=config.instrument,
+                 episode_length=env_config.episode_length, n_features=len(env_config.feature_columns))
 
     # ── 1. Load OHLCV data ────────────────────────────────────────────────────
     log.info("ml_dispatch.load_data", instrument=config.instrument)
@@ -150,8 +156,8 @@ def train(config: TrainingConfig, progress_fn=None) -> TrainingOutcome:
     log.info("ml_dispatch.training_start", run_id=config.run_id, timesteps=config.timesteps, n_seeds=config.n_seeds)
     seed_results_dict: dict = {}
 
+    v2_kwargs = {"env_config": env_config, "test_df": test_df} if _is_v2 else {}
     if config.n_seeds > 1 and train_best_of_n is not None:
-        # Multi-seed: pick best model by validation Sharpe
         model, progress_cb, seed_results_dict = train_best_of_n(
             train_df=train_df,
             val_df=val_df,
@@ -163,9 +169,10 @@ def train(config: TrainingConfig, progress_fn=None) -> TrainingOutcome:
             exploration_fraction=config.exploration_pct,
             model_name=model_name,
             progress_fn=progress_fn,
+            **v2_kwargs,
         )
     else:
-        # Single-seed: standard training path
+        single_kwargs = {"env_config": env_config} if _is_v2 else {}
         model, progress_cb = train_agent(
             train_df=train_df,
             output_dir=config.output_dir,
@@ -176,6 +183,7 @@ def train(config: TrainingConfig, progress_fn=None) -> TrainingOutcome:
             seed=42,
             model_name=model_name,
             progress_fn=progress_fn,
+            **single_kwargs,
         )
 
     model_path = str(Path(config.output_dir) / (model_name + ".zip"))
@@ -187,8 +195,9 @@ def train(config: TrainingConfig, progress_fn=None) -> TrainingOutcome:
     total_return = 0.0
     val_trades = 0
     eval_df = test_df if _is_v2 else val_df
+    eval_kwargs = {"env_config": env_config} if _is_v2 else {}
     try:
-        val_result = run_episode(model, eval_df)
+        val_result = run_episode(model, eval_df, **eval_kwargs)
         perf = val_result["performance"]
         sharpe       = perf["sharpe_ratio"]
         mdd          = perf["max_drawdown_pct"] / 100.0
@@ -204,7 +213,7 @@ def train(config: TrainingConfig, progress_fn=None) -> TrainingOutcome:
     train_return = 0.0
     train_trades = 0
     try:
-        train_result = run_episode(model, train_df)
+        train_result = run_episode(model, train_df, **eval_kwargs)
         tp = train_result["performance"]
         train_sharpe = tp["sharpe_ratio"]
         train_mdd    = tp["max_drawdown_pct"] / 100.0
@@ -213,6 +222,28 @@ def train(config: TrainingConfig, progress_fn=None) -> TrainingOutcome:
     except Exception:
         pass
     log.info("ml_dispatch.train_episode_complete", run_id=config.run_id, train_sharpe=round(train_sharpe, 3))
+
+    # ── 5c. RL diagnostic scorecard (V2 only) ────────────────────────────────
+    scorecard_path = None
+    if _is_v2 and test_df is not None:
+        try:
+            seed_list = seed_results_dict.get("seed_results") if seed_results_dict else None
+            scorecard = compute_scorecard(
+                model=model,
+                test_df=test_df,
+                train_df=train_df,
+                episode_metrics=list(progress_cb.records),
+                seed_results=seed_list,
+                env_config=env_config,
+                instrument=config.instrument,
+                run_id=config.run_id,
+            )
+            scorecard_path = save_scorecard(
+                scorecard, config.output_dir, config.instrument, config.run_id,
+            )
+            log.info("ml_dispatch.scorecard_saved", path=scorecard_path)
+        except Exception:
+            log.exception("ml_dispatch.scorecard_failed", run_id=config.run_id)
 
     # ── 6. Episode metrics from callback ─────────────────────────────────────
     episode_metrics = [
