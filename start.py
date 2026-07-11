@@ -35,19 +35,25 @@ LOG_DIR = Path(__file__).parent / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 log_file = LOG_DIR / f"rita-{date.today()}.log"
 
-# Kill any process already holding the port
-result = subprocess.run(
-    ["netstat", "-ano"],
-    capture_output=True, text=True
-)
-for line in result.stdout.splitlines():
-    if f":{PORT}" in line and "LISTENING" in line:
-        parts = line.split()
-        pid = parts[-1]
-        print(f"Killing existing process on port {PORT} (PID {pid})")
-        subprocess.run(["taskkill", "/PID", pid, "/F"],
-                       capture_output=True)
-        break
+# Kill any process already holding the port (cross-platform)
+import platform
+if platform.system() == "Windows":
+    result = subprocess.run(["netstat", "-ano"], capture_output=True, text=True)
+    for line in result.stdout.splitlines():
+        if f":{PORT}" in line and "LISTENING" in line:
+            parts = line.split()
+            pid = parts[-1]
+            print(f"Killing existing process on port {PORT} (PID {pid})")
+            subprocess.run(["taskkill", "/PID", pid, "/F"], capture_output=True)
+            break
+else:
+    result = subprocess.run(
+        ["lsof", "-ti", f":{PORT}"], capture_output=True, text=True
+    )
+    for pid in result.stdout.strip().splitlines():
+        if pid:
+            print(f"Killing existing process on port {PORT} (PID {pid})")
+            subprocess.run(["kill", "-9", pid], capture_output=True)
 
 # ── Chat feature pre-flight checks ───────────────────────────────────────────
 # The RITA chat assistant is fully local — no API key required.
