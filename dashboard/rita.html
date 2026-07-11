@@ -1210,73 +1210,102 @@ tr:hover td{background:var(--surface2);}
 
   </div>
 
-  <!-- Card 5: Model Building — Double DQN -->
-  <div class="card" style="margin-bottom:12px">
-    <div class="card-hdr" style="cursor:pointer" onclick="toggleLearnCard('model')">
-      <span class="card-title">Model Building — Double DQN</span>
-      <span id="learn-chevron-model">▼</span>
+  <!-- Row 3: Model Building + Combinatorial Optimization — 50/50 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+
+    <!-- Card 5: Model Building — Double DQN -->
+    <div class="card">
+      <div class="card-hdr" style="cursor:pointer" onclick="toggleLearnCard('model')">
+        <span class="card-title">Model Building — Double DQN</span>
+        <span id="learn-chevron-model">▶</span>
+      </div>
+      <div id="learn-body-model" class="card-body" style="display:none;font-size:13px;line-height:1.7;color:var(--t2)">
+        <p><strong>Framework:</strong> Stable-Baselines3 DQN with Double-Q target correction, implemented in <code>core/trading_env.py</code>.</p>
+        <p><strong>State Space:</strong> 8–9 features — daily_return, rsi_14, macd, bb_pct_b, trend_score, allocation, days_remaining, atr_ratio, ema_ratio.</p>
+        <p><strong>Action Space:</strong> Discrete(3) — Cash (0%), Half (50%), Full (100%) invested; the agent learns when to scale in and out.</p>
+        <p><strong>Network:</strong> MlpPolicy with two hidden layers of 256 units; replay buffer holds 100,000 transitions for stable off-policy learning.</p>
+        <p><strong>Seed Search:</strong> <code>train_best_of_n</code> in <code>core/ml_dispatch.py</code> runs N seeds, validates each on a held-out period, keeps the best Sharpe winner.</p>
+        <p><strong>Persistence:</strong> The winning model is serialised as <code>{model_name}.zip</code> via SB3's <code>model.save()</code> and reloaded for inference via <code>load_agent()</code>.</p>
+      </div>
     </div>
-    <div id="learn-body-model" class="card-body" style="font-size:13px;line-height:1.7;color:var(--t2)">
-      <p><strong>Framework:</strong> Stable-Baselines3 DQN with Double-Q target correction, implemented in <code>core/trading_env.py</code>.</p>
-      <p><strong>State Space:</strong> 8–9 features — daily_return, rsi_14, macd, bb_pct_b, trend_score, allocation, days_remaining, atr_ratio, ema_ratio.</p>
-      <p><strong>Action Space:</strong> Discrete(3) — Cash (0%), Half (50%), Full (100%) invested; the agent learns when to scale in and out.</p>
-      <p><strong>Network:</strong> MlpPolicy with two hidden layers of 256 units; replay buffer holds 100,000 transitions for stable off-policy learning.</p>
-      <p><strong>Seed Search:</strong> <code>train_best_of_n</code> in <code>core/ml_dispatch.py</code> runs N seeds, validates each on a held-out period, keeps the best Sharpe winner.</p>
-      <p><strong>Persistence:</strong> The winning model is serialised as <code>{model_name}.zip</code> via SB3's <code>model.save()</code> and reloaded for inference via <code>load_agent()</code>.</p>
+
+    <!-- Card 6: Combinatorial Optimization -->
+    <div class="card">
+      <div class="card-hdr" style="cursor:pointer" onclick="toggleLearnCard('comb-opt')">
+        <span class="card-title">Portfolio Optimization — OR-Tools CP-SAT</span>
+        <span id="learn-chevron-comb-opt">▶</span>
+      </div>
+      <div id="learn-body-comb-opt" class="card-body" style="display:none;font-size:13px;line-height:1.7;color:var(--t2)">
+        <p><strong>Method:</strong> Combinatorial Optimization — finds the best integer allocation from a finite set of possibilities using Google OR-Tools CP-SAT solver.</p>
+        <p><strong>Objective:</strong> Maximize &Sigma; w<sub>i</sub> &times; Sharpe<sub>i</sub> &mdash; weighted portfolio Sharpe ratio.</p>
+        <p><strong>Variables:</strong> w<sub>i</sub> &isin; {5 &hellip; 60} &mdash; integer allocation % per instrument (N &le; 7).</p>
+        <p><strong>Constraints:</strong> &Sigma;w<sub>i</sub> = 100 (budget), Sharpe &ge; 1.0, |MDD| &le; 10%, diversification bounds [5%, 60%].</p>
+        <p><strong>Inputs:</strong> <code>backtest_sharpe</code> and <code>backtest_mdd_pct</code> from training_history.csv; proxy estimates for instruments without models.</p>
+        <p><strong>Speed:</strong> CP-SAT finds the proven-optimal solution in &lt; 10 ms for 7 instruments.</p>
+      </div>
     </div>
+
   </div>
 
   <!-- ════════ Investment Workflow & Agents ════════ -->
   <div class="card" style="margin-bottom:12px">
-    <div class="card-body">
-      <h2 style="font-family:var(--fs);font-size:22px;margin:0 0 10px;color:var(--text)">How Professional Investment Firms Invest</h2>
-      <p style="font-size:13px;color:var(--t2);line-height:1.8;margin-bottom:14px">
-        In a professionally run investment firm, highly sophisticated quantitative finance tools and Risk / Reward
-        processes are used by smart professionals. They use these to evaluate various investment opportunities,
-        calculate the Risk / Reward and, as appropriate, hedge them with appropriate derivatives product(s).
-        For the purpose of this project, we look at a specific workflow — shown below — which depicts a typical
-        set-up for such an investment firm.
-      </p>
+    <div class="card-hdr" style="cursor:pointer" onclick="toggleLearnCard('invest-workflow')">
+      <span class="card-title">How Professional Investment Firms Invest</span>
+      <span id="learn-chevron-invest-workflow">▶</span>
+    </div>
+    <div id="learn-body-invest-workflow" class="card-body" style="display:none">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
 
-      <div class="tbl-wrap" style="max-height:none;margin-bottom:16px">
-        <table>
-          <thead>
-            <tr><th>Step</th><th>Purpose / Role</th><th>Scope</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><strong>Initiation</strong></td><td>Financial Goal</td><td>To define a clear, quantitative financial goal for a time period</td></tr>
-            <tr><td><strong>Research</strong></td><td>Research Analyst</td><td>Focus at macro-economic trends, Goods flow and Demand / Supply to arrive at growth projections</td></tr>
-            <tr><td><strong>Research</strong></td><td>Sentiment Analyst</td><td>Look at present market conditions, public news and investor sentiments</td></tr>
-            <tr><td><strong>Research</strong></td><td>Technical Analyst</td><td>Use of Technical Indicators such as Candlestick patterns, charts, MACD, RSI, Stochastic indicators</td></tr>
-            <tr><td><strong>Design</strong></td><td>Strategy Analyst</td><td>Decide on the strategy approach such as Value Investing (Buy cheap), Momentum Investing (Trade on strong upside / downside), Long Term Horizon (3 to 5 years)</td></tr>
-            <tr><td><strong>Evaluation</strong></td><td>Scenario Analyst</td><td>Evaluate the portfolio performance through various scenarios over a short-term horizon. Any expectations of maximum drawdown (MDD) on the portfolio can trigger derivatives trade</td></tr>
-            <tr><td><strong>Execution</strong></td><td>Execution Analyst</td><td>Take the appropriate investment and balance it with right derivatives trade</td></tr>
-            <tr><td><strong>Feedback</strong></td><td>Outcome Analyst</td><td>Build a Closed Loop system such that the result from each trade (profit / loss) is fed back to the initial phases. This then can be used to fine-tune the investment approach</td></tr>
-          </tbody>
-        </table>
+        <!-- Left 50%: Workflow table -->
+        <div class="tbl-wrap" style="max-height:none">
+          <table>
+            <thead>
+              <tr><th>Step</th><th>Purpose / Role</th><th>Scope</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Initiation</strong></td><td>Financial Goal</td><td>To define a clear, quantitative financial goal for a time period</td></tr>
+              <tr><td><strong>Research</strong></td><td>Research Analyst</td><td>Focus at macro-economic trends, Goods flow and Demand / Supply to arrive at growth projections</td></tr>
+              <tr><td><strong>Research</strong></td><td>Sentiment Analyst</td><td>Look at present market conditions, public news and investor sentiments</td></tr>
+              <tr><td><strong>Research</strong></td><td>Technical Analyst</td><td>Use of Technical Indicators such as Candlestick patterns, charts, MACD, RSI, Stochastic indicators</td></tr>
+              <tr><td><strong>Design</strong></td><td>Strategy Analyst</td><td>Decide on the strategy approach such as Value Investing (Buy cheap), Momentum Investing (Trade on strong upside / downside), Long Term Horizon (3 to 5 years)</td></tr>
+              <tr><td><strong>Evaluation</strong></td><td>Scenario Analyst</td><td>Evaluate the portfolio performance through various scenarios over a short-term horizon. Any expectations of maximum drawdown (MDD) on the portfolio can trigger derivatives trade</td></tr>
+              <tr><td><strong>Execution</strong></td><td>Execution Analyst</td><td>Take the appropriate investment and balance it with right derivatives trade</td></tr>
+              <tr><td><strong>Feedback</strong></td><td>Outcome Analyst</td><td>Build a Closed Loop system such that the result from each trade (profit / loss) is fed back to the initial phases. This then can be used to fine-tune the investment approach</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Right 50%: Context text -->
+        <div style="font-size:13px;color:var(--t2);line-height:1.8">
+          <p style="margin-bottom:12px">
+            In a professionally run investment firm, highly sophisticated quantitative finance tools and Risk / Reward
+            processes are used by smart professionals. They use these to evaluate various investment opportunities,
+            calculate the Risk / Reward and, as appropriate, hedge them with appropriate derivatives product(s).
+          </p>
+          <p style="margin-bottom:12px">
+            As shown, there are a few activities, and a great deal of data processing is required before taking any
+            trades. But such knowledge and especially data processing expertise is not available with a retail trader.
+            Unhedged exposure during events that go against trader views can lead to a significant impact to the portfolio
+            value. They are thus at a very significant disadvantage. This can be attempted to solve using a data Science
+            approach and an Agentic AI framework.
+          </p>
+          <p style="margin-bottom:12px">
+            By applying <strong>data science methods</strong>, the time-series market data can be transformed into actionable
+            intelligence, achieving both stable performance and risk control. With <strong>Agentic AI</strong>, a certain
+            Risk/Reward policy can be set against which AI agents can validate the trades / portfolio and provide a Risk
+            Informed view. These two elements become the core of the proposed
+            <strong>Risk Informed Investment Approach (RIIA)</strong>. With rich time-series data availability and applying
+            data science concepts, machine learning models can be built to do several key tasks, namely:
+          </p>
+          <ul style="margin:0 0 4px 18px">
+            <li>Interpreting market volatility conditions using hybrid time-series and ML techniques.</li>
+            <li>Modelling risk exposures through dynamic simulations.</li>
+            <li>Identifying flow patterns that limits excessive leverage buildup.</li>
+            <li>Optimizing trade sizing and execution under capital and margin constraints.</li>
+          </ul>
+        </div>
+
       </div>
-
-      <p style="font-size:13px;color:var(--t2);line-height:1.8;margin-bottom:12px">
-        As shown above, there are a few activities, and a great deal of data processing is required before taking any
-        trades. But such knowledge and especially data processing expertise is not available with a retail trader.
-        Unhedged exposure during events that go against trader views can lead to a significant impact to the portfolio
-        value. They are thus at a very significant disadvantage. This can be attempted to solve using a data Science
-        approach and an Agentic AI framework.
-      </p>
-      <p style="font-size:13px;color:var(--t2);line-height:1.8;margin-bottom:12px">
-        By applying <strong>data science methods</strong>, the time-series market data can be transformed into actionable
-        intelligence, achieving both stable performance and risk control. With <strong>Agentic AI</strong>, a certain
-        Risk/Reward policy can be set against which AI agents can validate the trades / portfolio and provide a Risk
-        Informed view. These two elements become the core of the proposed
-        <strong>Risk Informed Investment Approach (RIIA)</strong>. With rich time-series data availability and applying
-        data science concepts, machine learning models can be built to do several key tasks, namely:
-      </p>
-      <ul style="font-size:13px;color:var(--t2);line-height:1.8;margin:0 0 4px 18px">
-        <li>Interpreting market volatility conditions using hybrid time-series and ML techniques.</li>
-        <li>Modelling risk exposures through dynamic simulations.</li>
-        <li>Identifying flow patterns that limits excessive leverage buildup.</li>
-        <li>Optimizing trade sizing and execution under capital and margin constraints.</li>
-      </ul>
     </div>
   </div>
 
@@ -1368,6 +1397,7 @@ tr:hover td{background:var(--surface2);}
       <div class="chart-wrap"><div class="chart-col-label">Linked Analytics</div><div class="chart-title">Win Rate by Round</div><div class="chart-box" style="height:240px"><canvas id="aw-a8-c2"></canvas></div></div>
     </div>
   </div>
+
 
 </section>
 
@@ -1801,7 +1831,7 @@ tr:hover td{background:var(--surface2);}
     <!-- Ranked draft list -->
     <div class="card" style="padding:0;overflow:hidden">
       <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-        <span id="pb-draft-title" style="font-weight:700;font-size:14px">Recommended</span>
+        <span id="pb-draft-title" style="font-weight:700;font-size:14px">Recommended</span><span id="pb-draft-mode-badge" class="badge badge-sm ms-2" style="display:none;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;margin-left:8px"></span>
         <span style="font-size:11px;color:var(--t2)">ranked by return</span>
       </div>
       <div id="pb-guided-draft" style="min-height:80px"></div>
@@ -1829,9 +1859,17 @@ tr:hover td{background:var(--surface2);}
           <span style="color:var(--t2)">Proj. return</span>
           <span id="pb-draft-proj-return" style="font-weight:700;font-family:'IBM Plex Mono',monospace">—</span>
         </div>
-        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
           <span style="color:var(--t2)">Risk level</span>
           <span id="pb-draft-risk">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
+          <span style="color:var(--t2)">Sharpe ratio</span>
+          <span id="pb-draft-sharpe" style="font-weight:700;font-family:'IBM Plex Mono',monospace">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:16px">
+          <span style="color:var(--t2)">Max drawdown</span>
+          <span id="pb-draft-mdd" style="font-weight:700;font-family:'IBM Plex Mono',monospace">—</span>
         </div>
         <button id="pb-draft-build-btn" onclick="pbBuildFromDraft()"
                 style="width:100%;padding:9px;border:none;border-radius:6px;background:#BE185D;color:#fff;font-size:13px;font-weight:700;cursor:pointer">
