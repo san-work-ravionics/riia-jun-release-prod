@@ -979,6 +979,30 @@ tr:hover td{background:var(--surface2);}
     <div class="hdr-actions"><button class="btn btn-ghost btn-sm" onclick="loadModelEval()">↺ Reload</button></div>
   </div>
 
+  <!-- F34 P2.5: per-instrument summary table (latest training round) -->
+  <style>.me-sum-row.me-row-active td{background:rgba(0,86,184,0.10)}</style>
+  <div class="tbl-wrap" id="me-summary-table" style="margin-bottom:16px"><div class="empty">Loading...</div></div>
+
+  <!-- F34 P2.5: per-instrument evaluation plots (row click target) -->
+  <div id="me-eval-plots" style="margin-bottom:16px">
+    <div id="me-eval-plots-title" class="chart-title" style="margin-bottom:8px">Evaluation</div>
+    <div id="me-eval-plots-msg" class="empty" style="display:none"></div>
+    <div id="me-eval-charts" style="display:flex;gap:12px">
+      <div style="flex:1;min-width:0" class="chart-wrap">
+        <div class="chart-title">Equity Curve</div>
+        <div class="chart-box" style="height:200px"><canvas id="chart-me-equity"></canvas></div>
+      </div>
+      <div style="flex:1;min-width:0" class="chart-wrap">
+        <div class="chart-title">Drawdown</div>
+        <div class="chart-box" style="height:200px"><canvas id="chart-me-drawdown"></canvas></div>
+      </div>
+      <div style="flex:1;min-width:0" class="chart-wrap">
+        <div class="chart-title">Actions (Allocation)</div>
+        <div class="chart-box" style="height:200px"><canvas id="chart-me-actions"></canvas></div>
+      </div>
+    </div>
+  </div>
+
   <div id="me-instrument-bar" class="card-row" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px"></div>
   <div id="me-content"><div class="empty">Loading...</div></div>
 </section>
