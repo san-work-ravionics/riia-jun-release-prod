@@ -76,6 +76,7 @@ from rita.api.experience.portfolio_hedge import router as portfolio_hedge_router
 from rita.api.experience.fno_hedge_plan import router as fno_hedge_plan_router
 from rita.api.experience.portfolio_analytics import router as portfolio_analytics_router
 from rita.api.experience.hedge_reasoning import router as hedge_reasoning_router
+from rita.api.experience.optimal_allocation import router as optimal_allocation_router
 
 _MOBILE_UA_RE = re.compile(r"Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini", re.IGNORECASE)
 
@@ -396,6 +397,7 @@ app.include_router(portfolio_hedge_router)
 app.include_router(fno_hedge_plan_router)
 app.include_router(portfolio_analytics_router)
 app.include_router(hedge_reasoning_router)
+app.include_router(optimal_allocation_router)
 
 # -- Chat -- local intent classifier + OHLCV dispatch (no external API) -------
 app.include_router(chat_router)

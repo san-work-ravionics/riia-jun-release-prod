@@ -32,6 +32,7 @@ dependencies = [
     "boto3>=1.34",
     "mcp>=1.0",
     "jugaad-data==0.33.1",
+    "ortools>=9.9",
 ]
 
 [project.optional-dependencies]
