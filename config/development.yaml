@@ -3,7 +3,11 @@ server:
   log_level: "debug"
 
 model:
-  path: "C:\\Users\\Sandeep\\Documents\\Work\\code\\riia-cowork-jun\\riia-jun-release\\models"
+  path: "models"
+
+optimizer:
+  sharpe_floor: 0.5
+  mdd_ceiling: 20.0
 
 security:
   cors_origins: ["http://localhost:3000", "http://localhost:8000", "null"]

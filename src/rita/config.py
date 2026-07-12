@@ -120,6 +120,13 @@ class ChatSettings(BaseSettings):
     monitor_dir: str = "data/output"
 
 
+class OptimizerSettings(BaseSettings):
+    model_config = SettingsConfigDict(extra="forbid")
+
+    sharpe_floor: float = 1.0
+    mdd_ceiling: float = 10.0
+
+
 class DatabaseSettings(BaseSettings):
     model_config = SettingsConfigDict(extra="forbid")
 
@@ -179,6 +186,7 @@ class Settings(BaseSettings):
     model: ModelSettings = ModelSettings()
     chat: ChatSettings = ChatSettings()
     instruments: InstrumentsSettings = InstrumentsSettings()
+    optimizer: OptimizerSettings = OptimizerSettings()
     security: SecuritySettings = SecuritySettings()
     database: DatabaseSettings = DatabaseSettings()
 

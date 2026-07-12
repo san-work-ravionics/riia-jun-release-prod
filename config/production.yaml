@@ -1,6 +1,10 @@
 server:
   log_level: "warning"
 
+optimizer:
+  sharpe_floor: 1.0
+  mdd_ceiling: 10.0
+
 data:
   raw_dir: "/app/data/raw"
   input_dir: "/app/data/input"
