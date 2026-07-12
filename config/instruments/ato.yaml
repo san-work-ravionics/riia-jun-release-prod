@@ -1,0 +1,47 @@
+# ATO (Atos SE, Euronext Paris) — Fine-tuning defaults
+# French IT services; distressed/high-volatility regime since 2021 with deep
+# multi-year drawdown — the hardest hedging case among the 11 instruments.
+# New in F34 Phase 2.5 — every instrument gets its own env config (Phase 3.6 pattern).
+instrument: ATO
+
+training:
+  timesteps: 300000
+  learning_rate: 0.0001
+  buffer_size: 100000
+  exploration_pct: 0.55     # higher exploration — regime shifts punish greedy policies
+  n_seeds: 3
+  episode_length: 252       # 1 trading year
+
+# RIIATradingEnvV2 per-instrument hyperparameters (Phase 3.6 pattern).
+# EUR instrument -> rf_daily = 3.5% annualised. Hedge cost/floor above the
+# ASML reference point — realised volatility and gap risk are materially
+# higher in the distressed regime, so protection is priced dearer.
+env:
+  hedge_cost_per_day: 0.0045
+  hedge_daily_floor: -0.020
+  dsr_eta: 0.004
+  rf_daily: 0.0001388888888888889   # 0.035 / 252
+  hard_mdd_limit: -0.10
+  mdd_terminal_penalty: -5.0
+  risk_tolerance_mdd:
+    low: -0.08
+    medium: -0.15
+    high: -0.25
+  episode_length: 252
+  feature_columns:
+    - daily_return
+    - rsi_14
+    - macd
+    - macd_signal
+    - bb_pct_b
+    - trend_score
+    - Close
+    - atr_14
+    - ema_ratio
+
+notes: >
+  Structural downtrend 2021-2024 means the train window (pre-2023) and the
+  backtest window (2025+) sit in very different regimes — expect weak
+  validation metrics and treat this instrument as the stress case for the
+  optimizer's Sharpe floor. Initial config seeded in F34 Phase 2.5; re-tune
+  after the first 50k-timestep round.

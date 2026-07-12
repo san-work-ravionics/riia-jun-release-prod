@@ -1,0 +1,45 @@
+# ASRNL (ASR Nederland, Euronext Amsterdam) — Fine-tuning defaults
+# Dutch insurer; dividend-heavy, moderate volatility, rate-sensitive.
+# New in F34 Phase 2.5 — every instrument gets its own env config (Phase 3.6 pattern).
+instrument: ASRNL
+
+training:
+  timesteps: 300000
+  learning_rate: 0.0001
+  buffer_size: 100000
+  exploration_pct: 0.50
+  n_seeds: 3
+  episode_length: 252       # 1 trading year
+
+# RIIATradingEnvV2 per-instrument hyperparameters (Phase 3.6 pattern).
+# EUR instrument -> rf_daily = 3.5% annualised (ECB-anchored proxy).
+# Baseline hedge cost/floor at the AEX reference point — realised volatility
+# is close to the Dutch index; shorter history (2016+) so no bespoke tuning yet.
+env:
+  hedge_cost_per_day: 0.0038
+  hedge_daily_floor: -0.016
+  dsr_eta: 0.004
+  rf_daily: 0.0001388888888888889   # 0.035 / 252
+  hard_mdd_limit: -0.10
+  mdd_terminal_penalty: -5.0
+  risk_tolerance_mdd:
+    low: -0.08
+    medium: -0.15
+    high: -0.25
+  episode_length: 252
+  feature_columns:
+    - daily_return
+    - rsi_14
+    - macd
+    - macd_signal
+    - bb_pct_b
+    - trend_score
+    - Close
+    - atr_14
+    - ema_ratio
+
+notes: >
+  Rate-sensitive insurer; trend_score and ema_ratio carry signal around rate
+  cycles. Only ~10 years of history (listed 2016) — the smallest dataset of the
+  11 instruments. Initial config seeded from AEX baseline in F34 Phase 2.5;
+  re-tune once the first 50k-timestep training round produces a scorecard.

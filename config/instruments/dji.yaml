@@ -1,0 +1,45 @@
+# DJI (Dow Jones Industrial Average) — Fine-tuning defaults
+# US blue-chip price-weighted index; lowest realised volatility of the 11.
+# New in F34 Phase 2.5 — every instrument gets its own env config (Phase 3.6 pattern).
+instrument: DJI
+
+training:
+  timesteps: 300000
+  learning_rate: 0.0001
+  buffer_size: 100000
+  exploration_pct: 0.50
+  n_seeds: 3
+  episode_length: 252       # 1 trading year; index-level
+
+# RIIATradingEnvV2 per-instrument hyperparameters (Phase 3.6 pattern).
+# USD instrument -> rf_daily = 4.5% annualised (US T-bill proxy).
+# Hedge cost/floor slightly below the NIFTY baseline — deep, liquid index
+# options market and the lowest realised volatility in the universe.
+env:
+  hedge_cost_per_day: 0.0034
+  hedge_daily_floor: -0.014
+  dsr_eta: 0.004
+  rf_daily: 0.00017857142857142857   # 0.045 / 252
+  hard_mdd_limit: -0.10
+  mdd_terminal_penalty: -5.0
+  risk_tolerance_mdd:
+    low: -0.08
+    medium: -0.15
+    high: -0.25
+  episode_length: 252
+  feature_columns:
+    - daily_return
+    - rsi_14
+    - macd
+    - macd_signal
+    - bb_pct_b
+    - trend_score
+    - Close
+    - atr_14
+    - ema_ratio
+
+notes: >
+  Slow-trending blue-chip index; MACD and trend_score dominate. Low volatility
+  means the hedge action should be rarely optimal — a high hedge_usage_pct in
+  the scorecard would signal miscalibration. Initial config seeded in F34
+  Phase 2.5; re-tune after the first 50k-timestep round.
