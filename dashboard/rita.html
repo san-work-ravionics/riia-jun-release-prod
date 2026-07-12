@@ -975,7 +975,7 @@ tr:hover td{background:var(--surface2);}
 <!-- ════════════════ MODEL EVALUATION ════════════════ -->
 <section class="section" id="sec-model-eval">
   <div class="page-hdr">
-    <div><div class="page-title">Model Evaluation</div><div class="page-sub">Per-instrument RL diagnostic scorecard — 10-parameter assessment</div></div>
+    <div><div class="page-title">Model Evaluation</div><div class="page-sub" style="display:flex;justify-content:space-between;align-items:baseline">Per-instrument RL diagnostic scorecard — 10-parameter assessment<span id="me-window-meta" style="font-size:11px;color:var(--t3)"></span></div></div>
     <div class="hdr-actions"><button class="btn btn-ghost btn-sm" onclick="loadModelEval()">↺ Reload</button></div>
   </div>
 
@@ -1003,7 +1003,6 @@ tr:hover td{background:var(--surface2);}
     </div>
   </div>
 
-  <div id="me-instrument-bar" class="card-row" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px"></div>
   <div id="me-content"><div class="empty">Loading...</div></div>
 </section>
 

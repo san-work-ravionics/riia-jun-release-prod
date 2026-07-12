@@ -9,6 +9,7 @@ import { mkChart, C } from '../shared/charts.js';
 let _scorecards = [];
 let _selectedInstrument = null;
 let _summaryRows = [];
+let _summaryData = null;
 let _selectedRowInstrument = null;
 
 // ── Status helpers ────────────────────────────────────────────────────────────
@@ -27,20 +28,19 @@ function healthDot(healthy) {
 
 // ── Main loader ───────────────────────────────────────────────────────────────
 export async function loadModelEval() {
-  // Summary table + scorecards load in parallel; each fails independently.
   await Promise.all([_loadSummary(), _loadScorecards()]);
+  _renderSummaryTable(_summaryData);
   _defaultSelectRow();
 }
 
 // ── F34 P2.5: summary table (latest training round per instrument) ───────────
 async function _loadSummary() {
   try {
-    const data = await api('/api/v1/experience/rita/model-eval-summary');
-    _summaryRows = (data && data.rows) || [];
-    _renderSummaryTable(data);
+    _summaryData = await api('/api/v1/experience/rita/model-eval-summary');
+    _summaryRows = (_summaryData && _summaryData.rows) || [];
   } catch {
+    _summaryData = null;
     _summaryRows = [];
-    setEl('me-summary-table', '<div class="empty">Model evaluation summary unavailable.</div>');
   }
 }
 
@@ -50,44 +50,169 @@ function _gateBadge(gatePass) {
   return '<span class="badge neu">NO DATA</span>';
 }
 
-function _renderSummaryTable(data) {
+let _mergedRows = [];
+let _sortCol = null;
+let _sortAsc = true;
+
+const _COLS = [
+  { key: 'instrument',   label: 'Instrument',     align: 'left' },
+  { key: 'last_trained',  label: 'Last Trained',   align: 'left' },
+  { key: 'timesteps',     label: 'Timesteps',      align: 'right' },
+  { key: 'val_sharpe',    label: 'Val Sharpe',     align: 'right' },
+  { key: 'val_mdd_pct',   label: 'Val MDD%',      align: 'right' },
+  { key: 'bt_sharpe',     label: 'BT Sharpe',     align: 'right' },
+  { key: 'bt_mdd_pct',    label: 'BT MDD%',       align: 'right' },
+  { key: 'trades',        label: 'Trades',         align: 'right' },
+  { key: 'f1_sharpe',     label: 'Sharpe (Test)',  align: 'right', sc: true },
+  { key: 'f2_mdd',        label: 'Max DD (Test)',  align: 'right', sc: true },
+  { key: 'f4_winrate',    label: 'Win Rate',       align: 'right', sc: true },
+  { key: 'f5_baseline',   label: 'vs Baseline',    align: 'right', sc: true },
+  { key: 't1_entropy',    label: 'Entropy',        align: 'right', sc: true },
+  { key: 't2_gap',        label: 'Train-Test Gap', align: 'right', sc: true },
+  { key: 't3_conv',       label: 'Convergence',    align: 'right', sc: true },
+  { key: 't4_seedcv',     label: 'Seed CV',        align: 'right', sc: true },
+];
+
+function _buildMergedRows(data) {
   const rows = (data && data.rows) || [];
-  if (!rows.length) {
-    setEl('me-summary-table', '<div class="empty">No instruments configured.</div>');
-    return;
-  }
-  const meta = `<div style="font-size:11px;color:var(--t3);margin-bottom:6px">
-    Validation: ${data.val_window || '—'} · Backtest: ${data.backtest_window || '—'} · Gate: ${data.gate_rule || '—'}</div>`;
-  const body = rows.map(r => {
+  return rows.map(r => {
+    const sc = _scorecards.find(s => s.instrument === r.instrument);
+    const f = sc?.functional || {};
+    const t = sc?.technical || {};
+    const t3 = t.T3_reward_convergence_pct || {};
+    const t4 = t.T4_seed_consistency_cv || {};
+    return {
+      raw: r, sc,
+      instrument: r.instrument,
+      last_trained: r.last_trained || null,
+      timesteps: r.timesteps,
+      val_sharpe: r.val_sharpe,
+      val_mdd_pct: r.val_mdd_pct,
+      bt_sharpe: r.backtest_sharpe,
+      bt_mdd_pct: r.backtest_mdd_pct,
+      trades: r.trade_count,
+      f1_sharpe: f.F1_sharpe_test?.value ?? null,
+      f1_h: f.F1_sharpe_test?.healthy,
+      f2_mdd: f.F2_max_drawdown_test?.value ?? null,
+      f2_h: f.F2_max_drawdown_test?.healthy,
+      f4_winrate: f.F4_win_rate?.value ?? null,
+      f4_h: f.F4_win_rate?.healthy,
+      f5_baseline: f.F5_baseline_relative?.overall ?? null,
+      f5_h: f.F5_baseline_relative?.healthy,
+      t1_entropy: t.T1_action_entropy?.value ?? null,
+      t1_h: t.T1_action_entropy?.healthy,
+      t2_gap: t.T2_train_test_sharpe_gap?.value ?? null,
+      t2_h: t.T2_train_test_sharpe_gap?.healthy,
+      t3_conv: t3.value ?? null,
+      t3_h: t3.healthy,
+      t4_seedcv: t4.value ?? null,
+      t4_h: t4.healthy,
+    };
+  });
+}
+
+function _fmtCell(m, col) {
+  const v = m[col.key];
+  const mono = 'font-family:var(--fm)';
+  const al = col.align === 'right' ? 'text-align:right;' : '';
+  if (col.key === 'instrument')
+    return `<td style="font-weight:600">${v}</td>`;
+  if (col.key === 'last_trained')
+    return `<td style="${mono};font-size:11px">${v || '—'}</td>`;
+  if (col.key === 'timesteps')
+    return `<td style="${al}">${v != null ? v.toLocaleString() : '—'}</td>`;
+  if (col.key === 'val_sharpe' || col.key === 'bt_sharpe')
+    return `<td style="${al}${mono}">${fmt(v, 3)}</td>`;
+  if (col.key === 'val_mdd_pct' || col.key === 'bt_mdd_pct')
+    return `<td style="${al}${mono}">${fmtPct(v)}</td>`;
+  if (col.key === 'trades')
+    return `<td style="${al}${mono}">${v != null ? v : '—'}</td>`;
+  if (col.key === 'f1_sharpe')
+    return `<td style="${al}${mono}">${healthDot(m.f1_h)} ${v != null ? v.toFixed(3) : '—'}</td>`;
+  if (col.key === 'f2_mdd')
+    return `<td style="${al}${mono}">${healthDot(m.f2_h)} ${v != null ? (v*100).toFixed(1)+'%' : '—'}</td>`;
+  if (col.key === 'f4_winrate')
+    return `<td style="${al}${mono}">${healthDot(m.f4_h)} ${v != null ? (v*100).toFixed(1)+'%' : '—'}</td>`;
+  if (col.key === 'f5_baseline')
+    return `<td style="${al}${mono}">${healthDot(m.f5_h)} ${v != null ? v.toFixed(4) : '—'}</td>`;
+  if (col.key === 't1_entropy')
+    return `<td style="${al}${mono}">${healthDot(m.t1_h)} ${v != null ? v.toFixed(2) : '—'}</td>`;
+  if (col.key === 't2_gap')
+    return `<td style="${al}${mono}">${healthDot(m.t2_h)} ${v != null ? v.toFixed(2) : '—'}</td>`;
+  if (col.key === 't3_conv')
+    return `<td style="${al}${mono}">${healthDot(m.t3_h)} ${v != null ? v.toFixed(1)+'%' : '—'}</td>`;
+  if (col.key === 't4_seedcv')
+    return `<td style="${al}${mono}">${healthDot(m.t4_h)} ${v != null ? v.toFixed(4) : '—'}</td>`;
+  return `<td style="${al}">${v ?? '—'}</td>`;
+}
+
+export function meSortTable(colIdx) {
+  const col = _COLS[colIdx];
+  if (_sortCol === col.key) { _sortAsc = !_sortAsc; }
+  else { _sortCol = col.key; _sortAsc = true; }
+
+  _mergedRows.sort((a, b) => {
+    let va = a[col.key], vb = b[col.key];
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    if (typeof va === 'string') return _sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return _sortAsc ? va - vb : vb - va;
+  });
+  _renderTableHeaders();
+  _renderTableBody();
+}
+
+function _renderTableHeaders() {
+  const thead = document.querySelector('#me-summary-table thead tr');
+  if (!thead) return;
+  const thStyle = 'cursor:pointer;user-select:none;white-space:nowrap';
+  thead.innerHTML = _COLS.map((c, i) => {
+    const arrow = _sortCol === c.key ? (_sortAsc ? ' ▲' : ' ▼') : '';
+    const al = c.align === 'right' ? 'text-align:right;' : '';
+    return `<th style="${al}${thStyle}" onclick="meSortTable(${i})">${c.label}${arrow}</th>`;
+  }).join('');
+}
+
+function _renderTableBody() {
+  const tbody = document.querySelector('#me-summary-table tbody');
+  if (!tbody) return;
+  tbody.innerHTML = _mergedRows.map(m => {
+    const r = m.raw;
     const click = r.has_history
       ? ` onclick="meSelectRow('${r.instrument}')" style="cursor:pointer"` : '';
     const tip = r.source
       ? ` title="source: ${r.source}${r.round != null ? ' · round ' + r.round : ''}"` : '';
-    return `<tr class="me-sum-row" data-inst="${r.instrument}"${click}${tip}>
-      <td style="font-weight:600">${r.instrument}</td>
-      <td style="font-family:var(--fm);font-size:11px">${r.last_trained || '—'}</td>
-      <td style="text-align:right">${r.timesteps != null ? r.timesteps.toLocaleString() : '—'}</td>
-      <td style="text-align:right;font-family:var(--fm)">${fmt(r.val_sharpe, 3)}</td>
-      <td style="text-align:right;font-family:var(--fm)">${fmtPct(r.val_mdd_pct)}</td>
-      <td style="text-align:right;font-family:var(--fm)">${fmtPct(r.val_cagr_pct)}</td>
-      <td style="text-align:right;font-family:var(--fm)">${fmt(r.backtest_sharpe, 3)}</td>
-      <td style="text-align:right;font-family:var(--fm)">${fmtPct(r.backtest_mdd_pct)}</td>
-      <td style="text-align:right;font-family:var(--fm)">${fmtPct(r.backtest_return_pct)}</td>
-      <td style="text-align:right;font-family:var(--fm)">${r.trade_count != null ? r.trade_count : '—'}</td>
-      <td style="text-align:center">${_gateBadge(r.gate_pass)}</td>
-    </tr>`;
+    return `<tr class="me-sum-row" data-inst="${r.instrument}"${click}${tip}>${_COLS.map(c => _fmtCell(m, c)).join('')}</tr>`;
   }).join('');
-  setEl('me-summary-table', `${meta}
-    <table class="data-tbl" style="font-size:12px;width:100%">
-      <thead><tr>
-        <th>Instrument</th><th>Last Trained</th><th style="text-align:right">Timesteps</th>
-        <th style="text-align:right">Val Sharpe</th><th style="text-align:right">Val MDD%</th>
-        <th style="text-align:right">Val CAGR%</th><th style="text-align:right">Backtest Sharpe</th>
-        <th style="text-align:right">Backtest MDD%</th><th style="text-align:right">Backtest Return%</th>
-        <th style="text-align:right">Trades</th><th style="text-align:center">Gate</th>
-      </tr></thead>
-      <tbody>${body}</tbody>
+  if (_selectedRowInstrument) {
+    document.querySelectorAll('.me-sum-row').forEach(el =>
+      el.classList.toggle('me-row-active', el.dataset.inst === _selectedRowInstrument));
+  }
+}
+
+function _renderSummaryTable(data) {
+  if (!data || !(data.rows || []).length) {
+    setEl('me-summary-table', '<div class="empty">No instruments configured.</div>');
+    return;
+  }
+  const metaEl = document.getElementById('me-window-meta');
+  if (metaEl) metaEl.textContent = `Validation: ${data.val_window || '—'} · Backtest: ${data.backtest_window || '—'}`;
+
+  _mergedRows = _buildMergedRows(data);
+
+  const thStyle = 'cursor:pointer;user-select:none;white-space:nowrap';
+  const headers = _COLS.map((c, i) => {
+    const arrow = _sortCol === c.key ? (_sortAsc ? ' ▲' : ' ▼') : '';
+    const al = c.align === 'right' ? 'text-align:right;' : '';
+    return `<th style="${al}${thStyle}" onclick="meSortTable(${i})">${c.label}${arrow}</th>`;
+  }).join('');
+
+  setEl('me-summary-table', `<table class="data-tbl" style="font-size:12px;width:100%">
+      <thead><tr>${headers}</tr></thead>
+      <tbody></tbody>
     </table>`);
+  _renderTableBody();
 }
 
 function _defaultSelectRow() {
@@ -191,12 +316,9 @@ async function _loadScorecards() {
 
   _scorecards = (data && data.scorecards) || [];
   if (!_scorecards.length) {
-    setEl('me-instrument-bar', '');
     setEl('me-content', '<div class="empty">No model evaluations yet — run a per-instrument training job to populate this view.</div>');
     return;
   }
-
-  _renderInstrumentBar();
 
   if (!_selectedInstrument || !_scorecards.find(s => s.instrument === _selectedInstrument)) {
     _selectedInstrument = _scorecards[0].instrument;
@@ -204,30 +326,8 @@ async function _loadScorecards() {
   _renderDetail(_selectedInstrument);
 }
 
-// ── Instrument selector bar (geo-tile pattern) ────────────────────────────────
-function _renderInstrumentBar() {
-  const bar = document.getElementById('me-instrument-bar');
-  if (!bar) return;
-
-  bar.innerHTML = _scorecards.map(sc => {
-    const active = sc.instrument === _selectedInstrument ? ' me-inst-active' : '';
-    const sharpe = sc.functional?.F1_sharpe_test?.value;
-    const status = sc.overall_status || 'unknown';
-    return `<div class="kpi me-inst-tile${active}" data-id="${sc.instrument}"
-                 onclick="meSelectInstrument('${sc.instrument}')"
-                 style="padding:8px 12px;cursor:pointer;min-width:90px">
-      <div class="kpi-label" style="font-size:11px;font-weight:600">${sc.instrument}</div>
-      <div class="kpi-value" style="font-size:15px">${sharpe != null ? sharpe.toFixed(3) : '—'}</div>
-      <div style="margin-top:2px">${sevBadge(status)}</div>
-    </div>`;
-  }).join('');
-}
-
 export function meSelectInstrument(id) {
   _selectedInstrument = id;
-  document.querySelectorAll('.me-inst-tile').forEach(el =>
-    el.classList.toggle('me-inst-active', el.dataset.id === id)
-  );
   _renderDetail(id);
 }
 
@@ -262,18 +362,20 @@ function _renderDetail(instrumentId) {
       ${_kpi('Train-Test Gap', t.T2_train_test_sharpe_gap?.value, 2, t.T2_train_test_sharpe_gap?.healthy, '≤ 0.3')}
     </div>
 
-    <!-- Charts + tables in single row -->
+    <!-- Three charts in single row -->
     <div style="display:flex;gap:12px;align-items:flex-start">
       <div style="flex:1;min-width:0" class="chart-wrap">
         <div class="chart-title">Regime Sharpe (F3)</div>
         <div class="chart-box" style="height:180px"><canvas id="chart-me-regime-sharpe"></canvas></div>
       </div>
       <div style="flex:1;min-width:0" class="chart-wrap">
+        <div class="chart-title">Baseline Relative (F5)</div>
+        <div class="chart-box" style="height:180px"><canvas id="chart-me-baseline"></canvas></div>
+      </div>
+      <div style="flex:1;min-width:0" class="chart-wrap">
         <div class="chart-title">Action by Regime (T5)</div>
         <div class="chart-box" style="height:180px"><canvas id="chart-me-action-regime"></canvas></div>
       </div>
-      <div style="flex:1;min-width:0">${_renderFunctionalTable(f)}</div>
-      <div style="flex:1;min-width:0">${_renderTechnicalTable(t)}</div>
     </div>
 
     <!-- Diagnostic Insights -->
@@ -294,6 +396,7 @@ function _renderDetail(instrumentId) {
 
   setEl('me-content', html);
   _renderRegimeSharpeChart(f);
+  _renderBaselineChart(f);
   _renderActionRegimeChart(t);
 }
 
@@ -312,63 +415,6 @@ function _kpi(label, value, decimals, healthy, threshold) {
     <div class="kpi-value">${healthDot(healthy)} ${display}</div>
     <div class="kpi-delta" style="font-size:9px;color:var(--t3)">${threshold || ''}</div>
   </div>`;
-}
-
-// ── Functional parameter table ────────────────────────────────────────────────
-function _renderFunctionalTable(f) {
-  const rows = [
-    _paramRow('F1', 'Sharpe Ratio (Test)', f.F1_sharpe_test?.value, 3, f.F1_sharpe_test?.healthy, '> 1.0'),
-    _paramRow('F2', 'Max Drawdown (Test)', f.F2_max_drawdown_test?.value != null ? (f.F2_max_drawdown_test.value * 100).toFixed(1) + '%' : null, null, f.F2_max_drawdown_test?.healthy, '> -10%'),
-    _paramRow('F4', 'Win Rate', f.F4_win_rate?.value != null ? (f.F4_win_rate.value * 100).toFixed(1) + '%' : null, null, f.F4_win_rate?.healthy, '≥ 45%'),
-    _paramRow('F5', 'Baseline Relative', f.F5_baseline_relative?.overall, 4, f.F5_baseline_relative?.healthy, '> 0'),
-  ];
-
-  return `<div class="card" style="padding:12px 16px">
-    <div class="card-hdr"><span class="card-title">Functional (F1–F5)</span></div>
-    <table class="data-tbl" style="margin-top:8px;font-size:12px;width:100%">
-      <thead><tr><th>ID</th><th>Parameter</th><th style="text-align:right">Value</th><th style="text-align:center">Status</th><th>Threshold</th></tr></thead>
-      <tbody>${rows.join('')}</tbody>
-    </table>
-  </div>`;
-}
-
-// ── Technical parameter table ─────────────────────────────────────────────────
-function _renderTechnicalTable(t) {
-  const t3 = t.T3_reward_convergence_pct || {};
-  const t4 = t.T4_seed_consistency_cv || {};
-
-  const rows = [
-    _paramRow('T1', 'Action Entropy', t.T1_action_entropy?.value, 2, t.T1_action_entropy?.healthy, '0.5–1.8'),
-    _paramRow('T2', 'Train-Test Gap', t.T2_train_test_sharpe_gap?.value, 2, t.T2_train_test_sharpe_gap?.healthy, '≤ 0.3'),
-    _paramRow('T3', 'Convergence Rate', t3.value != null ? t3.value.toFixed(1) + '%' : null, null, t3.healthy, '20–80%'),
-    _paramRow('T4', 'Seed Consistency (CV)', t4.value, 4, t4.healthy, '≤ 0.5'),
-  ];
-
-  return `<div class="card" style="padding:12px 16px">
-    <div class="card-hdr"><span class="card-title">Technical (T1–T5)</span></div>
-    <table class="data-tbl" style="margin-top:8px;font-size:12px;width:100%">
-      <thead><tr><th>ID</th><th>Parameter</th><th style="text-align:right">Value</th><th style="text-align:center">Status</th><th>Threshold</th></tr></thead>
-      <tbody>${rows.join('')}</tbody>
-    </table>
-  </div>`;
-}
-
-function _paramRow(id, name, value, decimals, healthy, threshold) {
-  let display;
-  if (value == null) {
-    display = '—';
-  } else if (decimals != null) {
-    display = parseFloat(value).toFixed(decimals);
-  } else {
-    display = value;
-  }
-  return `<tr>
-    <td style="font-weight:600;color:var(--t2)">${id}</td>
-    <td>${name}</td>
-    <td style="text-align:right;font-family:var(--fm)">${display}</td>
-    <td style="text-align:center">${healthDot(healthy)}</td>
-    <td style="font-size:10px;color:var(--t3)">${threshold || ''}</td>
-  </tr>`;
 }
 
 // ── F3: Market Regime Sharpe chart ────────────────────────────────────────────
@@ -401,6 +447,40 @@ function _renderRegimeSharpeChart(f) {
       scales: {
         x: { grid: { color: 'rgba(0,0,0,0.06)' }, title: { display: true, text: 'Sharpe Ratio', font: { size: 10 } } },
         y: { grid: { display: false } },
+      },
+    },
+  });
+}
+
+// ── F5: Baseline Relative performance chart ──────────────────────────────────
+function _renderBaselineChart(f) {
+  const f5 = f.F5_baseline_relative || {};
+  const regimes = ['bull', 'bear', 'sideways'];
+  const labels = ['Bull', 'Bear', 'Sideways'];
+  const values = regimes.map(r => f5[r] ?? null);
+  const colors = values.map(v => v != null && v > 0 ? C.build : C.danger);
+
+  mkChart('chart-me-baseline', {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: colors.map(c => c + 'CC'),
+        borderColor: colors,
+        borderWidth: 1,
+        borderRadius: 4,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => `Relative: ${ctx.parsed.y?.toFixed(4) ?? '—'}` } },
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { grid: { color: 'rgba(0,0,0,0.06)' }, title: { display: true, text: 'vs Baseline', font: { size: 10 } } },
       },
     },
   });
