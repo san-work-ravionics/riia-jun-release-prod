@@ -92,6 +92,19 @@ DEFAULT_ENV_CONFIG = InstrumentEnvConfig()
 _ENV_CONFIG_CACHE: dict[str, InstrumentEnvConfig] = {}
 
 
+def list_instrument_ids() -> list[str]:
+    """Return the sorted uppercase instrument ids with an env config on disk.
+
+    One id per ``config/instruments/*.yaml`` file — the single source of truth
+    for which instruments exist (no hardcoded instrument list; F34 Phase 2.5).
+    Returns an empty list if the directory is missing.
+    """
+    if not _INSTRUMENTS_CONFIG_DIR.is_dir():
+        log.warning("instrument_config.dir_not_found", path=str(_INSTRUMENTS_CONFIG_DIR))
+        return []
+    return sorted(p.stem.upper() for p in _INSTRUMENTS_CONFIG_DIR.glob("*.yaml"))
+
+
 def load_instrument_env_config(
     instrument: str, force_reload: bool = False
 ) -> InstrumentEnvConfig:

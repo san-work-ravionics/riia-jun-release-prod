@@ -41,6 +41,12 @@ from rita.schemas.agent_performance import AgentKpi, AgentPerformanceSummaryResp
 from rita.core.classifier import CANONICAL_AGENTS
 from rita.core.rl_diagnostics import generate_insights
 from rita.schemas.rl_scorecard import InstrumentScorecard, RLScorecardResponse
+from rita.core.instrument_config import list_instrument_ids
+from rita.core.training_tracker import load_latest_round
+from rita.schemas.model_eval_summary import (
+    ModelEvalSummaryResponse,
+    ModelEvalSummaryRow,
+)
 
 log = structlog.get_logger()
 
@@ -1361,12 +1367,15 @@ def geography_overview(db: Session = Depends(get_db)) -> GeographyOverviewRespon
 # ── GET /api/v1/experience/rita/backtest-daily ────────────────────────────────
 
 @router.get("/experience/rita/backtest-daily", summary="Daily backtest results (experience tier)")
-def experience_backtest_daily(db: Session = Depends(get_db)) -> list[dict[str, Any]]:
+def experience_backtest_daily(
+    instrument: str | None = Query(None, description="Instrument id; defaults to the active instrument"),
+    db: Session = Depends(get_db),
+) -> list[dict[str, Any]]:
     """Experience-tier alias of /backtest-daily. Read-only, no db.commit()."""
     _start = time.monotonic()
     sources: dict[str, Any] = {}
 
-    active_id = _get_active_instrument_id(db)
+    active_id = instrument.upper() if instrument else _get_active_instrument_id(db)
 
     t0 = time.monotonic()
     try:
@@ -1449,6 +1458,98 @@ def experience_backtest_daily(db: Session = Depends(get_db)) -> list[dict[str, A
         sources=sources,
     )
     return response
+
+
+# ── GET /api/v1/experience/rita/model-eval-summary ────────────────────────────
+
+def _mes_float(row: dict[str, Any], key: str) -> float | None:
+    """Coerce a training-history cell to float; NaN/missing/malformed → None."""
+    val = row.get(key)
+    if val is None:
+        return None
+    try:
+        f = float(val)
+    except (TypeError, ValueError):
+        return None
+    return None if _math.isnan(f) else f
+
+
+def _mes_int(row: dict[str, Any], key: str) -> int | None:
+    f = _mes_float(row, key)
+    return int(f) if f is not None else None
+
+
+@router.get(
+    "/experience/rita/model-eval-summary",
+    summary="Per-instrument model evaluation summary (latest training round)",
+    response_model=ModelEvalSummaryResponse,
+)
+def experience_model_eval_summary() -> ModelEvalSummaryResponse:
+    """Latest training-round metrics for every configured instrument (F34 P2.5).
+
+    Read-only composition over core helpers (ADR-002 — no file I/O here):
+    ``list_instrument_ids()`` (config/instruments/*.yaml) ×
+    ``load_latest_round()`` (models/<INST>/training_history.csv).
+    Gate computed server-side; rows sorted backtest_sharpe desc, nulls last.
+    """
+    _start = time.monotonic()
+    rows: list[ModelEvalSummaryRow] = []
+
+    for inst in list_instrument_ids():
+        try:
+            latest = load_latest_round(inst)
+        except Exception as exc:  # noqa: BLE001 — one bad CSV must not 500 the table
+            log.warning("model_eval_summary.load_failed", instrument=inst, error=str(exc))
+            latest = None
+
+        if latest is None:
+            rows.append(ModelEvalSummaryRow(instrument=inst))
+            continue
+
+        backtest_sharpe  = _mes_float(latest, "backtest_sharpe")
+        backtest_mdd_pct = _mes_float(latest, "backtest_mdd_pct")
+        if backtest_sharpe is None or backtest_mdd_pct is None:
+            gate_pass: bool | None = None
+        else:
+            gate_pass = backtest_sharpe >= 1.0 and abs(backtest_mdd_pct) <= 10.0
+
+        source = latest.get("source")
+        rows.append(ModelEvalSummaryRow(
+            instrument=inst,
+            last_trained=str(latest["timestamp"]) if latest.get("timestamp") is not None else None,
+            timesteps=_mes_int(latest, "timesteps"),
+            val_sharpe=_mes_float(latest, "val_sharpe"),
+            val_mdd_pct=_mes_float(latest, "val_mdd_pct"),
+            val_cagr_pct=_mes_float(latest, "val_cagr_pct"),
+            backtest_sharpe=backtest_sharpe,
+            backtest_mdd_pct=backtest_mdd_pct,
+            backtest_return_pct=_mes_float(latest, "backtest_return_pct"),
+            trade_count=_mes_int(latest, "backtest_trade_count"),
+            gate_pass=gate_pass,
+            source=str(source) if source is not None else None,
+            round=_mes_int(latest, "round"),
+            has_history=True,
+        ))
+
+    # Sort: backtest_sharpe desc; null-sharpe rows last, alphabetical among themselves.
+    rows.sort(key=lambda r: (
+        r.backtest_sharpe is None,
+        -(r.backtest_sharpe if r.backtest_sharpe is not None else 0.0),
+        r.instrument,
+    ))
+
+    log_event(
+        log, "info", "experience.compose",
+        handler="experience_model_eval_summary",
+        duration_ms=int((time.monotonic() - _start) * 1000),
+        overall_status="ok" if any(r.has_history for r in rows) else "empty",
+        response_keys=["rows"],
+        sources={"training_history_csv": {
+            "status": "ok",
+            "record_count": sum(1 for r in rows if r.has_history),
+        }},
+    )
+    return ModelEvalSummaryResponse(rows=rows)
 
 
 # ── GET /api/v1/experience/rita/risk-timeline ─────────────────────────────────

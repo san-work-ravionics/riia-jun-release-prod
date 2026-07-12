@@ -17,6 +17,9 @@ let _sortAsc   = false;
 let _geoCache  = null;
 let _draftItems = [];   // [{id, ret, on}]
 let _activePreset = null;
+let _optimizerMode = false;
+let _optimizerResponse = null;
+let _optimizerFetchId = 0; // race-condition guard: latest-call-wins
 
 // Phase 2: sector, risk_score, return_1y_pct now come from the API.
 // This fallback map is used only when the API field is null (instruments with
@@ -469,6 +472,25 @@ const _HORIZON_PRESETS = {
 function _draftAlloc() {
   const on = _draftItems.filter(i => i.on);
   if (!on.length) return {};
+
+  // Optimizer mode: use backend allocation_pct per instrument
+  if (_optimizerMode && _optimizerResponse && _optimizerResponse.allocations && _optimizerResponse.allocations.length) {
+    const map = {};
+    for (const item of on) {
+      const match = _optimizerResponse.allocations.find(
+        a => a.ticker.toUpperCase() === item.id.toUpperCase()
+      );
+      if (match) {
+        map[item.id] = match.allocation_pct;
+      } else {
+        // Ticker not found in optimizer response — fallback to 0
+        map[item.id] = 0;
+      }
+    }
+    return map;
+  }
+
+  // Equal-weight fallback
   const base = Math.floor(100 / on.length);
   const rem  = 100 - base * on.length;
   const map  = {};
@@ -515,17 +537,74 @@ function _renderDraftDonut(items) {
 
 function _updateDraftStats() {
   const on = _draftItems.filter(i => i.on);
-  const avgRet  = on.length ? on.reduce((s, i) => s + (i.ret || 0), 0) / on.length : null;
-  const avgRisk = on.length ? on.reduce((s, i) => s + _estRisk(i.ret), 0) / on.length : null;
 
   _setText('pb-draft-holdings', on.length || '—');
-  const projEl = document.getElementById('pb-draft-proj-return');
-  if (projEl) {
-    projEl.textContent  = avgRet != null ? _fmtRet(avgRet) : '—';
-    projEl.style.color  = (avgRet || 0) >= 0 ? '#16a34a' : '#dc2626';
+
+  // Mode badge
+  const badgeEl = document.getElementById('pb-draft-mode-badge');
+  if (badgeEl) {
+    if (_optimizerMode) {
+      badgeEl.textContent = 'Optimized';
+      badgeEl.style.display = '';
+      badgeEl.style.background = 'rgba(22,163,106,.12)';
+      badgeEl.style.color = '#16a34a';
+    } else {
+      badgeEl.textContent = 'Equal Weight';
+      badgeEl.style.display = '';
+      badgeEl.style.background = 'rgba(100,116,139,.1)';
+      badgeEl.style.color = '#64748b';
+    }
   }
-  const riskEl = document.getElementById('pb-draft-risk');
-  if (riskEl) riskEl.innerHTML = avgRisk != null ? _riskDots(Math.round(avgRisk)) : '—';
+
+  if (_optimizerMode && _optimizerResponse) {
+    // Portfolio-level metrics from optimizer
+    const projEl = document.getElementById('pb-draft-proj-return');
+    if (projEl) {
+      projEl.textContent = _optimizerResponse.estimated_sharpe != null
+        ? _optimizerResponse.estimated_sharpe.toFixed(2)
+        : '—';
+      projEl.style.color = (_optimizerResponse.estimated_sharpe || 0) >= 1 ? '#16a34a' : '#64748b';
+    }
+    const riskEl = document.getElementById('pb-draft-risk');
+    if (riskEl) {
+      riskEl.textContent = _optimizerResponse.estimated_mdd_pct != null
+        ? _optimizerResponse.estimated_mdd_pct.toFixed(1) + '%'
+        : '—';
+    }
+    // Sharpe and MDD stat rows
+    const sharpeEl = document.getElementById('pb-draft-sharpe');
+    if (sharpeEl) {
+      sharpeEl.textContent = _optimizerResponse.estimated_sharpe != null
+        ? _optimizerResponse.estimated_sharpe.toFixed(2)
+        : '—';
+      sharpeEl.style.color = (_optimizerResponse.estimated_sharpe || 0) >= 1 ? '#16a34a' : '#64748b';
+    }
+    const mddEl = document.getElementById('pb-draft-mdd');
+    if (mddEl) {
+      mddEl.textContent = _optimizerResponse.estimated_mdd_pct != null
+        ? _optimizerResponse.estimated_mdd_pct.toFixed(1) + '%'
+        : '—';
+      mddEl.style.color = (_optimizerResponse.estimated_mdd_pct || 0) > 10 ? '#dc2626' : '#16a34a';
+    }
+  } else {
+    // Equal-weight mode: original stats
+    const avgRet  = on.length ? on.reduce((s, i) => s + (i.ret || 0), 0) / on.length : null;
+    const avgRisk = on.length ? on.reduce((s, i) => s + _estRisk(i.ret), 0) / on.length : null;
+
+    const projEl = document.getElementById('pb-draft-proj-return');
+    if (projEl) {
+      projEl.textContent  = avgRet != null ? _fmtRet(avgRet) : '—';
+      projEl.style.color  = (avgRet || 0) >= 0 ? '#16a34a' : '#dc2626';
+    }
+    const riskEl = document.getElementById('pb-draft-risk');
+    if (riskEl) riskEl.innerHTML = avgRisk != null ? _riskDots(Math.round(avgRisk)) : '—';
+
+    // Hide optimizer-specific stats in equal-weight mode
+    const sharpeEl = document.getElementById('pb-draft-sharpe');
+    if (sharpeEl) sharpeEl.textContent = '—';
+    const mddEl = document.getElementById('pb-draft-mdd');
+    if (mddEl) mddEl.textContent = '—';
+  }
 
   _renderDraftDonut(_draftItems);
 }
@@ -542,10 +621,26 @@ function _renderDraftList() {
     const retColor = (item.ret || 0) >= 0 ? '#16a34a' : '#dc2626';
     const pct = item.on ? (alloc[item.id] || 0) : 0;
     const barW = Math.min(pct * 2, 100);
+
+    // Optimizer mode: show per-instrument Sharpe, MDD, and metric_source
+    let metricsHtml = '';
+    if (_optimizerMode && _optimizerResponse && _optimizerResponse.allocations) {
+      const match = _optimizerResponse.allocations.find(
+        a => a.ticker.toUpperCase() === item.id.toUpperCase()
+      );
+      if (match && item.on) {
+        const srcBadge = match.metric_source === 'model'
+          ? '<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(22,163,106,.12);color:#16a34a;font-weight:600">model</span>'
+          : '<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(100,116,139,.1);color:#64748b;font-weight:600">proxy</span>';
+        metricsHtml = `<span style="font-size:10px;color:#64748b;font-family:'IBM Plex Mono',monospace;white-space:nowrap">S:${match.sharpe.toFixed(1)} MDD:${match.mdd_pct.toFixed(0)}%</span> ${srcBadge}`;
+      }
+    }
+
     return `<div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border);background:${item.on ? 'transparent' : 'rgba(0,0,0,.02)'}">
       <span style="width:16px;text-align:right;font-size:11px;color:var(--t2);font-family:'IBM Plex Mono',monospace">${idx + 1}</span>
       <span style="font-weight:700;font-size:13px;font-family:'IBM Plex Mono',monospace;width:68px">${item.id}</span>
       <span style="font-size:12px;font-weight:700;color:${retColor};font-family:'IBM Plex Mono',monospace;width:52px">${_fmtRet(item.ret)}</span>
+      ${metricsHtml}
       <div style="flex:1;height:5px;border-radius:3px;background:rgba(0,0,0,.08)">
         <div style="width:${barW}%;height:100%;border-radius:3px;background:${item.on ? '#BE185D' : '#cbd5e1'}"></div>
       </div>
@@ -568,7 +663,7 @@ function _horizonReturn(inst, key) {
   return inst.return_1y_pct ?? inst.daily_return_pct;
 }
 
-function _applyPreset(presetKey, geo) {
+async function _applyPreset(presetKey, geo) {
   _activePreset = presetKey;
   const preset = _HORIZON_PRESETS[presetKey];
   if (!preset) return;
@@ -602,6 +697,48 @@ function _applyPreset(presetKey, geo) {
     ret: _horizonReturn(i, presetKey),
     on: idx < 5,
   }));
+
+  // Call optimizer endpoint — show loading state while in flight
+  const fetchId = ++_optimizerFetchId;
+  const draftEl = document.getElementById('pb-guided-draft');
+  if (draftEl) {
+    draftEl.innerHTML = '<div style="padding:12px 14px;color:#64748b;font-size:12px;display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:14px;height:14px;border:2px solid #BE185D;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite"></span> Optimizing...</div>';
+  }
+
+  try {
+    const data = await apiFetch('/api/v1/experience/rita/optimal-allocation?horizon=' + presetKey);
+
+    // Race-condition guard: ignore stale responses
+    if (fetchId !== _optimizerFetchId) return;
+
+    if (data && (data.solver_status === 'OPTIMAL' || data.solver_status === 'FEASIBLE')
+        && Array.isArray(data.allocations) && data.allocations.length > 0) {
+      _optimizerMode = true;
+      _optimizerResponse = data;
+
+      // Override draft items with optimizer allocations (ticker matching)
+      _draftItems = data.allocations.map((a, idx) => {
+        const existingItem = ranked.find(r => r.id.toUpperCase() === a.ticker.toUpperCase());
+        return {
+          id: a.ticker.toUpperCase(),
+          ret: existingItem ? _horizonReturn(existingItem, presetKey) : null,
+          on: true,
+        };
+      });
+
+      if (titleEl) titleEl.textContent = preset.label + ' (Optimized)';
+    } else {
+      // Non-optimal status or empty allocations — equal-weight fallback
+      _optimizerMode = false;
+      _optimizerResponse = null;
+    }
+  } catch (e) {
+    // Network error or 500 — fall back to equal-weight silently
+    if (fetchId !== _optimizerFetchId) return;
+    _optimizerMode = false;
+    _optimizerResponse = null;
+    console.warn('[PB] Optimizer fetch failed, using equal-weight:', e.message || e);
+  }
 
   _renderDraftList();
   _updateDraftStats();
@@ -715,6 +852,16 @@ export function pbToggleDraftItem(id) {
   const item = _draftItems.find(i => i.id === id);
   if (!item) return;
   item.on = !item.on;
+
+  // Toggling an item OFF in optimizer mode switches to equal-weight
+  if (_optimizerMode && !item.on) {
+    _optimizerMode = false;
+    _optimizerResponse = null;
+    const titleEl = document.getElementById('pb-draft-title');
+    const preset = _activePreset ? _HORIZON_PRESETS[_activePreset] : null;
+    if (titleEl && preset) titleEl.textContent = preset.label;
+  }
+
   _renderDraftList();
   _updateDraftStats();
 }

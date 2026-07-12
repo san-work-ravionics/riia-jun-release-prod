@@ -142,3 +142,27 @@ class TrainingTracker:
         """Return the most recent round as a dict, or None if no history exists."""
         history = self.load_history()
         return history.iloc[-1].to_dict() if not history.empty else None
+
+
+# ─── Module-level helpers ─────────────────────────────────────────────────────
+
+def load_latest_round(instrument: str) -> dict | None:
+    """Return the latest training round for ``instrument``, or None.
+
+    Composes ``TrainingTracker.load_history()`` with ``settings.model.path``
+    so callers (Experience-tier routes) never touch the filesystem directly
+    (ADR-002; F34 Phase 2.5). Missing/empty/unreadable history → None.
+    """
+    from rita.config import get_settings
+
+    settings = get_settings()
+    tracker = TrainingTracker(os.path.join(settings.model.path, instrument.upper()))
+    try:
+        history = tracker.load_history()
+    except Exception as exc:  # pragma: no cover — load_history already guards
+        log.warning("training_tracker.latest_round_failed",
+                    instrument=instrument, error=str(exc))
+        return None
+    if history.empty:
+        return None
+    return history.iloc[-1].to_dict()

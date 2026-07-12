@@ -1,11 +1,15 @@
 // Model Evaluation — per-instrument RL diagnostic scorecard viewer
 // Instrument selector (geo-tile pattern) + 10-parameter scorecard detail view.
+// F34 Phase 2.5: per-instrument summary table (training_history latest round)
+// + clickable rows loading equity/drawdown/actions evaluation plots.
 import { api } from './api.js';
-import { setEl } from '../shared/utils.js';
+import { setEl, fmt, fmtPct } from '../shared/utils.js';
 import { mkChart, C } from '../shared/charts.js';
 
 let _scorecards = [];
 let _selectedInstrument = null;
+let _summaryRows = [];
+let _selectedRowInstrument = null;
 
 // ── Status helpers ────────────────────────────────────────────────────────────
 const _SEV_CLS  = { fail: 'err', warn: 'warn', pass: 'ok', info: 'neu' };
@@ -23,6 +27,160 @@ function healthDot(healthy) {
 
 // ── Main loader ───────────────────────────────────────────────────────────────
 export async function loadModelEval() {
+  // Summary table + scorecards load in parallel; each fails independently.
+  await Promise.all([_loadSummary(), _loadScorecards()]);
+  _defaultSelectRow();
+}
+
+// ── F34 P2.5: summary table (latest training round per instrument) ───────────
+async function _loadSummary() {
+  try {
+    const data = await api('/api/v1/experience/rita/model-eval-summary');
+    _summaryRows = (data && data.rows) || [];
+    _renderSummaryTable(data);
+  } catch {
+    _summaryRows = [];
+    setEl('me-summary-table', '<div class="empty">Model evaluation summary unavailable.</div>');
+  }
+}
+
+function _gateBadge(gatePass) {
+  if (gatePass === true)  return '<span class="badge ok">PASS</span>';
+  if (gatePass === false) return '<span class="badge warn">BELOW GATE</span>';
+  return '<span class="badge neu">NO DATA</span>';
+}
+
+function _renderSummaryTable(data) {
+  const rows = (data && data.rows) || [];
+  if (!rows.length) {
+    setEl('me-summary-table', '<div class="empty">No instruments configured.</div>');
+    return;
+  }
+  const meta = `<div style="font-size:11px;color:var(--t3);margin-bottom:6px">
+    Validation: ${data.val_window || '—'} · Backtest: ${data.backtest_window || '—'} · Gate: ${data.gate_rule || '—'}</div>`;
+  const body = rows.map(r => {
+    const click = r.has_history
+      ? ` onclick="meSelectRow('${r.instrument}')" style="cursor:pointer"` : '';
+    const tip = r.source
+      ? ` title="source: ${r.source}${r.round != null ? ' · round ' + r.round : ''}"` : '';
+    return `<tr class="me-sum-row" data-inst="${r.instrument}"${click}${tip}>
+      <td style="font-weight:600">${r.instrument}</td>
+      <td style="font-family:var(--fm);font-size:11px">${r.last_trained || '—'}</td>
+      <td style="text-align:right">${r.timesteps != null ? r.timesteps.toLocaleString() : '—'}</td>
+      <td style="text-align:right;font-family:var(--fm)">${fmt(r.val_sharpe, 3)}</td>
+      <td style="text-align:right;font-family:var(--fm)">${fmtPct(r.val_mdd_pct)}</td>
+      <td style="text-align:right;font-family:var(--fm)">${fmtPct(r.val_cagr_pct)}</td>
+      <td style="text-align:right;font-family:var(--fm)">${fmt(r.backtest_sharpe, 3)}</td>
+      <td style="text-align:right;font-family:var(--fm)">${fmtPct(r.backtest_mdd_pct)}</td>
+      <td style="text-align:right;font-family:var(--fm)">${fmtPct(r.backtest_return_pct)}</td>
+      <td style="text-align:right;font-family:var(--fm)">${r.trade_count != null ? r.trade_count : '—'}</td>
+      <td style="text-align:center">${_gateBadge(r.gate_pass)}</td>
+    </tr>`;
+  }).join('');
+  setEl('me-summary-table', `${meta}
+    <table class="data-tbl" style="font-size:12px;width:100%">
+      <thead><tr>
+        <th>Instrument</th><th>Last Trained</th><th style="text-align:right">Timesteps</th>
+        <th style="text-align:right">Val Sharpe</th><th style="text-align:right">Val MDD%</th>
+        <th style="text-align:right">Val CAGR%</th><th style="text-align:right">Backtest Sharpe</th>
+        <th style="text-align:right">Backtest MDD%</th><th style="text-align:right">Backtest Return%</th>
+        <th style="text-align:right">Trades</th><th style="text-align:center">Gate</th>
+      </tr></thead>
+      <tbody>${body}</tbody>
+    </table>`);
+}
+
+function _defaultSelectRow() {
+  try {
+    const withData = _summaryRows.filter(r => r.has_history);
+    if (!withData.length) return;
+    const target = withData.find(r => r.instrument === 'ASML') || withData[0];
+    meSelectRow(target.instrument);
+  } catch { /* default selection is best-effort */ }
+}
+
+export function meSelectRow(instrument) {
+  _selectedRowInstrument = instrument;
+  document.querySelectorAll('.me-sum-row').forEach(el =>
+    el.classList.toggle('me-row-active', el.dataset.inst === instrument)
+  );
+  _renderEvalPlots(instrument);
+  // Delegate to the existing scorecard view when one exists for this instrument.
+  if (_scorecards.find(s => s.instrument === instrument)) {
+    meSelectInstrument(instrument);
+  }
+}
+
+async function _renderEvalPlots(instrument) {
+  setEl('me-eval-plots-title', `Evaluation — ${instrument}`);
+  let series = [];
+  try {
+    series = await api(`/api/v1/experience/rita/backtest-daily?instrument=${encodeURIComponent(instrument)}`);
+  } catch {
+    series = [];
+  }
+  if (instrument !== _selectedRowInstrument) return; // stale response — a newer row was clicked
+
+  const msgEl    = document.getElementById('me-eval-plots-msg');
+  const chartsEl = document.getElementById('me-eval-charts');
+  if (!series || !series.length) {
+    if (msgEl)    { msgEl.style.display = ''; msgEl.textContent = `No backtest series for ${instrument}.`; }
+    if (chartsEl) chartsEl.style.display = 'none';
+    return;
+  }
+  if (msgEl)    msgEl.style.display = 'none';
+  if (chartsEl) chartsEl.style.display = 'flex';
+
+  const labels = series.map(d => d.date);
+  const pv     = series.map(d => d.portfolio_value);
+  const bv     = series.map(d => d.benchmark_value);
+  const alloc  = series.map(d => d.allocation);
+
+  // Drawdown computed client-side from portfolio_value running max.
+  let peak = -Infinity;
+  const dd = pv.map(v => {
+    if (v != null && v > peak) peak = v;
+    return v != null && peak > 0 ? ((v / peak) - 1) * 100 : null;
+  });
+
+  const axis = { x: { grid: { display: false }, ticks: { maxTicksLimit: 8, font: { size: 9 } } },
+                 y: { grid: { color: 'rgba(0,0,0,0.06)' }, ticks: { font: { size: 9 } } } };
+
+  mkChart('chart-me-equity', {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: 'Portfolio', data: pv, borderColor: C.run,  backgroundColor: C.run + '22', borderWidth: 1.5, pointRadius: 0, tension: 0.15 },
+      { label: 'Benchmark', data: bv, borderColor: C.t3,   borderDash: [4, 3], borderWidth: 1.2, pointRadius: 0, tension: 0.15 },
+    ] },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
+      scales: axis },
+  });
+
+  mkChart('chart-me-drawdown', {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: 'Drawdown %', data: dd, borderColor: C.danger, backgroundColor: C.danger + '22', fill: true, borderWidth: 1.2, pointRadius: 0, tension: 0.1 },
+    ] },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: ctx => `DD: ${ctx.parsed.y?.toFixed(2) ?? '—'}%` } } },
+      scales: axis },
+  });
+
+  mkChart('chart-me-actions', {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: 'Allocation', data: alloc, borderColor: C.build, backgroundColor: C.build + '22', stepped: true, fill: true, borderWidth: 1.2, pointRadius: 0 },
+    ] },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: axis },
+  });
+}
+
+// ── Existing scorecard flow (unchanged behaviour) ─────────────────────────────
+async function _loadScorecards() {
   let data;
   try {
     data = await api('/api/v1/experience/rita/agent-performance/scorecards');

@@ -1,0 +1,44 @@
+# SBIN (State Bank of India, NSE) — Fine-tuning defaults
+# Indian PSU bank; high-beta single stock, cyclical with credit cycles.
+# New in F34 Phase 2.5 — every instrument gets its own env config (Phase 3.6 pattern).
+instrument: SBIN
+
+training:
+  timesteps: 300000
+  learning_rate: 0.0001
+  buffer_size: 100000
+  exploration_pct: 0.50
+  n_seeds: 3
+  episode_length: 252       # 1 trading year
+
+# RIIATradingEnvV2 per-instrument hyperparameters (Phase 3.6 pattern).
+# INR instrument -> rf_daily = 7% annualised (India 10Y govt bond proxy,
+# matches NIFTY/BANKNIFTY). Hedge cost/floor above the NIFTY index baseline —
+# single-stock volatility runs higher than the diversified index.
+env:
+  hedge_cost_per_day: 0.0040
+  hedge_daily_floor: -0.017
+  dsr_eta: 0.004
+  rf_daily: 0.0002777777777777778   # 0.07 / 252
+  hard_mdd_limit: -0.10
+  mdd_terminal_penalty: -5.0
+  risk_tolerance_mdd:
+    low: -0.08
+    medium: -0.15
+    high: -0.25
+  episode_length: 252
+  feature_columns:
+    - daily_return
+    - rsi_14
+    - macd
+    - macd_signal
+    - bb_pct_b
+    - trend_score
+    - Close
+    - atr_14
+    - ema_ratio
+
+notes: >
+  Credit-cycle driven PSU bank; trend_score and macd carry signal through the
+  2020-2024 re-rating. Same rf anchor as NIFTY/BANKNIFTY (INR). Initial config
+  seeded in F34 Phase 2.5; re-tune after the first 50k-timestep round.

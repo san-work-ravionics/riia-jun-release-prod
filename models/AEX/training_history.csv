@@ -1,0 +1,2 @@
+round,timestamp,timesteps,source,val_sharpe,val_mdd_pct,val_cagr_pct,val_constraints_met,backtest_sharpe,backtest_mdd_pct,backtest_return_pct,backtest_cagr_pct,backtest_trade_count,backtest_constraints_met,notes
+1,2026-07-12 07:15:41,50000,trained,0.499,-7.17,11.75,False,0.527,-13.77,20.31,13.34,84,False,F34-P2.5 50k seed42 rita_ddqn_v2_aex_f34p25

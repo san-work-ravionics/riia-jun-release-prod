@@ -1,3 +1,4 @@
 round,timestamp,timesteps,source,val_sharpe,val_mdd_pct,val_cagr_pct,val_constraints_met,backtest_sharpe,backtest_mdd_pct,backtest_return_pct,backtest_cagr_pct,backtest_trade_count,backtest_constraints_met,notes
 1,2026-04-15 15:56:16,50000,trained,0.634,-53.24,0.0,False,0.634,-53.24,218.79,218.79,0,False,run_id=9f607b26
 2,2026-04-20 10:56:21,100000,trained,0.69,-42.89,0.0,False,0.69,-42.89,203.24,203.24,0,False,run_id=aef279db
+3,2026-07-12 07:06:06,50000,trained,0.899,-20.48,42.32,False,0.558,-19.63,33.27,21.87,150,False,F34-P2.5 50k seed42 rita_ddqn_v2_nvidia_f34p25

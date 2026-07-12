@@ -4,3 +4,4 @@ round,timestamp,timesteps,source,val_sharpe,val_mdd_pct,val_cagr_pct,val_constra
 3,2026-04-21 13:37:22,100000,trained,-0.284,-49.25,-9.32,False,-0.284,-49.25,-9.32,-9.32,0,False,run_id=8cde37f7
 4,2026-04-23 12:39:08,300000,trained,-0.115,-45.72,6.74,False,-0.115,-45.72,6.74,6.74,0,False,run_id=faf61e72
 5,2026-05-05 15:38:08,50000,trained,0.236,-29.04,65.04,False,0.236,-29.04,65.04,65.04,673,False,run_id=14705f79
+6,2026-07-12 06:59:38,50000,trained,0.457,-24.58,16.21,False,0.235,-25.24,15.55,10.26,100,False,F34-P2.5 50k seed42 rita_ddqn_v2_asml_f34p25
