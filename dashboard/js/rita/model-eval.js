@@ -60,9 +60,12 @@ const _COLS = [
   { key: 'timesteps',     label: 'Timesteps',      align: 'right' },
   { key: 'val_sharpe',    label: 'Val Sharpe',     align: 'right' },
   { key: 'val_mdd_pct',   label: 'Val MDD%',      align: 'right' },
+  { key: 'val_cagr_pct',  label: 'Val CAGR%',     align: 'right' },
   { key: 'bt_sharpe',     label: 'BT Sharpe',     align: 'right' },
   { key: 'bt_mdd_pct',    label: 'BT MDD%',       align: 'right' },
+  { key: 'bt_return_pct', label: 'BT Return%',    align: 'right' },
   { key: 'trades',        label: 'Trades',         align: 'right' },
+  { key: 'gate_pass',     label: 'Gate',           align: 'center' },
   { key: 'f1_sharpe',     label: 'Sharpe (Test)',  align: 'right', sc: true },
   { key: 'f2_mdd',        label: 'Max DD (Test)',  align: 'right', sc: true },
   { key: 'f4_winrate',    label: 'Win Rate',       align: 'right', sc: true },
@@ -88,9 +91,12 @@ function _buildMergedRows(data) {
       timesteps: r.timesteps,
       val_sharpe: r.val_sharpe,
       val_mdd_pct: r.val_mdd_pct,
+      val_cagr_pct: r.val_cagr_pct,
       bt_sharpe: r.backtest_sharpe,
       bt_mdd_pct: r.backtest_mdd_pct,
+      bt_return_pct: r.backtest_return_pct,
       trades: r.trade_count,
+      gate_pass: r.gate_pass,
       f1_sharpe: f.F1_sharpe_test?.value ?? null,
       f1_h: f.F1_sharpe_test?.healthy,
       f2_mdd: f.F2_max_drawdown_test?.value ?? null,
@@ -125,6 +131,10 @@ function _fmtCell(m, col) {
     return `<td style="${al}${mono}">${fmt(v, 3)}</td>`;
   if (col.key === 'val_mdd_pct' || col.key === 'bt_mdd_pct')
     return `<td style="${al}${mono}">${fmtPct(v)}</td>`;
+  if (col.key === 'val_cagr_pct' || col.key === 'bt_return_pct')
+    return `<td style="${al}${mono}">${v != null ? v.toFixed(1) + '%' : '—'}</td>`;
+  if (col.key === 'gate_pass')
+    return `<td style="text-align:center">${_gateBadge(v)}</td>`;
   if (col.key === 'trades')
     return `<td style="${al}${mono}">${v != null ? v : '—'}</td>`;
   if (col.key === 'f1_sharpe')
