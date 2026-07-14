@@ -137,7 +137,7 @@ def _run_pipeline_job(
         inst_defaults = load_instrument_defaults(req.instrument)
         train_body = TrainingRunCreate(
             instrument=req.instrument,
-            model_version=f"pipeline-{train_run_id[:8]}",
+            model_version=f"rita_ddqn_v2_{req.instrument.lower()}",
             algorithm="DoubleDQN",
             timesteps=req.timesteps,
             learning_rate=inst_defaults.get("learning_rate", 1e-4),
