@@ -2214,8 +2214,9 @@ def _load_rl_scorecards() -> list[dict]:
     import json
     from pathlib import Path
 
-    app_root = Path(__file__).resolve().parents[4]
-    pattern = str(app_root / "rita_output" / "models_v2" / "**" / "scorecard_*.json")
+    from rita.config import get_settings
+    model_path = Path(get_settings().model.path)
+    pattern = str(model_path / "**" / "scorecard_*.json")
 
     by_instrument: dict[str, tuple[str, dict]] = {}
     for fp in sorted(glob.glob(pattern, recursive=True)):
