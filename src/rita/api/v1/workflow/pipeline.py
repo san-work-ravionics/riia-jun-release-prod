@@ -21,6 +21,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from rita.auth import get_current_user
+from rita.core.ml_dispatch import load_instrument_defaults
 from rita.database import get_db, SessionLocal
 from rita.repositories.instrument import InstrumentRepository
 from rita.repositories.config_overrides import ConfigOverridesRepository
@@ -133,15 +134,16 @@ def _run_pipeline_job(
 
     db = SessionLocal()
     try:
+        inst_defaults = load_instrument_defaults(req.instrument)
         train_body = TrainingRunCreate(
             instrument=req.instrument,
             model_version=f"pipeline-{train_run_id[:8]}",
             algorithm="DoubleDQN",
             timesteps=req.timesteps,
-            learning_rate=1e-4,
-            buffer_size=50_000,
+            learning_rate=inst_defaults.get("learning_rate", 1e-4),
+            buffer_size=inst_defaults.get("buffer_size", 50_000),
             net_arch="[128, 128]",
-            exploration_pct=0.1,
+            exploration_pct=inst_defaults.get("exploration_pct", 0.1),
             notes=f"pipeline risk={req.risk_tolerance} target={req.target_return_pct}%",
         )
         now = datetime.now(timezone.utc)
@@ -246,7 +248,9 @@ def run_pipeline(req: PipelineRequest) -> PipelineResponse:
         args=(train_run_id, backtest_run_id, req),
         daemon=True,
     ).start()
-    log.info("pipeline.submitted", train_run_id=train_run_id, backtest_run_id=backtest_run_id)
+    log.info("pipeline.submitted", train_run_id=train_run_id, backtest_run_id=backtest_run_id,
+             timesteps=req.timesteps, n_seeds=req.n_seeds, force_retrain=req.force_retrain,
+             instrument=req.instrument)
     return PipelineResponse(
         status="accepted",
         message="Pipeline started. Poll /progress for status.",
