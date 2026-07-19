@@ -109,7 +109,10 @@ export async function selectDays(instrument, start_date, end_date) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ instrument, start_date, end_date })
   });
-  if (!res.ok) throw new Error(`select-days failed: ${res.status}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+    throw new Error(err.detail || `select-days failed: ${res.status}`);
+  }
   return res.json();
 }
 

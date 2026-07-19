@@ -126,6 +126,8 @@ def _load_game_data(instrument: str, start_date: str, end_date: str) -> pd.DataF
     df = pd.read_csv(_CSV_PATHS[instrument])
     df.columns = [c.lower() for c in df.columns]
     df["date"] = pd.to_datetime(df["date"], utc=True).dt.tz_localize(None)
+    df = df.dropna(subset=["close"])
+    max_date = df["date"].max().strftime("%Y-%m-%d")
     df = df[
         (df["date"] >= pd.to_datetime(start_date))
         & (df["date"] <= pd.to_datetime(end_date))
@@ -133,7 +135,7 @@ def _load_game_data(instrument: str, start_date: str, end_date: str) -> pd.DataF
     if len(df) < 9:
         raise HTTPException(
             status_code=422,
-            detail="Fewer than 9 trading days in selected range.",
+            detail=f"Fewer than 9 trading days in selected range. Data available up to {max_date}.",
         )
     return df[["date", "close"]].copy()
 

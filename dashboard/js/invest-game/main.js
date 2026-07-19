@@ -120,13 +120,13 @@ function showDayBar(n) {
 
 function setDateDefaults() {
   const end = new Date();
-  end.setDate(end.getDate() - 7);
+  end.setDate(end.getDate() - 30);
   const endEl = document.getElementById('end-date');
-  endEl.max = end.toISOString().split('T')[0];
-  endEl.value = endEl.max;
+  endEl.max = new Date().toISOString().split('T')[0];
+  endEl.value = end.toISOString().split('T')[0];
 
   const start = new Date(end);
-  start.setDate(start.getDate() - 21);
+  start.setDate(start.getDate() - 60);
   const startEl = document.getElementById('start-date');
   startEl.value = start.toISOString().split('T')[0];
 }
@@ -404,6 +404,7 @@ function initControls() {
       data = await selectDays(gameState.instrument, start, end);
     } catch (e) {
       console.error('selectDays error', e);
+      alert(e.message || 'Failed to select days — try a different date range.');
       document.getElementById('btn-select-days').disabled = false;
       return;
     }
