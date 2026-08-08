@@ -1,11 +1,10 @@
 """Unit tests for the Hedge Reasoning endpoint (Feature 31 Phase 1).
 
 Tests cover:
-- Happy path: 200 response with 6 reasoning steps
+- Happy path: 200 response with 7 reasoning steps
 - Decision matrix: BULL+FULL+elevated -> call_sell, BEAR+FULL -> put_buy, HOLD -> no_hedge
 - Edge cases: unknown instrument (404), insufficient data (422), missing OHLCV (422)
-- Payoff curves: 4 arrays present and equal length (33 points)
-- Step structure: all 6 steps have agent/title/narrative/data/verdict keys
+- Step structure: all 7 steps have agent/title/narrative/data/verdict keys
 - API contract: Pydantic schema matches Architect's response shape
 
 Strategy: The `ta` library may not be installed in the test environment.  We
@@ -16,7 +15,6 @@ functions and lazy-imported core helpers at the handler module level.
 
 from __future__ import annotations
 
-import math
 import sys
 import types
 from unittest.mock import patch, MagicMock
@@ -180,6 +178,27 @@ def _step_volatility(ann_vol: float = 28.0, vol_regime: str = "normal") -> dict:
     }
 
 
+def _step_goal_analyst() -> dict:
+    return {
+        "agent": "GOAL_ANALYST",
+        "title": "Goal-Relative Return Analysis",
+        "narrative": "Horizon fit: Short Term. Monthly target: 1.25%. Last month: +2.10%. Excess: +0.85%. Hedge trigger: ACTIVE.",
+        "data": {
+            "horizon_fit": "short_term",
+            "horizon_label": "Short Term",
+            "annual_target_pct": 15.0,
+            "monthly_target_pct": 1.25,
+            "months_above_target_pct": 45.0,
+            "cagr_5y_pct": 18.5,
+            "actual_monthly_return_pct": 2.1,
+            "excess_pct": 0.85,
+            "hedge_trigger": "triggered",
+            "hedge_budget_pct": 0.85,
+        },
+        "verdict": "triggered",
+    }
+
+
 def _step_hedge(primary: str = "call_sell") -> dict:
     verdict = primary.upper().replace("_", " ") if primary != "no_hedge" else "NO HEDGE"
     return {
@@ -267,7 +286,8 @@ def _apply_patches(mock_df, regime="BULL", allocation="FULL", alloc_pct=100,
         "step3": patch(f"{_H}._build_step_sentiment", return_value=_step_sentiment(total_score, sentiment_label)),
         "step4": patch(f"{_H}._build_step_allocation", return_value=_step_allocation(allocation, alloc_pct)),
         "step5": patch(f"{_H}._build_step_volatility", return_value=_step_volatility(ann_vol, vol_regime)),
-        "step6": patch(f"{_H}._build_step_hedge", return_value=_step_hedge(primary)),
+        "step6": patch(f"{_H}._build_step_goal_analyst", return_value=_step_goal_analyst()),
+        "step7": patch(f"{_H}._build_step_hedge", return_value=_step_hedge(primary)),
         # Lazy imports inside get_hedge_reasoning() at line 657
         "summary": patch("rita.core.technical_analyzer.get_market_summary", return_value=_summary()),
         "scored": patch("rita.core.technical_analyzer.get_sentiment_score", return_value=_scored(total_score)),
@@ -300,16 +320,16 @@ def _ctx(mock_df, **kwargs):
 # ── Happy path ───────────────────────────────────────────────────────────────
 
 class TestHappyPath:
-    """Happy path: mock market data, call endpoint, verify 200 with 6 steps."""
+    """Happy path: mock market data, call endpoint, verify 200 with 7 steps."""
 
-    def test_returns_200_with_6_steps(self, client, mock_df):
-        """GET /hedge-reasoning?instrument=ASML returns 200 with 6 reasoning steps."""
+    def test_returns_200_with_7_steps(self, client, mock_df):
+        """GET /hedge-reasoning?instrument=ASML returns 200 with 7 reasoning steps."""
         with _ctx(mock_df):
             resp = client.get("/api/v1/experience/fno/hedge-reasoning?instrument=ASML")
 
         assert resp.status_code == 200
         data = resp.json()
-        assert len(data["steps"]) == 6
+        assert len(data["steps"]) == 7
 
     def test_response_has_all_top_level_fields(self, client, mock_df):
         """Response contains all fields from the Pydantic schema."""
@@ -319,7 +339,7 @@ class TestHappyPath:
         data = resp.json()
         expected_keys = {
             "instrument", "timestamp", "steps", "recommendation",
-            "confidence", "payoff_curves", "spot_price", "data_source",
+            "confidence", "spot_price", "data_source",
         }
         assert expected_keys.issubset(set(data.keys()))
 
@@ -394,53 +414,13 @@ class TestEdgeCases:
         assert "Missing OHLCV" in resp.json()["detail"]
 
 
-# ── Payoff curves ────────────────────────────────────────────────────────────
-
-class TestPayoffCurves:
-    """Payoff curves: verify all 4 arrays present and equal length."""
-
-    def test_payoff_has_4_arrays(self, client, mock_df):
-        """payoff_curves has price_range, unhedged, call_sell, put_buy."""
-        with _ctx(mock_df):
-            resp = client.get("/api/v1/experience/fno/hedge-reasoning?instrument=ASML")
-
-        curves = resp.json()["payoff_curves"]
-        assert "price_range" in curves
-        assert "unhedged" in curves
-        assert "call_sell" in curves
-        assert "put_buy" in curves
-
-    def test_payoff_arrays_equal_length_33(self, client, mock_df):
-        """All 4 payoff arrays have exactly 33 points."""
-        with _ctx(mock_df):
-            resp = client.get("/api/v1/experience/fno/hedge-reasoning?instrument=ASML")
-
-        curves = resp.json()["payoff_curves"]
-        assert len(curves["price_range"]) == 33
-        assert len(curves["unhedged"]) == 33
-        assert len(curves["call_sell"]) == 33
-        assert len(curves["put_buy"]) == 33
-
-    def test_hold_payoff_curves_all_zero(self, client, mock_df):
-        """HOLD allocation produces zeroed payoff curves (still 33 points)."""
-        with _ctx(mock_df, allocation="HOLD", alloc_pct=0, primary="no_hedge",
-                  total_score=0):
-            resp = client.get("/api/v1/experience/fno/hedge-reasoning?instrument=ASML")
-
-        curves = resp.json()["payoff_curves"]
-        assert len(curves["price_range"]) == 33
-        assert all(v == 0.0 for v in curves["unhedged"])
-        assert all(v == 0.0 for v in curves["call_sell"])
-        assert all(v == 0.0 for v in curves["put_buy"])
-
-
 # ── Step structure ───────────────────────────────────────────────────────────
 
 class TestStepStructure:
-    """All 6 steps have agent/title/narrative/data/verdict keys."""
+    """All 7 steps have agent/title/narrative/data/verdict keys."""
 
     def test_all_steps_have_required_keys(self, client, mock_df):
-        """Each of the 6 steps contains agent, title, narrative, data, verdict."""
+        """Each of the 7 steps contains agent, title, narrative, data, verdict."""
         with _ctx(mock_df):
             resp = client.get("/api/v1/experience/fno/hedge-reasoning?instrument=ASML")
 
@@ -460,6 +440,7 @@ class TestStepStructure:
             "SENTIMENT_SCORER",
             "ALLOCATION_ENGINE",
             "VOLATILITY_ASSESSOR",
+            "GOAL_ANALYST",
             "HEDGE_ADVISOR",
         ]
         actual_agents = [s["agent"] for s in resp.json()["steps"]]
