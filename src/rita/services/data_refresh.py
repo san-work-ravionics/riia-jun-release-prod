@@ -34,17 +34,23 @@ log = structlog.get_logger()
 # ── Instrument YF ticker mapping ──────────────────────────────────────────────
 
 YF_TICKER_MAP: dict[str, str] = {
-    "NIFTY":     "^NSEI",
-    "BANKNIFTY": "^NSEBANK",
-    "ASML":      "ASML.AS",
-    "NVIDIA":    "NVDA",
-    "RELIANCE":  "RELIANCE.NS",
-    "SBIN":      "SBIN.NS",
-    "ASRNL":     "ASRNL.AS",
-    "ATO":       "ATO.PA",
-    "AEX":       "^AEX",
-    "DJI":       "^DJI",
-    "IXIC":      "^IXIC",
+    "NIFTY":      "^NSEI",
+    "BANKNIFTY":  "^NSEBANK",
+    "ASML":       "ASML.AS",
+    "NVIDIA":     "NVDA",
+    "RELIANCE":   "RELIANCE.NS",
+    "SBIN":       "SBIN.NS",
+    "ASRNL":      "ASRNL.AS",
+    "ATO":        "ATO.PA",
+    "AEX":        "^AEX",
+    "DJI":        "^DJI",
+    "IXIC":       "^IXIC",
+    "ANANTRAJ":   "ANANTRAJ.NS",
+    "ATHERENERG": "ATHERENERG.NS",
+    "HATHWAY":    "HATHWAY.NS",
+    "JIOFIN":     "JIOFIN.NS",
+    "NETWORK18":  "NETWORK18.NS",
+    "ZEEL":       "ZEEL.NS",
 }
 
 # NIFTY and BANKNIFTY write to a companion _yf.csv; all others use _daily.csv
@@ -163,6 +169,10 @@ def fetch_and_write_raw(instrument_id: str, yf_ticker: str, last_date: date | No
     # Flatten MultiIndex columns (yfinance >= 0.2.x)
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = [col[0] if isinstance(col, tuple) else col for col in df.columns]
+
+    # Drop rows where Close is missing (partial intraday rows from yfinance)
+    if "Close" in df.columns:
+        df = df.dropna(subset=["Close"])
 
     rows_added = len(df)
 

@@ -1,12 +1,17 @@
-// Equity Scenarios — static-JSON data layer
-// Data: /dashboard/data/scenarios/{alerts,portfolio,tradebook}.json
-// Move to API endpoints once DB models are ready.
+// Equity Scenarios — live holdings from API, static alerts/tradebook from JSON
 
 const DATA = `${window.location.origin}/dashboard/data/scenarios`;
+const API  = `${window.location.origin}/api/v1/experience/equity-scenarios`;
 
 async function loadJSON(file) {
   const r = await fetch(`${DATA}/${file}`);
   if (!r.ok) throw new Error(`Cannot load ${file} (${r.status})`);
+  return r.json();
+}
+
+async function loadHoldings() {
+  const r = await fetch(`${API}/holdings`);
+  if (!r.ok) throw new Error(`Cannot load live holdings (${r.status})`);
   return r.json();
 }
 
@@ -224,7 +229,7 @@ export async function init() {
   try {
     const [alertsData, portfolioData, tradebookData] = await Promise.all([
       loadJSON('alerts.json'),
-      loadJSON('portfolio.json'),
+      loadHoldings(),
       loadJSON('tradebook.json'),
     ]);
 

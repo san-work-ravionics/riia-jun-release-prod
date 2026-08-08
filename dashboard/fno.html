@@ -1063,12 +1063,12 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
         </div>
       </div>
 
-      <!-- Row 1: Portfolio Value chart + Payoff Comparison at Expiry (side by side) -->
-      <div class="two-col" style="margin-bottom:16px;">
+      <!-- Row 1: Portfolio Value + Payoff Comparison + Monthly Price Change -->
+      <div class="two-col" style="margin-bottom:16px;grid-template-columns:1fr 1fr 1fr;">
         <div class="card">
           <div class="card-hdr">
             <span class="card-title" id="eh-portfolio-chart-title">Portfolio Value</span>
-            <span class="card-sub">Daily close × shares</span>
+            <span class="card-sub">Monthly OHLC candles</span>
           </div>
           <div class="card-body">
             <div class="chart-wrap"><canvas id="eh-portfolio-chart"></canvas></div>
@@ -1086,6 +1086,15 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
               <span><span style="display:inline-block;width:16px;height:2px;background:var(--p01);margin-right:4px;vertical-align:middle;"></span>Covered Call</span>
               <span><span style="display:inline-block;width:16px;height:2px;background:var(--neg);margin-right:4px;vertical-align:middle;"></span>Protective Put</span>
             </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title" id="eh-monthly-chart-title">Monthly Price Change</span>
+            <span class="card-sub">MoM % change · ±1σ bands</span>
+          </div>
+          <div class="card-body">
+            <div class="chart-wrap"><canvas id="eh-monthly-change-chart"></canvas></div>
           </div>
         </div>
       </div>
