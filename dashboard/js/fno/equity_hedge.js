@@ -7,7 +7,6 @@ import { renderStressScenarios } from './stress.js';
 const RITA_API_KEY = '';
 
 let _portfolioChart = null;
-let _payoffChart = null;
 let _monthlyChangeChart = null;
 
 // Instrument + shares used for the last fetch — read by injectAsmlToState + renderEquityHedge
@@ -201,7 +200,6 @@ export function renderEquityHedge(data) {
   const hs         = data.hedge_scenarios;
   const mb         = hs.mild_bearish;
   const sb         = hs.strong_bearish;
-  const pc         = hs.payoff_curves;
   const ccy        = p.currency || 'EUR';
   const fmt        = v => _fmtCcy(v, ccy);
   const isNseLive  = hs.data_source === 'nse';
@@ -351,39 +349,6 @@ export function renderEquityHedge(data) {
           },
           scales: {
             x: { grid: { color: _gridClr }, ticks: { font: { family: _cm, size: 10 } } },
-            y: { grid: { color: _gridClr }, ticks: { font: { family: _cm, size: 10 }, callback: v => fmt(v) } },
-          },
-        },
-      });
-    });
-  }
-
-  // Payoff comparison chart
-  if (_payoffChart) { _payoffChart.destroy(); _payoffChart = null; }
-  const payCtx = document.getElementById('eh-payoff-chart');
-  if (payCtx) {
-    requestAnimationFrame(() => {
-      const instrument = _ehInstrument;
-      const xLabels = pc.price_range.map(v => fmt(v));
-      _payoffChart = new Chart(payCtx, {
-        type: 'line',
-        data: {
-          labels: xLabels,
-          datasets: [
-            { label: 'Unhedged',       data: pc.unhedged,       borderColor: _cRun,    backgroundColor: 'transparent', borderWidth: 2,   pointRadius: 0, tension: 0.2 },
-            { label: 'Covered Call',   data: pc.covered_call,   borderColor: _cBuild,  backgroundColor: 'transparent', borderWidth: 2,   pointRadius: 0, tension: 0.2 },
-            { label: 'Protective Put', data: pc.protective_put, borderColor: _cDanger, backgroundColor: 'transparent', borderWidth: 2,   pointRadius: 0, tension: 0.2 },
-            { label: 'Break-even',     data: Array(xLabels.length).fill(0), borderColor: _cT3, borderWidth: 1, borderDash: [4, 3], pointRadius: 0, fill: false },
-          ],
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: {
-            legend: _legendCfg,
-            tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${fmt(ctx.raw)}` } },
-          },
-          scales: {
-            x: { grid: { color: _gridClr }, title: { display: true, text: `${instrument} price at expiry`, font: { family: _cm, size: 10 } }, ticks: { font: { family: _cm, size: 9 }, maxTicksLimit: 10 } },
             y: { grid: { color: _gridClr }, ticks: { font: { family: _cm, size: 10 }, callback: v => fmt(v) } },
           },
         },

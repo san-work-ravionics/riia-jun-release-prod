@@ -15,10 +15,11 @@ model:
 
 chat:
   # Local path to the sentence-transformers/all-MiniLM-L6-v2 snapshot.
-  # Override with RITA_CHAT__EMBED_MODEL_PATH env var if the snapshot moves.
-  embed_model_path: "C:\\Users\\Sandeep\\.cache\\huggingface\\hub\\models--sentence-transformers--all-MiniLM-L6-v2\\snapshots\\c9745ed1d9f207416be6d2e6f8de32d1f16199bf"
+  # Override with RITA_CHAT__EMBED_MODEL_PATH env var for your platform.
+  embed_model_path: ""
 
-# Financial constants — config-driven, never hardcoded in application code
+# Financial constants — config-driven, never hardcoded in application code.
+# Per-instrument training/data configs live in config/instruments/<name>.yaml.
 instruments:
   nifty:
     lot_size: 75        # changed from 50 in 2024

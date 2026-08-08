@@ -1,7 +1,7 @@
 """Experience Layer — Hedge Reasoning endpoint (Feature 31 Phase 1).
 
 ADR-001 Tier 3: read-only composition, no writes, no side effects.
-Returns a 6-step deterministic reasoning chain for hedge recommendations.
+Returns a 7-step deterministic reasoning chain for hedge recommendations.
 
 GET /api/v1/experience/fno/hedge-reasoning?instrument=ASML&n_shares=10
 """
@@ -18,7 +18,8 @@ import structlog
 from fastapi import APIRouter, HTTPException, Query
 
 from rita.config import get_settings
-from rita.schemas.hedge_reasoning import HedgeReasoningResponse, PayoffCurves, ReasoningStep
+from rita.core.investment_horizons import INVESTMENT_HORIZONS
+from rita.schemas.hedge_reasoning import HedgeReasoningResponse, ReasoningStep
 
 log = structlog.get_logger(__name__)
 
@@ -416,21 +417,135 @@ def _build_step_volatility(df, ann_vol_override: float | None = None) -> dict:
     }
 
 
+def _build_step_goal_analyst(df) -> dict:
+    """Step 6 — GOAL ANALYST: classify horizon fit from price data and compute hedge trigger."""
+    closes = df["Close"].dropna()
+
+    short_cfg = INVESTMENT_HORIZONS["short_term"]
+    medium_cfg = INVESTMENT_HORIZONS["medium_term"]
+    long_cfg = INVESTMENT_HORIZONS["long_term"]
+
+    short_annual = short_cfg["min_return_pct"]
+    medium_annual = medium_cfg["min_return_pct"]
+    long_annual = long_cfg["min_return_pct"]
+
+    short_monthly = short_annual / 12.0
+    medium_monthly = ((1 + medium_annual / 100) ** (1 / 12) - 1) * 100
+    long_monthly = ((1 + long_annual / 100) ** (1 / 12) - 1) * 100
+
+    monthly_returns = closes.resample("ME").last().pct_change().dropna() * 100
+    months_above = float((monthly_returns >= short_monthly).sum() / len(monthly_returns) * 100) if len(monthly_returns) > 0 else 0.0
+
+    cagr_5y: float | None = None
+    if len(closes) >= medium_cfg["lookback_td"]:
+        start_5y = float(closes.iloc[-medium_cfg["lookback_td"]])
+        end_5y = float(closes.iloc[-1])
+        if start_5y > 0:
+            cagr_5y = round(((end_5y / start_5y) ** (1 / medium_cfg["years"]) - 1) * 100, 2)
+
+    if months_above >= 40:
+        horizon_fit = "short_term"
+        horizon_label = short_cfg["label"]
+        annual_target = short_annual
+        monthly_target = round(short_monthly, 2)
+    elif cagr_5y is not None and cagr_5y >= medium_annual:
+        horizon_fit = "medium_term"
+        horizon_label = medium_cfg["label"]
+        annual_target = medium_annual
+        monthly_target = round(medium_monthly, 2)
+    else:
+        horizon_fit = "long_term"
+        horizon_label = long_cfg["label"]
+        annual_target = long_annual
+        monthly_target = round(long_monthly, 2)
+
+    trading_days_1m = 21
+    if len(closes) >= trading_days_1m + 1:
+        close_now = float(closes.iloc[-1])
+        close_1m_ago = float(closes.iloc[-trading_days_1m])
+        actual_monthly_return = round((close_now / close_1m_ago - 1) * 100, 2) if close_1m_ago > 0 else 0.0
+    else:
+        actual_monthly_return = 0.0
+
+    excess = round(actual_monthly_return - monthly_target, 2)
+
+    if actual_monthly_return >= monthly_target:
+        hedge_trigger = "triggered"
+        hedge_budget = round(max(0, excess), 2)
+    else:
+        hedge_trigger = "not_triggered"
+        hedge_budget = 0.0
+
+    pct_note = f"{months_above:.0f}% of months delivered >={short_monthly:.2f}%"
+    if hedge_trigger == "triggered":
+        trigger_note = (
+            f"Hedge trigger: ACTIVE — lock in gains with hedge budget of {hedge_budget:.2f}%."
+        )
+    else:
+        trigger_note = (
+            "Hedge trigger: INACTIVE — target not yet met."
+        )
+
+    narrative = (
+        f"Classifying from historical returns... "
+        f"{pct_note} — {horizon_fit.replace('_', ' ')} fit "
+        f"(target: {annual_target:.0f}%/yr -> {monthly_target:.2f}%/mo). "
+        f"Last month return: {actual_monthly_return:+.2f}%. "
+        f"Target: {monthly_target:.2f}%. Excess: {excess:+.2f}%. "
+        f"{trigger_note}"
+    )
+
+    trigger_label = "TRIGGERED" if hedge_trigger == "triggered" else "NOT TRIGGERED"
+    excess_str = f" {excess:+.2f}%" if hedge_trigger == "triggered" else ""
+    verdict = f"{horizon_label} — {trigger_label}{excess_str}"
+
+    return {
+        "agent": "GOAL_ANALYST",
+        "title": "Goal-Relative Return Analysis",
+        "narrative": narrative,
+        "data": {
+            "horizon_fit": horizon_fit,
+            "horizon_label": horizon_label,
+            "annual_target_pct": annual_target,
+            "monthly_target_pct": monthly_target,
+            "months_above_target_pct": round(months_above, 1),
+            "cagr_5y_pct": cagr_5y,
+            "actual_monthly_return_pct": actual_monthly_return,
+            "excess_pct": excess,
+            "hedge_trigger": hedge_trigger,
+            "hedge_budget_pct": hedge_budget,
+        },
+        "verdict": verdict,
+    }
+
+
 def _build_step_hedge(
     regime: str,
     allocation: str,
     vol_data: dict,
     spot: float,
     n_shares: int,
+    goal_data: dict | None = None,
 ) -> dict:
-    """Step 6 — HEDGE ADVISOR: decision matrix + BS pricing."""
+    """Step 7 — HEDGE ADVISOR: decision matrix + BS pricing."""
     ann_vol = vol_data["ann_vol_253d"]
     vol_regime = vol_data["vol_regime"]
 
-    # Decision matrix: regime x allocation x vol
+    goal_triggered = goal_data is not None and goal_data.get("hedge_trigger") == "triggered"
+
     if allocation == "HOLD":
         primary = "no_hedge"
         primary_rationale = "No position to protect — allocation is HOLD (0% invested)."
+        secondary = None
+        secondary_rationale = None
+    elif goal_triggered:
+        primary = "put_buy"
+        monthly_target = goal_data["monthly_target_pct"]
+        primary_rationale = (
+            f"Goal target achieved (excess {goal_data['excess_pct']:+.2f}%). "
+            f"Recommending protective put costing <= hedge budget to lock in "
+            f"net return of {monthly_target:.2f}%."
+        )
         secondary = None
         secondary_rationale = None
     elif regime == "BULL":
@@ -500,11 +615,25 @@ def _build_step_hedge(
             "breakeven": round(spot + put_prem_eur / n_shares, 2) if n_shares > 0 else spot,
         }
 
-    # Build narrative
+    goal_not_triggered = goal_data is not None and goal_data.get("hedge_trigger") == "not_triggered"
+
     if allocation == "HOLD":
         narrative = (
             "Allocation is HOLD (0% invested) — no position to hedge. "
             "No hedge recommendation generated."
+        )
+    elif goal_triggered:
+        monthly_target = goal_data["monthly_target_pct"]
+        rec_label = "PUT BUY (protective put)"
+        narrative = (
+            f"Goal target achieved (excess {goal_data['excess_pct']:+.2f}%). "
+            f"Recommending protective put costing <= hedge budget to lock in "
+            f"net return of {monthly_target:.2f}%. "
+            f"Buy 1 sigma OTM puts at -{strike_pct:.1f}% strike. "
+            f"Cost {put_buy_data['premium_pct']:.1f}% premium "
+            f"(EUR {abs(put_buy_data['premium_eur']):,.2f} on position). "
+            f"Floor at EUR {put_buy_data['floor_value_eur']:,.2f}. "
+            f"Breakeven: EUR {put_buy_data['breakeven']:,.2f}."
         )
     else:
         rec_label = "CALL SELL (covered call)" if primary == "call_sell" else "PUT BUY (protective put)"
@@ -512,6 +641,13 @@ def _build_step_hedge(
             f"Given {regime} regime + {allocation} allocation + {vol_regime} volatility "
             f"-> Primary recommendation: {rec_label}. "
         )
+        if goal_not_triggered:
+            narrative += (
+                f"Monthly target not yet met "
+                f"(actual {goal_data['actual_monthly_return_pct']:.2f}% "
+                f"vs target {goal_data['monthly_target_pct']:.2f}%). "
+                f"No goal-based hedge trigger — falling back to regime analysis. "
+            )
         if primary == "call_sell":
             narrative += (
                 f"Sell 1 sigma OTM calls at +{strike_pct:.1f}% strike. "
@@ -554,57 +690,13 @@ def _build_step_hedge(
     }
 
 
-def _build_payoff_curves(
-    spot: float,
-    n_shares: int,
-    ann_vol: float,
-    strike_pct: float,
-) -> PayoffCurves:
-    """Build 33-point payoff comparison grid: unhedged, call_sell, put_buy."""
-    price_range = np.linspace(spot * 0.75, spot * 1.25, 33)
-
-    call_prem_pct = _bs_call_pct(ann_vol, strike_pct) / 100.0
-    put_prem_pct = _bs_put_pct(ann_vol, -strike_pct) / 100.0
-
-    call_strike = spot * (1 + strike_pct / 100)
-    put_strike = spot * (1 - strike_pct / 100)
-
-    premium_call_per_share = spot * call_prem_pct
-    premium_put_per_share = spot * put_prem_pct
-
-    unhedged = []
-    call_sell = []
-    put_buy = []
-
-    for p in price_range:
-        # Unhedged: simple long stock P&L
-        uh = (p - spot) * n_shares
-        unhedged.append(round(uh, 2))
-
-        # Covered call: long stock + short call
-        stock_pnl = (p - spot) * n_shares
-        call_pnl = -(max(p - call_strike, 0) - premium_call_per_share) * n_shares
-        call_sell.append(round(stock_pnl + call_pnl, 2))
-
-        # Protective put: long stock + long put
-        put_pnl = (max(put_strike - p, 0) - premium_put_per_share) * n_shares
-        put_buy.append(round(stock_pnl + put_pnl, 2))
-
-    return PayoffCurves(
-        price_range=[round(float(p), 2) for p in price_range],
-        unhedged=unhedged,
-        call_sell=call_sell,
-        put_buy=put_buy,
-    )
-
-
 # ── Endpoint ──────────────────────────────────────────────────────────────────
 
 
 @router.get(
     "/hedge-reasoning",
     response_model=HedgeReasoningResponse,
-    summary="6-step deterministic hedge reasoning chain",
+    summary="7-step deterministic hedge reasoning chain",
 )
 def get_hedge_reasoning(
     instrument: str = Query(..., description="Instrument identifier (e.g. ASML, NIFTY, NVIDIA)"),
@@ -615,27 +707,24 @@ def get_hedge_reasoning(
         description="Override annual volatility percentage (for what-if analysis)",
     ),
 ) -> HedgeReasoningResponse:
-    """Compute a 6-step hedge reasoning chain for the given instrument.
+    """Compute a 7-step hedge reasoning chain for the given instrument.
 
     Each step maps to an existing RITA core function. No LLM calls.
     Read-only — no database writes. All values are indicative.
     """
     inst = instrument.upper()
 
-    # Edge case: load data, handle unknown instrument
     try:
         df = _get_df(inst)
     except (FileNotFoundError, ValueError) as exc:
         raise HTTPException(status_code=404, detail=f"Unknown instrument: {inst}") from exc
 
-    # Edge case: insufficient data
     if len(df) < 30:
         raise HTTPException(
             status_code=422,
             detail=f"Insufficient data for {inst}: need at least 30 rows, got {len(df)}.",
         )
 
-    # Edge case: missing OHLCV columns
     required_cols = {"Open", "High", "Low", "Close", "Volume"}
     missing = required_cols - set(df.columns)
     if missing:
@@ -646,33 +735,29 @@ def get_hedge_reasoning(
 
     spot = float(df["Close"].dropna().iloc[-1])
 
-    # Step 1 — Regime
     step1 = _build_step_regime(df)
     regime = step1["data"]["regime"]
 
-    # Step 2 — Technicals
     step2 = _build_step_technicals(df)
 
-    # Step 3 — Sentiment (needs market summary)
     from rita.core.technical_analyzer import get_market_summary, get_sentiment_score
 
     summary = get_market_summary(df)
     step3 = _build_step_sentiment(summary)
     scored = get_sentiment_score(summary)
 
-    # Step 4 — Allocation
     step4 = _build_step_allocation(summary, scored)
     allocation = step4["data"]["recommendation"]
 
-    # Step 5 — Volatility
     step5 = _build_step_volatility(df, ann_vol_override)
     vol_data = step5["data"]
 
-    # Step 6 — Hedge recommendation
-    step6 = _build_step_hedge(regime, allocation, vol_data, spot, n_shares)
-    recommendation = step6["data"]["primary_recommendation"]
+    step6 = _build_step_goal_analyst(df)
+    goal_data = step6["data"]
 
-    # Confidence derivation from total sentiment score
+    step7 = _build_step_hedge(regime, allocation, vol_data, spot, n_shares, goal_data)
+    recommendation = step7["data"]["primary_recommendation"]
+
     total_score = scored["total_score"]
     if abs(total_score) >= 4:
         confidence = "high"
@@ -681,24 +766,6 @@ def get_hedge_reasoning(
     else:
         confidence = "low"
 
-    # Payoff curves
-    ann_vol = vol_data["ann_vol_253d"]
-    sigma_pct = min(ann_vol / math.sqrt(12), 15.0)
-    strike_pct = round(sigma_pct, 2)
-
-    if allocation == "HOLD":
-        # No position — flat payoff curves
-        price_range = np.linspace(spot * 0.75, spot * 1.25, 33)
-        zeros = [0.0] * 33
-        payoff = PayoffCurves(
-            price_range=[round(float(p), 2) for p in price_range],
-            unhedged=zeros,
-            call_sell=zeros,
-            put_buy=zeros,
-        )
-    else:
-        payoff = _build_payoff_curves(spot, n_shares, ann_vol, strike_pct)
-
     steps = [
         ReasoningStep(**step1),
         ReasoningStep(**step2),
@@ -706,6 +773,7 @@ def get_hedge_reasoning(
         ReasoningStep(**step4),
         ReasoningStep(**step5),
         ReasoningStep(**step6),
+        ReasoningStep(**step7),
     ]
 
     return HedgeReasoningResponse(
@@ -714,7 +782,6 @@ def get_hedge_reasoning(
         steps=steps,
         recommendation=recommendation,
         confidence=confidence,
-        payoff_curves=payoff,
         spot_price=round(spot, 2),
         data_source="black_scholes",
     )

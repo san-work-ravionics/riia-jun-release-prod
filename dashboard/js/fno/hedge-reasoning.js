@@ -3,9 +3,7 @@ import { api } from './api.js';
 import { mkChart, C } from '../shared/charts.js';
 import { state } from './state.js';
 
-// Module-level typewriter cancel token — increment to cancel in-flight animations
 let _twToken = 0;
-let _payoffChart = null;
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
@@ -120,7 +118,7 @@ function _renderCascade(data) {
   if (tsEl) tsEl.textContent = data.timestamp ? new Date(data.timestamp).toLocaleString() : '';
 
   // Reset all steps to hidden
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 7; i++) {
     const container = document.getElementById(`ha-step-${i}`);
     if (container) { container.style.opacity = '0'; container.style.display = 'none'; }
   }
@@ -132,7 +130,6 @@ function _renderCascade(data) {
 function _cascadeStep(data, idx) {
   const myToken = _twToken;
   if (idx >= data.steps.length) {
-    // All steps done — render payoff chart and final verdict
     _renderPayoffChart(data);
     _renderFinalVerdict(data);
     return;
@@ -238,7 +235,8 @@ function _renderStepData(idx, step) {
     case 2: return _stepSentiment(d);
     case 3: return _stepAllocation(d);
     case 4: return _stepVolatility(d);
-    case 5: return _stepHedgeAdvisor(d);
+    case 5: return _stepGoalAnalyst(d);
+    case 6: return _stepHedgeAdvisor(d);
     default: return '';
   }
 }
@@ -302,6 +300,20 @@ function _stepVolatility(d) {
   </div>`;
 }
 
+function _stepGoalAnalyst(d) {
+  const trigger = d.hedge_trigger || '--';
+  const triggerCls = trigger === 'triggered' ? 'reasoning-indicator--positive' : 'reasoning-indicator--neutral';
+  return `<div class="reasoning-data-row">
+    <span class="reasoning-kpi"><strong>Horizon Fit:</strong> ${_v(d.horizon_label)}</span>
+    <span class="reasoning-kpi"><strong>Annual Target:</strong> ${_v(d.annual_target_pct, '%')}</span>
+    <span class="reasoning-kpi"><strong>Monthly Target:</strong> ${_v(d.monthly_target_pct, '%')}</span>
+    <span class="reasoning-kpi"><strong>Last Month Return:</strong> ${_v(d.actual_monthly_return_pct, '%')}</span>
+    <span class="reasoning-kpi"><strong>Excess:</strong> ${_v(d.excess_pct, '%')}</span>
+    <span class="reasoning-kpi"><strong>Hedge Budget:</strong> ${_v(d.hedge_budget_pct, '%')}</span>
+    <span class="reasoning-kpi ${triggerCls}"><strong>Hedge Trigger:</strong> ${trigger}</span>
+  </div>`;
+}
+
 function _stepHedgeAdvisor(d) {
   const cs = d.call_sell || {};
   const pb = d.put_buy || {};
@@ -330,11 +342,12 @@ function _fmtEur(n) {
 
 // ── Internal: Payoff Chart ────────────────────────────────────────────────────
 
+let _payoffChart;
+
 function _renderPayoffChart(data) {
   const curves = data.payoff_curves;
   if (!curves || !curves.price_range) return;
 
-  // Check if all unhedged values are zero — "no hedge needed"
   const allZero = curves.unhedged && curves.unhedged.every(v => v === 0);
   if (allZero) {
     const canvas = document.getElementById('ha-payoff-chart');
@@ -446,9 +459,9 @@ function _renderFinalVerdict(data) {
 function _verdictColor(verdict) {
   if (!verdict) return 'reasoning-verdict--neutral';
   const v = verdict.toLowerCase();
-  if (v.includes('bull') || v.includes('full') || v.includes('call sell')) return 'reasoning-verdict--positive';
+  if (v.includes('bull') || v.includes('full') || v.includes('call sell') || v === 'triggered') return 'reasoning-verdict--positive';
   if (v.includes('bear') || v.includes('hold') || v.includes('put buy')) return 'reasoning-verdict--negative';
-  if (v.includes('elevated') || v.includes('rich')) return 'reasoning-verdict--warning';
+  if (v.includes('elevated') || v.includes('rich') || v.includes('not triggered')) return 'reasoning-verdict--warning';
   return 'reasoning-verdict--neutral';
 }
 

@@ -194,6 +194,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
 .chart-wrap{position:relative;height:220px;}
 .chart-wrap.tall{height:280px;}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:18px;}
 
 /* Margin util */
 .util-bar-outer{background:var(--surface2);border-radius:100px;height:16px;overflow:hidden;margin:8px 0;}
@@ -448,7 +449,8 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
 .ha-spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--border2);border-top-color:var(--p04);border-radius:50%;animation:ha-spin .6s linear infinite;}
 @keyframes ha-spin{to{transform:rotate(360deg)}}
 .ha-timestamp{font-family:var(--fm);font-size:10px;color:var(--t4);margin-bottom:12px;}
-.ha-steps-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px;}
+.ha-steps-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px;}
+.ha-steps-grid--row2{grid-template-columns:repeat(2,1fr);}
 .ha-steps-grid .reasoning-connector{display:none;}
 .reasoning-step{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:0;display:flex;flex-direction:column;min-width:0;box-shadow:0 1px 3px rgba(0,0,0,.06);}
 .reasoning-step-title{font-family:var(--fd);font-size:11px;font-weight:600;color:var(--text);margin-bottom:6px;line-height:1.3;}
@@ -1063,8 +1065,8 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
         </div>
       </div>
 
-      <!-- Row 1: Portfolio Value + Payoff Comparison + Monthly Price Change -->
-      <div class="two-col" style="margin-bottom:16px;grid-template-columns:1fr 1fr 1fr;">
+      <!-- Row 1: Portfolio Value + Monthly Price Change -->
+      <div class="two-col" style="margin-bottom:16px;">
         <div class="card">
           <div class="card-hdr">
             <span class="card-title" id="eh-portfolio-chart-title">Portfolio Value</span>
@@ -1072,20 +1074,6 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
           </div>
           <div class="card-body">
             <div class="chart-wrap"><canvas id="eh-portfolio-chart"></canvas></div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-hdr">
-            <span class="card-title">Payoff Comparison at Expiry</span>
-            <span class="card-sub">P&amp;L vs end-date position across price range</span>
-          </div>
-          <div class="card-body">
-            <div class="chart-wrap"><canvas id="eh-payoff-chart"></canvas></div>
-            <div style="display:flex;gap:20px;margin-top:10px;font-family:var(--fm);font-size:10px;flex-wrap:wrap;">
-              <span><span style="display:inline-block;width:16px;height:2px;background:var(--p02);margin-right:4px;vertical-align:middle;"></span>Unhedged</span>
-              <span><span style="display:inline-block;width:16px;height:2px;background:var(--p01);margin-right:4px;vertical-align:middle;"></span>Covered Call</span>
-              <span><span style="display:inline-block;width:16px;height:2px;background:var(--neg);margin-right:4px;vertical-align:middle;"></span>Protective Put</span>
-            </div>
           </div>
         </div>
         <div class="card">
@@ -1155,8 +1143,8 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
         </div>
       </div>
 
-      <!-- Row 3: Net Greeks + Stress Scenarios (side by side) -->
-      <div class="two-col" style="margin-bottom:16px;">
+      <!-- Row 3: Net Greeks + Stress Scenarios + Per-Instrument Greeks -->
+      <div class="three-col" style="margin-bottom:16px;">
         <div class="card">
           <div class="card-hdr">
             <span class="card-title">Net Greeks</span>
@@ -1175,22 +1163,20 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
             <div class="scenario-row" id="stress-row"></div>
           </div>
         </div>
-      </div>
-
-      <!-- Per-Instrument Greeks (full width) -->
-      <div class="card" style="margin-bottom:16px;">
-        <div class="card-hdr">
-          <span class="card-title">Per-Instrument Greeks</span>
-          <span class="card-sub" id="greeks-table-sub">All positions</span>
-        </div>
-        <div class="card-body" style="padding:0">
-          <div class="tbl-wrap">
-            <table>
-              <thead><tr><th>Instrument</th><th>Underlying</th><th>Exp</th><th>Type</th><th>Side</th><th>Delta</th><th>Theta/day</th><th>Vega</th><th>IV%</th></tr></thead>
-              <tbody id="greeks-tbody"></tbody>
-            </table>
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title">Per-Instrument Greeks</span>
+            <span class="card-sub" id="greeks-table-sub">All positions</span>
           </div>
-          <div class="tbl-footer" id="greeks-footer"></div>
+          <div class="card-body" style="padding:0">
+            <div class="tbl-wrap">
+              <table>
+                <thead><tr><th>Instrument</th><th>Underlying</th><th>Exp</th><th>Type</th><th>Side</th><th>Delta</th><th>Theta/day</th><th>Vega</th><th>IV%</th></tr></thead>
+                <tbody id="greeks-tbody"></tbody>
+              </table>
+            </div>
+            <div class="tbl-footer" id="greeks-footer"></div>
+          </div>
         </div>
       </div>
 
@@ -1289,7 +1275,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     <div class="page-hdr">
       <div>
         <div class="page-title">Hedge Advisor</div>
-        <div class="page-sub">6-agent reasoning chain — regime, technicals, sentiment, allocation, volatility, hedge (indicative)</div>
+        <div class="page-sub">7-agent reasoning chain — regime, technicals, sentiment, allocation, volatility, goal, hedge (indicative)</div>
       </div>
       <div class="ha-controls">
         <select id="ha-instrument-select" class="ha-select" onchange="haAnalyse()"></select>
@@ -1360,18 +1346,30 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
         <div class="reasoning-narrative" id="ha-step-4-narrative"></div>
         <div class="reasoning-data" id="ha-step-4-data" style="opacity:0"></div>
       </div>
-      <div class="reasoning-connector"></div>
+      </div><!-- /ha-steps-grid -->
 
+      <div class="ha-steps-grid ha-steps-grid--row2">
       <div class="reasoning-step" id="ha-step-5" style="display:none;opacity:0">
         <div class="reasoning-step-hdr">
-          <span class="reasoning-agent">HEDGE ADVISOR</span>
+          <span class="reasoning-agent">GOAL ANALYST</span>
           <span class="reasoning-verdict" id="ha-step-5-verdict" style="opacity:0;transform:scale(0)"></span>
         </div>
-        <div class="reasoning-step-title">Hedge Recommendation</div>
+        <div class="reasoning-step-title">Goal-Relative Return Analysis</div>
         <div class="reasoning-narrative" id="ha-step-5-narrative"></div>
         <div class="reasoning-data" id="ha-step-5-data" style="opacity:0"></div>
       </div>
-      </div><!-- /ha-steps-grid -->
+      <div class="reasoning-connector"></div>
+
+      <div class="reasoning-step" id="ha-step-6" style="display:none;opacity:0">
+        <div class="reasoning-step-hdr">
+          <span class="reasoning-agent">HEDGE ADVISOR</span>
+          <span class="reasoning-verdict" id="ha-step-6-verdict" style="opacity:0;transform:scale(0)"></span>
+        </div>
+        <div class="reasoning-step-title">Hedge Recommendation</div>
+        <div class="reasoning-narrative" id="ha-step-6-narrative"></div>
+        <div class="reasoning-data" id="ha-step-6-data" style="opacity:0"></div>
+      </div>
+      </div><!-- /ha-steps-grid row2 -->
 
       <div class="ha-chart-section">
         <div class="chart-wrap">

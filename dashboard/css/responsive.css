@@ -121,8 +121,9 @@ body.nav-open::before {
   /* Form grid: → 1-col */
   .form-grid { grid-template-columns: 1fr; }
 
-  /* Two-col: → 1-col */
+  /* Two-col / Three-col: → 1-col */
   .two-col { grid-template-columns: 1fr; }
+  .three-col { grid-template-columns: 1fr; }
 
   /* Market 3-panel: → 1-col */
   .market-3col {

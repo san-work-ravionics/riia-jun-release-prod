@@ -1,4 +1,4 @@
-# RITA Production Release (riia-jun-release)
+# RITA Production Release (riia-aug-release)
 
 This is the production application code for RITA (Risk Informed Trading Approach).
 Built by Claude Cowork engineer agents, sprint by sprint.
@@ -6,41 +6,43 @@ Built by Claude Cowork engineer agents, sprint by sprint.
 ## Structure
 
 ```
-riia-jun-release/
+riia-aug-release/
 ├── src/rita/
 │   ├── api/
-│   │   ├── v1/system/      # Pure CRUD routers (positions, orders, snapshots)
-│   │   ├── v1/workflow/    # Business process routers (train, backtest, evaluate)
-│   │   └── experience/     # Experience Layer routers (dashboard, fno, ops)
-│   ├── services/           # Business logic (WorkflowService, ManoeuvreService, etc.)
-│   ├── repositories/       # CSV access layer (one class per table, file locking)
+│   │   ├── v1/system/      # Pure CRUD routers (positions, orders, snapshots, instruments)
+│   │   ├── v1/workflow/    # Business process routers (train, backtest, evaluate, pipeline, chat)
+│   │   └── experience/     # Experience Layer routers (dashboard, fno, ops, invest game, portfolio, hedge)
+│   ├── services/           # Business logic (WorkflowService, ManoeuvreService, PortfolioService, etc.)
+│   ├── repositories/       # SQLAlchemy ORM access layer (SqlRepository base, 25 concrete repos)
+│   ├── models/             # SQLAlchemy ORM models (28 model classes)
 │   ├── schemas/            # Pydantic models for all data contracts
-│   ├── core/               # Pure calculation/ML logic (ported from POC)
+│   ├── core/               # Pure calculation/ML logic (RL envs, strategy engine, drift, scorecards)
 │   ├── interfaces/         # Streamlit app, MCP server
 │   └── config.py           # Pydantic Settings (validated at startup)
 ├── config/
 │   ├── base.yaml
 │   ├── development.yaml
 │   ├── staging.yaml
-│   └── production.yaml
+│   ├── production.yaml
+│   └── instruments/        # Per-instrument YAML configs (11 instruments)
+├── scripts/                # Offline scripts (training, backfill, scorecards, diagnostics)
 ├── tests/
-│   ├── unit/               # Unit tests (target: 200+ tests)
-│   ├── integration/        # Integration tests (target: 30 tests)
-│   └── e2e/                # End-to-end Playwright tests (target: 5 tests)
+│   ├── unit/               # Unit tests (48 test files, 18k+ lines)
+│   ├── integration/        # Integration tests (security)
+│   └── e2e/                # End-to-end Playwright tests (smoke, rita, fno, ops scenarios)
 ├── dashboard/
-│   ├── js/rita/            # ES modules decomposed from rita.html
-│   ├── js/fno/             # ES modules decomposed from fno.html
-│   ├── js/ops/             # ES modules decomposed from ops.html
+│   ├── js/ds/              # ES modules for data-science dashboard
 │   └── css/responsive.css  # Responsive breakpoints: 480/768/1100px
+├── mobileapp/              # Mobile PWA integration plan and deploy steps
 ├── k8s/                    # Kubernetes manifests
-└── docs/                   # Architecture Decision Records (ADRs)
+└── docs/                   # Architecture Decision Records (ADRs) and design docs
 ```
 
 ## Source (POC)
 `../poc/rita-cowork-demo` (local — not in this repo)
 
 ## Status
-Built sprint-by-sprint — see `../PLAN_STATUS.md` and Confluence Sprint Boards for current progress.
+Built sprint-by-sprint. Version tracked in `VERSION` file (currently v1.2.8).
 
 Option 1 — Local Python (recommended for development)
 

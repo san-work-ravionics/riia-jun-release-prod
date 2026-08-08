@@ -2,9 +2,9 @@
 
 | Field | Value |
 |---|---|
-| **Status** | Accepted (updated Sprint 4) |
+| **Status** | Accepted (updated Aug 2026) |
 | **Date** | 2026-03-30 |
-| **Last updated** | 2026-04-16 (Sprint 4 — full router inventory) |
+| **Last updated** | 2026-08-08 (full router inventory — 11 instruments, F34 features) |
 | **Sprint** | 0 |
 
 ---
@@ -44,6 +44,8 @@ Pure CRUD for individual ORM-backed table resources. No business logic. Direct r
 | `system/training_runs.py` | `/api/v1/training-history`, `/api/v1/risk-timeline`, `/api/v1/split-dates`, `/api/v1/backtest-status/{id}` | `training_runs`, `backtest_runs`, `backtest_results` |
 | `system/drift.py` | `/api/v1/drift` | DB-backed DriftDetector |
 | `system/data_prep.py` | `/api/v1/data-prep/*`, `/api/v1/test-results`, `/api/v1/shap-values`, `/api/v1/data-understanding` | file system |
+| `system/mcp_calls.py` | `/api/v1/mcp-calls` | MCP call log |
+| `system/client_errors.py` | `/api/v1` (client error reporting) | Client-side error capture |
 
 **Rule:** A System router may call **one repository** only. It must never call a service or another router.
 
@@ -58,6 +60,9 @@ Stateful workflows that orchestrate multiple services. Returns job status and re
 | `workflow/evaluate.py` | `POST /api/v1/evaluate` | Run model evaluation against live or historical data |
 | `workflow/pipeline.py` | `POST /api/v1/instrument/select`, `GET /api/v1/pipeline/progress`, `POST /api/v1/pipeline/quick-backtest` | Instrument switch + pipeline state |
 | `workflow/chat.py` | `POST /api/v1/chat`, `POST /api/v1/chat/warmup`, `GET /api/v1/chat/monitor` | Local intent classifier chat; logs to `alerts` table |
+| `workflow/instrument_onboard.py` | `/api/v1` (instrument onboard endpoints) | Instrument onboarding workflow |
+| `workflow/user_portfolio.py` | `/api/v1/user-portfolio` | User portfolio management workflow |
+| `workflow/commentary.py` | `/api/v1/commentary` | Commentary generation workflow |
 
 **Rule:** A Workflow router calls **services only** — never repositories directly, never Experience Layer routers.
 
@@ -74,6 +79,14 @@ Composes data from the System and Workflow tiers into single, UI-optimised paylo
 | `experience/pipeline_wizard.py` | `/api/v1` | Goal / Market / Strategy wizard steps for the onboarding flow |
 | `experience/ds.py` | `/api/experience/ds` | DS dashboard — instruments + training history + split dates |
 | `experience/agent_panel.py` | `/api/v1/agent-panel` | LangGraph 6-agent simulation; HITL run-day + plot endpoints |
+| `experience/invest_game.py` | `/api/experience/invest-game` | Investment game simulation UI payloads |
+| `experience/portfolio_analytics.py` | `/api/v1/experience/fno` | Portfolio analytics aggregated view (`/portfolio-analytics`) |
+| `experience/portfolio_hedge.py` | `/api/v1/experience/fno` | Portfolio hedge scenario composition (`/portfolio-hedge`) |
+| `experience/hedge_reasoning.py` | `/api/v1/experience/fno` | Hedge reasoning and advisory payloads |
+| `experience/user_portfolio.py` | `/api/v1/experience` | User portfolio read-only endpoint (`/user-portfolio`) |
+| `experience/users.py` | `/api/v1/experience/users` | User traffic analytics (`/traffic`) |
+| `experience/optimal_allocation.py` | `/api/v1/experience/rita` | F34 optimal allocation view (`/optimal-allocation`) |
+| `experience/fno_hedge_plan.py` | `/api/v1/experience/fno` | FnO hedge plan read/write (`/hedge-plan`) |
 
 **Special routers (outside the 3-tier hierarchy):**
 

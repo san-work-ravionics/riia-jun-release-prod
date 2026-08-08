@@ -2,10 +2,10 @@
 
 | Field | Value |
 |---|---|
-| **Status** | Accepted (updated Sprint 2.5) |
+| **Status** | Accepted (updated Aug 2026) |
 | **Date** | 2026-03-30 |
-| **Last updated** | 2026-04-02 (Sprint 2.5 — CSV backend replaced by SQLAlchemy ORM) |
-| **Sprint** | 0 → 2.5 |
+| **Last updated** | 2026-08-08 (full model/repo inventory — 28 models, 25 repos, 11 instruments) |
+| **Sprint** | 0 → 2.5 → current |
 
 ---
 
@@ -122,7 +122,7 @@ database_url = "postgresql+asyncpg://user:pass@host/rita"
 
 ---
 
-## ORM-Backed Tables — 17+ Models
+## ORM-Backed Tables — 28 Models, 25 Repositories
 
 | Repository Class | ORM Model | Primary Key | Notes |
 |---|---|---|---|
@@ -136,14 +136,42 @@ database_url = "postgresql+asyncpg://user:pass@host/rita"
 | `BacktestRunsRepository` | `BacktestRunModel` | `run_id` | |
 | `BacktestResultsRepository` | `BacktestResultModel` | `result_id` | |
 | `TrainingRunsRepository` | `TrainingRunModel` | `run_id` | val_sharpe/mdd/return/trades nullable for historical runs |
-| `RiskTimelineRepository` | `RiskTimelineModel` | (composite) | Day-by-day allocation/drawdown/regime |
+| `TrainingMetricsRepository` | `TrainingMetricModel` | — | Per-step training metrics |
+| `RiskTimelineRepository` | `RiskTimelineModel` | — | Day-by-day allocation/drawdown/regime |
 | `ModelRegistryRepository` | `ModelRegistryModel` | `model_id` | |
 | `AlertsRepository` | `AlertModel` | `alert_id` | Chat query log (replaces old `chat_monitor.csv`) |
 | `AuditLogRepository` | `AuditLogModel` | `log_id` | API call audit trail |
-| `MarketDataCacheRepository` | `MarketDataCacheModel` | `cache_id` | ~1,064 rows across 4 instruments |
+| `MarketDataCacheRepository` | `MarketDataCacheModel` | `cache_id` | Market data across 11 instruments |
 | `ConfigOverridesRepository` | `ConfigOverrideModel` | `override_id` | Includes `active_instrument_id` key |
-| `InstrumentsRepository` | `InstrumentModel` | `instrument_id` | 4 instruments: NIFTY, BANKNIFTY, ASML, NVIDIA |
-| `UsersRepository` | `UserModel` | `user_id` | `username, email, hashed_password, is_active, is_admin` |
+| `InstrumentRepository` | `InstrumentModel` | `instrument_id` | 11 instruments (see instrument configs) |
+| — | `UserModel` | `user_id` | `username, email, hashed_password, is_active, is_admin` |
+| `AgentPerformanceRepository` | `AgentPerformance` | — | Agent performance tracking (Feature 32) |
+| `AgentBuildRepository` | `AgentBuildRunModel`, `AgentBuildAgentModel` | — | Agent build run tracking |
+| `ApiCallLogRepository` | `ApiCallLogModel` | — | API call logging |
+| `CommentaryLogRepository` | `CommentaryLogModel` | — | Commentary generation log |
+| `LoginEventRepository` | `LoginEventModel` | — | User login event tracking |
+| `MCPCallRepository` | `MCPCallModel` | — | MCP call logging |
+| `UserHedgePlanRepository` | `UserHedgePlanModel` | — | User hedge plan storage |
+| `UserPortfolioRepository` | `UserPortfolioModel` | — | User portfolio holdings |
+| `UserPortfolioKeyRepository` | `UserPortfolioKeyModel` | — | User portfolio API keys |
+
+### Supported instruments (11)
+
+Instrument configs live in `config/instruments/`. Each YAML defines training hyperparams, data paths, and lot sizes.
+
+| Instrument | Config file | Region |
+|---|---|---|
+| NIFTY | `nifty.yaml` | India |
+| BANKNIFTY | `banknifty.yaml` | India |
+| RELIANCE | `reliance.yaml` | India |
+| SBIN | `sbin.yaml` | India |
+| ASML | `asml.yaml` | Europe |
+| AEX | `aex.yaml` | Europe |
+| ASRNL | `asrnl.yaml` | Europe |
+| ATO | `ato.yaml` | Europe |
+| NVIDIA | `nvidia.yaml` | US |
+| DJI | `dji.yaml` | US |
+| IXIC | `ixic.yaml` | US |
 
 `rita_input/` is **read-only** source data for ML (CSV files). It is not accessed via repositories.
 `rita_output/rita.db` is the SQLite database file — all ORM tables live here.
@@ -174,7 +202,7 @@ The following Sprint 0 mechanisms were **removed** when the CSV backend was repl
 
 **Negative:**
 - ORM models are a second representation of the data alongside Pydantic schemas — mitigated by keeping models minimal.
-- 17+ repository classes is more boilerplate than direct DB calls — offset by testability and the clean migration path.
+- 25 repository classes is more boilerplate than direct DB calls — offset by testability and the clean migration path.
 
 ---
 
