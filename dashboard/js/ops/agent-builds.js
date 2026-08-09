@@ -1,9 +1,9 @@
 // ── Agent Builds ──────────────────────────────────────────────────────────────
 import { apiFetch } from './api.js';
 
-const ROLES = ['pm', 'architect', 'engineer', 'qa', 'techwriter'];
-const ROLE_LABEL = { pm: 'PM', architect: 'Architect', engineer: 'Engineer', qa: 'QA', techwriter: 'TechWriter' };
-const PALETTE = ['#6B2FA0', '#0056B8', '#1A6B3C', '#92480A', '#BE185D'];
+const ROLES = ['pm', 'architect', 'design_reviewer', 'engineer', 'code_reviewer', 'qa', 'techwriter'];
+const ROLE_LABEL = { pm: 'PM', architect: 'Architect', design_reviewer: 'Design Reviewer', engineer: 'Engineer', code_reviewer: 'Code Reviewer', qa: 'QA', techwriter: 'TechWriter' };
+const PALETTE = ['#6B2FA0', '#0056B8', '#7C3AED', '#1A6B3C', '#0891B2', '#92480A', '#BE185D'];
 
 // Chart instances — destroy before recreating to avoid Canvas reuse errors
 let _chartGrounding = null;
@@ -696,7 +696,7 @@ export async function submitTokenEstimate() {
 
     if (!result) return;
 
-    const ROLE_LABELS = { pm: 'PM', architect: 'Architect', engineer: 'Engineer', qa: 'QA', techwriter: 'TechWriter' };
+    const ROLE_LABELS = { pm: 'PM', architect: 'Architect', design_reviewer: 'Design Reviewer', engineer: 'Engineer', code_reviewer: 'Code Reviewer', qa: 'QA', techwriter: 'TechWriter' };
     const perRoleRows = Object.entries(resp.per_role || {})
       .map(([role, tokens]) =>
         `<tr><td style="padding:2px 10px 2px 0;color:var(--t3)">${ROLE_LABELS[role] ?? role}</td><td style="font-family:var(--fm)">${(tokens ?? 0).toLocaleString()}</td></tr>`
