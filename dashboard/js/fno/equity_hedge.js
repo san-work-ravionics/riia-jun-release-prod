@@ -316,43 +316,41 @@ export function renderEquityHedge(data) {
       },
     };
 
-    requestAnimationFrame(() => {
-      _portfolioChart = new Chart(portCtx, {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [{
-            label: 'Body',
-            data: candles.map(c => [Math.min(c.o, c.c), Math.max(c.o, c.c)]),
-            backgroundColor: bodyColors,
-            borderColor: bodyColors,
-            borderWidth: 1,
-            borderSkipped: false,
-            barPercentage: 0.9,
-            categoryPercentage: 0.9,
-          }],
-        },
-        plugins: [wickPlugin],
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                title: ctx => ctx[0].label,
-                label: ctx => {
-                  const c = candles[ctx.dataIndex];
-                  return [`O: ${fmt(c.o)}  H: ${fmt(c.h)}`, `L: ${fmt(c.l)}  C: ${fmt(c.c)}`];
-                },
+    _portfolioChart = new Chart(portCtx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Body',
+          data: candles.map(c => [Math.min(c.o, c.c), Math.max(c.o, c.c)]),
+          backgroundColor: bodyColors,
+          borderColor: bodyColors,
+          borderWidth: 1,
+          borderSkipped: false,
+          barPercentage: 0.9,
+          categoryPercentage: 0.9,
+        }],
+      },
+      plugins: [wickPlugin],
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: ctx => ctx[0].label,
+              label: ctx => {
+                const c = candles[ctx.dataIndex];
+                return [`O: ${fmt(c.o)}  H: ${fmt(c.h)}`, `L: ${fmt(c.l)}  C: ${fmt(c.c)}`];
               },
             },
           },
-          scales: {
-            x: { grid: { color: _gridClr }, ticks: { font: { family: _cm, size: 10 } } },
-            y: { grid: { color: _gridClr }, ticks: { font: { family: _cm, size: 10 }, callback: v => fmt(v) } },
-          },
         },
-      });
+        scales: {
+          x: { grid: { color: _gridClr }, ticks: { font: { family: _cm, size: 10 } } },
+          y: { grid: { color: _gridClr }, ticks: { font: { family: _cm, size: 10 }, callback: v => fmt(v) } },
+        },
+      },
     });
   }
 
@@ -388,30 +386,28 @@ export function renderEquityHedge(data) {
 
     const barColors = changes.map(v => (Math.abs(v) > stdDev) ? 'rgba(155,28,28,0.65)' : 'rgba(0,86,184,0.55)');
 
-    requestAnimationFrame(() => {
-      _monthlyChangeChart = new Chart(mcCtx, {
-        type: 'bar',
-        data: {
-          labels: labels.map(m => { const [y, mo] = m.split('-'); return _MONTHS[parseInt(mo, 10) - 1] + ' ' + y.slice(2); }),
-          datasets: [
-            { label: 'Monthly Chg %', data: changes, backgroundColor: barColors, borderRadius: 3, order: 2 },
-            { label: `+1σ (${upper1.toFixed(1)}%)`, data: Array(labels.length).fill(upper1), type: 'line', borderColor: _cDanger, borderWidth: 1.5, borderDash: [6, 4], pointRadius: 0, fill: false, order: 1 },
-            { label: `−1σ (${lower1.toFixed(1)}%)`, data: Array(labels.length).fill(lower1), type: 'line', borderColor: _cDanger, borderWidth: 1.5, borderDash: [6, 4], pointRadius: 0, fill: false, order: 1 },
-            { label: `Mean (${mean.toFixed(1)}%)`, data: Array(labels.length).fill(mean), type: 'line', borderColor: _cT3, borderWidth: 1, borderDash: [3, 3], pointRadius: 0, fill: false, order: 1 },
-          ],
+    _monthlyChangeChart = new Chart(mcCtx, {
+      type: 'bar',
+      data: {
+        labels: labels.map(m => { const [y, mo] = m.split('-'); return _MONTHS[parseInt(mo, 10) - 1] + ' ' + y.slice(2); }),
+        datasets: [
+          { label: 'Monthly Chg %', data: changes, backgroundColor: barColors, borderRadius: 3, order: 2 },
+          { label: `+1σ (${upper1.toFixed(1)}%)`, data: Array(labels.length).fill(upper1), type: 'line', borderColor: _cDanger, borderWidth: 1.5, borderDash: [6, 4], pointRadius: 0, fill: false, order: 1 },
+          { label: `−1σ (${lower1.toFixed(1)}%)`, data: Array(labels.length).fill(lower1), type: 'line', borderColor: _cDanger, borderWidth: 1.5, borderDash: [6, 4], pointRadius: 0, fill: false, order: 1 },
+          { label: `Mean (${mean.toFixed(1)}%)`, data: Array(labels.length).fill(mean), type: 'line', borderColor: _cT3, borderWidth: 1, borderDash: [3, 3], pointRadius: 0, fill: false, order: 1 },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: _legendCfg,
+          tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)}%` } },
         },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: {
-            legend: _legendCfg,
-            tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)}%` } },
-          },
-          scales: {
-            x: { grid: { color: _gridClr }, ticks: { font: { family: _cm, size: 10 } } },
-            y: { grid: { color: _gridClr }, ticks: { font: { family: _cm, size: 10 }, callback: v => v.toFixed(1) + '%' } },
-          },
+        scales: {
+          x: { grid: { color: _gridClr }, ticks: { font: { family: _cm, size: 10 } } },
+          y: { grid: { color: _gridClr }, ticks: { font: { family: _cm, size: 10 }, callback: v => v.toFixed(1) + '%' } },
         },
-      });
+      },
     });
   }
 }

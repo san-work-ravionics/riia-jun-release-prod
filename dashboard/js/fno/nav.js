@@ -42,11 +42,9 @@ export function setUnderlying(und) {
   renderScenarios();
   renderHedgeRadar();
   initManoeuvre();
-  // If equity hedge page is visible, sync instrument field and reload data
+  // If equity hedge page is visible, reload data for the new instrument
   const ehPage = document.getElementById('page-equity-hedge');
   if (ehPage?.classList.contains('active')) {
-    const instEl = document.getElementById('eh-instrument');
-    if (instEl) instEl.value = und;
     loadEquityHedge(true);
   }
 }

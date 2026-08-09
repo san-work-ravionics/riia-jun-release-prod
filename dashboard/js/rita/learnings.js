@@ -72,7 +72,7 @@ async function loadAgentWorkflow() {
   const statusEl = document.getElementById('aw-status');
   if (statusEl) statusEl.textContent = 'Loading…';
 
-  const inst = (localStorage.getItem('ritaInstrument') || 'ASML').toUpperCase();
+  const inst = (localStorage.getItem('ritaInstrument') || 'NIFTY').toUpperCase();
   const [perfRes, sigRes, btdRes, shapRes, histRes] = await Promise.allSettled([
     api('/api/v1/performance-summary'),
     api(`/api/v1/market-signals?timeframe=daily&periods=252&instrument=${inst}`),
@@ -360,5 +360,5 @@ function _noData(canvasId) {
   ctx.fillStyle = '#8C877A';
   ctx.font = "11px 'IBM Plex Mono', monospace";
   ctx.textAlign = 'center';
-  ctx.fillText('No data — run the NIFTY pipeline first', canvas.width / 2, canvas.height / 2);
+  ctx.fillText('No data available', canvas.width / 2, canvas.height / 2);
 }
