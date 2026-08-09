@@ -121,7 +121,8 @@ function _renderInstrumentsTable(data) {
     return;
   }
   const header = `<tr>
-    <th>Instrument</th><th>Last Trained</th><th>Timesteps</th>
+    <th>Instrument</th><th>Data Rows</th><th>Last Data Refresh</th>
+    <th>Last Trained</th><th>Timesteps</th>
     <th>Val Sharpe</th><th>Val MDD%</th><th>BT Sharpe</th>
     <th>BT MDD%</th><th>BT Return%</th><th>Trades</th><th>Gate</th>
   </tr>`;
@@ -136,6 +137,8 @@ function _renderInstrumentsTable(data) {
     }
     return `<tr>
       <td>${r.instrument ?? '---'}</td>
+      <td>${r.data_rows != null ? Number(r.data_rows).toLocaleString() : '---'}</td>
+      <td>${r.last_data_refresh ?? '---'}</td>
       <td>${r.last_trained ?? '---'}</td>
       <td>${r.timesteps != null ? Number(r.timesteps).toLocaleString() : '---'}</td>
       <td>${r.val_sharpe != null ? fmt(r.val_sharpe) : '---'}</td>

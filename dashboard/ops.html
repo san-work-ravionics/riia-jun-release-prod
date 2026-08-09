@@ -529,12 +529,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
         </div>
         <div style="margin-top:14px;">
           <div style="font-size:10px;color:var(--t4);font-family:var(--fm);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Specs</div>
-          <ul class="feat-list">
-            <li><div class="feat-dot" style="background:var(--ops)"></div>Algorithm: Double DQN (stable-baselines3)</li>
-            <li><div class="feat-dot" style="background:var(--ops)"></div>State: 8 features — RSI, MACD, BB%B, ATR, Trend, …</li>
-            <li><div class="feat-dot" style="background:var(--ops)"></div>Actions: Discrete(3) — 0% / 50% / 100% Nifty</li>
-            <li><div class="feat-dot" style="background:var(--ops)"></div>Timesteps: 500k · τ=0.005 · 5-seed best</li>
-            <li><div class="feat-dot" style="background:var(--ops)"></div>Train: 2010–2022 · Val: 2023–2024 · Backtest: 2025+</li>
+          <ul class="feat-list" style="display:grid;grid-template-columns:1fr 1fr;gap:2px 16px">
+            <li><div class="feat-dot" style="background:var(--ops)"></div>Algorithm: Double DQN (SB3)</li>
+            <li><div class="feat-dot" style="background:var(--ops)"></div>State: 8 features (RSI, MACD, …)</li>
+            <li><div class="feat-dot" style="background:var(--ops)"></div>Actions: Discrete(3) — 0/50/100%</li>
+            <li><div class="feat-dot" style="background:var(--ops)"></div>Timesteps: 500k · τ=0.005</li>
+            <li><div class="feat-dot" style="background:var(--ops)"></div>Train: 2010–22 · Val: 23–24 · BT: 25+</li>
             <li><div class="feat-dot" style="background:var(--ops)"></div><span>Model age: <span id="mdl-age">—</span></span></li>
           </ul>
         </div>

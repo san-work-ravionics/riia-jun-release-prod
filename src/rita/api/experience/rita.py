@@ -1479,6 +1479,23 @@ def _mes_int(row: dict[str, Any], key: str) -> int | None:
     return int(f) if f is not None else None
 
 
+def _mes_data_stats(instrument: str) -> tuple[int | None, str | None]:
+    """Row count and last date from the instrument's OHLCV CSV (lightweight)."""
+    try:
+        from rita.core.data_understanding import find_instrument_csv
+        csv_path = find_instrument_csv(instrument)
+        with open(csv_path) as fh:
+            lines = fh.readlines()
+        n_rows = max(0, len(lines) - 1)  # subtract header
+        if n_rows == 0:
+            return 0, None
+        last_line = lines[-1].strip()
+        last_date = last_line.split(",")[0] if last_line else None
+        return n_rows, last_date
+    except Exception:
+        return None, None
+
+
 @router.get(
     "/experience/rita/model-eval-summary",
     summary="Per-instrument model evaluation summary (latest training round)",
@@ -1502,8 +1519,14 @@ def experience_model_eval_summary() -> ModelEvalSummaryResponse:
             log.warning("model_eval_summary.load_failed", instrument=inst, error=str(exc))
             latest = None
 
+        data_rows, last_data_refresh = _mes_data_stats(inst)
+
         if latest is None:
-            rows.append(ModelEvalSummaryRow(instrument=inst))
+            rows.append(ModelEvalSummaryRow(
+                instrument=inst,
+                data_rows=data_rows,
+                last_data_refresh=last_data_refresh,
+            ))
             continue
 
         backtest_sharpe  = _mes_float(latest, "backtest_sharpe")
@@ -1529,6 +1552,8 @@ def experience_model_eval_summary() -> ModelEvalSummaryResponse:
             source=str(source) if source is not None else None,
             round=_mes_int(latest, "round"),
             has_history=True,
+            data_rows=data_rows,
+            last_data_refresh=last_data_refresh,
         ))
 
     # Sort: backtest_sharpe desc; null-sharpe rows last, alphabetical among themselves.

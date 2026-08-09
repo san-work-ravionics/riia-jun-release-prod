@@ -33,6 +33,8 @@ class ModelEvalSummaryRow(BaseModel):
     source:              str | None = None  # "trained" | "loaded_existing"
     round:               int | None = None
     has_history:         bool = False
+    data_rows:           int | None = None
+    last_data_refresh:   str | None = None
 
     model_config = {"from_attributes": True}
 
