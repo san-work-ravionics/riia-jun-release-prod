@@ -1,6 +1,6 @@
 // ── Overview ──────────────────────────────────────────────────────────────────
 import { apiFetch } from './api.js';
-import { fmt, badge, stepName } from './utils.js';
+import { fmt, badge, setEl } from './utils.js';
 import { t } from '../shared/i18n.js';
 
 export async function loadOverview() {
@@ -96,48 +96,91 @@ export async function loadOverview() {
       ? `${health.model_age_days} days ago` : (health.model_exists ? 'exists' : 'not trained');
   }
 
-  // Dataset card — derived from /health (data_freshness + csv_loaded)
-  if (health) {
-    const fresh = health.data_freshness || {};
-    const daysOld = fresh.days_since_latest;
-    const latestDate = fresh.latest_date ?? '—';
+  // Instruments Data Summary — from model-eval-summary endpoint
+  try {
+    const evalData = await apiFetch('/api/v1/experience/rita/model-eval-summary');
+    _renderInstrumentsTable(evalData);
+  } catch (e) {
+    setEl('ov-instruments-table', '---');
+  }
 
-    const totalRows = fresh.total_rows;
-    document.getElementById('ds-rows').textContent = totalRows != null && totalRows > 0 ? totalRows.toLocaleString() : '—';
-    document.getElementById('ds-fresh').textContent = daysOld != null ? daysOld + 'd' : '—';
-    document.getElementById('ds-fresh').style.color = daysOld != null && daysOld > 7 ? 'var(--warn)' : 'var(--ok)';
-    document.getElementById('ds-range-text').textContent = `— → ${latestDate}`;
+  // Agent Build System — from agent-builds endpoint
+  try {
+    const buildsData = await apiFetch('/api/experience/ops/agent-builds');
+    _renderAgentRuns(buildsData);
+  } catch (e) {
+    setEl('ov-agent-runs', '---');
+  }
+}
 
-    const extAl = document.getElementById('ds-extended-al');
-    if (health.csv_loaded) {
-      extAl.innerHTML = `<div class="al ok" style="margin-top:0"><svg class="al-ic" width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 7l3 3 5-5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>${t('ops.csv_loaded_msg')}</div>`;
+/* ── Private helpers ──────────────────────────────────────────────────────── */
+
+function _renderInstrumentsTable(data) {
+  if (!data || !data.rows || data.rows.length === 0) {
+    setEl('ov-instruments-table', '<p>No instruments data available</p>');
+    return;
+  }
+  const header = `<tr>
+    <th>Instrument</th><th>Last Trained</th><th>Timesteps</th>
+    <th>Val Sharpe</th><th>Val MDD%</th><th>BT Sharpe</th>
+    <th>BT MDD%</th><th>BT Return%</th><th>Trades</th><th>Gate</th>
+  </tr>`;
+  const rows = data.rows.map(r => {
+    let gateBadge;
+    if (r.gate_pass === true) {
+      gateBadge = badge('PASS', 'ok');
+    } else if (r.gate_pass === false) {
+      gateBadge = badge('BELOW GATE', 'warn');
     } else {
-      extAl.innerHTML = `<div class="al i" style="margin-top:0"><svg class="al-ic" width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" stroke-width="1.2"/><path d="M6.5 4v3M6.5 9h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>${t('ops.csv_missing_msg')}</div>`;
+      gateBadge = badge('NO DATA', '');
     }
-  }
+    return `<tr>
+      <td>${r.instrument ?? '---'}</td>
+      <td>${r.last_trained ?? '---'}</td>
+      <td>${r.timesteps != null ? Number(r.timesteps).toLocaleString() : '---'}</td>
+      <td>${r.val_sharpe != null ? fmt(r.val_sharpe) : '---'}</td>
+      <td>${r.val_mdd_pct != null ? fmt(r.val_mdd_pct) : '---'}</td>
+      <td>${r.backtest_sharpe != null ? fmt(r.backtest_sharpe) : '---'}</td>
+      <td>${r.backtest_mdd_pct != null ? fmt(r.backtest_mdd_pct) : '---'}</td>
+      <td>${r.backtest_return_pct != null ? fmt(r.backtest_return_pct) : '---'}</td>
+      <td>${r.trade_count != null ? r.trade_count : '---'}</td>
+      <td>${gateBadge}</td>
+    </tr>`;
+  }).join('');
+  setEl('ov-instruments-table', `<table>${header}${rows}</table>`);
+}
 
-  // Recent activity from step log
-  const stepLog = await apiFetch('/api/experience/ops/step-log');
-  const actEl = document.getElementById('overview-activity');
-  if (stepLog && stepLog.length) {
-    const recent = stepLog.slice(-4).reverse();
-    actEl.innerHTML = recent.map((row, i) => {
-      const isLast = i === recent.length - 1;
-      const isOk = row.status === 'completed';
-      const dotColor = isOk ? 'var(--ok)' : 'var(--danger)';
-      return `<div class="act-row">
-        <div class="act-dot-wrap">
-          <div class="act-dot" style="background:${dotColor}"></div>
-          ${!isLast ? '<div class="act-line"></div>' : ''}
-        </div>
-        <div class="act-body">
-          <div class="act-title">Step ${row.step_num ?? '?'}: ${row.step_name ?? stepName(row.step_num)} ${badge(row.status, isOk ? 'ok' : 'danger')}</div>
-          <div class="act-desc">${fmt(row.duration_secs, 1)}s</div>
-        </div>
-        <div class="act-time">${(row.ended_at || row.started_at || '').slice(0, 16)}</div>
-      </div>`;
-    }).join('');
-  } else {
-    actEl.innerHTML = `<div class="empty">${t('ops.no_steps_logged')}</div>`;
+function _renderAgentRuns(data) {
+  if (!data || !data.runs || data.runs.length === 0) {
+    setEl('ov-agent-runs', '<p>No pipeline runs recorded</p>');
+    return;
   }
+  const recent = data.runs.slice(0, 5);
+  const html = recent.map(run => {
+    const date = _parseRunDate(run.run_id);
+    const request = run.request
+      ? (run.request.length > 80 ? run.request.slice(0, 80) + '...' : run.request)
+      : 'Untitled run';
+    const status = run.overall_status ?? 'unknown';
+    const statusCls = status === 'completed' ? 'ok' : (status === 'failed' ? 'danger' : 'warn');
+    const dur = run.duration_minutes != null ? fmt(run.duration_minutes, 0) + ' min' : '---';
+    return `<div style="margin-bottom:6px">
+      <span style="opacity:.6;font-size:.85em">${date}</span>
+      <span style="margin-left:6px">${request}</span>
+      <span style="margin-left:6px">${badge(status, statusCls)}</span>
+      <span style="margin-left:6px;opacity:.7;font-size:.85em">${dur}</span>
+    </div>`;
+  }).join('');
+  setEl('ov-agent-runs', html);
+}
+
+function _parseRunDate(runId) {
+  if (!runId || runId.length < 13) return runId ?? '---';
+  // Format: YYYYMMDD-HHMM...
+  const y = runId.slice(0, 4);
+  const m = runId.slice(4, 6);
+  const d = runId.slice(6, 8);
+  const hh = runId.slice(9, 11);
+  const mm = runId.slice(11, 13);
+  return `${y}-${m}-${d} ${hh}:${mm}`;
 }

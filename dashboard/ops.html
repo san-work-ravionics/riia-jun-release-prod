@@ -540,50 +540,19 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
         </div>
       </div>
 
-      <!-- Dataset card -->
+      <!-- Agent Build System card -->
       <div class="card">
-        <div class="c-ey"><div class="ey-d" style="background:var(--data)"></div>Active Dataset</div>
-        <div class="c-t">Nifty 50 OHLCV (Merged)</div>
-        <div class="sb-row">
-          <div class="sb"><div class="sb-l">Rows</div><div class="sb-v" id="ds-rows">—</div></div>
-          <div class="sb"><div class="sb-l">Features</div><div class="sb-v">8</div></div>
-          <div class="sb"><div class="sb-l">Freshness</div><div class="sb-v" id="ds-fresh">—</div></div>
-        </div>
-        <div style="margin-top:14px;">
-          <div style="font-size:10px;color:var(--t4);font-family:var(--fm);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Date Range</div>
-          <div class="al i" id="ds-range-al" style="margin-top:0;margin-bottom:8px;">
-            <svg class="al-ic" width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" stroke-width="1.2"/><path d="M6.5 4v3M6.5 9h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-            <span id="ds-range-text">Loading…</span>
-          </div>
-        </div>
-        <div>
-          <div style="font-size:10px;color:var(--t4);font-family:var(--fm);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Split Allocation</div>
-          <div class="bar-wrap">
-            <div class="bar-r">
-              <span class="bar-lbl">Train (2010–22)</span>
-              <div class="bar-track"><div class="bar-fill" style="width:77%;background:var(--optimize)"></div></div>
-              <span class="bar-pct">~77%</span>
-            </div>
-            <div class="bar-r">
-              <span class="bar-lbl">Val (2023–24)</span>
-              <div class="bar-track"><div class="bar-fill" style="width:15%;background:var(--sense)"></div></div>
-              <span class="bar-pct">~15%</span>
-            </div>
-            <div class="bar-r">
-              <span class="bar-lbl">Backtest (2025+)</span>
-              <div class="bar-track"><div class="bar-fill" style="width:8%;background:var(--data)"></div></div>
-              <span class="bar-pct">~8%</span>
-            </div>
-          </div>
-        </div>
-        <div style="margin-top:10px" id="ds-extended-al"></div>
+        <div class="c-ey"><div class="ey-d" style="background:var(--data)"></div>Agent Build System</div>
+        <div class="c-t">Multi-Agent SDLC</div>
+        <p id="ov-agent-blurb" style="font-size:.85em;line-height:1.5;margin:10px 0">A multi-agent software development lifecycle using Claude Code's native Agent tool, with 7 specialist roles (PM &rarr; Architect &rarr; Design Reviewer &rarr; Engineer &rarr; Code Reviewer &rarr; QA &rarr; TechWriter). Governed by 13 compiled skill files, formal guardrails (org + project + per-role), and a structured run-log/metrics system. The /enhance orchestrator acts as a router and gatekeeper &mdash; orchestrating agent chains end-to-end.</p>
+        <div id="ov-agent-runs">---</div>
       </div>
     </div>
 
-    <!-- Recent activity -->
+    <!-- Instruments Data Summary -->
     <div class="card">
-      <div class="c-ey"><div class="ey-d" style="background:var(--t3)"></div>Recent Pipeline Activity</div>
-      <div class="activity-scroll"><div class="activity" id="overview-activity"><div class="loading">Loading…</div></div></div>
+      <div class="c-ey"><div class="ey-d" style="background:var(--t3)"></div>Instruments Data Summary</div>
+      <div class="tbl-wrap"><div id="ov-instruments-table">---</div></div>
     </div>
   </section>
 
