@@ -473,6 +473,7 @@ class TestApiFrontendContract:
         "val_sharpe", "val_mdd_pct", "val_cagr_pct",
         "backtest_sharpe", "backtest_mdd_pct", "backtest_return_pct",
         "trade_count", "gate_pass", "source", "round", "has_history",
+        "data_rows", "last_data_refresh",
     }
 
     def test_response_schema_covers_js_reads(self):
