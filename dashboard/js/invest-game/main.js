@@ -13,10 +13,10 @@ const gameState = {
   currentDayIndex: 0,
   started: false,
   volatileMode: false,
-  buysLeft: 2,
+  buysLeft: 3,
   sellsLeft: 2,
   holdsLeft: 2,
-  aiBuysLeft: 2,
+  aiBuysLeft: 3,
   aiSellsLeft: 2,
   aiHoldsLeft: 2,
   user: { position: 'flat', cash: 5000, shares: 0, entryPrice: 0, portfolio: 0, cumCosts: 0, cumTax: 0, netValue: 5000, prevNetValue: 5000 },
@@ -34,7 +34,7 @@ function fmtSigned(value) {
 }
 
 function calculateDay(actor, action, closePrice) {
-  const tranche = gameState.startingCapital / 2;
+  const tranche = gameState.startingCapital / 3;
 
   if (action === 'BUY' && actor.cash > 0) {
     const invest   = Math.min(tranche, actor.cash);
@@ -312,7 +312,7 @@ function resetGame() {
   Object.assign(gameState, {
     gameId: null, instrument: 'ASML', currency: 'EUR', startingCapital: cap,
     warmupDays: [], gameDays: [], currentDayIndex: 0, started: false, volatileMode: false,
-    buysLeft: 2, sellsLeft: 2, holdsLeft: 2, aiBuysLeft: 2, aiSellsLeft: 2, aiHoldsLeft: 2,
+    buysLeft: 3, sellsLeft: 2, holdsLeft: 2, aiBuysLeft: 3, aiSellsLeft: 2, aiHoldsLeft: 2,
     user: freshActor(), ai: freshActor()
   });
 
