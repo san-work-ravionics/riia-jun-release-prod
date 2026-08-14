@@ -13,10 +13,12 @@ const gameState = {
   currentDayIndex: 0,
   started: false,
   volatileMode: false,
-  buysLeft: 3,
-  sellsLeft: 3,
-  aiBuysLeft: 3,
-  aiSellsLeft: 3,
+  buysLeft: 2,
+  sellsLeft: 2,
+  holdsLeft: 2,
+  aiBuysLeft: 2,
+  aiSellsLeft: 2,
+  aiHoldsLeft: 2,
   user: { position: 'flat', cash: 5000, shares: 0, entryPrice: 0, portfolio: 0, cumCosts: 0, cumTax: 0, netValue: 5000, prevNetValue: 5000 },
   ai:   { position: 'flat', cash: 5000, shares: 0, entryPrice: 0, portfolio: 0, cumCosts: 0, cumTax: 0, netValue: 5000, prevNetValue: 5000 }
 };
@@ -32,7 +34,7 @@ function fmtSigned(value) {
 }
 
 function calculateDay(actor, action, closePrice) {
-  const tranche = gameState.startingCapital / 3;
+  const tranche = gameState.startingCapital / 2;
 
   if (action === 'BUY' && actor.cash > 0) {
     const invest   = Math.min(tranche, actor.cash);
@@ -95,24 +97,27 @@ function renderBudgetDisplay() {
   const row = document.getElementById('budget-row');
   if (!el) return;
   if (row) row.style.display = '';
-  const budgetHtml = (b, s) =>
+  const budgetHtml = (b, s, h) =>
     `<span style="color:var(--ok);font-weight:600">Buys: ${b}</span>` +
     `<span style="color:var(--t4);margin:0 4px">/</span>` +
-    `<span style="color:var(--danger);font-weight:600">Sells: ${s}</span>`;
-  el.innerHTML = budgetHtml(gameState.buysLeft, gameState.sellsLeft);
+    `<span style="color:var(--danger);font-weight:600">Sells: ${s}</span>` +
+    `<span style="color:var(--t4);margin:0 4px">/</span>` +
+    `<span style="color:var(--t2);font-weight:600">Holds: ${h}</span>`;
+  el.innerHTML = budgetHtml(gameState.buysLeft, gameState.sellsLeft, gameState.holdsLeft);
   const aiEl = document.getElementById('ai-budget-display');
-  if (aiEl) aiEl.innerHTML = budgetHtml(gameState.aiBuysLeft, gameState.aiSellsLeft);
+  if (aiEl) aiEl.innerHTML = budgetHtml(gameState.aiBuysLeft, gameState.aiSellsLeft, gameState.aiHoldsLeft);
 }
 
 function showDayBar(n) {
   const canBuy  = gameState.buysLeft  > 0 && gameState.user.cash > 0;
   const canSell = gameState.sellsLeft > 0 && gameState.user.shares > 0;
+  const canHold = gameState.holdsLeft > 0;
   const buyBtn  = document.getElementById('dbar-buy');
   const sellBtn = document.getElementById('dbar-sell');
   const holdBtn = document.getElementById('dbar-hold');
   buyBtn.disabled  = !canBuy;
   sellBtn.disabled = !canSell;
-  holdBtn.disabled = false;
+  holdBtn.disabled = !canHold;
   buyBtn.onclick  = () => handleUserAction(n, 'BUY');
   sellBtn.onclick = () => handleUserAction(n, 'SELL');
   holdBtn.onclick = () => handleUserAction(n, 'HOLD');
@@ -184,14 +189,14 @@ function populateActiveRowData(n) {
 function unlockRow(n) {
   populateActiveRowData(n);
 
-  if (n === 9) {
+  if (n === 8) {
     showDayBar(n);
     ['dbar-buy', 'dbar-sell', 'dbar-hold'].forEach(id => {
       document.getElementById(id).disabled = true;
     });
     setTimeout(() => {
       const action = gameState.user.position === 'long' ? 'SELL' : 'HOLD';
-      handleUserAction(9, action);
+      handleUserAction(8, action);
     }, 700);
     return;
   }
@@ -200,7 +205,7 @@ function unlockRow(n) {
 }
 
 function showAllGreyed() {
-  for (let n = 3; n <= 9; n++) {
+  for (let n = 3; n <= 8; n++) {
     document.querySelectorAll(`[data-day="${n}"]`).forEach(el => {
       el.style.display = '';
       el.classList.add('greyed-out');
@@ -243,6 +248,7 @@ async function handleUserAction(n, action) {
 
   if (wasBuying)  gameState.buysLeft--;
   if (wasSelling) gameState.sellsLeft--;
+  if (action === 'HOLD') gameState.holdsLeft--;
 
   let result;
   try {
@@ -263,6 +269,7 @@ async function handleUserAction(n, action) {
   calculateDay(gameState.ai, aiEffective, closePrice);
   if (aiWasBuying)  gameState.aiBuysLeft--;
   if (aiWasSelling) gameState.aiSellsLeft--;
+  if (aiEffective === 'HOLD') gameState.aiHoldsLeft--;
   gameState.currentDayIndex = dayIndex + 1;
 
   const aiCell  = document.getElementById(`ai-cell-${n}`);
@@ -273,13 +280,13 @@ async function handleUserAction(n, action) {
   renderPnLCards();
   renderBudgetDisplay();
 
-  const pct = ((dayIndex + 1) / 7) * 100;
+  const pct = ((dayIndex + 1) / 6) * 100;
   document.getElementById('progress-fill').style.width       = `${pct}%`;
-  document.getElementById('progress-label-text').textContent = `Day ${dayIndex + 1} of 7`;
+  document.getElementById('progress-label-text').textContent = `Day ${dayIndex + 1} of 6`;
 
   renderComplianceRow(n, result);
 
-  if (n < 9) {
+  if (n < 8) {
     revealDay(n + 1);
   } else {
     await endGame();
@@ -305,7 +312,7 @@ function resetGame() {
   Object.assign(gameState, {
     gameId: null, instrument: 'ASML', currency: 'EUR', startingCapital: cap,
     warmupDays: [], gameDays: [], currentDayIndex: 0, started: false, volatileMode: false,
-    buysLeft: 3, sellsLeft: 3, aiBuysLeft: 3, aiSellsLeft: 3,
+    buysLeft: 2, sellsLeft: 2, holdsLeft: 2, aiBuysLeft: 2, aiSellsLeft: 2, aiHoldsLeft: 2,
     user: freshActor(), ai: freshActor()
   });
 
@@ -344,7 +351,7 @@ function resetGame() {
   document.getElementById('winner-badge').textContent        = '—';
   document.getElementById('winner-badge').className          = '';
   document.getElementById('progress-fill').style.width       = '0%';
-  document.getElementById('progress-label-text').textContent = 'Day 0 of 7';
+  document.getElementById('progress-label-text').textContent = 'Day 0 of 6';
   document.getElementById('row-performance').style.display   = 'none';
 
   // Day action bar
@@ -359,7 +366,7 @@ function resetGame() {
   });
 
   // Active columns
-  for (let n = 3; n <= 9; n++) {
+  for (let n = 3; n <= 8; n++) {
     document.querySelectorAll(`[data-day="${n}"]`).forEach(el => { el.classList.add('greyed-out'); });
     document.getElementById(`game-row-${n}`).classList.remove('active-col');
     const actionCell = document.getElementById(`action-label-${n}`);
@@ -427,11 +434,11 @@ function initControls() {
     document.getElementById('selected-instrument').textContent = data.instrument;
     document.getElementById('selected-range-text').textContent =
       data.game_days[0].date + ' — ' + data.game_days[data.game_days.length - 1].date;
-    document.getElementById('selected-days-count').textContent = '7 trading days';
+    document.getElementById('selected-days-count').textContent = '6 trading days';
     document.getElementById('selection-label').style.display   = '';
     document.getElementById('row-performance').style.display   = '';
     document.getElementById('progress-fill').style.width       = '0%';
-    document.getElementById('progress-label-text').textContent = 'Day 0 of 7';
+    document.getElementById('progress-label-text').textContent = 'Day 0 of 6';
 
     renderPnLCards();
     renderBudgetDisplay();
@@ -474,11 +481,11 @@ function initControls() {
     document.getElementById('selected-instrument').textContent = data.instrument;
     document.getElementById('selected-range-text').textContent =
       data.game_days[0].date + ' — ' + data.game_days[data.game_days.length - 1].date;
-    document.getElementById('selected-days-count').textContent = '7 volatile days';
+    document.getElementById('selected-days-count').textContent = '6 volatile days';
     document.getElementById('selection-label').style.display   = '';
     document.getElementById('row-performance').style.display   = '';
     document.getElementById('progress-fill').style.width       = '0%';
-    document.getElementById('progress-label-text').textContent = 'Day 0 of 7';
+    document.getElementById('progress-label-text').textContent = 'Day 0 of 6';
 
     renderPnLCards();
     renderBudgetDisplay();

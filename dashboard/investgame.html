@@ -180,7 +180,6 @@ input[type="date"]:focus{border-color:var(--game);}
 [data-day="6"]{background:#E4F0FA !important;}
 [data-day="7"]{background:#FAFAE4 !important;}
 [data-day="8"]{background:#E4F0FA !important;}
-[data-day="9"]{background:#FAFAE4 !important;}
 .comp-insight{font-size:12px;color:var(--t3);font-style:italic;white-space:normal;text-align:center;max-width:130px;}
 #game-table tbody td.comp-insight{white-space:normal;min-width:130px;max-width:180px;line-height:1.4;padding:8px 14px;}
 .status-badge{display:inline-flex;align-items:center;font-family:var(--fm);font-size:9px;font-weight:500;padding:2px 7px;border-radius:3px;border:1px solid;text-transform:uppercase;letter-spacing:.04em;}
@@ -247,7 +246,7 @@ input[type="date"]:focus{border-color:var(--game);}
         <span class="range-label">Selected</span>
         <span id="selected-instrument">—</span> &mdash;
         <span id="selected-range-text">—</span> &nbsp;·&nbsp;
-        <span id="selected-days-count">7 trading days</span>
+        <span id="selected-days-count">6 trading days</span>
       </div>
       <div id="day-action-bar" class="day-action-bar" style="display:none">
         <div class="dbar-day">
@@ -304,7 +303,7 @@ input[type="date"]:focus{border-color:var(--game);}
       </table>
       <div class="progress-wrap">
         <div class="progress-bar"><div id="progress-fill" style="width:0%"></div></div>
-        <span id="progress-label-text">Day 0 of 7</span>
+        <span id="progress-label-text">Day 0 of 6</span>
       </div>
     </section>
   </div>
@@ -327,7 +326,6 @@ input[type="date"]:focus{border-color:var(--game);}
             <th id="game-row-6"  class="day-col" data-day="6"  style="display:none">6</th>
             <th id="game-row-7"  class="day-col" data-day="7"  style="display:none">7</th>
             <th id="game-row-8"  class="day-col" data-day="8"  style="display:none">8</th>
-            <th id="game-row-9"  class="day-col" data-day="9"  style="display:none">9</th>
           </tr>
         </thead>
         <tbody>
@@ -340,7 +338,6 @@ input[type="date"]:focus{border-color:var(--game);}
             <td id="row6-price"  class="day-data" data-day="6"  style="display:none">—</td>
             <td id="row7-price"  class="day-data" data-day="7"  style="display:none">—</td>
             <td id="row8-price"  class="day-data" data-day="8"  style="display:none">—</td>
-            <td id="row9-price"  class="day-data" data-day="9"  style="display:none">—</td>
           </tr>
           <!-- Action -->
           <tr>
@@ -351,7 +348,6 @@ input[type="date"]:focus{border-color:var(--game);}
             <td id="action-label-6"  class="day-data" data-day="6"  style="display:none">—</td>
             <td id="action-label-7"  class="day-data" data-day="7"  style="display:none">—</td>
             <td id="action-label-8"  class="day-data" data-day="8"  style="display:none">—</td>
-            <td id="action-label-9"  class="day-data" data-day="9"  style="display:none">—</td>
           </tr>
           <!-- AI Action -->
           <tr>
@@ -362,7 +358,6 @@ input[type="date"]:focus{border-color:var(--game);}
             <td id="ai-cell-6"  class="day-data ai-cell" data-day="6"  style="display:none">—</td>
             <td id="ai-cell-7"  class="day-data ai-cell" data-day="7"  style="display:none">—</td>
             <td id="ai-cell-8"  class="day-data ai-cell" data-day="8"  style="display:none">—</td>
-            <td id="ai-cell-9"  class="day-data ai-cell" data-day="9"  style="display:none">—</td>
           </tr>
           <!-- Gate -->
           <tr>
@@ -373,7 +368,6 @@ input[type="date"]:focus{border-color:var(--game);}
             <td class="day-data" data-day="6"  style="display:none"><div class="gate-cell"><span id="comp-status-6">—</span><span id="comp-rule-6"   class="gate-rule">—</span></div></td>
             <td class="day-data" data-day="7"  style="display:none"><div class="gate-cell"><span id="comp-status-7">—</span><span id="comp-rule-7"   class="gate-rule">—</span></div></td>
             <td class="day-data" data-day="8"  style="display:none"><div class="gate-cell"><span id="comp-status-8">—</span><span id="comp-rule-8"   class="gate-rule">—</span></div></td>
-            <td class="day-data" data-day="9"  style="display:none"><div class="gate-cell"><span id="comp-status-9">—</span><span id="comp-rule-9"   class="gate-rule">—</span></div></td>
           </tr>
           <!-- AI Insight -->
           <tr>
@@ -384,7 +378,6 @@ input[type="date"]:focus{border-color:var(--game);}
             <td id="comp-insight-6"  class="day-data comp-insight" data-day="6"  style="display:none">—</td>
             <td id="comp-insight-7"  class="day-data comp-insight" data-day="7"  style="display:none">—</td>
             <td id="comp-insight-8"  class="day-data comp-insight" data-day="8"  style="display:none">—</td>
-            <td id="comp-insight-9"  class="day-data comp-insight" data-day="9"  style="display:none">—</td>
           </tr>
         </tbody>
       </table>

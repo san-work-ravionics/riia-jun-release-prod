@@ -132,10 +132,10 @@ def _load_game_data(instrument: str, start_date: str, end_date: str) -> pd.DataF
         (df["date"] >= pd.to_datetime(start_date))
         & (df["date"] <= pd.to_datetime(end_date))
     ].reset_index(drop=True)
-    if len(df) < 9:
+    if len(df) < 8:
         raise HTTPException(
             status_code=422,
-            detail=f"Fewer than 9 trading days in selected range. Data available up to {max_date}.",
+            detail=f"Fewer than 8 trading days in selected range. Data available up to {max_date}.",
         )
     return df[["date", "close"]].copy()
 
@@ -301,7 +301,7 @@ def _write_run_log(game_id: str, session: dict) -> None:
         )
         overall_status = "pass_with_warnings" if any_flagged else "pass"
 
-        days_complete = len(day_log) == 7
+        days_complete = len(day_log) == 6
         _grounding = {
             "session_valid": True,
             "agent_chain_ran": True,
@@ -368,8 +368,8 @@ def _write_run_log(game_id: str, session: dict) -> None:
 async def select_days(req: SelectDaysRequest) -> SelectDaysResponse:
     df = _load_game_data(req.instrument, req.start_date, req.end_date)
 
-    start_idx = random.randint(0, len(df) - 9)
-    block = df.iloc[start_idx : start_idx + 9].reset_index(drop=True)
+    start_idx = random.randint(0, len(df) - 8)
+    block = df.iloc[start_idx : start_idx + 8].reset_index(drop=True)
 
     warmup_rows = block.iloc[:2]
     game_rows = block.iloc[2:]
@@ -416,9 +416,9 @@ async def run_day(req: RunDayRequest) -> RunDayResponse:
     if req.game_id not in SESSION_DATA:
         raise HTTPException(status_code=404, detail="Game session not found.")
 
-    if req.day_index < 0 or req.day_index > 6:
+    if req.day_index < 0 or req.day_index > 5:
         raise HTTPException(
-            status_code=400, detail="day_index must be between 0 and 6."
+            status_code=400, detail="day_index must be between 0 and 5."
         )
 
     session = SESSION_DATA[req.game_id]
