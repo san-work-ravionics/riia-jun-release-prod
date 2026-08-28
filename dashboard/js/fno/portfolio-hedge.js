@@ -56,6 +56,13 @@ function _fmtEur(v) {
   return '€' + v.toLocaleString('en-EU', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
+function _currentQuarterLabel() {
+  const now = new Date();
+  const q = Math.ceil((now.getMonth() + 1) / 3);
+  const y = now.getFullYear().toString().slice(-2);
+  return `Q${q}'${y}`;
+}
+
 function _estRisk(daily_return_pct) {
   const abs = Math.abs(daily_return_pct || 0);
   if (abs < 0.3) return 1;
@@ -71,9 +78,34 @@ function _riskOf(id) {
   return (hm?.risk_score) ?? (_state.instruments[id]?.risk_score) ?? _estRisk(_state.instruments[id]?.daily_return_pct);
 }
 
-// ── Top 4 KPI widgets (reactive to hedgeChecked) ──────────────────────────────
+// ── Top 5 KPI widgets (reactive to hedgeChecked) ──────────────────────────────
 function _renderTopKpis() {
   _setText('ph-kpi-portfolio-val', _state.totalValueEur != null ? _fmtEur(_state.totalValueEur) : '—');
+
+  // Value Today: shares × latest close + cash
+  let liveValue = 0;
+  let hasLive = false;
+  for (const h of _state.holdings) {
+    const inst = _state.instruments[h.instrument_id];
+    if (h.shares != null && inst?.close != null) {
+      liveValue += h.shares * inst.close;
+      hasLive = true;
+    }
+    liveValue += (h.cash_eur ?? 0);
+  }
+  _setText('ph-kpi-value-today', hasLive ? _fmtEur(liveValue) : '—');
+  const changeEl = document.getElementById('ph-kpi-value-change');
+  if (changeEl) {
+    if (hasLive && _state.totalValueEur > 0) {
+      const changePct = ((liveValue / _state.totalValueEur) - 1) * 100;
+      const sign = changePct >= 0 ? '+' : '';
+      changeEl.textContent = `${sign}${changePct.toFixed(1)}% vs saved`;
+      changeEl.style.color = changePct >= 0 ? '#16a34a' : '#dc2626';
+    } else {
+      changeEl.textContent = 'vs saved';
+      changeEl.style.color = '';
+    }
+  }
 
   const hedgeMap = {};
   if (_state.apiHedge?.holdings) {
@@ -83,13 +115,30 @@ function _renderTopKpis() {
     _state.hedgeChecked.has(h.instrument_id) && hedgeMap[h.instrument_id]
   );
 
-  const totalDrop = checked.reduce((s, h) => s + (hedgeMap[h.instrument_id].var_95_eur ?? 0), 0);
+  const totalDrop = checked.reduce((s, h) => s + (hedgeMap[h.instrument_id].quarterly_var_eur ?? hedgeMap[h.instrument_id].var_95_eur ?? 0), 0);
   const totalCost = checked.reduce((s, h) => s + (hedgeMap[h.instrument_id].put_cost_eur ?? 0), 0);
   const protPct   = totalDrop > 0 ? ((totalDrop - totalCost) / totalDrop * 100) : 0;
 
   _setText('ph-kpi-drop-impact', totalDrop > 0 ? '−' + _fmtEur(totalDrop) : '—');
   _setText('ph-kpi-premium',     totalCost > 0 ? _fmtEur(totalCost)        : '—');
   _setText('ph-kpi-protection',  protPct   > 0 ? protPct.toFixed(0) + '%'  : '—');
+
+  // Quarter label
+  const qLabel = _currentQuarterLabel();
+  _setText('ph-kpi-drop-sub', `2σ quarterly VaR · ${qLabel}`);
+
+  // Weighted avg breach probability for checked holdings
+  const probItems = checked.filter(h => hedgeMap[h.instrument_id].hist_breach_prob_pct != null);
+  const probWeight = probItems.reduce((s, h) => s + h.allocation_pct, 0) || 1;
+  const avgProb = probItems.length > 0
+    ? probItems.reduce((s, h) => s + hedgeMap[h.instrument_id].hist_breach_prob_pct * (h.allocation_pct / probWeight), 0)
+    : null;
+  _setText('ph-kpi-probability', avgProb != null ? avgProb.toFixed(1) + '%' : '—');
+  const probEl = document.getElementById('ph-kpi-probability');
+  if (probEl && avgProb != null) {
+    probEl.style.color = avgProb > 10 ? '#dc2626' : avgProb > 5 ? '#d97706' : '#16a34a';
+  }
+  _setText('ph-kpi-prob-sub', `of 2σ breach · ${qLabel}`);
 }
 
 // ── Sticky totals row (reflects hedgeChecked only) ────────────────────────────
@@ -112,13 +161,23 @@ function _renderDiscoverTotals() {
     return;
   }
 
-  const totalDrop     = checked.reduce((s, h) => s + (hedgeMap[h.instrument_id].var_95_eur ?? 0), 0);
+  const totalDrop     = checked.reduce((s, h) => s + (hedgeMap[h.instrument_id].quarterly_var_eur ?? hedgeMap[h.instrument_id].var_95_eur ?? 0), 0);
   const totalCost     = checked.reduce((s, h) => s + (hedgeMap[h.instrument_id].put_cost_eur ?? 0), 0);
   const totalSaving   = totalDrop - totalCost;
   const totalPosition = checked.reduce((s, h) => s + (hedgeMap[h.instrument_id].position_eur ?? 0), 0);
   const hasEur        = checked.some(h => hedgeMap[h.instrument_id].position_eur != null);
   const totalCash     = _state.holdings.reduce((s, h) => s + (h.cash_eur ?? 0), 0);
   const cashTdVal     = totalCash > 0 ? _fmtEur(totalCash) : '—';
+
+  // Weighted average breach probability
+  const probItems = checked.filter(h => hedgeMap[h.instrument_id].hist_breach_prob_pct != null);
+  const totalWeight = probItems.reduce((s, h) => s + h.allocation_pct, 0) || 1;
+  const avgProb = probItems.length > 0
+    ? probItems.reduce((s, h) => s + hedgeMap[h.instrument_id].hist_breach_prob_pct * (h.allocation_pct / totalWeight), 0)
+    : null;
+  const probColor = avgProb != null ? (avgProb > 10 ? '#dc2626' : avgProb > 5 ? '#d97706' : '#16a34a') : '#16a34a';
+  const probBg    = avgProb != null ? (avgProb > 10 ? 'rgba(220,38,38,.1)' : avgProb > 5 ? 'rgba(217,119,6,.1)' : 'rgba(22,163,74,.12)') : 'rgba(22,163,74,.12)';
+  const probLabel = avgProb != null ? avgProb.toFixed(1) + '%' : '—';
 
   tr.innerHTML = `
     <td style="padding:7px 10px;font-size:11px;font-weight:700;color:#BE185D;font-family:var(--fm);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap">
@@ -129,7 +188,7 @@ function _renderDiscoverTotals() {
     <td style="padding:7px 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;white-space:nowrap">${hasEur ? _fmtEur(totalPosition) : '—'}</td>
     <td colspan="3" style="padding:7px 10px"></td>
     <td style="padding:7px 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:#dc2626;white-space:nowrap">${hasEur ? '−' + _fmtEur(totalDrop) : '—'}</td>
-    <td style="padding:7px 10px;text-align:center"><span style="font-size:11px;font-weight:700;background:rgba(22,163,74,.12);color:#16a34a;padding:2px 7px;border-radius:100px;font-family:var(--fm)">95%</span></td>
+    <td style="padding:7px 10px;text-align:center"><span style="font-size:11px;font-weight:700;background:${probBg};color:${probColor};padding:2px 7px;border-radius:100px;font-family:var(--fm)">${probLabel}</span></td>
     <td style="padding:7px 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;white-space:nowrap">${hasEur ? _fmtEur(totalCost) : '—'}</td>
     <td style="padding:7px 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:#2563eb;white-space:nowrap">${hasEur ? _fmtEur(totalSaving) : '—'}</td>
     <td></td>`;
@@ -138,6 +197,7 @@ function _renderDiscoverTotals() {
 // ── Holdings selection table ───────────────────────────────────────────────────
 function _renderDiscover() {
   _setText('ph-discover-portfolio-name', _state._portfolioName || '—');
+  _setText('ph-holdings-sub', `sorted by risk · ${_currentQuarterLabel()} · check to include in hedge`);
 
   // Show portfolio EUR value (read-only from saved portfolio)
   const eurDisp = document.getElementById('ph-eur-display');
@@ -172,8 +232,18 @@ function _renderDiscover() {
     const retColor = (ret || 0) > 0 ? '#2563eb' : (ret || 0) < 0 ? '#dc2626' : '#64748b';
 
     const hd      = hedgeMap[h.instrument_id];
-    const sigMove = hd ? '±' + (hd.ann_vol_pct * Math.sqrt(tMonths / 12)).toFixed(1) + '%' : '—';
+    const qtrVar  = hd?.quarterly_var_pct != null ? hd.quarterly_var_pct.toFixed(1) + '%' : '—';
+    const qtrDrop = hd?.quarterly_var_eur != null ? '−' + _fmtEur(hd.quarterly_var_eur) : (hd ? '−' + _fmtEur(hd.var_95_eur) : '—');
     const checked = _state.hedgeChecked.has(h.instrument_id);
+
+    // Historical breach probability — color-coded
+    let probBadge = '—';
+    if (hd?.hist_breach_prob_pct != null) {
+      const p = hd.hist_breach_prob_pct;
+      const pColor = p > 10 ? '#dc2626' : p > 5 ? '#d97706' : '#16a34a';
+      const pBg    = p > 10 ? 'rgba(220,38,38,.1)' : p > 5 ? 'rgba(217,119,6,.1)' : 'rgba(22,163,74,.12)';
+      probBadge = `<span style="font-size:11px;font-weight:700;background:${pBg};color:${pColor};padding:2px 7px;border-radius:100px;font-family:var(--fm)">${p.toFixed(1)}%</span>`;
+    }
 
     const sharesVal = h.shares != null ? h.shares.toLocaleString('en-US') : '—';
     const cashVal   = h.cash_eur != null ? _fmtEur(h.cash_eur) : '—';
@@ -187,13 +257,11 @@ function _renderDiscover() {
       <td style="padding:9px 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#64748b;white-space:nowrap">${hd && hd.position_eur != null ? _fmtEur(hd.position_eur) : '—'}</td>
       <td style="padding:9px 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:${retColor};white-space:nowrap">${retStr}</td>
       <td style="padding:9px 10px">${_riskDots(risk)}</td>
-      <td style="padding:9px 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#64748b;white-space:nowrap">${sigMove}</td>
-      <td style="padding:9px 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#dc2626;white-space:nowrap">${hd ? '−' + _fmtEur(hd.var_95_eur) : '—'}</td>
-      <td style="padding:9px 10px;text-align:center">
-        ${hd ? '<span style="font-size:11px;font-weight:700;background:rgba(22,163,74,.12);color:#16a34a;padding:2px 7px;border-radius:100px;font-family:var(--fm)">95%</span>' : '—'}
-      </td>
+      <td style="padding:9px 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#64748b;white-space:nowrap">${qtrVar}</td>
+      <td style="padding:9px 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#dc2626;white-space:nowrap">${qtrDrop}</td>
+      <td style="padding:9px 10px;text-align:center">${probBadge}</td>
       <td style="padding:9px 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;white-space:nowrap">${hd ? _fmtEur(hd.put_cost_eur) : '—'}</td>
-      <td style="padding:9px 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:#2563eb;white-space:nowrap">${hd && hd.var_95_eur != null && hd.put_cost_eur != null ? _fmtEur(hd.var_95_eur - hd.put_cost_eur) : '—'}</td>
+      <td style="padding:9px 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:#2563eb;white-space:nowrap">${hd && (hd.quarterly_var_eur ?? hd.var_95_eur) != null && hd.put_cost_eur != null ? _fmtEur((hd.quarterly_var_eur ?? hd.var_95_eur) - hd.put_cost_eur) : '—'}</td>
       <td style="padding:9px 14px;text-align:center">
         ${hd ? `<input type="checkbox" ${checked ? 'checked' : ''} onchange="phToggleHedge('${h.instrument_id}')" style="width:16px;height:16px;cursor:pointer;accent-color:#BE185D">` : ''}
       </td>

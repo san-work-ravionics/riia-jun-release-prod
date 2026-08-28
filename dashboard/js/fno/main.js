@@ -88,6 +88,7 @@ import { init as loadEquityScenarios } from '../scenarios/equity-scenarios.js';
 import { initI18n, setLanguage, applyTranslations } from '../shared/i18n.js';
 import { loadPortfolioHedge, phSetCoverage, phSetDuration, phToggleHedge, phPickStrategy, phSetScenarioTab } from './portfolio-hedge.js';
 import { loadHedgeAdvisor, haAnalyse, haSkipToVerdict } from './hedge-reasoning.js';
+import { loadStudy } from './study.js';
 
 window.setLanguage        = setLanguage;
 window.loadEquityHedge      = loadEquityHedge;
@@ -105,6 +106,9 @@ window.phSetScenarioTab   = phSetScenarioTab;
 
 // Hedge Advisor reasoning page
 _sectionLoaders['hedge-advisor'] = loadHedgeAdvisor;
+
+// Study — Rolling Futures Backtest
+_sectionLoaders['study'] = loadStudy;
 window.loadHedgeAdvisor   = loadHedgeAdvisor;
 window.haAnalyse          = haAnalyse;
 window.haSkipToVerdict    = haSkipToVerdict;

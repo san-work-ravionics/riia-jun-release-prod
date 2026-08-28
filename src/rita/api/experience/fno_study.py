@@ -1,0 +1,281 @@
+"""Experience Layer — FnO Rolling Futures Study (BANKNIFTY).
+
+Simulates a rolling quarterly futures portfolio on BANKNIFTY from 1 Jan 2025.
+Always holds 3 months of futures. Monthly roll: sell expiring, buy new back-month.
+Buy price = spot × 1.11 (11% basis premium). Sell price = spot (basis converges).
+Computes quarterly VaR and breach probability at each quarter boundary to show
+how risk metrics would have helped.
+
+GET /api/v1/experience/fno/study  (no auth required — read-only study data)
+"""
+from __future__ import annotations
+
+import statistics
+from collections import defaultdict
+from datetime import date
+
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from rita.database import get_db
+from rita.repositories.market_data import MarketDataCacheRepository
+
+router = APIRouter(prefix="/api/v1/experience/fno", tags=["experience:fno-study"])
+
+_BASIS_PREMIUM = 1.11
+_START_DATE = date(2025, 1, 1)
+_SYMBOL = "BANKNIFTY"
+
+
+class FuturesContract(BaseModel):
+    month_label: str
+    buy_date: str
+    buy_spot: float
+    buy_price: float
+    sell_date: str | None
+    sell_spot: float | None
+    sell_price: float | None
+    pnl: float | None
+    pnl_pct: float | None
+    status: str  # "closed" | "open"
+
+
+class QuarterSummary(BaseModel):
+    quarter: str
+    start_date: str
+    end_date: str
+    contracts_closed: int
+    total_pnl: float
+    quarterly_var_pct: float | None
+    actual_return_pct: float | None
+    var_breached: bool | None
+    hist_breach_prob_pct: float | None
+
+
+class StudyResponse(BaseModel):
+    instrument: str
+    start_date: str
+    basis_premium_pct: float
+    contracts: list[FuturesContract]
+    quarters: list[QuarterSummary]
+    cumulative_pnl: list[dict]
+    total_pnl: float
+    total_contracts: int
+
+
+def _last_trading_day_of_month(trading_dates: list[date], year: int, month: int) -> date | None:
+    candidates = [d for d in trading_dates if d.year == year and d.month == month]
+    return max(candidates) if candidates else None
+
+
+def _first_trading_day_on_or_after(trading_dates: list[date], target: date) -> date | None:
+    for d in trading_dates:
+        if d >= target:
+            return d
+    return None
+
+
+def _quarter_label(d: date) -> str:
+    q = (d.month - 1) // 3 + 1
+    return f"Q{q}'{str(d.year)[-2:]}"
+
+
+def _compute_quarterly_var(closes: list[float]) -> tuple[float | None, float | None]:
+    if len(closes) < 126:
+        return None, None
+    qtr_returns = [
+        (closes[i] - closes[i - 63]) / closes[i - 63] * 100
+        for i in range(63, len(closes))
+    ]
+    qtr_vol = statistics.stdev(qtr_returns)
+    var_2sigma = round(2.0 * qtr_vol, 2)
+    breaches = sum(1 for r in qtr_returns if r < -var_2sigma)
+    breach_pct = round(breaches / len(qtr_returns) * 100, 1)
+    return var_2sigma, breach_pct
+
+
+@router.get("/study", response_model=StudyResponse)
+def get_fno_study(db: Session = Depends(get_db)) -> StudyResponse:
+    all_records = MarketDataCacheRepository(db).read_all()
+    bn_recs = sorted(
+        [r for r in all_records if r.underlying.upper() == _SYMBOL],
+        key=lambda r: r.date,
+    )
+    if not bn_recs:
+        return StudyResponse(
+            instrument=_SYMBOL, start_date=str(_START_DATE),
+            basis_premium_pct=11.0, contracts=[], quarters=[],
+            cumulative_pnl=[], total_pnl=0, total_contracts=0,
+        )
+
+    trading_dates = [r.date for r in bn_recs]
+    close_by_date: dict[date, float] = {r.date: float(r.close) for r in bn_recs if r.close}
+    all_closes = [float(r.close) for r in bn_recs if r.close]
+
+    # Build the rolling futures portfolio
+    contracts: list[FuturesContract] = []
+    today = date.today()
+
+    # Find the first trading day on or after start
+    first_day = _first_trading_day_on_or_after(trading_dates, _START_DATE)
+    if not first_day:
+        return StudyResponse(
+            instrument=_SYMBOL, start_date=str(_START_DATE),
+            basis_premium_pct=11.0, contracts=[], quarters=[],
+            cumulative_pnl=[], total_pnl=0, total_contracts=0,
+        )
+
+    buy_spot = close_by_date.get(first_day, 0)
+
+    # Initial 3 contracts: Jan, Feb, Mar of start year
+    start_year = first_day.year
+    start_month = first_day.month
+    for i in range(3):
+        m = start_month + i
+        y = start_year + (m - 1) // 12
+        m = ((m - 1) % 12) + 1
+        month_label = date(y, m, 1).strftime("%b'%y")
+        contracts.append(FuturesContract(
+            month_label=month_label,
+            buy_date=str(first_day),
+            buy_spot=round(buy_spot, 2),
+            buy_price=round(buy_spot * _BASIS_PREMIUM, 2),
+            sell_date=None, sell_spot=None, sell_price=None,
+            pnl=None, pnl_pct=None, status="open",
+        ))
+
+    # Monthly roll logic
+    current_month = start_month
+    current_year = start_year
+    while True:
+        # Find last trading day of current_month
+        last_day = _last_trading_day_of_month(trading_dates, current_year, current_month)
+        if not last_day or last_day > today:
+            break
+
+        sell_spot_val = close_by_date.get(last_day)
+        if sell_spot_val is None:
+            break
+
+        # Close the front-month contract (the one matching current month)
+        target_label = date(current_year, current_month, 1).strftime("%b'%y")
+        for c in contracts:
+            if c.month_label == target_label and c.status == "open":
+                c.sell_date = str(last_day)
+                c.sell_spot = round(sell_spot_val, 2)
+                c.sell_price = round(sell_spot_val, 2)
+                c.pnl = round(c.sell_price - c.buy_price, 2)
+                c.pnl_pct = round((c.sell_price / c.buy_price - 1) * 100, 2) if c.buy_price else 0
+                c.status = "closed"
+                break
+
+        # Next trading day: buy new back-month future
+        next_day = _first_trading_day_on_or_after(
+            trading_dates, date(last_day.year, last_day.month, last_day.day)
+        )
+        # Actually need the day AFTER last_day
+        later_dates = [d for d in trading_dates if d > last_day]
+        next_day = later_dates[0] if later_dates else None
+
+        if next_day and next_day <= today:
+            # New contract: 3 months ahead of current
+            new_m = current_month + 3
+            new_y = current_year + (new_m - 1) // 12
+            new_m = ((new_m - 1) % 12) + 1
+            new_label = date(new_y, new_m, 1).strftime("%b'%y")
+
+            new_spot = close_by_date.get(next_day, 0)
+            contracts.append(FuturesContract(
+                month_label=new_label,
+                buy_date=str(next_day),
+                buy_spot=round(new_spot, 2),
+                buy_price=round(new_spot * _BASIS_PREMIUM, 2),
+                sell_date=None, sell_spot=None, sell_price=None,
+                pnl=None, pnl_pct=None, status="open",
+            ))
+
+        # Advance to next month
+        current_month += 1
+        if current_month > 12:
+            current_month = 1
+            current_year += 1
+
+    # Mark remaining open contracts with current spot as mark-to-market
+    latest_spot = all_closes[-1] if all_closes else 0
+    for c in contracts:
+        if c.status == "open":
+            c.sell_spot = round(latest_spot, 2)
+            c.sell_price = round(latest_spot, 2)
+            c.pnl = round(c.sell_price - c.buy_price, 2)
+            c.pnl_pct = round((c.sell_price / c.buy_price - 1) * 100, 2) if c.buy_price else 0
+
+    # Quarterly summaries
+    quarter_contracts: dict[str, list[FuturesContract]] = defaultdict(list)
+    for c in contracts:
+        if c.sell_date and c.status == "closed":
+            sell_d = date.fromisoformat(c.sell_date)
+            ql = _quarter_label(sell_d)
+            quarter_contracts[ql].append(c)
+
+    # Compute VaR using data available up to each quarter boundary
+    quarters: list[QuarterSummary] = []
+    quarter_order = sorted(quarter_contracts.keys(), key=lambda q: q[-2:] + q[1])
+
+    for ql in quarter_order:
+        qc = quarter_contracts[ql]
+        total_pnl = sum(c.pnl or 0 for c in qc)
+        dates_in_q = [date.fromisoformat(c.sell_date) for c in qc if c.sell_date]
+        start_d = min(date.fromisoformat(c.buy_date) for c in qc)
+        end_d = max(dates_in_q) if dates_in_q else start_d
+
+        # Spot return over the quarter
+        start_spot = close_by_date.get(
+            _first_trading_day_on_or_after(trading_dates, start_d), 0
+        )
+        end_spot = close_by_date.get(end_d, 0)
+        actual_ret = round((end_spot / start_spot - 1) * 100, 2) if start_spot else None
+
+        # VaR from data available up to quarter start
+        closes_up_to = [float(r.close) for r in bn_recs if r.date < start_d and r.close]
+        q_var, q_breach = _compute_quarterly_var(closes_up_to)
+
+        var_breached = None
+        if q_var is not None and actual_ret is not None:
+            var_breached = actual_ret < -q_var
+
+        quarters.append(QuarterSummary(
+            quarter=ql,
+            start_date=str(start_d),
+            end_date=str(end_d),
+            contracts_closed=len(qc),
+            total_pnl=round(total_pnl, 2),
+            quarterly_var_pct=q_var,
+            actual_return_pct=actual_ret,
+            var_breached=var_breached,
+            hist_breach_prob_pct=q_breach,
+        ))
+
+    # Cumulative P&L timeline (one point per closed contract)
+    cum_pnl = 0.0
+    cumulative: list[dict] = []
+    closed_sorted = sorted(
+        [c for c in contracts if c.status == "closed" and c.sell_date],
+        key=lambda c: c.sell_date,
+    )
+    for c in closed_sorted:
+        cum_pnl += c.pnl or 0
+        cumulative.append({"date": c.sell_date, "pnl": round(cum_pnl, 2), "contract": c.month_label})
+
+    total_pnl = sum(c.pnl or 0 for c in contracts)
+
+    return StudyResponse(
+        instrument=_SYMBOL,
+        start_date=str(_START_DATE),
+        basis_premium_pct=11.0,
+        contracts=contracts,
+        quarters=quarters,
+        cumulative_pnl=cumulative,
+        total_pnl=round(total_pnl, 2),
+        total_contracts=len(contracts),
+    )

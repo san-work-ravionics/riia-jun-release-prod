@@ -58,6 +58,10 @@ class HedgeHolding(BaseModel):
     position_eur: float | None = None        # allocation_pct/100 * total_value_eur
     put_cost_eur: float | None = None        # full-duration put premium in EUR
     var_95_eur: float | None = None          # 2σ downside EUR = 95% VaR
+    # Quarterly risk fields
+    quarterly_var_pct: float | None = None   # 2σ quarterly VaR as %
+    quarterly_var_eur: float | None = None   # 2σ quarterly VaR in EUR
+    hist_breach_prob_pct: float | None = None # % of historical quarters breaching 2σ
 
 
 class HedgeAggregate(BaseModel):
@@ -178,6 +182,24 @@ def _coverage_params(
     return strike_pct, strike_label, cost_pct, protected_pct, call_sell_cost_pct
 
 
+def _quarterly_stats(closes: list[float]) -> tuple[float | None, float | None]:
+    """Compute quarterly (63-trading-day) VaR and historical breach probability.
+
+    Returns (quarterly_var_pct, hist_breach_prob_pct) or (None, None) if insufficient data.
+    """
+    if len(closes) < 126:
+        return None, None
+    qtr_returns = [
+        (closes[i] - closes[i - 63]) / closes[i - 63] * 100
+        for i in range(63, len(closes))
+    ]
+    qtr_vol = statistics.stdev(qtr_returns)
+    var_2sigma = round(2.0 * qtr_vol, 2)
+    breaches = sum(1 for r in qtr_returns if r < -var_2sigma)
+    breach_pct = round(breaches / len(qtr_returns) * 100, 1)
+    return var_2sigma, breach_pct
+
+
 # ── Endpoint ──────────────────────────────────────────────────────────────────
 @router.get("/portfolio-hedge", response_model=PortfolioHedgeResponse)
 def get_portfolio_hedge(
@@ -255,16 +277,23 @@ def get_portfolio_hedge(
             coverage, vol, hedge_type, alloc, t_months
         )
 
+        # Quarterly risk from full history
+        all_recs = sorted(by_inst.get(inst_id, []), key=lambda r: r.date)
+        all_closes = [float(r.close) for r in all_recs if r.close]
+        q_var_pct, q_breach_pct = _quarterly_stats(all_closes)
+
         pos_eur: float | None = None
         put_cost_eur: float | None = None
         var_95_eur: float | None = None
+        q_var_eur: float | None = None
         if total_eur is not None:
             pos_eur = round(total_eur * alloc / 100.0, 2)
-            # ATM put (strike = 0% OTM): max loss = premium only — clean story for non-savvy users
             atm_cost_pct = _bs_put_pct(vol, 0.0, t_months=t_months)
             put_cost_eur = round(pos_eur * atm_cost_pct / 100.0, 2)
             sigma_eur = pos_eur * vol / 100.0 * (t_months / 12.0) ** 0.5
             var_95_eur = round(2.0 * sigma_eur, 2)
+            if q_var_pct is not None:
+                q_var_eur = round(pos_eur * q_var_pct / 100.0, 2)
 
         result_holdings.append(HedgeHolding(
             instrument_id=inst_id,
@@ -283,6 +312,9 @@ def get_portfolio_hedge(
             position_eur=pos_eur,
             put_cost_eur=put_cost_eur,
             var_95_eur=var_95_eur,
+            quarterly_var_pct=q_var_pct,
+            quarterly_var_eur=q_var_eur,
+            hist_breach_prob_pct=q_breach_pct,
         ))
 
     total_weight = sum(h.weight for h in result_holdings) or 1.0

@@ -211,13 +211,13 @@ jobs:
 
       - name: Health check
         run: |
-          echo "Waiting for /health..."
-          for i in $(seq 1 30); do
+          echo "Waiting for /health (up to ~7 min for embed model load on t3.micro)..."
+          for i in $(seq 1 40); do
             if curl -sf http://${{ secrets.AWS_EC2_IP }}/health > /dev/null; then
               echo "RITA is up."
               exit 0
             fi
-            sleep 6
+            sleep 10
           done
           echo "Health check timed out."
           exit 1
