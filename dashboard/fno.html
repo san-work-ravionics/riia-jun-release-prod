@@ -1495,12 +1495,11 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       </div>
     </div>
 
-    <!-- Model data split legend -->
-    <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;font-family:var(--fm);font-size:11px;color:var(--t3)">
-      <span style="font-weight:600;color:var(--t2)">Model data split:</span>
-      <span><span style="display:inline-block;width:12px;height:12px;background:rgba(37,99,235,.15);border-left:3px solid #2563eb;border-radius:2px;margin-right:4px;vertical-align:middle"></span>Train (70%)</span>
-      <span><span style="display:inline-block;width:12px;height:12px;background:rgba(217,119,6,.15);border-left:3px solid #d97706;border-radius:2px;margin-right:4px;vertical-align:middle"></span>Validation (15%)</span>
-      <span><span style="display:inline-block;width:12px;height:12px;background:rgba(124,58,237,.15);border-left:3px solid #7c3aed;border-radius:2px;margin-right:4px;vertical-align:middle"></span>Test (15%)</span>
+    <!-- Model data split note -->
+    <div class="info-note" style="margin-bottom:14px">
+      <strong>Out-of-sample:</strong> All study contracts (Jan 2025 onward) fall in the model's <strong>test split</strong> — the RITA model was trained on earlier data (BANKNIFTY: 2007–2020, NIFTY: 1999–2018). Rows highlighted with
+      <span style="display:inline-block;width:10px;height:10px;background:rgba(37,99,235,.15);border-left:3px solid #2563eb;border-radius:2px;margin:0 2px;vertical-align:middle"></span><strong>blue</strong> = train or
+      <span style="display:inline-block;width:10px;height:10px;background:rgba(217,119,6,.15);border-left:3px solid #d97706;border-radius:2px;margin:0 2px;vertical-align:middle"></span><strong>amber</strong> = validation only appear if the study window overlaps those periods.
     </div>
 
     <!-- Contracts detail tables — side by side -->

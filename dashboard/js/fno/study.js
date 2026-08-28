@@ -52,7 +52,6 @@ function _renderQuarters(study) {
   const _qSplitStyle = {
     train: 'border-left:3px solid #2563eb;background:rgba(37,99,235,.04)',
     val:   'border-left:3px solid #d97706;background:rgba(217,119,6,.04)',
-    test:  'border-left:3px solid #7c3aed;background:rgba(124,58,237,.04)',
   };
 
   tbody.innerHTML = study.quarters.map(q => {
@@ -85,12 +84,12 @@ function _renderContracts(study) {
   const _splitStyle = {
     train: 'border-left:3px solid #2563eb;background:rgba(37,99,235,.04)',
     val:   'border-left:3px solid #d97706;background:rgba(217,119,6,.04)',
-    test:  'border-left:3px solid #7c3aed;background:rgba(124,58,237,.04)',
+    test:  '',
   };
   const _splitBadge = {
     train: '<span style="background:rgba(37,99,235,.1);color:#2563eb;padding:1px 5px;border-radius:100px;font-size:8px;font-weight:700;margin-left:4px">TRAIN</span>',
     val:   '<span style="background:rgba(217,119,6,.1);color:#d97706;padding:1px 5px;border-radius:100px;font-size:8px;font-weight:700;margin-left:4px">VAL</span>',
-    test:  '<span style="background:rgba(124,58,237,.1);color:#7c3aed;padding:1px 5px;border-radius:100px;font-size:8px;font-weight:700;margin-left:4px">TEST</span>',
+    test:  '',
   };
 
   tbody.innerHTML = study.contracts.map(c => {
@@ -107,7 +106,7 @@ function _renderContracts(study) {
         : '<span style="background:rgba(22,163,74,.1);color:#16a34a;padding:2px 6px;border-radius:100px;font-size:10px;font-weight:700">SAFE</span>';
     }
 
-    const split = c.data_split || 'train';
+    const split = c.data_split || '';
     const rowStyle = _splitStyle[split] || '';
     const splitTag = _splitBadge[split] || '';
 
