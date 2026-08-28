@@ -1417,7 +1417,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;font-family:var(--fm)">BANKNIFTY</div>
     <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px">
       <div class="card" style="text-align:center;padding:16px" id="study-kpi-pnl-BANKNIFTY"><div class="kpi-val">—</div><div class="kpi-sub">total P&L</div></div>
-      <div class="card" style="text-align:center;padding:16px" id="study-kpi-contracts-BANKNIFTY"><div class="kpi-val">—</div><div class="kpi-sub">contracts traded</div></div>
+      <div class="card" style="text-align:center;padding:16px" id="study-kpi-protected-BANKNIFTY"><div class="kpi-val" style="color:#16a34a">—</div><div class="kpi-sub">RITA Protected</div></div>
       <div class="card" style="text-align:center;padding:16px" id="study-kpi-avg-BANKNIFTY"><div class="kpi-val">—</div><div class="kpi-sub">avg P&L per contract</div></div>
       <div class="card" style="text-align:center;padding:16px" id="study-kpi-downside-BANKNIFTY"><div class="kpi-val" style="color:#dc2626">—</div><div class="kpi-sub">Qtr Downside (1σ)</div></div>
       <div class="card" style="text-align:center;padding:16px" id="study-kpi-probability-BANKNIFTY"><div class="kpi-val" style="color:#16a34a">—</div><div class="kpi-sub">Hist. Probability</div></div>
@@ -1428,7 +1428,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;font-family:var(--fm)">NIFTY</div>
     <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px">
       <div class="card" style="text-align:center;padding:16px" id="study-kpi-pnl-NIFTY"><div class="kpi-val">—</div><div class="kpi-sub">total P&L</div></div>
-      <div class="card" style="text-align:center;padding:16px" id="study-kpi-contracts-NIFTY"><div class="kpi-val">—</div><div class="kpi-sub">contracts traded</div></div>
+      <div class="card" style="text-align:center;padding:16px" id="study-kpi-protected-NIFTY"><div class="kpi-val" style="color:#16a34a">—</div><div class="kpi-sub">RITA Protected</div></div>
       <div class="card" style="text-align:center;padding:16px" id="study-kpi-avg-NIFTY"><div class="kpi-val">—</div><div class="kpi-sub">avg P&L per contract</div></div>
       <div class="card" style="text-align:center;padding:16px" id="study-kpi-downside-NIFTY"><div class="kpi-val" style="color:#dc2626">—</div><div class="kpi-sub">Qtr Downside (1σ)</div></div>
       <div class="card" style="text-align:center;padding:16px" id="study-kpi-probability-NIFTY"><div class="kpi-val" style="color:#16a34a">—</div><div class="kpi-sub">Hist. Probability</div></div>
@@ -1446,8 +1446,8 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
             <thead style="background:var(--surface)">
               <tr style="font-size:10px;color:#64748b;border-bottom:2px solid rgba(0,0,0,.08);text-transform:uppercase;letter-spacing:.04em">
                 <th style="padding:8px 8px;text-align:left;font-weight:700">Qtr</th>
-                <th style="padding:8px 8px;text-align:left;font-weight:700">P&L</th>
                 <th style="padding:8px 8px;text-align:left;font-weight:700">Return</th>
+                <th style="padding:8px 8px;text-align:left;font-weight:700">Hedged</th>
                 <th style="padding:8px 8px;text-align:left;font-weight:700">VaR</th>
                 <th style="padding:8px 8px;text-align:left;font-weight:700">Prob</th>
                 <th style="padding:8px 8px;text-align:center;font-weight:700">Status</th>
@@ -1466,8 +1466,8 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
             <thead style="background:var(--surface)">
               <tr style="font-size:10px;color:#64748b;border-bottom:2px solid rgba(0,0,0,.08);text-transform:uppercase;letter-spacing:.04em">
                 <th style="padding:8px 8px;text-align:left;font-weight:700">Qtr</th>
-                <th style="padding:8px 8px;text-align:left;font-weight:700">P&L</th>
                 <th style="padding:8px 8px;text-align:left;font-weight:700">Return</th>
+                <th style="padding:8px 8px;text-align:left;font-weight:700">Hedged</th>
                 <th style="padding:8px 8px;text-align:left;font-weight:700">VaR</th>
                 <th style="padding:8px 8px;text-align:left;font-weight:700">Prob</th>
                 <th style="padding:8px 8px;text-align:center;font-weight:700">Status</th>
@@ -1483,13 +1483,13 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
       <div class="card">
         <div class="card-hdr">
-          <span class="card-title">BANKNIFTY — Cumulative P&L</span>
+          <span class="card-title">BANKNIFTY — Actual vs Hedged P&L</span>
         </div>
         <div style="height:260px;position:relative"><canvas id="study-cum-chart-BANKNIFTY"></canvas></div>
       </div>
       <div class="card">
         <div class="card-hdr">
-          <span class="card-title">NIFTY — Cumulative P&L</span>
+          <span class="card-title">NIFTY — Actual vs Hedged P&L</span>
         </div>
         <div style="height:260px;position:relative"><canvas id="study-cum-chart-NIFTY"></canvas></div>
       </div>

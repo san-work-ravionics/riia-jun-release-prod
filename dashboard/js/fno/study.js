@@ -1,6 +1,6 @@
 // ── FnO Study — Rolling Index Futures Backtest (BANKNIFTY + NIFTY) ───────────
 // Fetches /api/v1/experience/fno/study and renders per-instrument:
-// 1. KPI strip (6 tiles): total P&L, contracts, avg, downside, probability, breaches
+// 1. KPI strip (6 tiles): total P&L, RITA protected, avg, downside, probability, breaches
 // 2. Quarterly risk summary table with VaR vs actual + breach flag
 // 3. Cumulative P&L chart
 // 4. Contracts detail table with SAFE/BREACHED badges
@@ -27,7 +27,11 @@ function _renderKpis(study) {
   const totalQ = study.quarters.length;
 
   _setEl(`study-kpi-pnl-${s}`, `<div class="kpi-val" style="color:${study.total_pnl >= 0 ? '#16a34a' : '#dc2626'}">${_fmtPts(study.total_pnl)} pts</div><div class="kpi-sub">total P&L (${closed.length} closed + ${open.length} open)</div>`);
-  _setEl(`study-kpi-contracts-${s}`, `<div class="kpi-val">${study.total_contracts}</div><div class="kpi-sub">contracts traded</div>`);
+
+  const ritaPct = study.rita_protected_pct;
+  const ritaColor = ritaPct != null && ritaPct > 0 ? '#16a34a' : '#64748b';
+  _setEl(`study-kpi-protected-${s}`, `<div class="kpi-val" style="color:${ritaColor}">${ritaPct != null ? ritaPct.toFixed(1) + '%' : '—'}</div><div class="kpi-sub">downside absorbed by hedge</div>`);
+
   _setEl(`study-kpi-avg-${s}`, `<div class="kpi-val" style="color:${avgPnl >= 0 ? '#16a34a' : '#dc2626'}">${_fmtPts(avgPnl)} pts</div><div class="kpi-sub">avg P&L per contract</div>`);
 
   const qVar = study.quarterly_var_pct;
@@ -47,6 +51,7 @@ function _renderQuarters(study) {
 
   tbody.innerHTML = study.quarters.map(q => {
     const retColor = (q.actual_return_pct || 0) >= 0 ? '#16a34a' : '#dc2626';
+    const hedgedColor = (q.hedged_return_pct || 0) >= 0 ? '#16a34a' : '#dc2626';
     const breachBadge = q.var_breached === true
       ? '<span style="background:rgba(220,38,38,.1);color:#dc2626;padding:2px 6px;border-radius:100px;font-size:10px;font-weight:700">BREACHED</span>'
       : q.var_breached === false
@@ -56,8 +61,8 @@ function _renderQuarters(study) {
 
     return `<tr style="border-bottom:1px solid rgba(0,0,0,.06)">
       <td style="padding:8px;font-weight:700;font-family:var(--fm)">${q.quarter}</td>
-      <td style="padding:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:${q.total_pnl >= 0 ? '#16a34a' : '#dc2626'};font-weight:600">${_fmtPts(q.total_pnl)}</td>
       <td style="padding:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:${retColor};font-weight:600">${_fmtPct(q.actual_return_pct)}</td>
+      <td style="padding:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:${hedgedColor};font-weight:600">${_fmtPct(q.hedged_return_pct)}</td>
       <td style="padding:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#dc2626">${q.quarterly_var_pct != null ? '−' + q.quarterly_var_pct.toFixed(1) + '%' : '—'}</td>
       <td style="padding:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:${probColor}">${q.hist_breach_prob_pct != null ? q.hist_breach_prob_pct.toFixed(1) + '%' : '—'}</td>
       <td style="padding:8px;text-align:center">${breachBadge}</td>
@@ -106,6 +111,7 @@ function _renderCumChart(study) {
 
   const labels = study.cumulative_pnl.map(p => p.contract);
   const values = study.cumulative_pnl.map(p => p.pnl);
+  const hedgedValues = study.cumulative_pnl.map(p => p.hedged_pnl ?? p.pnl);
 
   requestAnimationFrame(() => {
     _charts[canvasId] = mkChart(canvasId, {
@@ -113,7 +119,7 @@ function _renderCumChart(study) {
       data: {
         labels,
         datasets: [{
-          label: 'Cumulative P&L (pts)',
+          label: 'Actual P&L',
           data: values,
           borderColor: C.pink,
           borderWidth: 2.5,
@@ -125,15 +131,25 @@ function _renderCumChart(study) {
             above: 'rgba(22,163,74,.08)',
             below: 'rgba(220,38,38,.08)',
           },
+        }, {
+          label: 'Hedged P&L',
+          data: hedgedValues,
+          borderColor: '#16a34a',
+          borderWidth: 2,
+          borderDash: [5, 3],
+          pointRadius: 2,
+          pointBackgroundColor: '#16a34a',
+          tension: 0.2,
+          fill: false,
         }],
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
+          legend: { display: true, position: 'top', labels: { boxWidth: 14, font: { family: 'IBM Plex Mono', size: 9 } } },
           tooltip: {
             callbacks: {
-              label: ctx => `P&L: ${ctx.parsed.y.toLocaleString('en-IN')} pts`,
+              label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('en-IN')} pts`,
             }
           },
         },

@@ -48,6 +48,7 @@ class FuturesContract(BaseModel):
     pnl: float | None
     pnl_pct: float | None
     status: str
+    hedged_pnl: float | None = None
 
 
 class QuarterSummary(BaseModel):
@@ -60,6 +61,7 @@ class QuarterSummary(BaseModel):
     actual_return_pct: float | None
     var_breached: bool | None
     hist_breach_prob_pct: float | None
+    hedged_return_pct: float | None = None
 
 
 class InstrumentStudy(BaseModel):
@@ -74,6 +76,7 @@ class InstrumentStudy(BaseModel):
     quarterly_var_pct: float | None = None
     hist_breach_prob_pct: float | None = None
     quarter_label: str | None = None
+    rita_protected_pct: float | None = None
 
 
 class MultiStudyResponse(BaseModel):
@@ -109,6 +112,64 @@ def _compute_quarterly_var(closes: list[float]) -> tuple[float | None, float | N
     breaches = sum(1 for r in qtr_returns if r < -var_1sigma)
     breach_pct = round(breaches / len(qtr_returns) * 100, 1)
     return var_1sigma, breach_pct
+
+
+def _hedged_compound(closes: list[float]) -> float:
+    """Compound return multiplier with RITA hedge floor applied.
+
+    Floors each daily return at -1.5% and charges 0.36% cost on floored days.
+    Returns the multiplier (e.g. 1.05 = +5% over the period).
+    """
+    if len(closes) < 2:
+        return 1.0
+
+    floor = -0.015
+    cost = 0.0036
+    compound = 1.0
+
+    for i in range(1, len(closes)):
+        ret = (closes[i] - closes[i - 1]) / closes[i - 1]
+        if ret < floor:
+            compound *= (1 + floor - cost)
+        else:
+            compound *= (1 + ret)
+
+    return compound
+
+
+def _compute_rita_protection(closes: list[float]) -> float | None:
+    """Net downside protection from the RITA hedge overlay.
+
+    Uses the RL model's Action-3 parameters (trading_env_v2):
+      daily floor  = -1.5%  (HEDGE_DAILY_FLOOR)
+      daily cost   = 0.36%  (HEDGE_COST_PER_DAY)
+
+    Returns the net percentage of total historical downside that the
+    protective-put floor would have absorbed, after subtracting hedge carry.
+    """
+    if len(closes) < 63:
+        return None
+
+    floor = -0.015
+    cost = 0.0036
+
+    total_downside = 0.0
+    tail_saved = 0.0
+    hedge_days = 0
+
+    for i in range(1, len(closes)):
+        ret = (closes[i] - closes[i - 1]) / closes[i - 1]
+        if ret < 0:
+            total_downside += abs(ret)
+        if ret < floor:
+            tail_saved += abs(ret - floor)
+            hedge_days += 1
+
+    if total_downside == 0:
+        return 0.0
+
+    net = tail_saved - hedge_days * cost
+    return round(max(0.0, net / total_downside * 100), 1)
 
 
 def _build_study(symbol: str, recs: list) -> InstrumentStudy | None:
@@ -201,6 +262,16 @@ def _build_study(symbol: str, recs: list) -> InstrumentStudy | None:
             c.pnl = round(c.sell_price - c.buy_price, 2)
             c.pnl_pct = round((c.sell_price / c.buy_price - 1) * 100, 2) if c.buy_price else 0
 
+    for c in contracts:
+        buy_d = date.fromisoformat(c.buy_date)
+        sell_d = date.fromisoformat(c.sell_date) if c.sell_date else today
+        segment = [close_by_date[d] for d in trading_dates if buy_d <= d <= sell_d and d in close_by_date]
+        if len(segment) >= 2:
+            hedged_sell = c.buy_spot * _hedged_compound(segment)
+            c.hedged_pnl = round(hedged_sell - c.buy_price, 2)
+        else:
+            c.hedged_pnl = c.pnl
+
     quarter_contracts: dict[str, list[FuturesContract]] = defaultdict(list)
     for c in contracts:
         if c.sell_date and c.status == "closed":
@@ -231,6 +302,12 @@ def _build_study(symbol: str, recs: list) -> InstrumentStudy | None:
         if q_var is not None and actual_ret is not None:
             var_breached = actual_ret < -q_var
 
+        q_closes = [close_by_date[d] for d in trading_dates
+                     if start_d <= d <= end_d and d in close_by_date]
+        hedged_ret = None
+        if len(q_closes) >= 2:
+            hedged_ret = round((_hedged_compound(q_closes) - 1) * 100, 2)
+
         quarters.append(QuarterSummary(
             quarter=ql,
             start_date=str(start_d),
@@ -241,9 +318,11 @@ def _build_study(symbol: str, recs: list) -> InstrumentStudy | None:
             actual_return_pct=actual_ret,
             var_breached=var_breached,
             hist_breach_prob_pct=q_breach,
+            hedged_return_pct=hedged_ret,
         ))
 
     cum_pnl = 0.0
+    cum_hedged = 0.0
     cumulative: list[dict] = []
     closed_sorted = sorted(
         [c for c in contracts if c.status == "closed" and c.sell_date],
@@ -251,12 +330,19 @@ def _build_study(symbol: str, recs: list) -> InstrumentStudy | None:
     )
     for c in closed_sorted:
         cum_pnl += c.pnl or 0
-        cumulative.append({"date": c.sell_date, "pnl": round(cum_pnl, 2), "contract": c.month_label})
+        cum_hedged += c.hedged_pnl if c.hedged_pnl is not None else (c.pnl or 0)
+        cumulative.append({
+            "date": c.sell_date,
+            "pnl": round(cum_pnl, 2),
+            "hedged_pnl": round(cum_hedged, 2),
+            "contract": c.month_label,
+        })
 
     total_pnl = sum(c.pnl or 0 for c in contracts)
 
     q_var, q_breach = _compute_quarterly_var(all_closes)
     q_label = _quarter_label(today)
+    rita_prot = _compute_rita_protection(all_closes)
 
     return InstrumentStudy(
         instrument=symbol,
@@ -270,6 +356,7 @@ def _build_study(symbol: str, recs: list) -> InstrumentStudy | None:
         quarterly_var_pct=q_var,
         hist_breach_prob_pct=q_breach,
         quarter_label=q_label,
+        rita_protected_pct=rita_prot,
     )
 
 
