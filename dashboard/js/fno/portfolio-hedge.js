@@ -125,7 +125,7 @@ function _renderTopKpis() {
 
   // Quarter label
   const qLabel = _currentQuarterLabel();
-  _setText('ph-kpi-drop-sub', `2σ quarterly VaR · ${qLabel}`);
+  _setText('ph-kpi-drop-sub', `1σ quarterly VaR · ${qLabel}`);
 
   // Weighted avg breach probability for checked holdings
   const probItems = checked.filter(h => hedgeMap[h.instrument_id].hist_breach_prob_pct != null);
@@ -138,7 +138,7 @@ function _renderTopKpis() {
   if (probEl && avgProb != null) {
     probEl.style.color = avgProb > 10 ? '#dc2626' : avgProb > 5 ? '#d97706' : '#16a34a';
   }
-  _setText('ph-kpi-prob-sub', `of 2σ breach · ${qLabel}`);
+  _setText('ph-kpi-prob-sub', `of 1σ breach · ${qLabel}`);
 }
 
 // ── Sticky totals row (reflects hedgeChecked only) ────────────────────────────

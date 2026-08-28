@@ -28,6 +28,16 @@ function _renderKpis(data) {
   _setEl('study-kpi-pnl', `<div class="kpi-val" style="color:${data.total_pnl >= 0 ? '#16a34a' : '#dc2626'}">${_fmtPts(data.total_pnl)} pts</div><div class="kpi-sub">total P&L (${closed.length} closed + ${open.length} open)</div>`);
   _setEl('study-kpi-contracts', `<div class="kpi-val">${data.total_contracts}</div><div class="kpi-sub">contracts traded</div>`);
   _setEl('study-kpi-avg', `<div class="kpi-val" style="color:${avgPnl >= 0 ? '#16a34a' : '#dc2626'}">${_fmtPts(avgPnl)} pts</div><div class="kpi-sub">avg P&L per contract</div>`);
+  // Qtr Downside (1σ VaR)
+  const qVar = data.quarterly_var_pct;
+  const qLabel = data.quarter_label || '';
+  _setEl('study-kpi-downside', `<div class="kpi-val" style="color:#dc2626">${qVar != null ? '−' + qVar.toFixed(1) + '%' : '—'}</div><div class="kpi-sub">Qtr Downside · ${qLabel}</div>`);
+
+  // Historical breach probability
+  const bProb = data.hist_breach_prob_pct;
+  const probColor = bProb != null ? (bProb > 10 ? '#dc2626' : bProb > 5 ? '#d97706' : '#16a34a') : '#16a34a';
+  _setEl('study-kpi-probability', `<div class="kpi-val" style="color:${probColor}">${bProb != null ? bProb.toFixed(1) + '%' : '—'}</div><div class="kpi-sub">Hist. Probability · ${qLabel}</div>`);
+
   _setEl('study-kpi-breaches', `<div class="kpi-val" style="color:${breaches > 0 ? '#dc2626' : '#16a34a'}">${breaches}/${totalQ}</div><div class="kpi-sub">quarters breached VaR</div>`);
 }
 
@@ -56,18 +66,26 @@ function _renderQuarters(quarters) {
   }).join('');
 }
 
-function _renderContracts(contracts) {
+function _renderContracts(contracts, varPct) {
   const tbody = document.getElementById('study-contracts-body');
   if (!tbody) return;
 
   tbody.innerHTML = contracts.map(c => {
     const pnlColor = (c.pnl || 0) >= 0 ? '#16a34a' : '#dc2626';
-    const statusBadge = c.status === 'open'
-      ? '<span style="background:rgba(37,99,235,.1);color:#2563eb;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700">MTM</span>'
+    const mtmBadge = c.status === 'open'
+      ? ' <span style="background:rgba(37,99,235,.1);color:#2563eb;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700">MTM</span>'
       : '';
 
+    let statusBadge = '—';
+    if (c.pnl_pct != null && varPct != null) {
+      const breached = c.pnl_pct < -varPct;
+      statusBadge = breached
+        ? '<span style="background:rgba(220,38,38,.1);color:#dc2626;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:700">BREACHED</span>'
+        : '<span style="background:rgba(22,163,74,.1);color:#16a34a;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:700">SAFE</span>';
+    }
+
     return `<tr style="border-bottom:1px solid rgba(0,0,0,.05)">
-      <td style="padding:8px 12px;font-weight:600;font-family:var(--fm)">${c.month_label} ${statusBadge}</td>
+      <td style="padding:8px 12px;font-weight:600;font-family:var(--fm)">${c.month_label}${mtmBadge}</td>
       <td style="padding:8px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px">${c.buy_date}</td>
       <td style="padding:8px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px">${_fmtPts(c.buy_spot)}</td>
       <td style="padding:8px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px">${_fmtPts(c.buy_price)}</td>
@@ -75,6 +93,7 @@ function _renderContracts(contracts) {
       <td style="padding:8px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px">${_fmtPts(c.sell_price)}</td>
       <td style="padding:8px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:${pnlColor}">${_fmtPts(c.pnl)}</td>
       <td style="padding:8px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:${pnlColor}">${_fmtPct(c.pnl_pct)}</td>
+      <td style="padding:8px 12px;text-align:center">${statusBadge}</td>
     </tr>`;
   }).join('');
 }
@@ -143,7 +162,7 @@ export async function loadStudy() {
 
     _renderKpis(data);
     _renderQuarters(data.quarters);
-    _renderContracts(data.contracts);
+    _renderContracts(data.contracts, data.quarterly_var_pct);
     _renderCumChart(data.cumulative_pnl);
   } catch (e) {
     _setEl('study-loading', '');

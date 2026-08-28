@@ -57,11 +57,11 @@ class HedgeHolding(BaseModel):
     # EUR-denominated fields (None when portfolio has no total_value_eur stored)
     position_eur: float | None = None        # allocation_pct/100 * total_value_eur
     put_cost_eur: float | None = None        # full-duration put premium in EUR
-    var_95_eur: float | None = None          # 2σ downside EUR = 95% VaR
+    var_95_eur: float | None = None          # 1σ downside EUR
     # Quarterly risk fields
-    quarterly_var_pct: float | None = None   # 2σ quarterly VaR as %
-    quarterly_var_eur: float | None = None   # 2σ quarterly VaR in EUR
-    hist_breach_prob_pct: float | None = None # % of historical quarters breaching 2σ
+    quarterly_var_pct: float | None = None   # 1σ quarterly VaR as %
+    quarterly_var_eur: float | None = None   # 1σ quarterly VaR in EUR
+    hist_breach_prob_pct: float | None = None # % of historical quarters breaching 1σ
 
 
 class HedgeAggregate(BaseModel):
@@ -194,10 +194,10 @@ def _quarterly_stats(closes: list[float]) -> tuple[float | None, float | None]:
         for i in range(63, len(closes))
     ]
     qtr_vol = statistics.stdev(qtr_returns)
-    var_2sigma = round(2.0 * qtr_vol, 2)
-    breaches = sum(1 for r in qtr_returns if r < -var_2sigma)
+    var_1sigma = round(qtr_vol, 2)
+    breaches = sum(1 for r in qtr_returns if r < -var_1sigma)
     breach_pct = round(breaches / len(qtr_returns) * 100, 1)
-    return var_2sigma, breach_pct
+    return var_1sigma, breach_pct
 
 
 # ── Endpoint ──────────────────────────────────────────────────────────────────
@@ -291,7 +291,7 @@ def get_portfolio_hedge(
             atm_cost_pct = _bs_put_pct(vol, 0.0, t_months=t_months)
             put_cost_eur = round(pos_eur * atm_cost_pct / 100.0, 2)
             sigma_eur = pos_eur * vol / 100.0 * (t_months / 12.0) ** 0.5
-            var_95_eur = round(2.0 * sigma_eur, 2)
+            var_95_eur = round(sigma_eur, 2)
             if q_var_pct is not None:
                 q_var_eur = round(pos_eur * q_var_pct / 100.0, 2)
 

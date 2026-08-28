@@ -2,7 +2,8 @@
 
 Simulates a rolling quarterly futures portfolio on BANKNIFTY from 1 Jan 2025.
 Always holds 3 months of futures. Monthly roll: sell expiring, buy new back-month.
-Buy price = spot × 1.11 (11% basis premium). Sell price = spot (basis converges).
+Buy price = spot × (1 + basis premium). Basis premium is tiered by months-to-expiry:
+same month 0.3%, 1 month out 0.7%, 2+ months out 1.1%. Sell price = spot (basis converges).
 Computes quarterly VaR and breach probability at each quarter boundary to show
 how risk metrics would have helped.
 
@@ -23,9 +24,19 @@ from rita.repositories.market_data import MarketDataCacheRepository
 
 router = APIRouter(prefix="/api/v1/experience/fno", tags=["experience:fno-study"])
 
-_BASIS_PREMIUM = 1.11
 _START_DATE = date(2025, 1, 1)
 _SYMBOL = "BANKNIFTY"
+
+# Basis premium depends on months-to-expiry at buy time:
+#   same month → 0.3%, 1 month out → 0.7%, 2+ months out → 1.1%
+_PREMIUM_BY_MONTHS_OUT = {0: 0.003, 1: 0.007}
+_PREMIUM_DEFAULT = 0.011
+
+
+def _basis_premium(buy_date: date, contract_year: int, contract_month: int) -> float:
+    months_out = (contract_year - buy_date.year) * 12 + (contract_month - buy_date.month)
+    pct = _PREMIUM_BY_MONTHS_OUT.get(months_out, _PREMIUM_DEFAULT)
+    return 1.0 + pct
 
 
 class FuturesContract(BaseModel):
@@ -62,6 +73,9 @@ class StudyResponse(BaseModel):
     cumulative_pnl: list[dict]
     total_pnl: float
     total_contracts: int
+    quarterly_var_pct: float | None = None
+    hist_breach_prob_pct: float | None = None
+    quarter_label: str | None = None
 
 
 def _last_trading_day_of_month(trading_dates: list[date], year: int, month: int) -> date | None:
@@ -89,10 +103,10 @@ def _compute_quarterly_var(closes: list[float]) -> tuple[float | None, float | N
         for i in range(63, len(closes))
     ]
     qtr_vol = statistics.stdev(qtr_returns)
-    var_2sigma = round(2.0 * qtr_vol, 2)
-    breaches = sum(1 for r in qtr_returns if r < -var_2sigma)
+    var_1sigma = round(qtr_vol, 2)
+    breaches = sum(1 for r in qtr_returns if r < -var_1sigma)
     breach_pct = round(breaches / len(qtr_returns) * 100, 1)
-    return var_2sigma, breach_pct
+    return var_1sigma, breach_pct
 
 
 @router.get("/study", response_model=StudyResponse)
@@ -136,11 +150,12 @@ def get_fno_study(db: Session = Depends(get_db)) -> StudyResponse:
         y = start_year + (m - 1) // 12
         m = ((m - 1) % 12) + 1
         month_label = date(y, m, 1).strftime("%b'%y")
+        premium = _basis_premium(first_day, y, m)
         contracts.append(FuturesContract(
             month_label=month_label,
             buy_date=str(first_day),
             buy_spot=round(buy_spot, 2),
-            buy_price=round(buy_spot * _BASIS_PREMIUM, 2),
+            buy_price=round(buy_spot * premium, 2),
             sell_date=None, sell_spot=None, sell_price=None,
             pnl=None, pnl_pct=None, status="open",
         ))
@@ -186,11 +201,12 @@ def get_fno_study(db: Session = Depends(get_db)) -> StudyResponse:
             new_label = date(new_y, new_m, 1).strftime("%b'%y")
 
             new_spot = close_by_date.get(next_day, 0)
+            premium = _basis_premium(next_day, new_y, new_m)
             contracts.append(FuturesContract(
                 month_label=new_label,
                 buy_date=str(next_day),
                 buy_spot=round(new_spot, 2),
-                buy_price=round(new_spot * _BASIS_PREMIUM, 2),
+                buy_price=round(new_spot * premium, 2),
                 sell_date=None, sell_spot=None, sell_price=None,
                 pnl=None, pnl_pct=None, status="open",
             ))
@@ -269,13 +285,21 @@ def get_fno_study(db: Session = Depends(get_db)) -> StudyResponse:
 
     total_pnl = sum(c.pnl or 0 for c in contracts)
 
+    # Current quarterly VaR and breach probability from full dataset
+    q_var, q_breach = _compute_quarterly_var(all_closes)
+    today = date.today()
+    q_label = _quarter_label(today)
+
     return StudyResponse(
         instrument=_SYMBOL,
         start_date=str(_START_DATE),
-        basis_premium_pct=11.0,
+        basis_premium_pct=1.1,
         contracts=contracts,
         quarters=quarters,
         cumulative_pnl=cumulative,
         total_pnl=round(total_pnl, 2),
         total_contracts=len(contracts),
+        quarterly_var_pct=q_var,
+        hist_breach_prob_pct=q_breach,
+        quarter_label=q_label,
     )

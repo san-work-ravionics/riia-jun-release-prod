@@ -627,12 +627,12 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
         <div class="card" style="text-align:center;padding:14px 8px">
           <div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;font-family:var(--fm);margin-bottom:6px">Qtr Downside</div>
           <div id="ph-kpi-drop-impact" style="font-size:20px;font-weight:700;font-family:var(--fm);color:#dc2626">—</div>
-          <div id="ph-kpi-drop-sub" style="font-size:9px;color:var(--t3);font-family:var(--fm);margin-top:4px">2σ quarterly VaR</div>
+          <div id="ph-kpi-drop-sub" style="font-size:9px;color:var(--t3);font-family:var(--fm);margin-top:4px">1σ quarterly VaR</div>
         </div>
         <div class="card" style="text-align:center;padding:14px 8px">
           <div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;font-family:var(--fm);margin-bottom:6px">Hist. Probability</div>
           <div id="ph-kpi-probability" style="font-size:20px;font-weight:700;font-family:var(--fm);color:#16a34a">—</div>
-          <div id="ph-kpi-prob-sub" style="font-size:9px;color:var(--t3);font-family:var(--fm);margin-top:4px">of 2σ breach</div>
+          <div id="ph-kpi-prob-sub" style="font-size:9px;color:var(--t3);font-family:var(--fm);margin-top:4px">of 1σ breach</div>
         </div>
         <div class="card" style="text-align:center;padding:14px 8px">
           <div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;font-family:var(--fm);margin-bottom:6px">Put Premium</div>
@@ -1405,7 +1405,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     <div class="page-hdr">
       <div>
         <div class="page-title">Study — BANKNIFTY Rolling Futures</div>
-        <div class="page-sub">Quarterly futures portfolio from 1 Jan 2025 · Buy at spot +11% · Sell at spot · Monthly roll</div>
+        <div class="page-sub">Quarterly futures portfolio from 1 Jan 2025 · Tiered basis (0.3%/0.7%/1.1%) · Sell at spot · Monthly roll</div>
       </div>
       <span class="phase-tag p02">Backtest</span>
     </div>
@@ -1414,7 +1414,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     <div id="study-error" style="display:none;font-size:13px;padding:10px 14px;border-radius:6px;background:rgba(220,38,38,.08);color:#dc2626;margin-bottom:16px"></div>
 
     <!-- KPI strip -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px">
       <div class="card" style="text-align:center;padding:16px" id="study-kpi-pnl">
         <div class="kpi-val">—</div><div class="kpi-sub">total P&L</div>
       </div>
@@ -1423,6 +1423,12 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       </div>
       <div class="card" style="text-align:center;padding:16px" id="study-kpi-avg">
         <div class="kpi-val">—</div><div class="kpi-sub">avg P&L per contract</div>
+      </div>
+      <div class="card" style="text-align:center;padding:16px" id="study-kpi-downside">
+        <div class="kpi-val" style="color:#dc2626">—</div><div class="kpi-sub">Qtr Downside (1σ)</div>
+      </div>
+      <div class="card" style="text-align:center;padding:16px" id="study-kpi-probability">
+        <div class="kpi-val" style="color:#16a34a">—</div><div class="kpi-sub">Hist. Probability</div>
       </div>
       <div class="card" style="text-align:center;padding:16px" id="study-kpi-breaches">
         <div class="kpi-val">—</div><div class="kpi-sub">quarters breached VaR</div>
@@ -1443,7 +1449,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
               <th style="padding:10px 12px;text-align:left;font-weight:700">Contracts</th>
               <th style="padding:10px 12px;text-align:left;font-weight:700">P&L (pts)</th>
               <th style="padding:10px 12px;text-align:left;font-weight:700">Actual Return</th>
-              <th style="padding:10px 12px;text-align:left;font-weight:700">Qtr VaR (2σ)</th>
+              <th style="padding:10px 12px;text-align:left;font-weight:700">Qtr VaR (1σ)</th>
               <th style="padding:10px 12px;text-align:left;font-weight:700">Hist Prob</th>
               <th style="padding:10px 12px;text-align:center;font-weight:700">Status</th>
             </tr>
@@ -1468,7 +1474,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     <div class="card" style="padding:0;overflow:hidden;margin-bottom:20px">
       <div class="card-hdr">
         <span class="card-title">Contracts Detail</span>
-        <span class="card-sub">each monthly futures position · buy at spot ×1.11 · sell at spot</span>
+        <span class="card-sub">each monthly futures position · tiered basis (0.3%/0.7%/1.1%) · sell at spot</span>
       </div>
       <div class="tbl-wrap" style="max-height:400px">
         <table style="width:100%;border-collapse:collapse;font-size:13px">
@@ -1482,6 +1488,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
               <th style="padding:9px 12px;text-align:left;font-weight:700">Sell Price</th>
               <th style="padding:9px 12px;text-align:left;font-weight:700">P&L</th>
               <th style="padding:9px 12px;text-align:left;font-weight:700">P&L %</th>
+              <th style="padding:9px 12px;text-align:center;font-weight:700">Status</th>
             </tr>
           </thead>
           <tbody id="study-contracts-body"></tbody>
