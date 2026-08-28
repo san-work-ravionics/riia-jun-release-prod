@@ -10,6 +10,7 @@ import { mkChart, C } from '../shared/charts.js';
 
 const _fmtPts = v => v != null ? v.toLocaleString('en-IN', { maximumFractionDigits: 0 }) : '—';
 const _fmtPct = v => v != null ? (v >= 0 ? '+' : '') + v.toFixed(1) + '%' : '—';
+const _fmtDdMm = v => { if (!v) return '—'; const [,m,d] = v.split('-'); return `${d}-${m}`; };
 
 const _charts = {};
 
@@ -100,10 +101,10 @@ function _renderContracts(study) {
 
     return `<tr style="border-bottom:1px solid rgba(0,0,0,.05);${rowStyle}">
       <td style="padding:6px 8px;font-weight:600;font-family:var(--fm);font-size:12px">${c.month_label}${mtmBadge}${hedgeTag}</td>
-      <td style="padding:6px 8px;font-family:'IBM Plex Mono',monospace;font-size:11px">${c.buy_date}</td>
+      <td style="padding:6px 8px;font-family:'IBM Plex Mono',monospace;font-size:11px">${_fmtDdMm(c.buy_date)}</td>
       <td style="padding:6px 8px;font-family:'IBM Plex Mono',monospace;font-size:11px">${_fmtPts(c.buy_spot)}</td>
       <td style="padding:6px 8px;font-family:'IBM Plex Mono',monospace;font-size:11px">${_fmtPts(c.buy_price)}</td>
-      <td style="padding:6px 8px;font-family:'IBM Plex Mono',monospace;font-size:11px">${c.sell_date || '—'}</td>
+      <td style="padding:6px 8px;font-family:'IBM Plex Mono',monospace;font-size:11px">${_fmtDdMm(c.sell_date)}</td>
       <td style="padding:6px 8px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:${pnlColor}">${_fmtPts(c.pnl)}</td>
       <td style="padding:6px 8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:${pnlColor}">${_fmtPct(c.pnl_pct)}</td>
       <td style="padding:6px 8px;text-align:center">${statusBadge}</td>
