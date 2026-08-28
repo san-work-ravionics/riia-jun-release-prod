@@ -11,18 +11,14 @@ GET /api/v1/experience/fno/study  (no auth required — read-only study data)
 """
 from __future__ import annotations
 
-import csv as _csv
 import statistics
 from collections import defaultdict
 from datetime import date
-from functools import lru_cache
-from pathlib import Path
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from rita.config import settings
 from rita.database import get_db
 from rita.repositories.market_data import MarketDataCacheRepository
 
@@ -53,7 +49,6 @@ class FuturesContract(BaseModel):
     pnl_pct: float | None
     status: str
     hedged_pnl: float | None = None
-    data_split: str | None = None
 
 
 class QuarterSummary(BaseModel):
@@ -67,7 +62,6 @@ class QuarterSummary(BaseModel):
     var_breached: bool | None
     hist_breach_prob_pct: float | None
     hedged_return_pct: float | None = None
-    data_split: str | None = None
 
 
 class InstrumentStudy(BaseModel):
@@ -83,7 +77,6 @@ class InstrumentStudy(BaseModel):
     hist_breach_prob_pct: float | None = None
     quarter_label: str | None = None
     rita_protected_pct: float | None = None
-    split_dates: dict | None = None
 
 
 class MultiStudyResponse(BaseModel):
@@ -179,25 +172,6 @@ def _compute_rita_protection(closes: list[float]) -> float | None:
     return round(max(0.0, net / total_downside * 100), 1)
 
 
-_CSV_NAME = {"BANKNIFTY": "banknifty_daily.csv", "NIFTY": "nifty_daily.csv"}
-
-
-@lru_cache(maxsize=4)
-def _model_split_dates(symbol: str) -> tuple[date | None, date | None]:
-    """Return (train_end, val_end) from the full training CSV (70/15/15 split)."""
-    csv_path = Path(settings.data.input_dir) / symbol.upper() / _CSV_NAME.get(symbol, "")
-    if not csv_path.exists():
-        return None, None
-    with open(csv_path) as f:
-        dates = sorted(row["Date"][:10] for row in _csv.DictReader(f) if row.get("Date"))
-    n = len(dates)
-    if n < 10:
-        return None, None
-    i_tr = int(n * 0.70)
-    i_va = int(n * 0.85)
-    return date.fromisoformat(dates[i_tr - 1]), date.fromisoformat(dates[i_va - 1])
-
-
 def _build_study(symbol: str, recs: list) -> InstrumentStudy | None:
     """Build a rolling futures study for a single instrument."""
     if not recs:
@@ -288,8 +262,6 @@ def _build_study(symbol: str, recs: list) -> InstrumentStudy | None:
             c.pnl = round(c.sell_price - c.buy_price, 2)
             c.pnl_pct = round((c.sell_price / c.buy_price - 1) * 100, 2) if c.buy_price else 0
 
-    train_end, val_end = _model_split_dates(symbol)
-
     for c in contracts:
         buy_d = date.fromisoformat(c.buy_date)
         sell_d = date.fromisoformat(c.sell_date) if c.sell_date else today
@@ -299,15 +271,6 @@ def _build_study(symbol: str, recs: list) -> InstrumentStudy | None:
             c.hedged_pnl = round(hedged_sell - c.buy_price, 2)
         else:
             c.hedged_pnl = c.pnl
-
-        if train_end:
-            ref_d = date.fromisoformat(c.sell_date) if c.sell_date else buy_d
-            if ref_d <= train_end:
-                c.data_split = "train"
-            elif val_end and ref_d <= val_end:
-                c.data_split = "val"
-            else:
-                c.data_split = "test"
 
     quarter_contracts: dict[str, list[FuturesContract]] = defaultdict(list)
     for c in contracts:
@@ -345,15 +308,6 @@ def _build_study(symbol: str, recs: list) -> InstrumentStudy | None:
         if len(q_closes) >= 2:
             hedged_ret = round((_hedged_compound(q_closes) - 1) * 100, 2)
 
-        q_split = None
-        if train_end:
-            if end_d <= train_end:
-                q_split = "train"
-            elif val_end and end_d <= val_end:
-                q_split = "val"
-            else:
-                q_split = "test"
-
         quarters.append(QuarterSummary(
             quarter=ql,
             start_date=str(start_d),
@@ -365,7 +319,6 @@ def _build_study(symbol: str, recs: list) -> InstrumentStudy | None:
             var_breached=var_breached,
             hist_breach_prob_pct=q_breach,
             hedged_return_pct=hedged_ret,
-            data_split=q_split,
         ))
 
     cum_pnl = 0.0
@@ -404,10 +357,6 @@ def _build_study(symbol: str, recs: list) -> InstrumentStudy | None:
         hist_breach_prob_pct=q_breach,
         quarter_label=q_label,
         rita_protected_pct=rita_prot,
-        split_dates={
-            "train_end": str(train_end) if train_end else None,
-            "val_end": str(val_end) if val_end else None,
-        },
     )
 
 
