@@ -49,6 +49,12 @@ function _renderQuarters(study) {
   const tbody = document.getElementById(`study-quarter-body-${study.instrument}`);
   if (!tbody) return;
 
+  const _qSplitStyle = {
+    train: 'border-left:3px solid #2563eb;background:rgba(37,99,235,.04)',
+    val:   'border-left:3px solid #d97706;background:rgba(217,119,6,.04)',
+    test:  'border-left:3px solid #7c3aed;background:rgba(124,58,237,.04)',
+  };
+
   tbody.innerHTML = study.quarters.map(q => {
     const retColor = (q.actual_return_pct || 0) >= 0 ? '#16a34a' : '#dc2626';
     const hedgedColor = (q.hedged_return_pct || 0) >= 0 ? '#16a34a' : '#dc2626';
@@ -58,8 +64,9 @@ function _renderQuarters(study) {
         ? '<span style="background:rgba(22,163,74,.1);color:#16a34a;padding:2px 6px;border-radius:100px;font-size:10px;font-weight:700">SAFE</span>'
         : '—';
     const probColor = (q.hist_breach_prob_pct || 0) > 10 ? '#dc2626' : (q.hist_breach_prob_pct || 0) > 5 ? '#d97706' : '#16a34a';
+    const qRowStyle = _qSplitStyle[q.data_split] || '';
 
-    return `<tr style="border-bottom:1px solid rgba(0,0,0,.06)">
+    return `<tr style="border-bottom:1px solid rgba(0,0,0,.06);${qRowStyle}">
       <td style="padding:8px;font-weight:700;font-family:var(--fm)">${q.quarter}</td>
       <td style="padding:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:${retColor};font-weight:600">${_fmtPct(q.actual_return_pct)}</td>
       <td style="padding:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:${hedgedColor};font-weight:600">${_fmtPct(q.hedged_return_pct)}</td>
@@ -75,6 +82,17 @@ function _renderContracts(study) {
   if (!tbody) return;
   const varPct = study.quarterly_var_pct;
 
+  const _splitStyle = {
+    train: 'border-left:3px solid #2563eb;background:rgba(37,99,235,.04)',
+    val:   'border-left:3px solid #d97706;background:rgba(217,119,6,.04)',
+    test:  'border-left:3px solid #7c3aed;background:rgba(124,58,237,.04)',
+  };
+  const _splitBadge = {
+    train: '<span style="background:rgba(37,99,235,.1);color:#2563eb;padding:1px 5px;border-radius:100px;font-size:8px;font-weight:700;margin-left:4px">TRAIN</span>',
+    val:   '<span style="background:rgba(217,119,6,.1);color:#d97706;padding:1px 5px;border-radius:100px;font-size:8px;font-weight:700;margin-left:4px">VAL</span>',
+    test:  '<span style="background:rgba(124,58,237,.1);color:#7c3aed;padding:1px 5px;border-radius:100px;font-size:8px;font-weight:700;margin-left:4px">TEST</span>',
+  };
+
   tbody.innerHTML = study.contracts.map(c => {
     const pnlColor = (c.pnl || 0) >= 0 ? '#16a34a' : '#dc2626';
     const mtmBadge = c.status === 'open'
@@ -89,8 +107,12 @@ function _renderContracts(study) {
         : '<span style="background:rgba(22,163,74,.1);color:#16a34a;padding:2px 6px;border-radius:100px;font-size:10px;font-weight:700">SAFE</span>';
     }
 
-    return `<tr style="border-bottom:1px solid rgba(0,0,0,.05)">
-      <td style="padding:6px 8px;font-weight:600;font-family:var(--fm);font-size:12px">${c.month_label}${mtmBadge}</td>
+    const split = c.data_split || 'train';
+    const rowStyle = _splitStyle[split] || '';
+    const splitTag = _splitBadge[split] || '';
+
+    return `<tr style="border-bottom:1px solid rgba(0,0,0,.05);${rowStyle}">
+      <td style="padding:6px 8px;font-weight:600;font-family:var(--fm);font-size:12px">${c.month_label}${mtmBadge}${splitTag}</td>
       <td style="padding:6px 8px;font-family:'IBM Plex Mono',monospace;font-size:11px">${c.buy_date}</td>
       <td style="padding:6px 8px;font-family:'IBM Plex Mono',monospace;font-size:11px">${_fmtPts(c.buy_spot)}</td>
       <td style="padding:6px 8px;font-family:'IBM Plex Mono',monospace;font-size:11px">${_fmtPts(c.buy_price)}</td>
