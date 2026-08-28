@@ -1404,7 +1404,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
   <div class="section" id="page-study">
     <div class="page-hdr">
       <div>
-        <div class="page-title">Study — BANKNIFTY Rolling Futures</div>
+        <div class="page-title">Study — Rolling Index Futures</div>
         <div class="page-sub">Quarterly futures portfolio from 1 Jan 2025 · Tiered basis (0.3%/0.7%/1.1%) · Sell at spot · Monthly roll</div>
       </div>
       <span class="phase-tag p02">Backtest</span>
@@ -1413,86 +1413,135 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     <div id="study-loading" style="color:var(--t3);font-size:13px;padding:12px 0;font-family:var(--fm)"></div>
     <div id="study-error" style="display:none;font-size:13px;padding:10px 14px;border-radius:6px;background:rgba(220,38,38,.08);color:#dc2626;margin-bottom:16px"></div>
 
-    <!-- KPI strip -->
+    <!-- BANKNIFTY KPI strip -->
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;font-family:var(--fm)">BANKNIFTY</div>
     <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px">
-      <div class="card" style="text-align:center;padding:16px" id="study-kpi-pnl">
-        <div class="kpi-val">—</div><div class="kpi-sub">total P&L</div>
+      <div class="card" style="text-align:center;padding:16px" id="study-kpi-pnl-BANKNIFTY"><div class="kpi-val">—</div><div class="kpi-sub">total P&L</div></div>
+      <div class="card" style="text-align:center;padding:16px" id="study-kpi-contracts-BANKNIFTY"><div class="kpi-val">—</div><div class="kpi-sub">contracts traded</div></div>
+      <div class="card" style="text-align:center;padding:16px" id="study-kpi-avg-BANKNIFTY"><div class="kpi-val">—</div><div class="kpi-sub">avg P&L per contract</div></div>
+      <div class="card" style="text-align:center;padding:16px" id="study-kpi-downside-BANKNIFTY"><div class="kpi-val" style="color:#dc2626">—</div><div class="kpi-sub">Qtr Downside (1σ)</div></div>
+      <div class="card" style="text-align:center;padding:16px" id="study-kpi-probability-BANKNIFTY"><div class="kpi-val" style="color:#16a34a">—</div><div class="kpi-sub">Hist. Probability</div></div>
+      <div class="card" style="text-align:center;padding:16px" id="study-kpi-breaches-BANKNIFTY"><div class="kpi-val">—</div><div class="kpi-sub">quarters breached VaR</div></div>
+    </div>
+
+    <!-- NIFTY KPI strip -->
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;font-family:var(--fm)">NIFTY</div>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px">
+      <div class="card" style="text-align:center;padding:16px" id="study-kpi-pnl-NIFTY"><div class="kpi-val">—</div><div class="kpi-sub">total P&L</div></div>
+      <div class="card" style="text-align:center;padding:16px" id="study-kpi-contracts-NIFTY"><div class="kpi-val">—</div><div class="kpi-sub">contracts traded</div></div>
+      <div class="card" style="text-align:center;padding:16px" id="study-kpi-avg-NIFTY"><div class="kpi-val">—</div><div class="kpi-sub">avg P&L per contract</div></div>
+      <div class="card" style="text-align:center;padding:16px" id="study-kpi-downside-NIFTY"><div class="kpi-val" style="color:#dc2626">—</div><div class="kpi-sub">Qtr Downside (1σ)</div></div>
+      <div class="card" style="text-align:center;padding:16px" id="study-kpi-probability-NIFTY"><div class="kpi-val" style="color:#16a34a">—</div><div class="kpi-sub">Hist. Probability</div></div>
+      <div class="card" style="text-align:center;padding:16px" id="study-kpi-breaches-NIFTY"><div class="kpi-val">—</div><div class="kpi-sub">quarters breached VaR</div></div>
+    </div>
+
+    <!-- Quarterly Summaries — side by side -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="card-hdr">
+          <span class="card-title">BANKNIFTY — Quarterly Risk</span>
+        </div>
+        <div class="tbl-wrap">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead style="background:var(--surface)">
+              <tr style="font-size:10px;color:#64748b;border-bottom:2px solid rgba(0,0,0,.08);text-transform:uppercase;letter-spacing:.04em">
+                <th style="padding:8px 8px;text-align:left;font-weight:700">Qtr</th>
+                <th style="padding:8px 8px;text-align:left;font-weight:700">P&L</th>
+                <th style="padding:8px 8px;text-align:left;font-weight:700">Return</th>
+                <th style="padding:8px 8px;text-align:left;font-weight:700">VaR</th>
+                <th style="padding:8px 8px;text-align:left;font-weight:700">Prob</th>
+                <th style="padding:8px 8px;text-align:center;font-weight:700">Status</th>
+              </tr>
+            </thead>
+            <tbody id="study-quarter-body-BANKNIFTY"></tbody>
+          </table>
+        </div>
       </div>
-      <div class="card" style="text-align:center;padding:16px" id="study-kpi-contracts">
-        <div class="kpi-val">—</div><div class="kpi-sub">contracts traded</div>
-      </div>
-      <div class="card" style="text-align:center;padding:16px" id="study-kpi-avg">
-        <div class="kpi-val">—</div><div class="kpi-sub">avg P&L per contract</div>
-      </div>
-      <div class="card" style="text-align:center;padding:16px" id="study-kpi-downside">
-        <div class="kpi-val" style="color:#dc2626">—</div><div class="kpi-sub">Qtr Downside (1σ)</div>
-      </div>
-      <div class="card" style="text-align:center;padding:16px" id="study-kpi-probability">
-        <div class="kpi-val" style="color:#16a34a">—</div><div class="kpi-sub">Hist. Probability</div>
-      </div>
-      <div class="card" style="text-align:center;padding:16px" id="study-kpi-breaches">
-        <div class="kpi-val">—</div><div class="kpi-sub">quarters breached VaR</div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="card-hdr">
+          <span class="card-title">NIFTY — Quarterly Risk</span>
+        </div>
+        <div class="tbl-wrap">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead style="background:var(--surface)">
+              <tr style="font-size:10px;color:#64748b;border-bottom:2px solid rgba(0,0,0,.08);text-transform:uppercase;letter-spacing:.04em">
+                <th style="padding:8px 8px;text-align:left;font-weight:700">Qtr</th>
+                <th style="padding:8px 8px;text-align:left;font-weight:700">P&L</th>
+                <th style="padding:8px 8px;text-align:left;font-weight:700">Return</th>
+                <th style="padding:8px 8px;text-align:left;font-weight:700">VaR</th>
+                <th style="padding:8px 8px;text-align:left;font-weight:700">Prob</th>
+                <th style="padding:8px 8px;text-align:center;font-weight:700">Status</th>
+              </tr>
+            </thead>
+            <tbody id="study-quarter-body-NIFTY"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- Quarterly Summary -->
-    <div class="card" style="padding:0;overflow:hidden;margin-bottom:20px">
-      <div class="card-hdr">
-        <span class="card-title">Quarterly Risk Summary</span>
-        <span class="card-sub">predicted VaR vs actual outcome at each quarter boundary</span>
+    <!-- Cumulative P&L charts — side by side -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-title">BANKNIFTY — Cumulative P&L</span>
+        </div>
+        <div style="height:260px;position:relative"><canvas id="study-cum-chart-BANKNIFTY"></canvas></div>
       </div>
-      <div class="tbl-wrap">
-        <table style="width:100%;border-collapse:collapse;font-size:13px">
-          <thead style="background:var(--surface)">
-            <tr style="font-size:11px;color:#64748b;border-bottom:2px solid rgba(0,0,0,.08);text-transform:uppercase;letter-spacing:.04em">
-              <th style="padding:10px 12px;text-align:left;font-weight:700">Quarter</th>
-              <th style="padding:10px 12px;text-align:left;font-weight:700">Contracts</th>
-              <th style="padding:10px 12px;text-align:left;font-weight:700">P&L (pts)</th>
-              <th style="padding:10px 12px;text-align:left;font-weight:700">Actual Return</th>
-              <th style="padding:10px 12px;text-align:left;font-weight:700">Qtr VaR (1σ)</th>
-              <th style="padding:10px 12px;text-align:left;font-weight:700">Hist Prob</th>
-              <th style="padding:10px 12px;text-align:center;font-weight:700">Status</th>
-            </tr>
-          </thead>
-          <tbody id="study-quarter-body"></tbody>
-        </table>
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-title">NIFTY — Cumulative P&L</span>
+        </div>
+        <div style="height:260px;position:relative"><canvas id="study-cum-chart-NIFTY"></canvas></div>
       </div>
     </div>
 
-    <!-- Cumulative P&L chart -->
-    <div class="card" style="margin-bottom:20px">
-      <div class="card-hdr">
-        <span class="card-title">Cumulative P&L</span>
-        <span class="card-sub">points gained/lost over each roll</span>
+    <!-- Contracts detail tables — side by side -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="card-hdr">
+          <span class="card-title">BANKNIFTY — Contracts</span>
+          <span class="card-sub">tiered basis · sell at spot</span>
+        </div>
+        <div class="tbl-wrap" style="max-height:400px">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead style="position:sticky;top:0;z-index:1;background:var(--surface)">
+              <tr style="font-size:10px;color:#64748b;border-bottom:2px solid rgba(0,0,0,.08);text-transform:uppercase;letter-spacing:.04em">
+                <th style="padding:7px 8px;text-align:left;font-weight:700">Contract</th>
+                <th style="padding:7px 8px;text-align:left;font-weight:700">Buy</th>
+                <th style="padding:7px 8px;text-align:left;font-weight:700">Spot</th>
+                <th style="padding:7px 8px;text-align:left;font-weight:700">Price</th>
+                <th style="padding:7px 8px;text-align:left;font-weight:700">Sell</th>
+                <th style="padding:7px 8px;text-align:left;font-weight:700">P&L</th>
+                <th style="padding:7px 8px;text-align:left;font-weight:700">%</th>
+                <th style="padding:7px 8px;text-align:center;font-weight:700">Status</th>
+              </tr>
+            </thead>
+            <tbody id="study-contracts-body-BANKNIFTY"></tbody>
+          </table>
+        </div>
       </div>
-      <div style="height:280px;position:relative">
-        <canvas id="study-cum-chart"></canvas>
-      </div>
-    </div>
-
-    <!-- Contracts detail table -->
-    <div class="card" style="padding:0;overflow:hidden;margin-bottom:20px">
-      <div class="card-hdr">
-        <span class="card-title">Contracts Detail</span>
-        <span class="card-sub">each monthly futures position · tiered basis (0.3%/0.7%/1.1%) · sell at spot</span>
-      </div>
-      <div class="tbl-wrap" style="max-height:400px">
-        <table style="width:100%;border-collapse:collapse;font-size:13px">
-          <thead style="position:sticky;top:0;z-index:1;background:var(--surface)">
-            <tr style="font-size:11px;color:#64748b;border-bottom:2px solid rgba(0,0,0,.08);text-transform:uppercase;letter-spacing:.04em">
-              <th style="padding:9px 12px;text-align:left;font-weight:700">Contract</th>
-              <th style="padding:9px 12px;text-align:left;font-weight:700">Buy Date</th>
-              <th style="padding:9px 12px;text-align:left;font-weight:700">Spot</th>
-              <th style="padding:9px 12px;text-align:left;font-weight:700">Buy Price</th>
-              <th style="padding:9px 12px;text-align:left;font-weight:700">Sell Date</th>
-              <th style="padding:9px 12px;text-align:left;font-weight:700">Sell Price</th>
-              <th style="padding:9px 12px;text-align:left;font-weight:700">P&L</th>
-              <th style="padding:9px 12px;text-align:left;font-weight:700">P&L %</th>
-              <th style="padding:9px 12px;text-align:center;font-weight:700">Status</th>
-            </tr>
-          </thead>
-          <tbody id="study-contracts-body"></tbody>
-        </table>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="card-hdr">
+          <span class="card-title">NIFTY — Contracts</span>
+          <span class="card-sub">tiered basis · sell at spot</span>
+        </div>
+        <div class="tbl-wrap" style="max-height:400px">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead style="position:sticky;top:0;z-index:1;background:var(--surface)">
+              <tr style="font-size:10px;color:#64748b;border-bottom:2px solid rgba(0,0,0,.08);text-transform:uppercase;letter-spacing:.04em">
+                <th style="padding:7px 8px;text-align:left;font-weight:700">Contract</th>
+                <th style="padding:7px 8px;text-align:left;font-weight:700">Buy</th>
+                <th style="padding:7px 8px;text-align:left;font-weight:700">Spot</th>
+                <th style="padding:7px 8px;text-align:left;font-weight:700">Price</th>
+                <th style="padding:7px 8px;text-align:left;font-weight:700">Sell</th>
+                <th style="padding:7px 8px;text-align:left;font-weight:700">P&L</th>
+                <th style="padding:7px 8px;text-align:left;font-weight:700">%</th>
+                <th style="padding:7px 8px;text-align:center;font-weight:700">Status</th>
+              </tr>
+            </thead>
+            <tbody id="study-contracts-body-NIFTY"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>

@@ -1,6 +1,6 @@
-"""Experience Layer — FnO Rolling Futures Study (BANKNIFTY).
+"""Experience Layer — FnO Rolling Futures Study (BANKNIFTY + NIFTY).
 
-Simulates a rolling quarterly futures portfolio on BANKNIFTY from 1 Jan 2025.
+Simulates rolling quarterly futures portfolios from 1 Jan 2025.
 Always holds 3 months of futures. Monthly roll: sell expiring, buy new back-month.
 Buy price = spot × (1 + basis premium). Basis premium is tiered by months-to-expiry:
 same month 0.3%, 1 month out 0.7%, 2+ months out 1.1%. Sell price = spot (basis converges).
@@ -25,10 +25,8 @@ from rita.repositories.market_data import MarketDataCacheRepository
 router = APIRouter(prefix="/api/v1/experience/fno", tags=["experience:fno-study"])
 
 _START_DATE = date(2025, 1, 1)
-_SYMBOL = "BANKNIFTY"
+_SYMBOLS = ["BANKNIFTY", "NIFTY"]
 
-# Basis premium depends on months-to-expiry at buy time:
-#   same month → 0.3%, 1 month out → 0.7%, 2+ months out → 1.1%
 _PREMIUM_BY_MONTHS_OUT = {0: 0.003, 1: 0.007}
 _PREMIUM_DEFAULT = 0.011
 
@@ -49,7 +47,7 @@ class FuturesContract(BaseModel):
     sell_price: float | None
     pnl: float | None
     pnl_pct: float | None
-    status: str  # "closed" | "open"
+    status: str
 
 
 class QuarterSummary(BaseModel):
@@ -64,7 +62,7 @@ class QuarterSummary(BaseModel):
     hist_breach_prob_pct: float | None
 
 
-class StudyResponse(BaseModel):
+class InstrumentStudy(BaseModel):
     instrument: str
     start_date: str
     basis_premium_pct: float
@@ -76,6 +74,10 @@ class StudyResponse(BaseModel):
     quarterly_var_pct: float | None = None
     hist_breach_prob_pct: float | None = None
     quarter_label: str | None = None
+
+
+class MultiStudyResponse(BaseModel):
+    studies: list[InstrumentStudy]
 
 
 def _last_trading_day_of_month(trading_dates: list[date], year: int, month: int) -> date | None:
@@ -109,40 +111,24 @@ def _compute_quarterly_var(closes: list[float]) -> tuple[float | None, float | N
     return var_1sigma, breach_pct
 
 
-@router.get("/study", response_model=StudyResponse)
-def get_fno_study(db: Session = Depends(get_db)) -> StudyResponse:
-    all_records = MarketDataCacheRepository(db).read_all()
-    bn_recs = sorted(
-        [r for r in all_records if r.underlying.upper() == _SYMBOL],
-        key=lambda r: r.date,
-    )
-    if not bn_recs:
-        return StudyResponse(
-            instrument=_SYMBOL, start_date=str(_START_DATE),
-            basis_premium_pct=11.0, contracts=[], quarters=[],
-            cumulative_pnl=[], total_pnl=0, total_contracts=0,
-        )
+def _build_study(symbol: str, recs: list) -> InstrumentStudy | None:
+    """Build a rolling futures study for a single instrument."""
+    if not recs:
+        return None
 
-    trading_dates = [r.date for r in bn_recs]
-    close_by_date: dict[date, float] = {r.date: float(r.close) for r in bn_recs if r.close}
-    all_closes = [float(r.close) for r in bn_recs if r.close]
+    trading_dates = [r.date for r in recs]
+    close_by_date: dict[date, float] = {r.date: float(r.close) for r in recs if r.close}
+    all_closes = [float(r.close) for r in recs if r.close]
 
-    # Build the rolling futures portfolio
     contracts: list[FuturesContract] = []
     today = date.today()
 
-    # Find the first trading day on or after start
     first_day = _first_trading_day_on_or_after(trading_dates, _START_DATE)
     if not first_day:
-        return StudyResponse(
-            instrument=_SYMBOL, start_date=str(_START_DATE),
-            basis_premium_pct=11.0, contracts=[], quarters=[],
-            cumulative_pnl=[], total_pnl=0, total_contracts=0,
-        )
+        return None
 
     buy_spot = close_by_date.get(first_day, 0)
 
-    # Initial 3 contracts: Jan, Feb, Mar of start year
     start_year = first_day.year
     start_month = first_day.month
     for i in range(3):
@@ -160,11 +146,9 @@ def get_fno_study(db: Session = Depends(get_db)) -> StudyResponse:
             pnl=None, pnl_pct=None, status="open",
         ))
 
-    # Monthly roll logic
     current_month = start_month
     current_year = start_year
     while True:
-        # Find last trading day of current_month
         last_day = _last_trading_day_of_month(trading_dates, current_year, current_month)
         if not last_day or last_day > today:
             break
@@ -173,7 +157,6 @@ def get_fno_study(db: Session = Depends(get_db)) -> StudyResponse:
         if sell_spot_val is None:
             break
 
-        # Close the front-month contract (the one matching current month)
         target_label = date(current_year, current_month, 1).strftime("%b'%y")
         for c in contracts:
             if c.month_label == target_label and c.status == "open":
@@ -185,16 +168,10 @@ def get_fno_study(db: Session = Depends(get_db)) -> StudyResponse:
                 c.status = "closed"
                 break
 
-        # Next trading day: buy new back-month future
-        next_day = _first_trading_day_on_or_after(
-            trading_dates, date(last_day.year, last_day.month, last_day.day)
-        )
-        # Actually need the day AFTER last_day
         later_dates = [d for d in trading_dates if d > last_day]
         next_day = later_dates[0] if later_dates else None
 
         if next_day and next_day <= today:
-            # New contract: 3 months ahead of current
             new_m = current_month + 3
             new_y = current_year + (new_m - 1) // 12
             new_m = ((new_m - 1) % 12) + 1
@@ -211,13 +188,11 @@ def get_fno_study(db: Session = Depends(get_db)) -> StudyResponse:
                 pnl=None, pnl_pct=None, status="open",
             ))
 
-        # Advance to next month
         current_month += 1
         if current_month > 12:
             current_month = 1
             current_year += 1
 
-    # Mark remaining open contracts with current spot as mark-to-market
     latest_spot = all_closes[-1] if all_closes else 0
     for c in contracts:
         if c.status == "open":
@@ -226,7 +201,6 @@ def get_fno_study(db: Session = Depends(get_db)) -> StudyResponse:
             c.pnl = round(c.sell_price - c.buy_price, 2)
             c.pnl_pct = round((c.sell_price / c.buy_price - 1) * 100, 2) if c.buy_price else 0
 
-    # Quarterly summaries
     quarter_contracts: dict[str, list[FuturesContract]] = defaultdict(list)
     for c in contracts:
         if c.sell_date and c.status == "closed":
@@ -234,7 +208,6 @@ def get_fno_study(db: Session = Depends(get_db)) -> StudyResponse:
             ql = _quarter_label(sell_d)
             quarter_contracts[ql].append(c)
 
-    # Compute VaR using data available up to each quarter boundary
     quarters: list[QuarterSummary] = []
     quarter_order = sorted(quarter_contracts.keys(), key=lambda q: q[-2:] + q[1])
 
@@ -245,15 +218,13 @@ def get_fno_study(db: Session = Depends(get_db)) -> StudyResponse:
         start_d = min(date.fromisoformat(c.buy_date) for c in qc)
         end_d = max(dates_in_q) if dates_in_q else start_d
 
-        # Spot return over the quarter
         start_spot = close_by_date.get(
             _first_trading_day_on_or_after(trading_dates, start_d), 0
         )
         end_spot = close_by_date.get(end_d, 0)
         actual_ret = round((end_spot / start_spot - 1) * 100, 2) if start_spot else None
 
-        # VaR from data available up to quarter start
-        closes_up_to = [float(r.close) for r in bn_recs if r.date < start_d and r.close]
+        closes_up_to = [float(r.close) for r in recs if r.date < start_d and r.close]
         q_var, q_breach = _compute_quarterly_var(closes_up_to)
 
         var_breached = None
@@ -272,7 +243,6 @@ def get_fno_study(db: Session = Depends(get_db)) -> StudyResponse:
             hist_breach_prob_pct=q_breach,
         ))
 
-    # Cumulative P&L timeline (one point per closed contract)
     cum_pnl = 0.0
     cumulative: list[dict] = []
     closed_sorted = sorted(
@@ -285,13 +255,11 @@ def get_fno_study(db: Session = Depends(get_db)) -> StudyResponse:
 
     total_pnl = sum(c.pnl or 0 for c in contracts)
 
-    # Current quarterly VaR and breach probability from full dataset
     q_var, q_breach = _compute_quarterly_var(all_closes)
-    today = date.today()
     q_label = _quarter_label(today)
 
-    return StudyResponse(
-        instrument=_SYMBOL,
+    return InstrumentStudy(
+        instrument=symbol,
         start_date=str(_START_DATE),
         basis_premium_pct=1.1,
         contracts=contracts,
@@ -303,3 +271,20 @@ def get_fno_study(db: Session = Depends(get_db)) -> StudyResponse:
         hist_breach_prob_pct=q_breach,
         quarter_label=q_label,
     )
+
+
+@router.get("/study", response_model=MultiStudyResponse)
+def get_fno_study(db: Session = Depends(get_db)) -> MultiStudyResponse:
+    all_records = MarketDataCacheRepository(db).read_all()
+
+    studies: list[InstrumentStudy] = []
+    for symbol in _SYMBOLS:
+        recs = sorted(
+            [r for r in all_records if r.underlying.upper() == symbol],
+            key=lambda r: r.date,
+        )
+        study = _build_study(symbol, recs)
+        if study:
+            studies.append(study)
+
+    return MultiStudyResponse(studies=studies)
