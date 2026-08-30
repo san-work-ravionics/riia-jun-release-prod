@@ -2357,3 +2357,190 @@ def agent_performance_timeline(
     result = performance_timeline(db, start, end, bucket_days)
     result["from"], result["to"] = from_, to
     return result
+
+
+# ── GET /api/v1/experience/rita/asta-signals ──────────────────────────────────
+
+@router.get("/experience/rita/asta-signals", summary="ASTA signal analysis data")
+def asta_signals(
+    instrument: str = "NIFTY",
+    periods: int = 500,
+) -> dict[str, Any]:
+    """Return ASTA labeled signal data for the Signals page.
+
+    Reads the pre-computed ``asta_labeled_dataset.csv`` and returns a summary
+    plus per-day rows for charting.  Experience tier — read-only, no DB writes.
+    """
+    import numpy as np
+    import pandas as pd
+    from pathlib import Path
+    from rita.config import get_settings as _gs
+
+    _settings = _gs()
+    inst = instrument.upper()
+    csv_path = Path(_settings.data.output_dir) / inst / "asta_labeled_dataset.csv"
+
+    if not csv_path.exists():
+        return {"error": "dataset_not_found", "instrument": inst, "summary": {}, "rows": []}
+
+    df = pd.read_csv(str(csv_path), index_col=0, parse_dates=True)
+
+    total = len(df)
+    buy_count = int((df["asta_signal"] == "BUY").sum())
+    sell_count = int((df["asta_signal"] == "SELL").sum())
+    hold_count = int((df["asta_signal"] == "HOLD").sum())
+    active = df[df["asta_signal"] != "HOLD"]
+
+    setup_breakdown = {}
+    if len(active) > 0:
+        for setup_name, grp in active.groupby("asta_setup"):
+            setup_breakdown[setup_name] = {
+                "buy": int((grp["asta_signal"] == "BUY").sum()),
+                "sell": int((grp["asta_signal"] == "SELL").sum()),
+                "total": len(grp),
+            }
+
+    conf_stats = {}
+    if len(active) > 0:
+        conf = active["asta_confidence"]
+        conf_stats = {
+            "mean": round(float(conf.mean()), 3),
+            "median": round(float(conf.median()), 3),
+            "min": round(float(conf.min()), 3),
+            "max": round(float(conf.max()), 3),
+        }
+
+    # ── Forward simulation: did price hit target or stop loss first? ──
+    MAX_HOLD = 20
+    highs = df["High"].values
+    lows = df["Low"].values
+    n = len(df)
+
+    outcomes = [""] * n       # "target", "stopped", "open", or ""
+    realized_pts = [0.0] * n  # actual points captured (positive or negative)
+
+    signal_indices = df.index[df["asta_signal"] != "HOLD"]
+    for idx in signal_indices:
+        pos = df.index.get_loc(idx)
+        sig = df.at[idx, "asta_signal"]
+        sl = float(df.at[idx, "asta_stop_loss"])
+        tgt = float(df.at[idx, "asta_target"])
+        close = float(df.at[idx, "Close"])
+
+        if np.isnan(sl) or np.isnan(tgt) or np.isnan(close) or sl == 0 or tgt == 0:
+            outcomes[pos] = "open"
+            continue
+
+        outcome = "open"
+        pts = 0.0
+        for j in range(pos + 1, min(pos + 1 + MAX_HOLD, n)):
+            if sig == "BUY":
+                if lows[j] <= sl:
+                    outcome = "stopped"
+                    pts = sl - close
+                    break
+                if highs[j] >= tgt:
+                    outcome = "target"
+                    pts = tgt - close
+                    break
+            else:
+                if highs[j] >= sl:
+                    outcome = "stopped"
+                    pts = close - sl
+                    break
+                if lows[j] <= tgt:
+                    outcome = "target"
+                    pts = close - tgt
+                    break
+
+        outcomes[pos] = outcome
+        realized_pts[pos] = round(pts, 2)
+
+    df["_outcome"] = outcomes
+    df["_realized_pts"] = realized_pts
+
+    # ── Aggregate points stats ──
+    sig_mask = df["asta_signal"] != "HOLD"
+    buy_mask = df["asta_signal"] == "BUY"
+    sell_mask = df["asta_signal"] == "SELL"
+
+    buy_target_pts = float(df.loc[buy_mask & (df["_outcome"] == "target"), "_realized_pts"].sum())
+    buy_stopped_pts = float(df.loc[buy_mask & (df["_outcome"] == "stopped"), "_realized_pts"].sum())
+    sell_target_pts = float(df.loc[sell_mask & (df["_outcome"] == "target"), "_realized_pts"].sum())
+    sell_stopped_pts = float(df.loc[sell_mask & (df["_outcome"] == "stopped"), "_realized_pts"].sum())
+
+    points_stats = {
+        "buy_pts": round(buy_target_pts + buy_stopped_pts, 1),
+        "buy_target_pts": round(buy_target_pts, 1),
+        "buy_stopped_pts": round(buy_stopped_pts, 1),
+        "buy_target_count": int((buy_mask & (df["_outcome"] == "target")).sum()),
+        "buy_stopped_count": int((buy_mask & (df["_outcome"] == "stopped")).sum()),
+        "buy_open_count": int((buy_mask & (df["_outcome"] == "open")).sum()),
+        "sell_pts": round(sell_target_pts + sell_stopped_pts, 1),
+        "sell_target_pts": round(sell_target_pts, 1),
+        "sell_stopped_pts": round(sell_stopped_pts, 1),
+        "sell_target_count": int((sell_mask & (df["_outcome"] == "target")).sum()),
+        "sell_stopped_count": int((sell_mask & (df["_outcome"] == "stopped")).sum()),
+        "sell_open_count": int((sell_mask & (df["_outcome"] == "open")).sum()),
+        "total_pts": round(buy_target_pts + buy_stopped_pts + sell_target_pts + sell_stopped_pts, 1),
+        "win_rate_pct": round(
+            int((sig_mask & (df["_outcome"] == "target")).sum())
+            / max(int((sig_mask & (df["_outcome"] != "open")).sum()), 1) * 100, 1
+        ),
+        "hold_days": MAX_HOLD,
+    }
+
+    summary = {
+        "instrument": inst,
+        "total_rows": total,
+        "buy_count": buy_count,
+        "sell_count": sell_count,
+        "hold_count": hold_count,
+        "signal_rate_pct": round((buy_count + sell_count) / total * 100, 1) if total else 0,
+        "setup_breakdown": setup_breakdown,
+        "confidence_stats": conf_stats,
+        "points_stats": points_stats,
+        "date_range": {
+            "start": str(df.index.min().date()) if total else None,
+            "end": str(df.index.max().date()) if total else None,
+        },
+    }
+
+    def _v(val):
+        if val is None:
+            return None
+        try:
+            f = float(val)
+        except (TypeError, ValueError):
+            return None
+        return None if (pd.isna(f) or not np.isfinite(f)) else round(f, 4)
+
+    keep_cols = [
+        "Close", "High", "Low", "Open", "Volume",
+        "asta_signal", "asta_setup", "asta_confidence",
+        "asta_mandatory_met", "asta_mandatory_total",
+        "asta_optional_met", "asta_optional_total",
+        "asta_stop_loss", "asta_target",
+        "_outcome", "_realized_pts",
+        "rsi_14", "stoch_k", "stoch_d", "macd_hist",
+        "bb_upper", "bb_lower", "bb_squeeze",
+        "tide_macd_hist_uptick", "tide_macd_hist_downtick",
+        "wave_rsi_14",
+    ]
+    available = [c for c in keep_cols if c in df.columns]
+
+    tail = df.tail(periods) if periods > 0 else df
+    rows = []
+    for idx, row in tail.iterrows():
+        r: dict[str, Any] = {"date": str(idx.date())}
+        for col in available:
+            val = row.get(col)
+            if isinstance(val, str):
+                r[col] = val
+            elif isinstance(val, (bool, np.bool_)):
+                r[col] = bool(val)
+            else:
+                r[col] = _v(val)
+        rows.append(r)
+
+    return {"summary": summary, "rows": rows}

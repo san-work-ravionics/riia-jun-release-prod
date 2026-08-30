@@ -21,6 +21,7 @@ import { loadScenarios, runScenarioBacktest, setScenarioPeriod } from './scenari
 import { loadAgentPanel, agentPanelStep, resetAgentPanel, approveAgentProposal, rejectAgentProposal } from './agent-panel.js';
 import { loadAiCompliance, switchAcTab } from './ai-compliance.js';
 import { loadTechnicalAnalysis } from './technical-analysis.js';
+import { loadAstaSignals } from './asta-signals.js';
 import { loadLearnings, toggleLearnCard, switchAgentTab } from './learnings.js';
 import { loadStrategyComparison, scSelectInstrument, scSelectYear } from './strategy-comparison.js';
 import { useChip, sendChatMsg, clearChat, updateChips, showAlerts, refreshChatChips } from './chat.js';
@@ -45,6 +46,7 @@ _sectionLoaders.risk              = loadRisk;
 _sectionLoaders.trades            = loadTrades;
 _sectionLoaders.export            = loadExport;
 _sectionLoaders['technical-analysis'] = loadTechnicalAnalysis;
+_sectionLoaders['asta-signals']       = loadAstaSignals;
 _sectionLoaders.learnings             = loadLearnings;
 _sectionLoaders['strategy-compare']    = loadStrategyComparison;
 _sectionLoaders['my-portfolio']        = loadMyPortfolio;
@@ -84,6 +86,7 @@ window.loadExplain        = loadExplain;
 window.loadRisk           = loadRisk;
 window.loadTrades         = loadTrades;
 window.loadTechnicalAnalysis = loadTechnicalAnalysis;
+window.loadAstaSignals    = loadAstaSignals;
 window.loadLearnings      = loadLearnings;
 window.toggleLearnCard          = toggleLearnCard;
 window.switchAgentTab           = switchAgentTab;
@@ -136,7 +139,7 @@ async function selectGeoInstrument(id) {
     if (data) { updateChips(data.chips); showAlerts(data.alerts); }
   }
   await loadActiveInstrument();
-  const instrumentSections = new Set(['trades', 'performance', 'scenarios', 'risk', 'market-signals', 'diagnostics', 'explain', 'technical-analysis', 'learnings', 'strategy-compare', 'model-eval']);
+  const instrumentSections = new Set(['trades', 'performance', 'scenarios', 'risk', 'market-signals', 'diagnostics', 'explain', 'technical-analysis', 'asta-signals', 'learnings', 'strategy-compare', 'model-eval']);
   await Promise.all([
     loadHealth(), loadPerfSummary(), loadDrift(), loadProgress(), loadMarketSignals(),
     ...(instrumentSections.has(section) && _sectionLoaders[section] ? [_sectionLoaders[section]()] : []),

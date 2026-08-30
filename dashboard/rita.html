@@ -382,6 +382,9 @@ tr:hover td{background:var(--surface2);}
     <div class="nav-item p01" data-s="technical-analysis" onclick="show('technical-analysis',this)">
       <span class="nav-icon">📈</span><span data-i18n="nav.technical_analysis">Technical Analysis</span>
     </div>
+    <div class="nav-item p01" data-s="asta-signals" onclick="show('asta-signals',this)">
+      <span class="nav-icon">◎</span> Signals
+    </div>
     <div class="nav-item p01" data-s="strategy" onclick="show('strategy',this)">
       <span class="nav-icon">◎</span> <span data-i18n="heading.strategy">Strategy</span>
     </div>
@@ -583,6 +586,71 @@ tr:hover td{background:var(--surface2);}
       <div class="chart-box" style="height:150px"><canvas id="chart-ta-rsi"></canvas></div>
     </div>
   </div>
+</section>
+
+
+<!-- ════════════════ ASTA SIGNALS ════════════════ -->
+<section id="sec-asta-signals" class="section">
+  <div class="page-header">
+    <div><div class="page-title">Signals</div><div class="page-sub">ASTA Double Screen &amp; Triple Screen signal analysis — setup-level BUY / SELL labels with confidence scoring</div></div>
+    <div class="hdr-actions"><button class="btn btn-ghost btn-sm" onclick="loadAstaSignals()">Refresh</button></div>
+  </div>
+
+  <!-- KPI Summary -->
+  <div id="asta-summary" class="card" style="margin-bottom:16px">Loading signal data…</div>
+
+  <!-- Setup Breakdown -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-hdr"><span class="card-title">Setup Breakdown</span><span style="font-weight:400;color:var(--t3);font-size:11px;margin-left:8px">— signals per ASTA setup</span></div>
+    <div id="asta-setup-breakdown" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px"></div>
+  </div>
+
+  <!-- Price + Signal Markers chart -->
+  <div class="chart-wrap">
+    <div class="chart-title">Price &amp; Signal Markers <span style="font-weight:400;color:var(--t3);font-size:11px">— ▲ BUY · ▼ SELL overlaid on close price</span></div>
+    <div class="chart-box" style="height:260px"><canvas id="chart-asta-price"></canvas></div>
+  </div>
+
+  <!-- Row: Setup Donut + Confidence Histogram + Stochastic -->
+  <div class="card-row-3">
+    <div class="chart-wrap" style="margin:0">
+      <div class="chart-title">Setup Distribution <span style="font-weight:400;color:var(--t3);font-size:11px">— signal share by setup</span></div>
+      <div class="chart-box" style="height:200px"><canvas id="chart-asta-setup"></canvas></div>
+    </div>
+    <div class="chart-wrap" style="margin:0">
+      <div class="chart-title">Confidence Distribution <span style="font-weight:400;color:var(--t3);font-size:11px">— histogram of signal confidence scores</span></div>
+      <div class="chart-box" style="height:200px"><canvas id="chart-asta-conf"></canvas></div>
+    </div>
+    <div class="chart-wrap" style="margin:0">
+      <div class="chart-title">Stochastic Oscillator <span style="font-weight:400;color:var(--t3);font-size:11px">— %K / %D · PCO/NCO triggers</span></div>
+      <div class="chart-box" style="height:200px"><canvas id="chart-asta-stoch"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Recent Signals Table -->
+  <div class="card" style="margin-top:16px">
+    <div class="card-hdr"><span class="card-title">Recent Signals</span><span style="font-weight:400;color:var(--t3);font-size:11px;margin-left:8px">— last 20 BUY / SELL signals</span></div>
+    <div style="overflow-x:auto;max-height:280px;overflow-y:auto">
+      <table class="tbl">
+        <thead style="position:sticky;top:0;background:var(--surface);z-index:1"><tr>
+          <th>Date</th><th>Signal</th><th>Setup</th><th>Close</th><th>Confidence</th><th>Stop Loss</th><th>Target</th><th>Outcome</th><th>Points</th>
+        </tr></thead>
+        <tbody id="asta-recent-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Methodology -->
+  <details class="card" style="margin-top:16px">
+    <summary class="card-hdr" style="cursor:pointer"><span class="card-title">Methodology</span></summary>
+    <div style="padding:12px 16px;font-size:12px;color:var(--t2);line-height:1.6">
+      <p><strong>SMM Double Screen</strong> — simplest setup. Screen 1 (Tide): Monthly MACD histogram direction confirms macro trend. Screen 2 (Wave): Stochastic PCO/NCO crossover on the weekly timeframe. Entry trigger: at least one Ripple-level confirmation — bullish/bearish candlestick pattern, high-volume candle, EMA crossover, or chart pattern (Double Bottom/Top).</p>
+      <p style="margin-top:8px"><strong>GEO PAN Triple Screen</strong> — stricter multi-timeframe trend-following. All three screens (Tide + Wave + Ripple) must align: monthly uptrend, weekly retracement to Fibonacci support, daily bullish chart pattern (DB/FBD) + reversal candlestick.</p>
+      <p style="margin-top:8px"><strong>GEO PAN Swing Trader (DB/DT)</strong> — reversal setup at Bollinger Band extremes. Requires BB squeeze/BBNC on the Tide, a Double Bottom or Double Top on the Wave, and a reversal candlestick on the Ripple.</p>
+      <p style="margin-top:8px"><strong>GEO PAN Momentum BB</strong> — BB Challenge with trendline-break proxy. Both Tide and Wave must show BB upper/lower challenge, aligned RSI &gt; 50 (buy) or &lt; 50 (sell), and MACD histogram confirming direction.</p>
+      <p style="margin-top:8px"><strong>Confidence Score:</strong> (mandatory_met + optional_met) / total_conditions. Range 0–1. Higher confidence = more conditions satisfied beyond the mandatory gate.</p>
+    </div>
+  </details>
 </section>
 
 
