@@ -135,41 +135,40 @@ def _candlestick_patterns(df: pd.DataFrame) -> pd.DataFrame:
     Returns boolean columns for each pattern.
     """
     out = df.copy()
-    o, h, l, c = out["Open"], out["High"], out["Low"], out["Close"]
-    body = (c - o).abs()
-    body_prev = body.shift(1)
-    upper_shadow = h - pd.concat([o, c], axis=1).max(axis=1)
-    lower_shadow = pd.concat([o, c], axis=1).min(axis=1) - l
+    op, h, lo, c = out["Open"], out["High"], out["Low"], out["Close"]
+    body = (c - op).abs()
+    upper_shadow = h - pd.concat([op, c], axis=1).max(axis=1)
+    lower_shadow = pd.concat([op, c], axis=1).min(axis=1) - lo
     avg_body = body.rolling(10).mean()
 
     out["cdl_bullish_engulf"] = (
-        (c.shift(1) < o.shift(1)) &  # prev bearish
-        (c > o) &                      # current bullish
-        (o <= c.shift(1)) &            # open <= prev close
-        (c >= o.shift(1))              # close >= prev open
+        (c.shift(1) < op.shift(1)) &  # prev bearish
+        (c > op) &                      # current bullish
+        (op <= c.shift(1)) &            # open <= prev close
+        (c >= op.shift(1))              # close >= prev open
     )
 
     out["cdl_bearish_engulf"] = (
-        (c.shift(1) > o.shift(1)) &  # prev bullish
-        (c < o) &                      # current bearish
-        (o >= c.shift(1)) &            # open >= prev close
-        (c <= o.shift(1))              # close <= prev open
+        (c.shift(1) > op.shift(1)) &  # prev bullish
+        (c < op) &                      # current bearish
+        (op >= c.shift(1)) &            # open >= prev close
+        (c <= op.shift(1))              # close <= prev open
     )
 
     out["cdl_piercing"] = (
-        (c.shift(1) < o.shift(1)) &                    # prev bearish
-        (c > o) &                                        # current bullish
-        (o < c.shift(1)) &                               # open below prev close
-        (c > (o.shift(1) + c.shift(1)) / 2) &           # close above midpoint
-        (c < o.shift(1))                                  # close below prev open
+        (c.shift(1) < op.shift(1)) &                    # prev bearish
+        (c > op) &                                        # current bullish
+        (op < c.shift(1)) &                               # open below prev close
+        (c > (op.shift(1) + c.shift(1)) / 2) &           # close above midpoint
+        (c < op.shift(1))                                  # close below prev open
     )
 
     out["cdl_dark_cloud"] = (
-        (c.shift(1) > o.shift(1)) &                    # prev bullish
-        (c < o) &                                        # current bearish
-        (o > c.shift(1)) &                               # open above prev close
-        (c < (o.shift(1) + c.shift(1)) / 2) &           # close below midpoint
-        (c > o.shift(1))                                  # close above prev open
+        (c.shift(1) > op.shift(1)) &                    # prev bullish
+        (c < op) &                                        # current bearish
+        (op > c.shift(1)) &                               # open above prev close
+        (c < (op.shift(1) + c.shift(1)) / 2) &           # close below midpoint
+        (c > op.shift(1))                                  # close above prev open
     )
 
     out["cdl_hammer"] = (
@@ -187,17 +186,17 @@ def _candlestick_patterns(df: pd.DataFrame) -> pd.DataFrame:
     # Morning Star: 3-bar pattern (bearish, small body, bullish)
     small_body = body < avg_body * 0.5
     out["cdl_morning_star"] = (
-        (c.shift(2) < o.shift(2)) &      # bar -2 bearish
+        (c.shift(2) < op.shift(2)) &      # bar -2 bearish
         small_body.shift(1) &              # bar -1 small body
-        (c > o) &                          # bar 0 bullish
-        (c > (o.shift(2) + c.shift(2)) / 2)  # close above midpoint of bar -2
+        (c > op) &                          # bar 0 bullish
+        (c > (op.shift(2) + c.shift(2)) / 2)  # close above midpoint of bar -2
     )
 
     out["cdl_evening_star"] = (
-        (c.shift(2) > o.shift(2)) &      # bar -2 bullish
+        (c.shift(2) > op.shift(2)) &      # bar -2 bullish
         small_body.shift(1) &              # bar -1 small body
-        (c < o) &                          # bar 0 bearish
-        (c < (o.shift(2) + c.shift(2)) / 2)  # close below midpoint of bar -2
+        (c < op) &                          # bar 0 bearish
+        (c < (op.shift(2) + c.shift(2)) / 2)  # close below midpoint of bar -2
     )
 
     return out
