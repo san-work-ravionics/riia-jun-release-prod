@@ -16,8 +16,9 @@ export async function api(path, method = 'GET', body = null) {
       if (!_isLocal) {
         sessionStorage.setItem('post_login_redirect', window.location.href);
         window.location.href = '/auth/google/login';
+        return;
       }
-      return;
+      throw new Error('Session expired — please log in again');
     }
     const err = await r.json().catch(() => ({ detail: r.statusText }));
     throw new Error(err.detail || r.statusText);

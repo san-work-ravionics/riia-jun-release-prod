@@ -82,43 +82,30 @@ def training_history(
 @router.get("/training-split", summary="Actual train/val/backtest date ranges for an instrument")
 def training_split(
     instrument: str = "NIFTY",
-    db: Session = Depends(get_db),
 ) -> dict[str, Any]:
-    """Return the date ranges used for train, validation, and backtest phases."""
+    """Return the date ranges used for train, validation, and test phases."""
     from rita.core.data_understanding import find_instrument_csv
     from rita.core.technical_analyzer import calculate_indicators
     from rita.core.data_loader import load_ohlcv_csv
+    from rita.core.trading_env_v2 import temporal_split
 
     result: dict[str, Any] = {
         "train_start": None, "train_end": None,
         "val_start": None,   "val_end": None,
-        "backtest_start": None, "backtest_end": None,
+        "test_start": None,  "test_end": None,
     }
 
     try:
         csv_path = find_instrument_csv(instrument)
         df = load_ohlcv_csv(str(csv_path))
         df = calculate_indicators(df)
-        split_idx = int(len(df) * 0.8)
-        train_df = df.iloc[:split_idx]
-        val_df   = df.iloc[split_idx:]
+        train_df, val_df, test_df = temporal_split(df)
         result["train_start"] = str(train_df.index[0].date())
         result["train_end"]   = str(train_df.index[-1].date())
         result["val_start"]   = str(val_df.index[0].date())
         result["val_end"]     = str(val_df.index[-1].date())
-    except Exception:
-        log_event(log, "error", "training_run.error", exc_info=True)
-
-    try:
-        runs_repo = BacktestRunsRepository(db)
-        completed = [
-            r for r in runs_repo.read_all()
-            if r.status in ("complete", "completed") and (r.instrument or "NIFTY") == instrument
-        ]
-        if completed:
-            latest = max(completed, key=lambda r: r.ended_at or r.recorded_at)
-            result["backtest_start"] = str(latest.start_date)
-            result["backtest_end"]   = str(latest.end_date)
+        result["test_start"]  = str(test_df.index[0].date())
+        result["test_end"]    = str(test_df.index[-1].date())
     except Exception:
         log_event(log, "error", "training_run.error", exc_info=True)
 

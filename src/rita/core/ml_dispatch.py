@@ -110,6 +110,7 @@ def train(config: TrainingConfig, progress_fn=None) -> TrainingOutcome:
                      Called every 1000 timesteps with {timestep, loss, ep_rew_mean}.
     """  # noqa: D401
     """Load data, train Double-DQN, validate, save model, return real metrics."""
+    import pandas as pd
     from rita.core.data_loader import load_ohlcv_csv
     from rita.core.data_understanding import find_instrument_csv
     from rita.core.technical_analyzer import calculate_indicators
@@ -118,33 +119,58 @@ def train(config: TrainingConfig, progress_fn=None) -> TrainingOutcome:
     # Feature 32 Phase 3 — route to the V2 env trainer when model_version is a V2
     # stem. Golden trainers are left bound for all other versions (unchanged).
     _is_v2 = config.model_version.startswith("rita_ddqn_v2")
+    _is_asta = config.model_version.startswith("rita_ddqn_asta")
     env_config = None
-    if _is_v2:
-        from rita.core.trading_env_v2 import (
-            train_agent_v2 as train_agent,
-            train_best_of_n_v2 as train_best_of_n,
-            run_episode_v2 as run_episode,
-            temporal_split,
-        )
+    if _is_v2 or _is_asta:
+        from rita.core.trading_env_v2 import temporal_split
         from rita.core.instrument_config import load_instrument_env_config
         from rita.core.rl_scorecard import compute_scorecard, save_scorecard
         env_config = load_instrument_env_config(config.instrument)
         log.info("ml_dispatch.env_config_loaded", instrument=config.instrument,
                  episode_length=env_config.episode_length, n_features=len(env_config.feature_columns))
 
-    # ── 1. Load OHLCV data ────────────────────────────────────────────────────
-    log.info("ml_dispatch.load_data", instrument=config.instrument)
-    csv_path = find_instrument_csv(config.instrument)
-    df = load_ohlcv_csv(str(csv_path))
-    log.info("ml_dispatch.data_loaded", rows=len(df))
+    if _is_asta:
+        from rita.core.asta_trading_env import (
+            train_agent_asta as train_agent,
+            train_best_of_n_asta as train_best_of_n,
+            run_episode_asta as run_episode,
+        )
+    elif _is_v2:
+        from rita.core.trading_env_v2 import (
+            train_agent_v2 as train_agent,
+            train_best_of_n_v2 as train_best_of_n,
+            run_episode_v2 as run_episode,
+        )
 
-    # ── 2. Technical indicators ───────────────────────────────────────────────
-    df = calculate_indicators(df)
-    log.info("ml_dispatch.indicators_computed", rows=len(df))
+    # ── 1. Load data ─────────────────────────────────────────────────────────
+    log.info("ml_dispatch.load_data", instrument=config.instrument, feature_set="asta" if _is_asta else "technical")
+    csv_path = find_instrument_csv(config.instrument)
+    if _is_asta:
+        asta_csv = Path(__file__).parents[3] / "data" / "input" / config.instrument / "asta_labeled_dataset.csv"
+        if asta_csv.exists():
+            df = pd.read_csv(str(asta_csv), index_col="Date", parse_dates=True)
+        else:
+            from rita.core.asta_indicators import compute_asta_indicators
+            from rita.core.asta_labeler import label_asta_signals
+            raw_df = load_ohlcv_csv(str(csv_path))
+            df = compute_asta_indicators(raw_df)
+            df = label_asta_signals(df)
+            asta_csv.parent.mkdir(parents=True, exist_ok=True)
+            df.to_csv(str(asta_csv))
+            log.info("ml_dispatch.asta_dataset_generated", rows=len(df), path=str(asta_csv))
+        log.info("ml_dispatch.asta_dataset_loaded", rows=len(df), path=str(asta_csv))
+    else:
+        df = load_ohlcv_csv(str(csv_path))
+        log.info("ml_dispatch.data_loaded", rows=len(df))
+
+    # ── 2. Technical indicators (skip for ASTA — already in dataset) ─────────
+    if not _is_asta:
+        df = calculate_indicators(df)
+        log.info("ml_dispatch.indicators_computed", rows=len(df))
 
     # ── 3. Train / validation (/ test) split ────────────────────────────────────
     test_df = None
-    if _is_v2:
+    if _is_v2 or _is_asta:
         train_df, val_df, test_df = temporal_split(df)
     else:
         split_idx = int(len(df) * 0.8)
@@ -156,7 +182,7 @@ def train(config: TrainingConfig, progress_fn=None) -> TrainingOutcome:
     log.info("ml_dispatch.training_start", run_id=config.run_id, timesteps=config.timesteps, n_seeds=config.n_seeds)
     seed_results_dict: dict = {}
 
-    v2_kwargs = {"env_config": env_config, "test_df": test_df} if _is_v2 else {}
+    v2_kwargs = {"env_config": env_config, "test_df": test_df} if (_is_v2 or _is_asta) else {}
     if config.n_seeds > 1 and train_best_of_n is not None:
         model, progress_cb, seed_results_dict = train_best_of_n(
             train_df=train_df,
@@ -172,7 +198,7 @@ def train(config: TrainingConfig, progress_fn=None) -> TrainingOutcome:
             **v2_kwargs,
         )
     else:
-        single_kwargs = {"env_config": env_config} if _is_v2 else {}
+        single_kwargs = {"env_config": env_config} if (_is_v2 or _is_asta) else {}
         model, progress_cb = train_agent(
             train_df=train_df,
             output_dir=config.output_dir,
@@ -194,8 +220,8 @@ def train(config: TrainingConfig, progress_fn=None) -> TrainingOutcome:
     mdd = 0.0
     total_return = 0.0
     val_trades = 0
-    eval_df = test_df if _is_v2 else val_df
-    eval_kwargs = {"env_config": env_config} if _is_v2 else {}
+    eval_df = test_df if (_is_v2 or _is_asta) else val_df
+    eval_kwargs = {"env_config": env_config} if (_is_v2 or _is_asta) else {}
     try:
         val_result = run_episode(model, eval_df, **eval_kwargs)
         perf = val_result["performance"]
@@ -225,7 +251,7 @@ def train(config: TrainingConfig, progress_fn=None) -> TrainingOutcome:
 
     # ── 5c. RL diagnostic scorecard (V2 only) ────────────────────────────────
     scorecard_path = None
-    if _is_v2 and test_df is not None:
+    if (_is_v2 or _is_asta) and test_df is not None:
         try:
             seed_list = seed_results_dict.get("seed_results") if seed_results_dict else None
             scorecard = compute_scorecard(

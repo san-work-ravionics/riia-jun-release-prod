@@ -20,6 +20,7 @@ import { loadModelAudit } from './model-audit.js';
 import { loadConcepts, switchConceptTab } from './concepts.js';
 import { closeChartModal } from './utils.js';
 import { initI18n, setLanguage, applyTranslations } from '../shared/i18n.js';
+import { ensureDevToken } from '../shared/dev-auth.js';
 
 // ── Section loader registry ──────────────────────────────────────────────────
 const _sectionLoaders = {
@@ -78,6 +79,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeVizModa
 initI18n(); applyTranslations();
 // Replicates the inline init() function from ds.html verbatim.
 document.addEventListener('DOMContentLoaded', async () => {
+  await ensureDevToken();
   // Default simulation end date to today so charts always show current data
   const today = new Date().toISOString().slice(0, 10);
   ['b-end', 'r-end'].forEach(id => {

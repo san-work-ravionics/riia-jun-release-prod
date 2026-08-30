@@ -2381,7 +2381,17 @@ def asta_signals(
     csv_path = Path(_settings.data.input_dir) / inst / "asta_labeled_dataset.csv"
 
     if not csv_path.exists():
-        return {"error": "dataset_not_found", "instrument": inst, "summary": {}, "rows": []}
+        try:
+            from rita.core.data_loader import load_instrument_data
+            from rita.core.asta_indicators import compute_asta_indicators
+            from rita.core.asta_labeler import label_asta_signals
+            raw_df = load_instrument_data(inst)
+            gen_df = compute_asta_indicators(raw_df)
+            gen_df = label_asta_signals(gen_df)
+            csv_path.parent.mkdir(parents=True, exist_ok=True)
+            gen_df.to_csv(str(csv_path))
+        except Exception:
+            return {"error": "dataset_not_found", "instrument": inst, "summary": {}, "rows": []}
 
     df = pd.read_csv(str(csv_path), index_col=0, parse_dates=True)
 

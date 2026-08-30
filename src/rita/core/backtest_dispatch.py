@@ -99,18 +99,30 @@ def run_backtest(config: BacktestConfig) -> BacktestOutcome:
         )
     model_path = str(candidates[0])
 
-    # ── 2. Load OHLCV (primary CSV + manual supplement if present) ───────────
-    # load_instrument_data() appends e.g. nifty_manual.csv so backtests can
-    # reach 2026 dates even though merged.csv ends at 2025-12-31.
-    # Pre-filtering before calculate_indicators() avoids running the expensive
-    # trend_score computation on the full history (e.g. 4,500+ rows for BANKNIFTY)
-    # when only ~250 rows are needed for a 1-year backtest.
-    # Warmup of 250 rows covers EMA-200 (200) + trend_score window (20) + margin.
+    _is_asta = config.model_version.startswith("rita_ddqn_asta")
+
+    # ── 2. Load data ────────────────────────────────────────────────────────
     _WARMUP_ROWS = 250
-    df_raw = load_instrument_data(instrument)
-    start_idx = df_raw.index.searchsorted(str(config.start_date))
-    buffer_start = max(0, start_idx - _WARMUP_ROWS)
-    df = calculate_indicators(df_raw.iloc[buffer_start:])
+
+    if _is_asta:
+        import pandas as pd
+        asta_csv = Path(__file__).parents[3] / "data" / "input" / instrument / "asta_labeled_dataset.csv"
+        if asta_csv.exists():
+            df = pd.read_csv(asta_csv, parse_dates=["Date"], index_col="Date")
+        else:
+            from rita.core.asta_indicators import compute_asta_indicators
+            from rita.core.asta_labeler import label_asta_signals
+            df_raw = load_instrument_data(instrument)
+            df = compute_asta_indicators(df_raw)
+            df = label_asta_signals(df)
+            asta_csv.parent.mkdir(parents=True, exist_ok=True)
+            df.to_csv(str(asta_csv))
+        df.sort_index(inplace=True)
+    else:
+        df_raw = load_instrument_data(instrument)
+        start_idx = df_raw.index.searchsorted(str(config.start_date))
+        buffer_start = max(0, start_idx - _WARMUP_ROWS)
+        df = calculate_indicators(df_raw.iloc[buffer_start:])
 
     # ── 3. Filter to exact date range ────────────────────────────────────────
     start_ts = str(config.start_date)
@@ -126,7 +138,11 @@ def run_backtest(config: BacktestConfig) -> BacktestOutcome:
 
     # ── 4. Load model + run episode ──────────────────────────────────────────
     model = trading_env.load_agent(model_path)
-    episode = trading_env.run_episode(model, filtered)
+    if _is_asta:
+        from rita.core.asta_trading_env import run_episode_asta
+        episode = run_episode_asta(model, filtered)
+    else:
+        episode = trading_env.run_episode(model, filtered)
 
     perf = episode["performance"]
     total_return = perf["portfolio_total_return_pct"] / 100.0

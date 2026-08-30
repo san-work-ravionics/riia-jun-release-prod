@@ -106,6 +106,7 @@ class PipelineRequest(BaseModel):
     timesteps: int = 200_000
     force_retrain: bool = False
     n_seeds: int = 1
+    feature_set: str = "technical"   # "technical" or "asta"
     sim_start: Optional[str] = None
     sim_end: Optional[str] = None
 
@@ -135,9 +136,10 @@ def _run_pipeline_job(
     db = SessionLocal()
     try:
         inst_defaults = load_instrument_defaults(req.instrument)
+        version_prefix = "rita_ddqn_asta" if req.feature_set == "asta" else "rita_ddqn_v2"
         train_body = TrainingRunCreate(
             instrument=req.instrument,
-            model_version=f"rita_ddqn_v2_{req.instrument.lower()}",
+            model_version=f"{version_prefix}_{req.instrument.lower()}",
             algorithm="DoubleDQN",
             timesteps=req.timesteps,
             learning_rate=inst_defaults.get("learning_rate", 1e-4),
@@ -172,7 +174,7 @@ def _run_pipeline_job(
             n_seeds=req.n_seeds,
         )
 
-        existing_zips = sorted(mdir.glob("*.zip"))
+        existing_zips = sorted(mdir.glob(f"{version_prefix}*.zip"))
         if not req.force_retrain and existing_zips:
             existing_model_path = existing_zips[-1]
             reused_model_version = existing_model_path.stem
@@ -250,7 +252,7 @@ def run_pipeline(req: PipelineRequest) -> PipelineResponse:
     ).start()
     log.info("pipeline.submitted", train_run_id=train_run_id, backtest_run_id=backtest_run_id,
              timesteps=req.timesteps, n_seeds=req.n_seeds, force_retrain=req.force_retrain,
-             instrument=req.instrument)
+             instrument=req.instrument, feature_set=req.feature_set)
     return PipelineResponse(
         status="accepted",
         message="Pipeline started. Poll /progress for status.",

@@ -473,6 +473,14 @@ tr:hover td{background:var(--surface2);}
           <div class="cfg-hint">Keep highest Sharpe</div>
         </div>
         <div class="cfg-group">
+          <label class="cfg-label">Parameters</label>
+          <select class="cfg-select" id="b-params">
+            <option value="technical" selected>Technical Indicators</option>
+            <option value="asta">ASTA Signals</option>
+          </select>
+          <div class="cfg-hint">Feature set for observation space</div>
+        </div>
+        <div class="cfg-group">
           <label class="cfg-label">Simulation Start</label>
           <input class="cfg-input" id="b-start" type="date" value="2025-08-01">
         </div>
@@ -517,6 +525,14 @@ tr:hover td{background:var(--surface2);}
         <div class="cfg-group">
           <label class="cfg-label">Instrument</label>
           <select class="cfg-select" id="r-instrument"></select>
+        </div>
+        <div class="cfg-group">
+          <label class="cfg-label">Parameters</label>
+          <select class="cfg-select" id="r-params">
+            <option value="technical" selected>Technical Indicators</option>
+            <option value="asta">ASTA Signals</option>
+          </select>
+          <div class="cfg-hint">Which model to load</div>
         </div>
         <div class="cfg-group">
           <label class="cfg-label">Simulation Start</label>
@@ -1341,6 +1357,11 @@ tr:hover td{background:var(--surface2);}
   <div class="card" style="margin-bottom:14px">
     <div class="card-hdr"><span class="card-title">Training History</span><span class="card-sub">one row per pipeline run</span></div>
     <div class="tbl-wrap" id="mau-history-wrap"><div class="empty">Loading…</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-hdr"><span class="card-title">Model Runs Comparison</span><span class="card-sub">last 10 runs — best metric per column highlighted</span></div>
+    <div class="tbl-wrap" id="mau-compare-wrap"><div class="empty">Loading…</div></div>
   </div>
 
   <div class="card">

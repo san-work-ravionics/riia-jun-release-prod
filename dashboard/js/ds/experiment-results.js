@@ -27,6 +27,7 @@ export async function loadExperimentResults() {
     const _fs = v => (v != null && !isNaN(parseFloat(v))) ? parseFloat(v).toFixed(3) : '—';
     const _fi = v => (v != null && !isNaN(parseInt(v, 10))) ? parseInt(v, 10).toLocaleString() : '—';
     const _lbl = d => { if (!d) return null; const dt = new Date(d + 'T00:00:00'); return dt.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }); };
+    const _dateRange = (s, e) => (s && e) ? `<div style="font-size:10px;color:var(--t3);margin-bottom:6px">${_lbl(s)} → ${_lbl(e)}</div>` : '';
 
     const PC = {
       Train:      { color: '#1565C0', bg: 'rgba(21,101,192,0.13)' },
@@ -50,7 +51,8 @@ export async function loadExperimentResults() {
 
     const trainCard = `
       <div style="border:1px solid ${PC.Train.color};border-radius:7px;padding:12px 14px;background:${PC.Train.bg}">
-        <div style="font-weight:700;color:${PC.Train.color};margin-bottom:8px;font-size:12px">Train</div>
+        <div style="font-weight:700;color:${PC.Train.color};margin-bottom:4px;font-size:12px">Train</div>
+        ${_dateRange(split?.train_start, split?.train_end)}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px">
           <div><span style="color:var(--t3)">Sharpe</span><div style="font-weight:600">${_fs(latest?.train_sharpe)}</div></div>
           <div><span style="color:var(--t3)">MDD %</span><div style="font-weight:600">${_fv(latest?.train_mdd_pct)}</div></div>
@@ -61,7 +63,8 @@ export async function loadExperimentResults() {
 
     const testCard = `
       <div style="border:1px solid ${PC.Validation.color};border-radius:7px;padding:12px 14px;background:${PC.Validation.bg}">
-        <div style="font-weight:700;color:${PC.Validation.color};margin-bottom:8px;font-size:12px">Validation</div>
+        <div style="font-weight:700;color:${PC.Validation.color};margin-bottom:4px;font-size:12px">Validation</div>
+        ${_dateRange(split?.val_start, split?.val_end)}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px">
           <div><span style="color:var(--t3)">Sharpe</span><div style="font-weight:600">${_fs(latest?.val_sharpe)}</div></div>
           <div><span style="color:var(--t3)">MDD %</span><div style="font-weight:600">${_fv(latest?.val_mdd_pct)}</div></div>
@@ -72,7 +75,8 @@ export async function loadExperimentResults() {
 
     const btCard = `
       <div style="border:1px solid ${PC.Backtest.color};border-radius:7px;padding:12px 14px;background:${PC.Backtest.bg}">
-        <div style="font-weight:700;color:${PC.Backtest.color};margin-bottom:8px;font-size:12px">Backtest</div>
+        <div style="font-weight:700;color:${PC.Backtest.color};margin-bottom:4px;font-size:12px">Backtest</div>
+        ${_dateRange(split?.test_start, split?.test_end)}
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;font-size:11px">
           <div><span style="color:var(--t3)">Days</span><div style="font-weight:600">${btRows.length || '—'}</div></div>
           <div><span style="color:var(--t3)">Sharpe</span><div style="font-weight:600">${perf ? _fs(perf.sharpe_ratio) : '—'}</div></div>

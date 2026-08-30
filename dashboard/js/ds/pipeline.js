@@ -67,6 +67,7 @@ async function runPipeline(forceRetrain) {
     target_return_pct:15, time_horizon_days:252, risk_tolerance:'moderate',
     force_retrain: forceRetrain,
     n_seeds: seeds,
+    feature_set: get(`${iid}-params`)?.value || 'technical',
     sim_start: get(`${iid}-start`).value||null,
     sim_end:   get(`${iid}-end`).value||null
   };
