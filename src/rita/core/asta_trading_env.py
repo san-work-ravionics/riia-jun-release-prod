@@ -26,7 +26,6 @@ from stable_baselines3.common.monitor import Monitor
 from rita.core.instrument_config import DEFAULT_ENV_CONFIG, InstrumentEnvConfig
 from rita.core.performance import compute_all_metrics
 from rita.core.trading_env import TrainingProgressCallback
-from rita.core.trading_env_v2 import temporal_split
 from rita.logging_config import log_event
 
 log = structlog.get_logger(__name__)
