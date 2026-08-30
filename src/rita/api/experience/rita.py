@@ -2378,7 +2378,7 @@ def asta_signals(
 
     _settings = _gs()
     inst = instrument.upper()
-    csv_path = Path(_settings.data.output_dir) / inst / "asta_labeled_dataset.csv"
+    csv_path = Path(_settings.data.input_dir) / inst / "asta_labeled_dataset.csv"
 
     if not csv_path.exists():
         return {"error": "dataset_not_found", "instrument": inst, "summary": {}, "rows": []}
