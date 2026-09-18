@@ -574,6 +574,10 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     <div class="nav-item p02" data-page="study">
       <span class="nav-icon">📊</span> Study
     </div>
+    <div class="nav-item p02" data-page="experiment">
+      <span class="nav-icon">🧪</span> Experiment
+      <span style="margin-left:auto;background:var(--p02-bg);color:var(--p02);font-family:var(--fm);font-size:9px;font-weight:600;padding:1px 6px;border-radius:100px;">F38</span>
+    </div>
   </div>
 
   <div class="sidebar-footer">
@@ -1547,6 +1551,93 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
             <tbody id="study-contracts-body-NIFTY"></tbody>
           </table>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Experiment — Nifty Options Strangle Backtest ────────── -->
+  <div class="section" id="page-experiment">
+    <div class="page-hdr">
+      <div>
+        <div class="page-title">Experiment — Nifty Options Strangle</div>
+        <div class="page-sub">Daily 100-pt OTM Call + Put · BSM pricing · Delta-neutral lots · Jan 2026 → today</div>
+      </div>
+      <span class="phase-tag p02">Backtest</span>
+    </div>
+
+    <div id="exp-loading" style="color:var(--t3);font-size:13px;padding:12px 0;font-family:var(--fm)"></div>
+    <div id="exp-error" style="display:none;font-size:13px;padding:10px 14px;border-radius:6px;background:rgba(220,38,38,.08);color:#dc2626;margin-bottom:16px"></div>
+
+    <!-- Config inputs + actions -->
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:6px">
+        <label style="font-size:12px;color:var(--t3);font-family:var(--fm)">Capital ₹</label>
+        <input id="exp-capital" type="number" value="15000" min="1000" max="10000000" step="1000" style="width:90px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-family:var(--fm);font-size:13px;background:var(--surface);color:var(--text)">
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <label style="font-size:12px;color:var(--t3);font-family:var(--fm)">Target %</label>
+        <input id="exp-target" type="number" value="15" min="1" max="50" step="1" style="width:60px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-family:var(--fm);font-size:13px;background:var(--surface);color:var(--text)">
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <label style="font-size:12px;color:var(--t3);font-family:var(--fm)">Stop-Loss %</label>
+        <input id="exp-sl" type="number" value="5" min="1" max="30" step="1" style="width:60px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-family:var(--fm);font-size:13px;background:var(--surface);color:var(--text)">
+      </div>
+      <button onclick="loadExperiment()" style="padding:6px 16px;border:none;border-radius:6px;background:var(--p02);color:#fff;font-family:var(--fm);font-size:12px;font-weight:600;cursor:pointer">Run Backtest</button>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+        <button onclick="fetchExpData()" style="padding:6px 14px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-family:var(--fm);font-size:11px;cursor:pointer">Refresh Kite Data</button>
+        <span id="exp-fetch-status" style="font-size:11px;color:var(--t3);font-family:var(--fm)"></span>
+      </div>
+    </div>
+
+    <!-- P&L summary — capital, P&L, final value, return -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px">
+      <div class="card" style="text-align:center;padding:16px" id="exp-kpi-capital"><div class="kpi-val">₹15,000</div><div class="kpi-sub">starting capital</div></div>
+      <div class="card" style="text-align:center;padding:16px" id="exp-kpi-pnl"><div class="kpi-val">—</div><div class="kpi-sub">total P&L</div></div>
+      <div class="card" style="text-align:center;padding:16px" id="exp-kpi-final"><div class="kpi-val">—</div><div class="kpi-sub">final value</div></div>
+      <div class="card" style="text-align:center;padding:16px" id="exp-kpi-return"><div class="kpi-val">—</div><div class="kpi-sub">return on capital</div></div>
+    </div>
+    <!-- Trade stats -->
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px">
+      <div class="card" style="text-align:center;padding:16px" id="exp-kpi-winrate"><div class="kpi-val">—</div><div class="kpi-sub">win rate</div></div>
+      <div class="card" style="text-align:center;padding:16px" id="exp-kpi-trades"><div class="kpi-val">—</div><div class="kpi-sub">total trades</div></div>
+      <div class="card" style="text-align:center;padding:16px" id="exp-kpi-avg"><div class="kpi-val">—</div><div class="kpi-sub">avg per trade</div></div>
+      <div class="card" style="text-align:center;padding:16px" id="exp-kpi-target"><div class="kpi-val">—</div><div class="kpi-sub">target hits</div></div>
+      <div class="card" style="text-align:center;padding:16px" id="exp-kpi-sl"><div class="kpi-val">—</div><div class="kpi-sub">stop-loss hits</div></div>
+    </div>
+
+    <!-- Cumulative P&L chart -->
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-hdr">
+        <span class="card-title">Cumulative P&L</span>
+      </div>
+      <div style="height:260px;position:relative"><canvas id="exp-cum-chart"></canvas></div>
+    </div>
+
+    <!-- Daily entries table -->
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="card-hdr">
+        <span class="card-title">Daily Entry / Exit Log</span>
+        <span class="card-sub">entry at open · exit at close or T/SL</span>
+      </div>
+      <div class="tbl-wrap" style="max-height:400px">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead style="position:sticky;top:0;z-index:1;background:var(--surface)">
+            <tr style="font-size:10px;color:#64748b;border-bottom:2px solid rgba(0,0,0,.08);text-transform:uppercase;letter-spacing:.04em">
+              <th style="padding:7px 8px;text-align:left;font-weight:700">Date</th>
+              <th style="padding:7px 8px;text-align:left;font-weight:700">Nifty</th>
+              <th style="padding:7px 8px;text-align:left;font-weight:700">Call</th>
+              <th style="padding:7px 8px;text-align:left;font-weight:700">Put</th>
+              <th style="padding:7px 8px;text-align:left;font-weight:700">Lots</th>
+              <th style="padding:7px 8px;text-align:left;font-weight:700">IV</th>
+              <th style="padding:7px 8px;text-align:right;font-weight:700">Entry</th>
+              <th style="padding:7px 8px;text-align:right;font-weight:700">Exit</th>
+              <th style="padding:7px 8px;text-align:right;font-weight:700">Day P&L</th>
+              <th style="padding:7px 8px;text-align:right;font-weight:700">Cum P&L</th>
+              <th style="padding:7px 8px;text-align:center;font-weight:700">Exit</th>
+            </tr>
+          </thead>
+          <tbody id="exp-table-body"></tbody>
+        </table>
       </div>
     </div>
   </div>
