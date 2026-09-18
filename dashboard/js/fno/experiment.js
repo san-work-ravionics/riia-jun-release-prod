@@ -2,7 +2,7 @@
 // Calls fno-margin-fetch middleware: /api/experiment/backtest
 // Summary panel + scrollable daily entry/exit table
 
-import { kiteFetch } from './api.js';
+import { apiFetch, kiteFetch } from './api.js';
 import { mkChart } from '../shared/charts.js';
 
 const _fmtRs = v => v != null ? '₹' + Math.abs(v).toLocaleString('en-IN', { maximumFractionDigits: 0 }) : '—';
@@ -107,15 +107,15 @@ export async function loadExperiment() {
   const errEl = document.getElementById('exp-error');
   if (errEl) errEl.style.display = 'none';
 
-  const data = await kiteFetch(`/api/experiment/backtest?target_pct=${target}&sl_pct=${sl}`);
+  const data = await apiFetch(`/api/experience/fno/experiment-backtest?target_pct=${target}&sl_pct=${sl}`);
   _setEl('exp-loading', '');
 
   if (!data) {
-    if (errEl) { errEl.textContent = 'Cannot reach Kite API middleware'; errEl.style.display = 'block'; }
+    if (errEl) { errEl.textContent = 'Backtest endpoint unreachable'; errEl.style.display = 'block'; }
     return;
   }
-  if (!data.success) {
-    if (errEl) { errEl.textContent = data.error || 'Backtest failed'; errEl.style.display = 'block'; }
+  if (data.error) {
+    if (errEl) { errEl.textContent = data.error; errEl.style.display = 'block'; }
     return;
   }
 
