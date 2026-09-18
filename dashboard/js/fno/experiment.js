@@ -2,7 +2,8 @@
 // Calls fno-margin-fetch middleware: /api/experiment/backtest
 // Summary panel + scrollable daily entry/exit table
 
-const KITE_API = 'http://localhost:8000';
+import { kiteFetch } from './api.js';
+import { mkChart } from '../shared/charts.js';
 
 const _fmtRs = v => v != null ? '₹' + Math.abs(v).toLocaleString('en-IN', { maximumFractionDigits: 0 }) : '—';
 const _fmtPct = v => v != null ? (v >= 0 ? '+' : '') + v.toFixed(1) + '%' : '—';
@@ -27,18 +28,13 @@ function _exitBadge(t) {
   return `<span style="background:${c.bg};color:${c.fg};padding:2px 6px;border-radius:100px;font-size:10px;font-weight:700">${c.label}</span>`;
 }
 
-let _chartInstance = null;
-
 function _renderChart(entries) {
-  const canvas = document.getElementById('exp-cum-chart');
-  if (!canvas || !entries.length) return;
-
-  if (_chartInstance) _chartInstance.destroy();
+  if (!entries.length) return;
 
   const labels = entries.map(e => e.date.slice(5));
   const data = entries.map(e => e.cum_pnl);
 
-  _chartInstance = new Chart(canvas, {
+  mkChart('exp-cum-chart', {
     type: 'line',
     data: {
       labels,
@@ -111,38 +107,34 @@ export async function loadExperiment() {
   const errEl = document.getElementById('exp-error');
   if (errEl) errEl.style.display = 'none';
 
-  try {
-    const res = await fetch(`${KITE_API}/api/experiment/backtest?target_pct=${target}&sl_pct=${sl}`);
-    const data = await res.json();
+  const data = await kiteFetch(`/api/experiment/backtest?target_pct=${target}&sl_pct=${sl}`);
+  _setEl('exp-loading', '');
 
-    _setEl('exp-loading', '');
-
-    if (!data.success) {
-      if (errEl) { errEl.textContent = data.error || 'Backtest failed'; errEl.style.display = 'block'; }
-      return;
-    }
-
-    _renderSummary(data.summary);
-    _renderTable(data.entries);
-    _renderChart(data.entries);
-  } catch (e) {
-    _setEl('exp-loading', '');
-    if (errEl) { errEl.textContent = 'Cannot reach Kite API middleware — is it running on port 8000?'; errEl.style.display = 'block'; }
+  if (!data) {
+    if (errEl) { errEl.textContent = 'Cannot reach Kite API middleware'; errEl.style.display = 'block'; }
+    return;
   }
+  if (!data.success) {
+    if (errEl) { errEl.textContent = data.error || 'Backtest failed'; errEl.style.display = 'block'; }
+    return;
+  }
+
+  _renderSummary(data.summary);
+  _renderTable(data.entries);
+  _renderChart(data.entries);
 }
 
 export async function fetchExpData() {
   _setEl('exp-fetch-status', 'Fetching from Kite API...');
-  try {
-    const res = await fetch(`${KITE_API}/api/experiment/fetch-data`, { method: 'POST' });
-    const data = await res.json();
-    if (data.success) {
-      _setEl('exp-fetch-status', `✓ ${data.rows} trading days fetched`);
-      loadExperiment();
-    } else {
-      _setEl('exp-fetch-status', `✗ ${data.error}`);
-    }
-  } catch (e) {
+  const data = await kiteFetch('/api/experiment/fetch-data', { method: 'POST' });
+  if (!data) {
     _setEl('exp-fetch-status', '✗ Cannot reach Kite middleware');
+    return;
+  }
+  if (data.success) {
+    _setEl('exp-fetch-status', `✓ ${data.rows} trading days fetched`);
+    loadExperiment();
+  } else {
+    _setEl('exp-fetch-status', `✗ ${data.error}`);
   }
 }
