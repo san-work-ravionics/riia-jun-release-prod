@@ -212,16 +212,18 @@ jobs:
 
       - name: Health check
         run: |
-          echo "Waiting for /health (up to ~15 min for embed model load on t3.micro)..."
-          for i in $(seq 1 90); do
-            if curl -sf http://${{ secrets.AWS_EC2_IP }}/health > /dev/null; then
-              echo "RITA is up."
-              exit 0
-            fi
-            sleep 10
-          done
-          echo "Health check timed out."
-          exit 1
+          echo "Waiting for /health via SSH (up to ~15 min for embed model load on t3.micro)..."
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} '
+            for i in $(seq 1 90); do
+              if curl -sf http://localhost:8000/health > /dev/null 2>&1; then
+                echo "RITA is up."
+                exit 0
+              fi
+              sleep 10
+            done
+            echo "Health check timed out."
+            exit 1
+          '
 
       - name: Restore models to EC2
         run: |
