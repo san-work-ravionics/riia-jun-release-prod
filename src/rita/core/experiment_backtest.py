@@ -1,22 +1,24 @@
-"""Nifty Options Experiment Backtest — BSM strangle simulation.
+"""Nifty Options Experiment Backtest.
 
-Prices OTM Call + Put via Black-Scholes-Merton, runs a daily strangle backtest
-with configurable target/stop-loss.  Entry at open, exit at close (or when T/SL
-hit intraday).  Delta-neutral: equalise notional by buying more lots of the
-cheaper leg.
+Runs a daily strangle backtest with configurable target/stop-loss.
+Uses real NSE option prices from DB when available,
+falls back to BSM estimates when not.
 
-Ported from fno-margin-fetch middleware — pure computation, no Kite dependency.
+Entry at open, exit at close (or when T/SL hit intraday).
+Delta-neutral: equalise notional by buying more lots of the cheaper leg.
 """
 from __future__ import annotations
 
 import csv
 import math
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
 RISK_FREE = 0.065
 
+
+# ── BSM (fallback when real prices not available) ────────────────────────────
 
 def _norm_cdf(x: float) -> float:
     return 0.5 * (1.0 + math.erf(x / math.sqrt(2.0)))
@@ -59,6 +61,8 @@ def _days_to_weekly_expiry(d: date) -> int:
     return days if days > 0 else 7
 
 
+# ── Data loading ─────────────────────────────────────────────────────────────
+
 def _load_csv(csv_path: Path) -> list[dict]:
     if not csv_path.exists():
         return []
@@ -76,9 +80,46 @@ def _load_csv(csv_path: Path) -> list[dict]:
     return rows
 
 
+def _load_option_prices(bhav_path: Path) -> dict[tuple, dict]:
+    """Legacy CSV loader — kept for standalone/test use only."""
+    if not bhav_path.exists():
+        return {}
+
+    raw: dict[tuple, list[dict]] = {}
+    with open(bhav_path) as f:
+        for r in csv.DictReader(f):
+            key = (r["date"], int(float(r["strike"])), r["option_type"])
+            entry = {
+                "open": float(r["open"]),
+                "high": float(r["high"]),
+                "low": float(r["low"]),
+                "close": float(r["close"]),
+                "expiry": r["expiry"],
+                "oi": int(float(r.get("oi", 0))),
+            }
+            if key not in raw:
+                raw[key] = []
+            raw[key].append(entry)
+
+    lookup: dict[tuple, dict] = {}
+    for key, contracts in raw.items():
+        trade_date = key[0]
+        nearest = min(
+            contracts,
+            key=lambda c: c["expiry"] if c["expiry"] >= trade_date else "9999",
+        )
+        lookup[key] = nearest
+
+    return lookup
+
+
+# ── Strike rounding ──────────────────────────────────────────────────────────
+
 def _round_strike(spot: float, offset: float) -> float:
     return round((spot + offset) / 50) * 50
 
+
+# ── Backtest ─────────────────────────────────────────────────────────────────
 
 def run_backtest(
     csv_path: Path,
@@ -86,10 +127,14 @@ def run_backtest(
     target_pct: float = 15.0,
     sl_pct: float = 5.0,
     backtest_start: date | None = None,
+    option_prices: dict[tuple, dict] | None = None,
 ) -> dict[str, Any]:
     rows = _load_csv(csv_path)
     if not rows:
         return {"error": "No experiment CSV data found"}
+
+    if option_prices is None:
+        option_prices = {}
 
     start = backtest_start or date(2021, 1, 1)
     data = [r for r in rows if r["date"] >= str(start)]
@@ -102,6 +147,8 @@ def run_backtest(
     target_hits = 0
     sl_hits = 0
     time_exits = 0
+    real_count = 0
+    bsm_count = 0
 
     for day in data:
         idx_in_all = next(
@@ -125,8 +172,33 @@ def run_backtest(
         T_entry = max(dte / 365, 1 / 365)
         T_exit = max((dte - 1) / 365, 0.0001)
 
-        call_premium_entry = _bsm_call(spot_entry, call_strike, T_entry, RISK_FREE, sigma)
-        put_premium_entry = _bsm_put(spot_entry, put_strike, T_entry, RISK_FREE, sigma)
+        call_key = (day["date"], int(call_strike), "CE")
+        put_key = (day["date"], int(put_strike), "PE")
+        call_real = option_prices.get(call_key)
+        put_real = option_prices.get(put_key)
+
+        if call_real and put_real and call_real["open"] > 0 and put_real["open"] > 0:
+            price_source = "nse"
+            call_premium_entry = call_real["open"]
+            put_premium_entry = put_real["open"]
+            call_premium_high = call_real["high"]
+            put_premium_high = put_real["high"]
+            call_premium_low = call_real["low"]
+            put_premium_low = put_real["low"]
+            call_premium_close = call_real["close"]
+            put_premium_close = put_real["close"]
+            real_count += 1
+        else:
+            price_source = "bsm"
+            call_premium_entry = _bsm_call(spot_entry, call_strike, T_entry, RISK_FREE, sigma)
+            put_premium_entry = _bsm_put(spot_entry, put_strike, T_entry, RISK_FREE, sigma)
+            call_premium_high = _bsm_call(spot_high, call_strike, T_exit, RISK_FREE, sigma)
+            put_premium_high = _bsm_put(spot_low, put_strike, T_exit, RISK_FREE, sigma)
+            call_premium_low = _bsm_call(spot_low, call_strike, T_exit, RISK_FREE, sigma)
+            put_premium_low = _bsm_put(spot_high, put_strike, T_exit, RISK_FREE, sigma)
+            call_premium_close = _bsm_call(spot_exit, call_strike, T_exit, RISK_FREE, sigma)
+            put_premium_close = _bsm_put(spot_exit, put_strike, T_exit, RISK_FREE, sigma)
+            bsm_count += 1
 
         if call_premium_entry <= 0 or put_premium_entry <= 0:
             continue
@@ -140,19 +212,20 @@ def run_backtest(
         elif put_notional > call_notional and call_notional > 0:
             call_lots = max(1, round(put_notional / call_notional))
 
-        total_entry_cost = (
-            call_premium_entry * lot_size * call_lots
-            + put_premium_entry * lot_size * put_lots
-        )
+        call_entry_cost = call_premium_entry * lot_size * call_lots
+        put_entry_cost = put_premium_entry * lot_size * put_lots
+        total_entry_cost = call_entry_cost + put_entry_cost
 
-        call_best = _bsm_call(spot_high, call_strike, T_exit, RISK_FREE, sigma)
-        put_best = _bsm_put(spot_low, put_strike, T_exit, RISK_FREE, sigma)
-        best_value = call_best * lot_size * call_lots + put_best * lot_size * put_lots
+        best_value = (
+            call_premium_high * lot_size * call_lots
+            + put_premium_high * lot_size * put_lots
+        )
         best_pnl_pct = (best_value - total_entry_cost) / total_entry_cost * 100
 
-        call_worst = _bsm_call(spot_low, call_strike, T_exit, RISK_FREE, sigma)
-        put_worst = _bsm_put(spot_high, put_strike, T_exit, RISK_FREE, sigma)
-        worst_value = call_worst * lot_size * call_lots + put_worst * lot_size * put_lots
+        worst_value = (
+            call_premium_low * lot_size * call_lots
+            + put_premium_low * lot_size * put_lots
+        )
         worst_pnl_pct = (worst_value - total_entry_cost) / total_entry_cost * 100
 
         exit_type = "time"
@@ -167,12 +240,23 @@ def run_backtest(
 
         if exit_type == "target":
             exit_value = total_entry_cost * (1 + target_pct / 100)
+            call_exit_val = call_premium_high * lot_size * call_lots
+            put_exit_val = put_premium_high * lot_size * put_lots
+            trigger_spot = spot_high
         elif exit_type == "sl":
             exit_value = total_entry_cost * (1 - sl_pct / 100)
+            call_exit_val = call_premium_low * lot_size * call_lots
+            put_exit_val = put_premium_low * lot_size * put_lots
+            trigger_spot = spot_low
         else:
-            call_exit = _bsm_call(spot_exit, call_strike, T_exit, RISK_FREE, sigma)
-            put_exit = _bsm_put(spot_exit, put_strike, T_exit, RISK_FREE, sigma)
-            exit_value = call_exit * lot_size * call_lots + put_exit * lot_size * put_lots
+            call_exit_val = call_premium_close * lot_size * call_lots
+            put_exit_val = put_premium_close * lot_size * put_lots
+            exit_value = call_exit_val + put_exit_val
+            trigger_spot = spot_exit
+
+        call_pnl = call_exit_val - call_entry_cost
+        put_pnl = put_exit_val - put_entry_cost
+        winner = "call" if call_pnl >= put_pnl else "put"
 
         day_pnl = exit_value - total_entry_cost
         day_pnl_pct = (day_pnl / total_entry_cost * 100) if total_entry_cost else 0
@@ -193,13 +277,19 @@ def run_backtest(
             "put_premium": round(put_premium_entry, 2),
             "call_lots": call_lots,
             "put_lots": put_lots,
+            "lot_size": lot_size,
             "iv_pct": round(sigma * 100, 1),
             "entry_cost": round(total_entry_cost, 2),
             "exit_value": round(exit_value, 2),
+            "call_pnl": round(call_pnl, 2),
+            "put_pnl": round(put_pnl, 2),
+            "winner": winner,
+            "trigger_spot": round(trigger_spot, 2),
             "day_pnl": round(day_pnl, 2),
             "day_pnl_pct": round(day_pnl_pct, 2),
             "cum_pnl": round(cum_pnl, 2),
             "exit_type": exit_type,
+            "price_source": price_source,
         })
 
     total_trades = wins + losses
@@ -218,6 +308,25 @@ def run_backtest(
         "sl_pct": sl_pct,
         "best_day": max((e["day_pnl"] for e in entries), default=0),
         "worst_day": min((e["day_pnl"] for e in entries), default=0),
+        "real_price_days": real_count,
+        "bsm_price_days": bsm_count,
     }
 
     return {"summary": summary, "entries": entries}
+
+
+def get_valid_contracts_from_repo(
+    repo, lot_size: int,
+) -> dict[str, Any]:
+    """Return summary of real NSE option price coverage from DB."""
+    count = repo.count()
+    if count == 0:
+        return {"error": "No NSE Bhav copy data — run import_bhav_csv first"}
+
+    date_from, date_to = repo.date_range()
+    return {
+        "total_rows": count,
+        "date_from": date_from,
+        "date_to": date_to,
+        "lot_size": lot_size,
+    }

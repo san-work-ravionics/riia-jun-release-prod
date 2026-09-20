@@ -30,6 +30,9 @@ terraform/generated-key.pem
 *.db
 *.sqlite
 
+# Large data files (imported to DB, not shipped in git)
+data/input/NIFTY/nifty_option_bhav.csv
+
 # Test results
 test-results/
 

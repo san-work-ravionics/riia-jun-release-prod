@@ -89,7 +89,7 @@ import { initI18n, setLanguage, applyTranslations } from '../shared/i18n.js';
 import { loadPortfolioHedge, phSetCoverage, phSetDuration, phToggleHedge, phPickStrategy, phSetScenarioTab } from './portfolio-hedge.js';
 import { loadHedgeAdvisor, haAnalyse, haSkipToVerdict } from './hedge-reasoning.js';
 import { loadStudy } from './study.js';
-import { loadExperiment, fetchExpData } from './experiment.js';
+import { loadExperiment, fetchExpData, switchExpTab } from './experiment.js';
 
 window.setLanguage        = setLanguage;
 window.loadEquityHedge      = loadEquityHedge;
@@ -115,6 +115,7 @@ _sectionLoaders['study'] = loadStudy;
 _sectionLoaders['experiment'] = loadExperiment;
 window.loadExperiment = loadExperiment;
 window.fetchExpData = fetchExpData;
+window.switchExpTab = switchExpTab;
 window.loadHedgeAdvisor   = loadHedgeAdvisor;
 window.haAnalyse          = haAnalyse;
 window.haSkipToVerdict    = haSkipToVerdict;

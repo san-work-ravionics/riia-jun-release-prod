@@ -12,13 +12,19 @@ class ExperimentEntry(BaseModel):
     put_premium: float
     call_lots: int
     put_lots: int
+    lot_size: int
     iv_pct: float
     entry_cost: float
     exit_value: float
+    call_pnl: float
+    put_pnl: float
+    winner: str
+    trigger_spot: float
     day_pnl: float
     day_pnl_pct: float
     cum_pnl: float
     exit_type: str
+    price_source: str
 
 
 class ExperimentSummary(BaseModel):
@@ -36,6 +42,8 @@ class ExperimentSummary(BaseModel):
     sl_pct: float
     best_day: float
     worst_day: float
+    real_price_days: int
+    bsm_price_days: int
 
 
 class ExperimentBacktestPayload(BaseModel):

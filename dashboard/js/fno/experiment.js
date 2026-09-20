@@ -1,6 +1,6 @@
 // ── FnO Experiment — Nifty Options Strangle Backtest ──────────────────────────
-// Calls fno-margin-fetch middleware: /api/experiment/backtest
-// Summary panel + scrollable daily entry/exit table
+// Backtest via RITA backend: /api/experience/fno/experiment-backtest
+// Data refresh via fno-margin-fetch middleware: /api/experiment/fetch-data
 
 import { apiFetch, kiteFetch } from './api.js';
 import { mkChart } from '../shared/charts.js';
@@ -26,6 +26,13 @@ function _exitBadge(t) {
   };
   const c = colors[t] || colors.time;
   return `<span style="background:${c.bg};color:${c.fg};padding:2px 6px;border-radius:100px;font-size:10px;font-weight:700">${c.label}</span>`;
+}
+
+function _sourceBadge(s) {
+  if (s === 'nse') {
+    return '<span style="background:rgba(37,99,235,.1);color:#2563eb;padding:1px 5px;border-radius:100px;font-size:9px;font-weight:700">NSE</span>';
+  }
+  return '<span style="background:rgba(245,158,11,.1);color:#d97706;padding:1px 5px;border-radius:100px;font-size:9px;font-weight:700">BSM</span>';
 }
 
 function _renderChart(entries) {
@@ -75,27 +82,58 @@ function _renderSummary(s) {
   _setEl('exp-kpi-avg', `<div class="kpi-val" style="color:${_pnlColor(s.avg_pnl)}">${_fmtRs(s.avg_pnl)}</div><div class="kpi-sub">avg per trade</div>`);
   _setEl('exp-kpi-target', `<div class="kpi-val" style="color:#16a34a">${s.target_hits}</div><div class="kpi-sub">target hits</div>`);
   _setEl('exp-kpi-sl', `<div class="kpi-val" style="color:#dc2626">${s.sl_hits}</div><div class="kpi-sub">stop-loss hits</div>`);
+
+  const realPct = s.total_trades > 0 ? ((s.real_price_days / s.total_trades) * 100).toFixed(0) : 0;
+  _setEl('exp-kpi-source', `<div class="kpi-val">${realPct}%</div><div class="kpi-sub">${s.real_price_days} NSE / ${s.bsm_price_days} BSM</div>`);
 }
 
-function _renderTable(entries) {
+function _renderTable(entries, filter) {
   const tbody = document.getElementById('exp-table-body');
   if (!tbody) return;
 
-  tbody.innerHTML = entries.map(e => `
+  const filtered = filter === 'nse'
+    ? entries.filter(e => e.price_source === 'nse')
+    : entries;
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="17" style="text-align:center;padding:24px;color:#64748b">
+      ${filter === 'nse' ? 'No NSE real-price data available. Run <code>fetch_nse_bhav.py</code> to download Bhav copy data.' : 'No entries.'}
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(e => `
     <tr>
       <td>${e.date}</td>
       <td>${_fmtNum(e.nifty_open)}</td>
       <td>${e.call_strike} <span style="color:var(--t3)">@${e.call_premium}</span></td>
       <td>${e.put_strike} <span style="color:var(--t3)">@${e.put_premium}</span></td>
       <td>${e.call_lots}C / ${e.put_lots}P</td>
+      <td>${e.lot_size}</td>
       <td>${e.iv_pct}%</td>
       <td>${_fmtRs(e.entry_cost)}</td>
       <td>${_fmtRs(e.exit_value)}</td>
+      <td style="color:${_pnlColor(e.call_pnl)}">${e.call_pnl >= 0 ? '+' : '-'}${_fmtRs(e.call_pnl)}</td>
+      <td style="color:${_pnlColor(e.put_pnl)}">${e.put_pnl >= 0 ? '+' : '-'}${_fmtRs(e.put_pnl)}</td>
+      <td><span style="font-weight:700;color:${e.winner === 'call' ? '#2563eb' : '#9333ea'}">${e.winner === 'call' ? 'CE' : 'PE'}</span></td>
       <td style="color:${_pnlColor(e.day_pnl)};font-weight:600">${e.day_pnl >= 0 ? '+' : '-'}${_fmtRs(e.day_pnl)}</td>
+      <td>${_fmtNum(e.trigger_spot)}</td>
       <td style="color:${_pnlColor(e.cum_pnl)};font-weight:600">${e.cum_pnl >= 0 ? '+' : '-'}${_fmtRs(e.cum_pnl)}</td>
       <td>${_exitBadge(e.exit_type)}</td>
+      <td>${_sourceBadge(e.price_source)}</td>
     </tr>
   `).join('');
+}
+
+let _lastEntries = [];
+let _activeTab = 'backtest';
+
+function _switchTab(tab) {
+  _activeTab = tab;
+  document.querySelectorAll('.exp-tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  });
+  _renderTable(_lastEntries, tab === 'valid' ? 'nse' : 'all');
 }
 
 export async function loadExperiment() {
@@ -119,8 +157,9 @@ export async function loadExperiment() {
     return;
   }
 
+  _lastEntries = data.entries;
   _renderSummary(data.summary);
-  _renderTable(data.entries);
+  _renderTable(data.entries, _activeTab === 'valid' ? 'nse' : 'all');
   _renderChart(data.entries);
 }
 
@@ -137,4 +176,8 @@ export async function fetchExpData() {
   } else {
     _setEl('exp-fetch-status', `✗ ${data.error}`);
   }
+}
+
+export function switchExpTab(tab) {
+  _switchTab(tab);
 }
