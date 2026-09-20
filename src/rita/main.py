@@ -263,54 +263,6 @@ async def lifespan(app: FastAPI):
         log.warning("market_data.seed_failed", error=str(_exc))
 
 
-    # ── Seed nse_option_bhav from compressed .db.gz if table is empty ──────────
-    try:
-        import gzip as _gzip
-        import os as _os
-        import shutil as _shutil
-        import tempfile as _tmpfile
-        from rita.database import SessionLocal as _BhavSL
-
-        _bhav_db = _BhavSL()
-        try:
-            _bhav_count = _bhav_db.execute(text(
-                "SELECT COUNT(*) FROM nse_option_bhav"
-            )).scalar()
-            if _bhav_count == 0:
-                _seed_paths = [
-                    Path("/app/data/input/NIFTY/nse_option_bhav.db.gz"),
-                    Path(_os.environ.get("RITA_INPUT_DIR", "data/input")) / "NIFTY" / "nse_option_bhav.db.gz",
-                ]
-                _gz = next((p for p in _seed_paths if p.exists()), None)
-                if _gz:
-                    log.info("bhav.seed_start", source=str(_gz))
-                    with _tmpfile.NamedTemporaryFile(suffix=".db", delete=False) as _tf:
-                        with _gzip.open(_gz, "rb") as _fin:
-                            _shutil.copyfileobj(_fin, _tf)
-                        _tmp_path = _tf.name
-                    try:
-                        _bhav_db.execute(text(f"ATTACH DATABASE '{_tmp_path}' AS seed_bhav"))
-                        _bhav_db.execute(text(
-                            "INSERT INTO nse_option_bhav "
-                            "(date, strike, option_type, expiry, open, high, low, close, settle_price, oi) "
-                            "SELECT date, strike, option_type, expiry, open, high, low, close, settle_price, oi "
-                            "FROM seed_bhav.nse_option_bhav"
-                        ))
-                        _bhav_db.execute(text("DETACH DATABASE seed_bhav"))
-                        _bhav_db.commit()
-                        _new_count = _bhav_db.execute(text("SELECT COUNT(*) FROM nse_option_bhav")).scalar()
-                        log.info("bhav.seed_complete", rows=_new_count)
-                    finally:
-                        _os.unlink(_tmp_path)
-                else:
-                    log.info("bhav.seed_skip", reason="no .db.gz file found")
-            else:
-                log.info("bhav.seed_skip", reason="table_not_empty", rows=_bhav_count)
-        finally:
-            _bhav_db.close()
-    except Exception as _exc:
-        log.warning("bhav.seed_failed", error=str(_exc))
-
     # ── Seed / sync paper positions (update-or-insert per instrument) ─────────
     try:
         import uuid as _uuid3

@@ -1,8 +1,14 @@
 """Repository for the nse_option_bhav table (NSE F&O Bhav copy data)."""
 from __future__ import annotations
 
+import gzip
+import os
+import shutil
+import sqlite3
+import tempfile
 import threading
 import time
+from pathlib import Path
 
 import structlog
 from sqlalchemy import func, select
@@ -12,14 +18,87 @@ from rita.models.nse_option_bhav import NseOptionBhavModel
 
 log = structlog.get_logger()
 
-# Module-level cache for option price lookups (static reference data)
 _cache_lock = threading.Lock()
 _price_cache: dict[tuple[str, int, str], dict] | None = None
 _cache_count: int = 0
 
+_SEED_PATHS = [
+    Path("/app/data/input/NIFTY/nse_option_bhav.db.gz"),
+    Path(os.environ.get("RITA_INPUT_DIR", "data/input")) / "NIFTY" / "nse_option_bhav.db.gz",
+]
+
+_decompressed_db: str | None = None
+
+
+def _ensure_decompressed_db() -> str | None:
+    """Decompress .db.gz to a temp file once; return its path or None."""
+    global _decompressed_db
+    if _decompressed_db and os.path.exists(_decompressed_db):
+        return _decompressed_db
+
+    gz = next((p for p in _SEED_PATHS if p.exists()), None)
+    if gz is None:
+        return None
+
+    log.info("bhav.decompress_start", source=str(gz))
+    t0 = time.time()
+    tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+    try:
+        with gzip.open(gz, "rb") as f_in:
+            shutil.copyfileobj(f_in, tmp, length=1 << 20)
+        tmp.close()
+        _decompressed_db = tmp.name
+        log.info("bhav.decompress_done", seconds=round(time.time() - t0, 1))
+        return _decompressed_db
+    except Exception:
+        tmp.close()
+        os.unlink(tmp.name)
+        raise
+
+
+def _build_cache_from_seed_db(db_path: str) -> dict[tuple[str, int, str], dict]:
+    """Read bhav data directly from the seed SQLite file."""
+    t0 = time.time()
+    conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+    try:
+        cur = conn.execute(
+            "SELECT date, strike, option_type, expiry, open, high, low, close, oi "
+            "FROM nse_option_bhav"
+        )
+        raw: dict[tuple, list] = {}
+        for row in cur:
+            key = (str(row[0]), row[1], row[2])
+            entry = {
+                "open": row[4], "high": row[5], "low": row[6], "close": row[7],
+                "expiry": str(row[3]), "oi": row[8],
+            }
+            raw.setdefault(key, []).append(entry)
+    finally:
+        conn.close()
+
+    lookup: dict[tuple, dict] = {}
+    for key, contracts in raw.items():
+        trade_date = key[0]
+        nearest = min(
+            contracts,
+            key=lambda c: c["expiry"] if c["expiry"] >= trade_date else "9999",
+        )
+        lookup[key] = nearest
+
+    elapsed = time.time() - t0
+    log.info("bhav_cache_built", source="seed_db", entries=len(lookup), seconds=round(elapsed, 1))
+    return lookup
+
 
 def _build_cache(db: Session) -> dict[tuple[str, int, str], dict]:
     """Load all bhav data into a nearest-expiry lookup dict."""
+    count = db.query(func.count(NseOptionBhavModel.id)).scalar() or 0
+    if count == 0:
+        seed_path = _ensure_decompressed_db()
+        if seed_path:
+            return _build_cache_from_seed_db(seed_path)
+        return {}
+
     t0 = time.time()
     m = NseOptionBhavModel
     stmt = select(m.date, m.strike, m.option_type, m.expiry,
@@ -32,9 +111,7 @@ def _build_cache(db: Session) -> dict[tuple[str, int, str], dict]:
             "open": r[4], "high": r[5], "low": r[6], "close": r[7],
             "expiry": str(r[3]), "oi": r[8],
         }
-        if key not in raw:
-            raw[key] = []
-        raw[key].append(entry)
+        raw.setdefault(key, []).append(entry)
 
     lookup: dict[tuple, dict] = {}
     for key, contracts in raw.items():
@@ -46,7 +123,7 @@ def _build_cache(db: Session) -> dict[tuple[str, int, str], dict]:
         lookup[key] = nearest
 
     elapsed = time.time() - t0
-    log.info("bhav_cache_built", entries=len(lookup), seconds=round(elapsed, 1))
+    log.info("bhav_cache_built", source="main_db", entries=len(lookup), seconds=round(elapsed, 1))
     return lookup
 
 
