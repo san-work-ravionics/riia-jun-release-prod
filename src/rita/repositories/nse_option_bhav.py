@@ -65,7 +65,9 @@ class _SeedDbPriceLookup:
 
     def __init__(self, db_path: str) -> None:
         self._db_path = db_path
-        self._conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+        self._conn = sqlite3.connect(
+            f"file:{db_path}?mode=ro", uri=True, check_same_thread=False,
+        )
         self._local_cache: dict[tuple, dict] = {}
 
     def get(self, key: tuple, default=None):
