@@ -19,7 +19,7 @@ from rita.models.nse_option_bhav import NseOptionBhavModel
 log = structlog.get_logger()
 
 _cache_lock = threading.Lock()
-_price_cache: dict[tuple[str, int, str], dict] | None = None
+_price_cache: dict[tuple[str, int, str], dict] | _SeedDbPriceLookup | None = None
 _cache_count: int = 0
 
 _SEED_PATHS = [
@@ -56,47 +56,77 @@ def _ensure_decompressed_db() -> str | None:
         raise
 
 
-def _build_cache_from_seed_db(db_path: str) -> dict[tuple[str, int, str], dict]:
-    """Read bhav data directly from the seed SQLite file."""
-    t0 = time.time()
-    conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
-    try:
-        cur = conn.execute(
-            "SELECT date, strike, option_type, expiry, open, high, low, close, oi "
-            "FROM nse_option_bhav"
+class _SeedDbPriceLookup:
+    """Dict-like object that queries the seed SQLite DB on demand.
+
+    Only loads one row per .get() call — uses the ix_bhav_lookup index
+    for fast point queries. Memory footprint: connection + small result cache.
+    """
+
+    def __init__(self, db_path: str) -> None:
+        self._db_path = db_path
+        self._conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+        self._local_cache: dict[tuple, dict] = {}
+
+    def get(self, key: tuple, default=None):
+        cached = self._local_cache.get(key)
+        if cached is not None:
+            return cached
+
+        date_str, strike, option_type = key
+        cur = self._conn.execute(
+            "SELECT expiry, open, high, low, close, oi FROM nse_option_bhav "
+            "WHERE date = ? AND strike = ? AND option_type = ? "
+            "ORDER BY expiry ASC",
+            (date_str, strike, option_type),
         )
-        raw: dict[tuple, list] = {}
-        for row in cur:
-            key = (str(row[0]), row[1], row[2])
-            entry = {
-                "open": row[4], "high": row[5], "low": row[6], "close": row[7],
-                "expiry": str(row[3]), "oi": row[8],
-            }
-            raw.setdefault(key, []).append(entry)
-    finally:
-        conn.close()
+        rows = cur.fetchall()
+        if not rows:
+            return default
 
-    lookup: dict[tuple, dict] = {}
-    for key, contracts in raw.items():
-        trade_date = key[0]
-        nearest = min(
-            contracts,
-            key=lambda c: c["expiry"] if c["expiry"] >= trade_date else "9999",
+        nearest = None
+        for r in rows:
+            exp = str(r[0])
+            if exp >= date_str:
+                nearest = r
+                break
+        if nearest is None:
+            nearest = rows[-1]
+
+        entry = {
+            "open": nearest[1], "high": nearest[2], "low": nearest[3],
+            "close": nearest[4], "expiry": str(nearest[0]), "oi": nearest[5],
+        }
+        self._local_cache[key] = entry
+        return entry
+
+    def seed_db_count(self) -> int:
+        cur = self._conn.execute("SELECT COUNT(*) FROM nse_option_bhav")
+        return cur.fetchone()[0]
+
+    def seed_db_date_range(self) -> tuple[str | None, str | None]:
+        cur = self._conn.execute(
+            "SELECT MIN(date), MAX(date) FROM nse_option_bhav"
         )
-        lookup[key] = nearest
+        row = cur.fetchone()
+        mn, mx = row
+        return (str(mn) if mn else None, str(mx) if mx else None)
 
-    elapsed = time.time() - t0
-    log.info("bhav_cache_built", source="seed_db", entries=len(lookup), seconds=round(elapsed, 1))
-    return lookup
+    def __del__(self) -> None:
+        try:
+            self._conn.close()
+        except Exception:
+            pass
 
 
-def _build_cache(db: Session) -> dict[tuple[str, int, str], dict]:
-    """Load all bhav data into a nearest-expiry lookup dict."""
+def _build_cache(db: Session) -> dict[tuple[str, int, str], dict] | _SeedDbPriceLookup:
+    """Return a price lookup — full dict from main DB, or lazy seed DB wrapper."""
     count = db.query(func.count(NseOptionBhavModel.id)).scalar() or 0
     if count == 0:
         seed_path = _ensure_decompressed_db()
         if seed_path:
-            return _build_cache_from_seed_db(seed_path)
+            log.info("bhav_cache_mode", source="seed_db_lazy")
+            return _SeedDbPriceLookup(seed_path)
         return {}
 
     t0 = time.time()
@@ -139,17 +169,23 @@ class NseOptionBhavRepository:
     def __init__(self, db: Session) -> None:
         self._db = db
 
-    def get_option_prices(self) -> dict[tuple[str, int, str], dict]:
-        """Return cached lookup dict, building it on first call."""
+    def get_option_prices(self) -> dict[tuple[str, int, str], dict] | _SeedDbPriceLookup:
+        """Return cached lookup (dict or lazy seed DB wrapper), building on first call."""
         global _price_cache, _cache_count
         with _cache_lock:
             if _price_cache is None:
                 _price_cache = _build_cache(self._db)
-                _cache_count = len(_price_cache)
+                _cache_count = len(_price_cache) if isinstance(_price_cache, dict) else -1
             return _price_cache
 
     def count(self) -> int:
-        return self._db.query(func.count(NseOptionBhavModel.id)).scalar() or 0
+        main_count = self._db.query(func.count(NseOptionBhavModel.id)).scalar() or 0
+        if main_count > 0:
+            return main_count
+        prices = self.get_option_prices()
+        if isinstance(prices, _SeedDbPriceLookup):
+            return prices.seed_db_count()
+        return 0
 
     def date_range(self) -> tuple[str | None, str | None]:
         row = self._db.query(
@@ -157,7 +193,12 @@ class NseOptionBhavRepository:
             func.max(NseOptionBhavModel.date),
         ).one()
         mn, mx = row
-        return (str(mn) if mn else None, str(mx) if mx else None)
+        if mn is not None:
+            return (str(mn), str(mx) if mx else None)
+        prices = self.get_option_prices()
+        if isinstance(prices, _SeedDbPriceLookup):
+            return prices.seed_db_date_range()
+        return (None, None)
 
     def bulk_insert(self, records: list[dict], batch_size: int = 5000) -> int:
         """Insert records in batches. Returns total inserted."""
