@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from rita.config import Settings, get_settings
 from rita.core.experiment_backtest import get_valid_contracts_from_repo, run_backtest
 from rita.database import get_db
-from rita.repositories.nse_option_bhav import NseOptionBhavRepository
+from rita.repositories.nse_option_bhav import NseOptionBhavRepository, seed_from_compressed_db
 from rita.schemas.experiment_backtest import ExperimentBacktestPayload
 
 router = APIRouter(
@@ -63,6 +63,23 @@ def get_valid_contracts_info(
     lot_size = settings.instruments.nifty.lot_size
     repo = NseOptionBhavRepository(db)
     return get_valid_contracts_from_repo(repo, lot_size)
+
+
+@router.post("/seed-bhav-from-db")
+def seed_bhav_from_db(
+    db: Session = Depends(get_db),
+) -> dict:
+    """Seed nse_option_bhav from compressed .db.gz file using SQLite ATTACH.
+
+    Memory-efficient: direct DB-to-DB copy, no Python row objects.
+    Safe on t3.micro (1GB RAM). Idempotent — clears existing rows first.
+    """
+    bind = db.get_bind()
+    db_url = str(bind.url)
+    db_path = db_url.replace("sqlite:///", "").replace("sqlite://", "")
+    if not db_path:
+        return {"error": "Cannot determine main DB path"}
+    return seed_from_compressed_db(db_path)
 
 
 @router.post("/import-bhav-csv")
