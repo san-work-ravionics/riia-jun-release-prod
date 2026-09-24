@@ -1,0 +1,131 @@
+{
+  "run_id": "20260628-1007",
+  "app": "rl",
+  "request": "Feature 32 Phase 3.5 — RL Reward Realignment. Replace profit-shaped reward with DSR, fix causal alignment, anchor hard MDD at -10%, wire temporal_split, drop patch-stack.",
+  "skill_file": "project-office/skills/skill-add-core-feature.md",
+  "agents": [
+    {
+      "role": "pm",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 22000,
+      "actual_tokens": null,
+      "grounding_checks": {
+        "plan_status_read": true,
+        "sprint_fit_confirmed": true,
+        "risk_flags_assessed": true,
+        "approved": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "architect",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 22000,
+      "actual_tokens": null,
+      "grounding_checks": {
+        "approach_present": true,
+        "module_targets_present": true,
+        "files_listed": true,
+        "objective_alignment_stated": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "design_reviewer",
+      "status": "pass",
+      "steps_required": 6,
+      "steps_completed": 6,
+      "adherence_score": 1.0,
+      "token_estimate": 8000,
+      "actual_tokens": null,
+      "grounding_checks": {
+        "requirements_coverage": true,
+        "objective_alignment": true,
+        "approach_soundness": true,
+        "golden_frozen_safety": true,
+        "files_to_touch_complete": true,
+        "dod_populated": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "engineer",
+      "status": "pass",
+      "steps_required": 5,
+      "steps_completed": 5,
+      "adherence_score": 1.0,
+      "token_estimate": 55000,
+      "actual_tokens": null,
+      "grounding_checks": {
+        "branch_created": true,
+        "tests_added_passing": true,
+        "ruff_passed": true,
+        "golden_frozen_confirmed": true,
+        "spec_updated": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "code_reviewer",
+      "status": "conditional",
+      "steps_required": 6,
+      "steps_completed": 6,
+      "adherence_score": 1.0,
+      "token_estimate": 12000,
+      "actual_tokens": {"total_tokens": 67843, "tool_uses": 25},
+      "grounding_checks": {
+        "implementation_matches_design": true,
+        "objective_alignment_in_code": true,
+        "train_eval_consistency": true,
+        "golden_frozen": true,
+        "engineer_guardrails": true,
+        "tests_present_meaningful": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "qa",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 65000,
+      "actual_tokens": {"total_tokens": 68585, "tool_uses": 17},
+      "grounding_checks": {
+        "tests_written": true,
+        "tests_passed": true,
+        "design_contract_done": true,
+        "acceptance_checked": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "techwriter",
+      "status": "pass_with_warnings",
+      "steps_required": 3,
+      "steps_completed": 2,
+      "adherence_score": 0.67,
+      "token_estimate": 38000,
+      "actual_tokens": {"total_tokens": 41434, "tool_uses": 18},
+      "grounding_checks": {
+        "spec_file_confirmed": true,
+        "design_doc_updated": true,
+        "confluence_updated": false
+      },
+      "failure_modes": []
+    }
+  ],
+  "overall_status": "pass_with_warnings",
+  "total_tokens_estimated": 222000,
+  "total_actual_tokens": 177862,
+  "duration_minutes": 30,
+  "branch": "worktree-agent-a307b0c7ce12bd300",
+  "merge_status": "merged",
+  "merge_commit": "f86ee0b"
+}

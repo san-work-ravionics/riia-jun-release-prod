@@ -1,924 +1,118 @@
 {
-  "generated_at": "2026-07-05T07:57:46",
-  "total_runs": 76,
-  "per_role": {
+  "generated_at": "2026-09-20T21:28:33",
+  "total_runs": 13,
+  "status_counts": {
+    "pass_with_warnings": 6,
+    "pass": 7
+  },
+  "app_counts": {
+    "rl": 2,
+    "rita": 5,
+    "ops": 1,
+    "fno": 5
+  },
+  "total_estimated_tokens": 2473800,
+  "total_actual_tokens": 2134540,
+  "total_duration_minutes": 765,
+  "avg_duration_minutes": 58.8,
+  "per_agent": {
     "pm": {
-      "run_count": 30,
-      "avg_adherence_score": 1.0,
-      "first_pass_rate": 1.0,
-      "recent_first_pass_rate": 1.0,
-      "avg_token_cost": 12118
+      "runs": 8,
+      "avg_adherence": 1.0,
+      "total_estimated_tokens": 215000,
+      "total_actual_tokens": 245631,
+      "token_overrun_ratio": 1.14,
+      "top_failure_modes": {}
     },
     "architect": {
-      "run_count": 30,
-      "avg_adherence_score": 0.992,
-      "first_pass_rate": 0.967,
-      "recent_first_pass_rate": 1.0,
-      "avg_token_cost": 12487
-    },
-    "engineer": {
-      "run_count": 32,
-      "avg_adherence_score": 0.924,
-      "first_pass_rate": 0.719,
-      "recent_first_pass_rate": 1.0,
-      "avg_token_cost": 32222
-    },
-    "qa": {
-      "run_count": 30,
-      "avg_adherence_score": 0.992,
-      "first_pass_rate": 0.933,
-      "recent_first_pass_rate": 1.0,
-      "avg_token_cost": 33517
-    },
-    "techwriter": {
-      "run_count": 30,
-      "avg_adherence_score": 0.945,
-      "first_pass_rate": 0.9,
-      "recent_first_pass_rate": 1.0,
-      "avg_token_cost": 18910
+      "runs": 8,
+      "avg_adherence": 1.0,
+      "total_estimated_tokens": 200000,
+      "total_actual_tokens": 35108,
+      "token_overrun_ratio": 0.18,
+      "top_failure_modes": {}
     },
     "design_reviewer": {
-      "run_count": 2,
-      "avg_adherence_score": 1.0,
-      "first_pass_rate": 1.0,
-      "recent_first_pass_rate": 1.0,
-      "avg_token_cost": 11500
+      "runs": 8,
+      "avg_adherence": 1.0,
+      "total_estimated_tokens": 174000,
+      "total_actual_tokens": 163824,
+      "token_overrun_ratio": 0.94,
+      "top_failure_modes": {
+        "DR-001": 1
+      }
+    },
+    "engineer": {
+      "runs": 14,
+      "avg_adherence": 0.975,
+      "total_estimated_tokens": 613000,
+      "total_actual_tokens": 604213,
+      "token_overrun_ratio": 0.99,
+      "top_failure_modes": {
+        "FC-LINT: unused import shipped, caught by CI ruff gate": 1,
+        "FC-COV: new 538-line module shipped without coverage omit entry": 1,
+        "No worktree isolation \u2014 committed directly to master (retrospective audit)": 1
+      }
     },
     "code_reviewer": {
-      "run_count": 2,
-      "avg_adherence_score": 0.95,
-      "first_pass_rate": 0.0,
-      "recent_first_pass_rate": 0.0,
-      "avg_token_cost": 13500
-    }
-  },
-  "per_app": {
-    "rita": {
-      "run_count": 13,
-      "pass": 10,
-      "pass_with_warnings": 3,
-      "fail": 0
+      "runs": 8,
+      "avg_adherence": 0.969,
+      "total_estimated_tokens": 366000,
+      "total_actual_tokens": 342029,
+      "token_overrun_ratio": 0.93,
+      "top_failure_modes": {
+        "CR-WORKTREE-FALSE-POSITIVE: spec blocking findings overridden \u2014 specs confirmed present in worktree branch": 1
+      }
     },
-    "invest-game": {
-      "run_count": 40,
-      "pass": 38,
-      "pass_with_warnings": 1,
-      "fail": 1
+    "qa": {
+      "runs": 8,
+      "avg_adherence": 0.938,
+      "total_estimated_tokens": 550000,
+      "total_actual_tokens": 358759,
+      "token_overrun_ratio": 0.65,
+      "top_failure_modes": {
+        "No unit tests \u2014 no RITA backend code to test (external middleware)": 1
+      }
+    },
+    "techwriter": {
+      "runs": 8,
+      "avg_adherence": 0.794,
+      "total_estimated_tokens": 355000,
+      "total_actual_tokens": 384976,
+      "token_overrun_ratio": 1.08,
+      "top_failure_modes": {
+        "Confluence key not present in aug workspace": 1
+      }
     },
     "ops": {
-      "run_count": 15,
-      "pass": 11,
-      "pass_with_warnings": 4,
-      "fail": 0
-    },
-    "ds": {
-      "run_count": 2,
-      "pass": 1,
-      "pass_with_warnings": 1,
-      "fail": 0
-    },
-    "backend + ops + rita": {
-      "run_count": 1,
-      "pass": 1,
-      "pass_with_warnings": 0,
-      "fail": 0
-    },
-    "fno": {
-      "run_count": 4,
-      "pass": 4,
-      "pass_with_warnings": 0,
-      "fail": 0
-    },
-    "ds+investor-flow": {
-      "run_count": 1,
-      "pass": 1,
-      "pass_with_warnings": 0,
-      "fail": 0
+      "runs": 1,
+      "avg_adherence": 1.0,
+      "total_estimated_tokens": 800,
+      "total_actual_tokens": 0,
+      "token_overrun_ratio": 0.0,
+      "top_failure_modes": {}
     }
   },
-  "grounding_trend": [
-    {
-      "run_id": "20260430-1315",
-      "app": "rita",
-      "grounding_score": 0.917,
-      "checks_passed": 22,
-      "checks_total": 24
-    },
-    {
-      "run_id": "20260430-1415",
-      "app": "rita",
-      "grounding_score": 0.864,
-      "checks_passed": 19,
-      "checks_total": 22
-    },
-    {
-      "run_id": "20260430-1809",
-      "app": "rita",
-      "grounding_score": 0.917,
-      "checks_passed": 22,
-      "checks_total": 24
-    },
-    {
-      "run_id": "20260505-1000",
-      "app": "invest-game",
-      "grounding_score": 0.583,
-      "checks_passed": 14,
-      "checks_total": 24
-    },
-    {
-      "run_id": "20260506-0830",
-      "app": "invest-game",
-      "grounding_score": 0.542,
-      "checks_passed": 13,
-      "checks_total": 24
-    },
-    {
-      "run_id": "20260507-0717",
-      "app": "ops",
-      "grounding_score": 0.864,
-      "checks_passed": 19,
-      "checks_total": 22
-    },
-    {
-      "run_id": "20260508-improve-observability",
-      "app": "ops",
-      "grounding_score": 0.909,
-      "checks_passed": 20,
-      "checks_total": 22
-    },
-    {
-      "run_id": "20260511-1046",
-      "app": "rita",
-      "grounding_score": 0.909,
-      "checks_passed": 20,
-      "checks_total": 22
-    },
-    {
-      "run_id": "20260512-0730",
-      "app": "ops",
-      "grounding_score": 0.773,
-      "checks_passed": 17,
-      "checks_total": 22
-    },
-    {
-      "run_id": "20260514-1030",
-      "app": "rita",
-      "grounding_score": 0.95,
-      "checks_passed": 19,
-      "checks_total": 20
-    },
-    {
-      "run_id": "20260515-0859",
-      "app": "ops",
-      "grounding_score": 1.0,
-      "checks_passed": 20,
-      "checks_total": 20
-    },
-    {
-      "run_id": "20260515-1420",
-      "app": "rita",
-      "grounding_score": 1.0,
-      "checks_passed": 20,
-      "checks_total": 20
-    },
-    {
-      "run_id": "20260515-1500",
-      "app": "ops",
-      "grounding_score": 1.0,
-      "checks_passed": 20,
-      "checks_total": 20
-    },
-    {
-      "run_id": "20260517-1130",
-      "app": "rita",
-      "grounding_score": 1.0,
-      "checks_passed": 20,
-      "checks_total": 20
-    },
-    {
-      "run_id": "20260517-1430",
-      "app": "ops",
-      "grounding_score": 1.0,
-      "checks_passed": 20,
-      "checks_total": 20
-    },
-    {
-      "run_id": "20260517-2137",
-      "app": "backend + ops + rita",
-      "grounding_score": 1.0,
-      "checks_passed": 20,
-      "checks_total": 20
-    },
-    {
-      "run_id": "20260518-0545",
-      "app": "ops",
-      "grounding_score": 1.0,
-      "checks_passed": 20,
-      "checks_total": 20
-    },
-    {
-      "run_id": "20260518-0635",
-      "app": "ops",
-      "grounding_score": 1.0,
-      "checks_passed": 20,
-      "checks_total": 20
-    },
-    {
-      "run_id": "20260518-1057",
-      "app": "rita",
-      "grounding_score": 1.0,
-      "checks_passed": 20,
-      "checks_total": 20
-    },
-    {
-      "run_id": "20260518-1110",
-      "app": "rita",
-      "grounding_score": 1.0,
-      "checks_passed": 20,
-      "checks_total": 20
-    },
-    {
-      "run_id": "20260518-1253",
-      "app": "fno",
-      "grounding_score": 1.0,
-      "checks_passed": 20,
-      "checks_total": 20
-    },
-    {
-      "run_id": "20260518-1608",
-      "app": "ds",
-      "grounding_score": 0.95,
-      "checks_passed": 19,
-      "checks_total": 20
-    },
-    {
-      "run_id": "20260519-0740",
-      "app": "ops",
-      "grounding_score": 1.0,
-      "checks_passed": 20,
-      "checks_total": 20
-    },
-    {
-      "run_id": "20260520-1600",
-      "app": "ops",
-      "grounding_score": 1.0,
-      "checks_passed": 20,
-      "checks_total": 20
-    },
-    {
-      "run_id": "20260521-0942",
-      "app": "ops",
-      "grounding_score": 0.95,
-      "checks_passed": 19,
-      "checks_total": 20
-    },
-    {
-      "run_id": "20260524-1517",
-      "app": "ops",
-      "grounding_score": 1.0,
-      "checks_passed": 20,
-      "checks_total": 20
-    },
-    {
-      "run_id": "20260525-1559",
-      "app": "rita",
-      "grounding_score": 0.95,
-      "checks_passed": 19,
-      "checks_total": 20
-    },
-    {
-      "run_id": "20260526-0929",
-      "app": "rita",
-      "grounding_score": 1.0,
-      "checks_passed": 20,
-      "checks_total": 20
-    },
-    {
-      "run_id": "20260526-1900",
-      "app": "ds+investor-flow",
-      "grounding_score": 0.6,
-      "checks_passed": 3,
-      "checks_total": 5
-    },
-    {
-      "run_id": "20260620-0900",
-      "app": "ops",
-      "grounding_score": 0.4,
-      "checks_passed": 2,
-      "checks_total": 5
-    },
-    {
-      "run_id": "20260621-1229",
-      "app": "fno",
-      "grounding_score": 1.0,
-      "checks_passed": 28,
-      "checks_total": 28
-    },
-    {
-      "run_id": "20260621-1736",
-      "app": "fno",
-      "grounding_score": 1.0,
-      "checks_passed": 29,
-      "checks_total": 29
-    }
+  "alerts": [
+    "[ALERT] techwriter adherence 0.67 < 0.7 in run 20260628-1007",
+    "[ALERT] techwriter adherence 0.67 < 0.7 in run 20260708-0828",
+    "[ALERT] techwriter adherence 0.67 < 0.7 in run 20260809-0908",
+    "[ALERT] qa adherence 0.50 < 0.7 in run 20260918-1049",
+    "[ALERT] techwriter adherence 0.67 < 0.7 in run 20260918-1049",
+    "[ALERT] techwriter adherence 0.67 < 0.7 in run 20260918-1101"
   ],
-  "failure_modes": {
-    "FC-001": {
-      "total": 7,
-      "recent_fires": 0,
-      "by_role": {
-        "engineer": 5,
-        "techwriter": 2
-      }
-    },
-    "FC-006": {
-      "total": 1,
-      "recent_fires": 0,
-      "by_role": {
-        "engineer": 1
-      }
-    },
-    "FC-005": {
-      "total": 2,
-      "recent_fires": 0,
-      "by_role": {
-        "techwriter": 2
-      }
-    },
-    "FC-003": {
-      "total": 1,
-      "recent_fires": 0,
-      "by_role": {
-        "engineer": 1
-      }
-    },
-    "FC-MISSING-DELIVERABLE": {
-      "total": 1,
-      "recent_fires": 0,
-      "by_role": {
-        "architect": 1
-      }
-    },
-    "FC-PARTIAL-IMPL": {
-      "total": 2,
-      "recent_fires": 0,
-      "by_role": {
-        "engineer": 2
-      }
-    },
-    "FC-004": {
-      "total": 2,
-      "recent_fires": 0,
-      "by_role": {
-        "engineer": 1,
-        "qa": 1
-      }
-    },
-    "tool_permission_blocked": {
-      "total": 1,
-      "recent_fires": 0,
-      "by_role": {
-        "techwriter": 1
-      }
-    },
-    "FC-TIER-12-system-api-calls": {
-      "total": 1,
-      "recent_fires": 0,
-      "by_role": {
-        "engineer": 1
-      }
-    },
-    "FC-API-SIG-post-signature": {
-      "total": 1,
-      "recent_fires": 0,
-      "by_role": {
-        "engineer": 1
-      }
-    },
-    "FC-HTML-CSS: generated non-existent CSS classes in ops.html (kpi-row, kpi-card, data-table); missing api-metrics from nav.js SECTIONS; inline style:display:none on new section": {
-      "total": 1,
-      "recent_fires": 0,
-      "by_role": {
-        "engineer": 1
-      }
-    },
-    "GHCR_PAT expired \u2014 PATTERN-003 recurrence; rotated and retried": {
-      "total": 1,
-      "recent_fires": 1,
-      "by_role": {
-        "engineer": 1
-      }
-    },
-    "n_shares field missing from response schema (advisory, non-blocking)": {
-      "total": 1,
-      "recent_fires": 1,
-      "by_role": {
-        "code_reviewer": 1
-      }
-    },
-    "3 advisory: hardcoded fallback list, data_source unused, ha-indicative-label missing": {
-      "total": 1,
-      "recent_fires": 1,
-      "by_role": {
-        "code_reviewer": 1
-      }
-    }
-  },
   "skill_version_history": [
     {
-      "skill_file": "project-office/skills/skill-add-rita-feature.md",
-      "last_updated": "a6dc791",
-      "recent_commits": [
-        {
-          "hash": "a6dc791",
-          "message": "Initial Aug release: Feature 32 Phases 3-5 workspace"
-        }
-      ],
-      "improvement_applied": "FC-001 v4: self-verify grep added to spec-update step. FC-IMP v3: path-depth verification added. FC-TIER v1 + FC-API-SIG v1: system-tier banned-endpoint grep gate and api() POST positional-signature gate added before git add (matches ds skill). Root cause: FC-TIER and FC-API-SIG were ds-only; extended to all 3 dashboard skills.",
-      "before_first_pass_rate": 0.562,
-      "after_first_pass_rate": 1.0
-    },
-    {
-      "skill_file": "project-office/skills/skill-add-fno-feature.md",
-      "last_updated": "a6dc791",
-      "recent_commits": [
-        {
-          "hash": "a6dc791",
-          "message": "Initial Aug release: Feature 32 Phases 3-5 workspace"
-        }
-      ],
-      "improvement_applied": "FC-001 v4: self-verify grep. FC-IMP v3: path-depth check. FC-TIER v1 + FC-API-SIG v1: banned system-tier endpoint grep gate + api() POST signature gate added (matches ds skill).",
-      "before_first_pass_rate": 0.562,
-      "after_first_pass_rate": 1.0
-    },
-    {
-      "skill_file": "project-office/skills/skill-add-ops-feature.md",
-      "last_updated": "a6dc791",
-      "recent_commits": [
-        {
-          "hash": "a6dc791",
-          "message": "Initial Aug release: Feature 32 Phases 3-5 workspace"
-        }
-      ],
-      "improvement_applied": "FC-HTML-CSS v1: Step 4b added with ops design system CSS class table (kpi-strip/kpi/kpi-ey/kpi-val/tbl-wrap), banned class list (kpi-row/kpi-card/data-table), no-display-none rule, SECTIONS array grep gate. 3 new DoD checklist items. Root cause: run-20260524-1517 engineer generated non-existent CSS classes; section invisible due to display:none; SECTIONS array not updated.",
-      "before_first_pass_rate": 0.679,
-      "after_first_pass_rate": null
-    },
-    {
-      "skill_file": "project-office/skills/skill-fix-js-bug.md",
-      "improvement_applied": "CSAT v1: browser cache reminder added to DoD \u2014 after committing static JS/HTML changes engineer must tell user to hard-refresh (Cmd+Shift+R / Ctrl+Shift+R). Root cause: run-20260526-1900 csat=2, fix was correct on disk but user saw stale cached version and reported it as broken.",
-      "before_first_pass_rate": null,
-      "after_first_pass_rate": null
-    },
-    {
       "skill_file": ".claude/commands/enhance.md",
-      "improvement_applied": "CSAT v4: step 7d copy-vs-move gate added to Engineer prompt \u2014 move/relocate tasks must delete old path (git rm) after copying; leaving original in place = FC-PARTIAL-IMPL. Root cause: run-20260519-1500 csat=2, engineer copied instead of moved, user had to clarify twice. Previous CSAT v3 still active: QA file-path gate + PM continuation-run detection.",
-      "before_first_pass_rate": 0.667,
-      "after_first_pass_rate": 0.8
-    },
-    {
-      "skill_file": ".claude/commands/add-mobile-feature.md",
-      "improvement_applied": "CSAT v1: file-relocation clarification gate added at top of skill. 'Move' tasks must confirm: copy to new path + update all references + git rm --cached from old path. Prevents copy-vs-move ambiguity (root cause: run-20260519-1500 csat=2, user had to rephrase requirements twice). Also updated description frontmatter from old rita-build-portfolio path to new riia-jun-release/mobileapp path.",
-      "before_first_pass_rate": null,
-      "after_first_pass_rate": null
-    },
-    {
-      "skill_file": "project-office/skills/skill-add-ds-feature.md",
-      "improvement_applied": "FC-TIER v1: system-tier API compliance self-verify grep gate added to Guardrails table and DoD \u2014 Engineer must run `grep -rn api/v1/training-history|backtest-daily|risk-timeline dashboard/js/ds/` before git add; output must be empty. Root cause: 20260518-1608 had 12 system-tier API calls across 9 files caught by QA. FC-API-SIG v1: api() POST positional signature documented in Guardrails + DoD gate \u2014 Engineer must verify no `api(path, {` patterns remain; correct form is api(path, 'POST', body). Root cause: 20260518-1608 had 4 wrong-signature POST calls in pipeline.js + scenarios.js.",
+      "last_updated": "20260711",
+      "improvement_applied": "TOKEN-FORECAST-RECALIBRATE + TECHWRITER-BRANCH-NOTED",
+      "changes": [
+        "design_reviewer token_estimate: 8000 \u2192 30000 (actual avg ~34k across 3 runs)",
+        "code_reviewer token_estimate: 12000 \u2192 60000 (actual avg ~68k across 3 runs)",
+        "TechWriter prompt: added explicit branch_noted instruction to prevent adherence miss"
+      ],
       "before_first_pass_rate": null,
       "after_first_pass_rate": null
     }
-  ],
-  "game_sessions": [
-    {
-      "run_id": "20260705-0531",
-      "request": "Invest game: ASML over 7 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.1,
-      "day_count": 7,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260705-0517",
-      "request": "Invest game: ASML over 7 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.1,
-      "day_count": 7,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260705-0514",
-      "request": "Invest game: NVIDIA over 7 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.2,
-      "day_count": 7,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260704-2341",
-      "request": "Invest game: ASML over 7 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.1,
-      "day_count": 7,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260620-0832",
-      "request": "Invest game: ASML over 7 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.2,
-      "day_count": 7,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260620-0825",
-      "request": "Invest game: ASML over 5 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.4,
-      "day_count": 5,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260521-0823",
-      "request": "Invest game: ASML over 8 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.1,
-      "day_count": 8,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260521-0812",
-      "request": "Invest game: ASML over 8 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.2,
-      "day_count": 8,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260520-1430",
-      "request": "Invest game: ASML over 8 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.2,
-      "day_count": 8,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260520-1338",
-      "request": "Invest game: ASML over 8 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.1,
-      "day_count": 8,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260520-1334",
-      "request": "Invest game: ASML over 8 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.3,
-      "day_count": 8,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260520-1332",
-      "request": "Invest game: ASML over 8 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.2,
-      "day_count": 8,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260520-1331",
-      "request": "Invest game: ASML over 8 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.2,
-      "day_count": 8,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260520-1326",
-      "request": "Invest game: ASML over 8 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.1,
-      "day_count": 8,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260520-1309",
-      "request": "Invest game: ASML over 8 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.2,
-      "day_count": 8,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260520-1306",
-      "request": "Invest game: ASML over 8 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.2,
-      "day_count": 8,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260520-1303",
-      "request": "Invest game: ASML over 8 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.3,
-      "day_count": 8,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260520-1226",
-      "request": "Invest game: ASML over 8 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.2,
-      "day_count": 8,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260519-1805",
-      "request": "Invest game: ASML over 8 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.2,
-      "day_count": 8,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260519-1801",
-      "request": "Invest game: ASML over 8 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.2,
-      "day_count": 8,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260519-1730",
-      "request": "Invest game: ASML over 8 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.5,
-      "day_count": 8,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260518-2002",
-      "request": "Invest game: ASML over 8 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.2,
-      "day_count": 8,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260518-1956",
-      "request": "Invest game: ASML over 8 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.2,
-      "day_count": 8,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260518-1953",
-      "request": "Invest game: ASML over 8 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.4,
-      "day_count": 8,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260518-1950",
-      "request": "Invest game: ASML over 8 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.3,
-      "day_count": 8,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260518-1938",
-      "request": "Invest game: ASML over 8 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.2,
-      "day_count": 8,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260518-1935",
-      "request": "Invest game: ASML over 8 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.8,
-      "day_count": 8,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260518-1926",
-      "request": "Invest game: ASML over 8 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.2,
-      "day_count": 8,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260518-1916",
-      "request": "Invest game: ASML over 10 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.4,
-      "day_count": 10,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260518-1915",
-      "request": "Invest game: ASML over 10 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.3,
-      "day_count": 10,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260518-1310",
-      "request": "Invest game: ASML over 10 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.7,
-      "day_count": 10,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260511-1317",
-      "request": "Invest game: ASML over 10 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.6,
-      "day_count": 10,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260507-0557",
-      "request": "Invest game: ASML over 10 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.6,
-      "day_count": 10,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260507-0551",
-      "request": "Invest game: ASML over 10 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.6,
-      "day_count": 10,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260507-0545",
-      "request": "Invest game: ASML over 10 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.9,
-      "day_count": 10,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260506-1316",
-      "request": "Invest game: ASML over 10 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.4,
-      "day_count": 0,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260506-1249",
-      "request": "Invest game: ASML over 10 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.4,
-      "day_count": 0,
-      "flagged_count": 0
-    },
-    {
-      "run_id": "20260506-1239",
-      "request": "Invest game: ASML over 10 days",
-      "overall_status": "pass",
-      "duration_minutes": 0.2,
-      "day_count": 0,
-      "flagged_count": 0
-    }
-  ],
-  "task_completion": {
-    "tsr": 0.868,
-    "first_attempt_success_rate": 0.868,
-    "partial_completion_rate": 0.118,
-    "abandonment_rate": 0.0
-  },
-  "quality": {
-    "avg_accuracy_score": 2.89,
-    "avg_relevance_score": 4.0,
-    "avg_csat": 2.89,
-    "recent_avg_csat": 2.67,
-    "csat_count": 18,
-    "planning_accuracy_rate": 0.833,
-    "recent_planning_accuracy_rate": 1.0,
-    "grounding_pass_rate": 0.886
-  },
-  "token_forecasting": {
-    "avg_forecast_error_pct": 15.7,
-    "by_complexity": {
-      "small": {
-        "avg_actual": 8673,
-        "multiplier": 0.7
-      },
-      "medium": {
-        "avg_actual": null,
-        "multiplier": 1.0
-      },
-      "large": {
-        "avg_actual": 95880,
-        "multiplier": 1.5
-      }
-    },
-    "by_feature_type": {
-      "rita": {
-        "run_count": 13,
-        "avg_tokens": 90874,
-        "modifier": 1.0
-      },
-      "ops": {
-        "run_count": 15,
-        "avg_tokens": 69958,
-        "modifier": 0.6
-      },
-      "fno": {
-        "run_count": 4,
-        "avg_tokens": 136575,
-        "modifier": 0.8
-      },
-      "invest-game": {
-        "run_count": 40,
-        "avg_tokens": 7230,
-        "modifier": 1.1
-      }
-    }
-  },
-  "efficiency": {
-    "avg_duration_minutes": 26,
-    "avg_tokens_per_run": 47345,
-    "avg_retry_count": 0.03,
-    "avg_time_saved_hours": 7.6
-  },
-  "reliability": {
-    "error_recovery_rate": 0.826,
-    "graceful_degradation_rate": 0.9,
-    "loop_event_total": 0
-  },
-  "hitl": {
-    "escalation_rate": 0.013,
-    "avg_corrections_per_run": 0.03,
-    "total_hitl_events": 2
-  },
-  "agentic": {
-    "context_adherence_rate": null,
-    "memory_utilization_rate": 0.0,
-    "loop_detection_rate": 0.0
-  },
-  "api_metrics": {
-    "available": true,
-    "total_calls": 13777,
-    "unique_endpoints": 176,
-    "overall_error_rate_pct": 8.33,
-    "error_rate_5xx_pct": 0.44,
-    "top_5_by_calls": [
-      {
-        "path": "/api/v1/experience/rita/geography-overview",
-        "method": "GET",
-        "count": 1352,
-        "p50_ms": 9.7,
-        "p95_ms": 721.2,
-        "error_count": 0
-      },
-      {
-        "path": "/progress",
-        "method": "GET",
-        "count": 1163,
-        "p50_ms": 5.7,
-        "p95_ms": 447.1,
-        "error_count": 0
-      },
-      {
-        "path": "/api/v1/commentary",
-        "method": "POST",
-        "count": 798,
-        "p50_ms": 127.2,
-        "p95_ms": 2895.6,
-        "error_count": 108
-      },
-      {
-        "path": "/api/v1/market-signals",
-        "method": "GET",
-        "count": 723,
-        "p50_ms": 187.0,
-        "p95_ms": 862.7,
-        "error_count": 0
-      },
-      {
-        "path": "/api/v1/experience/rita/strategy-comparison",
-        "method": "GET",
-        "count": 556,
-        "p50_ms": 6.9,
-        "p95_ms": 16.9,
-        "error_count": 0
-      }
-    ],
-    "generated_at": "2026-07-05T05:57:46.159090+00:00"
-  }
+  ]
 }

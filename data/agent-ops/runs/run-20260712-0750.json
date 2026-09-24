@@ -1,0 +1,131 @@
+{
+  "run_id": "20260712-0750",
+  "app": "rita",
+  "request": "Feature 34 Phase 2.5 — Model Evaluation Dashboard (tasks 2.5.2–2.5.5): summary table in sec-model-eval with per-instrument rows, clickable rows for eval plots, ASML default, existing model-eval preserved; 2.5.1 training artifacts committed",
+  "skill_file": "project-office/skills/skill-add-rita-feature.md",
+  "agents": [
+    {
+      "role": "pm",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 22000,
+      "actual_tokens": {"total_tokens": 44735, "tool_uses": 9},
+      "grounding_checks": {
+        "plan_status_read": true,
+        "sprint_fit_confirmed": true,
+        "risk_flags_assessed": true,
+        "approved": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "architect",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 22000,
+      "actual_tokens": null,
+      "grounding_checks": {
+        "api_contract_present": true,
+        "files_listed": true,
+        "dod_checklist_filled": true,
+        "spec_reference_valid": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "design_reviewer",
+      "status": "pass",
+      "steps_required": 5,
+      "steps_completed": 5,
+      "adherence_score": 1.0,
+      "token_estimate": 30000,
+      "actual_tokens": {"total_tokens": 34738, "tool_uses": null},
+      "grounding_checks": {
+        "requirements_coverage": true,
+        "api_contract_complete": true,
+        "frontend_contract_complete": true,
+        "files_to_touch_complete": true,
+        "dod_populated": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "engineer",
+      "status": "pass",
+      "steps_required": 5,
+      "steps_completed": 5,
+      "adherence_score": 1.0,
+      "token_estimate": 55000,
+      "actual_tokens": {"total_tokens": 114204, "tool_uses": 57},
+      "grounding_checks": {
+        "branch_created": true,
+        "code_changed": true,
+        "spec_updated": true,
+        "ruff_passed": true,
+        "contract_matches_architect": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "code_reviewer",
+      "status": "conditional",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 60000,
+      "actual_tokens": {"total_tokens": 75406, "tool_uses": null},
+      "grounding_checks": {
+        "implementation_matches_design": true,
+        "js_contract_verified": true,
+        "engineer_guardrails_followed": true,
+        "spec_updated": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "qa",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 65000,
+      "actual_tokens": {"total_tokens": 73994, "tool_uses": null},
+      "grounding_checks": {
+        "tests_written": true,
+        "tests_passed": true,
+        "coverage_delta_recorded": true,
+        "contract_check_done": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "techwriter",
+      "status": "pass_with_warnings",
+      "steps_required": 3,
+      "steps_completed": 3,
+      "adherence_score": 1.0,
+      "token_estimate": 38000,
+      "actual_tokens": {"total_tokens": 85945, "tool_uses": null},
+      "grounding_checks": {
+        "confluence_updated": true,
+        "spec_file_confirmed": true,
+        "branch_noted": true
+      },
+      "failure_modes": [],
+      "notes": "Step 3b recording: 30338 tokens. Step 6 completed by orchestrator after original agent died on session limit."
+    }
+  ],
+  "overall_status": "pass_with_warnings",
+  "total_tokens_estimated": 292000,
+  "total_actual_tokens": 429022,
+  "duration_minutes": 90,
+  "branch": "worktree-agent-a22508e1e271fe413",
+  "merge_status": "merged",
+  "merge_commit": "b37b2fa",
+  "aug_release_merge_commit": "bec30d1",
+  "notes": "Run split across two sessions — session limit killed TechWriter agent; resumed in fresh session. Code Review: CONDITIONAL with 1 advisory (mkdir side-effect in TrainingTracker.__init__ on read path). QA: 22/22 new tests, 965-test suite green."
+}

@@ -1,0 +1,56 @@
+{
+  "run_id": "20260920-2127",
+  "app": "fno",
+  "request": "PATTERN-021 OOM deploy fix — streaming cache + seed endpoint for 2.3M NSE option Bhav rows on t3.micro",
+  "skill_file": "n/a",
+  "agents": [
+    {
+      "role": "engineer",
+      "status": "pass",
+      "steps_required": 6,
+      "steps_completed": 6,
+      "adherence_score": 1.0,
+      "token_estimate": 4000,
+      "grounding_checks": {
+        "branch_created": false,
+        "code_changed": true,
+        "spec_updated": false,
+        "ruff_passed": true,
+        "contract_matches_architect": true
+      },
+      "failure_modes": [],
+      "notes": "3 failed approaches before final fix. POST /seed-bhav-from-db (SQLite ATTACH, zero Python memory) + _build_cache_streaming (SQL GROUP BY 2.3M→323K). EC2 crash recovery via aws ec2 stop/start. Commit dcde01f."
+    },
+    {
+      "role": "engineer",
+      "status": "pass",
+      "steps_required": 2,
+      "steps_completed": 2,
+      "adherence_score": 1.0,
+      "token_estimate": 800,
+      "grounding_checks": {
+        "branch_created": false,
+        "code_changed": true,
+        "spec_updated": true,
+        "ruff_passed": true,
+        "contract_matches_architect": true
+      },
+      "failure_modes": [],
+      "notes": "PATTERN-021 documented in DEPLOYMENT_KNOWLEDGE.md with all 3 failed approaches and final solution."
+    }
+  ],
+  "overall_status": "pass",
+  "total_tokens_estimated": 4800,
+  "duration_minutes": 120,
+  "branch": "main",
+  "merge_status": "merged",
+  "merge_commit": "dcde01f",
+  "human_score": {
+    "accuracy": 3,
+    "relevance": 4,
+    "csat": 4,
+    "planning_ok": true,
+    "time_saved_hours": 2,
+    "notes": ""
+  }
+}

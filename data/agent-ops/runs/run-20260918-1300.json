@@ -1,0 +1,31 @@
+{
+  "run_id": "20260918-1300",
+  "app": "fno",
+  "request": "F38 Phase 1 backend — port Kite middleware backtest into RITA backend + data refresh + deploy",
+  "skill_file": "n/a",
+  "agents": [{
+    "role": "engineer", "status": "pass",
+    "steps_required": 6, "steps_completed": 6, "adherence_score": 1.0,
+    "token_estimate": 1200,
+    "grounding_checks": { "branch_created": false, "code_changed": true, "spec_updated": false, "ruff_passed": true, "contract_matches_architect": true },
+    "failure_modes": [], "notes": "core/experiment_backtest.py + schema + experience endpoint + experiment.js apiFetch switch + main.py router + nifty_experiment_daily.csv (1411 rows). Commit cb9d625."
+  }, {
+    "role": "ops", "status": "pass",
+    "steps_required": 7, "steps_completed": 7, "adherence_score": 1.0,
+    "token_estimate": 800,
+    "grounding_checks": { "branch_created": false, "code_changed": true, "spec_updated": false, "ruff_passed": true, "contract_matches_architect": true },
+    "failure_modes": [], "notes": "Deploy c975116 (v1.2.22) + CI health check fix (SSH-based curl c49510e, v1.2.23). PAT rotated, GHCR_PAT updated. 17 instruments data refresh."
+  }],
+  "overall_status": "pass",
+  "total_tokens_estimated": 2000,
+  "duration_minutes": 45,
+  "branch": "master", "merge_status": "merged", "merge_commit": "c49510e",
+  "human_score": {
+    "accuracy": 3,
+    "relevance": 4,
+    "csat": 3,
+    "planning_ok": true,
+    "time_saved_hours": 8,
+    "notes": ""
+  }
+}

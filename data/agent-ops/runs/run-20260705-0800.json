@@ -1,0 +1,39 @@
+{
+  "run_id": "20260705-0800",
+  "app": "rita",
+  "request": "Fix Scenarios Run Backtest error (numpy/SB3 version skew on model load); fix chat warmup crash (transformers 5.x vs torch 2.2.2 on Intel Mac); pin production ML stack",
+  "skill_file": "n/a",
+  "agents": [
+    {
+      "role": "engineer",
+      "status": "pass",
+      "steps_required": 3,
+      "steps_completed": 3,
+      "adherence_score": 1.0,
+      "token_estimate": 60000,
+      "grounding_checks": {
+        "branch_created": false,
+        "code_changed": true,
+        "spec_updated": true,
+        "ruff_passed": true,
+        "contract_matches_architect": true
+      },
+      "failure_modes": [],
+      "notes": "6c45e91: model_compat.py — cross-version DQN loading (numpy._core aliases, BitGenerator ctor patch, custom_objects fallback rebuilding spaces from q-net weights); verified all 13 model zips load + full run_backtest for BANKNIFTY/NVIDIA. 46a5622: chat warmup — downgraded venv transformers stack to torch-2.2-compatible (transformers 4.49.0, sentence-transformers 3.4.1), added RITA_CHAT_EMBED_MODEL_PATH override in config.py + activate-env-mac.sh; verified seed index + classify offline; user confirmed chat working after restart. 2a885dd: constraints-prod.txt pins prod ML stack to training-machine versions, wired via pip -c in Dockerfile; all pins verified on PyPI/torch CPU index. Specs updated: Spec_Python_Code.md (model_compat), Spec_Chat_Feature.md (embed path + Mac constraint), SPEC_Prod_Deploy.md (failure table row)."
+    }
+  ],
+  "human_score": {
+    "accuracy": 3,
+    "relevance": 4,
+    "csat": 3,
+    "planning_ok": true,
+    "time_saved_hours": 5,
+    "notes": ""
+  },
+  "overall_status": "pass",
+  "total_tokens_estimated": 60000,
+  "duration_minutes": 55,
+  "branch": "main",
+  "merge_status": "merged",
+  "merge_commit": "2a885dd"
+}
