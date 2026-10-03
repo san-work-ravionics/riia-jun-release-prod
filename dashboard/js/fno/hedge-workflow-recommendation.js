@@ -9,6 +9,7 @@
 import { apiFetch } from './api.js';
 import { setEl } from '../shared/utils.js';
 import { state } from './state.js';
+import { renderInstrumentTiles } from './hedge-instrument-tiles.js';
 import { computeNShares, hedgeLabel, hedgeType, estRisk } from './hedge-calc.js';
 import { hwMarkDirty, authHeaders, STRATEGY_LABELS } from './hedge-workflow-save.js';
 
@@ -66,20 +67,7 @@ function _ensureSelections() {
 
 // ── Rendering ────────────────────────────────────────────────────────────────
 function _renderInstrumentSelect() {
-  const hw = _hw();
-  const known = hw.knownInstruments || [];
-  if (!known.length) {
-    setEl('hw-rec-instrument-select', `<div class="kpi-sub">—</div>`);
-    return;
-  }
-  const options = known
-    .map((id) => `<option value="${id}" ${id === hw.instrumentId ? 'selected' : ''}>${id}</option>`)
-    .join('');
-  setEl(
-    'hw-rec-instrument-select',
-    `<div class="kpi-label">Instrument</div>
-     <select onchange="hwSelectInstrument(this.value)" style="font-family:var(--fm);font-size:12px;padding:4px 8px;">${options}</select>`
-  );
+  renderInstrumentTiles('hw-rec-instrument-select', _hw());
 }
 
 function _renderStatus(msg, withRerun) {

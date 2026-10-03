@@ -23,6 +23,7 @@
 import { apiFetch } from './api.js';
 import { setEl, badge } from '../shared/utils.js';
 import { state } from './state.js';
+import { renderInstrumentTiles } from './hedge-instrument-tiles.js';
 import { loadRecommendationStep } from './hedge-workflow-recommendation.js';
 import { loadWhatIfStep } from './hedge-workflow-whatif.js';
 import { loadSaveStep, hwScheduleSave, authHeaders as _authHeaders } from './hedge-workflow-save.js';
@@ -144,22 +145,11 @@ function _renderHqsBanner() {
   );
 }
 
-// ── Exposure step — instrument select (#hw-exp-instrument-select) ──────────
+// ── Exposure step — instrument tiles (#hw-exp-instrument-select) ───────────
 function _renderInstrumentSelect() {
-  const known = state.hedgeWorkflow.knownInstruments || [];
-  const active = state.hedgeWorkflow.instrumentId;
-  if (known.length === 0) {
-    setEl('hw-exp-instrument-select', `<div class="kpi-sub">—</div>`);
-    return;
-  }
-  const options = known
-    .map((id) => `<option value="${id}" ${id === active ? 'selected' : ''}>${id}</option>`)
-    .join('');
-  setEl(
-    'hw-exp-instrument-select',
-    `<div class="kpi-label">Instrument</div>
-     <select onchange="hwSelectInstrument(this.value)" style="font-family:var(--fm);font-size:12px;padding:4px 8px;">${options}</select>`
-  );
+  renderInstrumentTiles('hw-exp-instrument-select', state.hedgeWorkflow);
+  // Keep the other step's panel in sync (both are rendered from the same state).
+  renderInstrumentTiles('hw-rec-instrument-select', state.hedgeWorkflow);
 }
 
 // ── Exposure step — net Greeks KPIs (#hw-exp-greeks-kpis) ──────────────────

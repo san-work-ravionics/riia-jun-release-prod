@@ -362,6 +362,10 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
 @media(max-width:800px){.man-month-grid{grid-template-columns:repeat(3,1fr);} .man-tab-strip{flex-wrap:wrap;}}
 /* ── Equity Scenarios section ──────────────────────────────────────────── */
 /* Alias equity-scenarios colour tokens → fno palette, scoped to section  */
+#page-hedge-workflow{--run:var(--p03);--run-bg:var(--p03-bg);}
+.geo-kpi{cursor:pointer;border:1.5px solid transparent;border-radius:var(--r);transition:border-color .15s,background .15s;}
+.geo-kpi:hover{border-color:var(--border2);background:var(--surface2);}
+.geo-kpi-active{border-color:var(--run) !important;background:var(--run-bg) !important;}
 #page-equity-scenarios{--run:var(--p01);--run-bg:var(--p01-bg);--run-bd:var(--p01-bd);--warn:var(--p03);--warn-bg:var(--p03-bg);--warn-bd:var(--p03-bd);--danger:var(--neg);--danger-bg:var(--neg-bg);--danger-bd:var(--neg-bd);--build:var(--p02);--build-bg:var(--p02-bg);--build-bd:var(--p02-bd);--ds:var(--p04);--ds-bg:var(--p04-bg);--ds-bd:var(--p04-bd);}
 .es-page-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
 .es-page-hdr-title{font-family:var(--fm);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);}
@@ -563,25 +567,14 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       <span class="nav-icon">🛡</span> Hedge Workflow
       <span style="margin-left:auto;background:var(--p03-bg);color:var(--p03);font-family:var(--fm);font-size:9px;font-weight:600;padding:1px 6px;border-radius:100px;">F39</span>
     </div>
-    <div class="nav-item p04" data-page="equity-hedge">
-      <span class="nav-icon">⬗</span> <span data-i18n="nav.equity_hedge">Equity Hedge</span>
-    </div>
     <div class="nav-item p01" data-page="scenarios">
       <span class="nav-icon">↔</span> <span data-i18n="nav.scenarios">Risk-Reward</span>
     </div>
     <div class="nav-item p01" data-page="equity-scenarios">
       <span class="nav-icon">◎</span> Equity Scenarios
     </div>
-    <div class="nav-item p03" data-page="hedge" id="nav-hedge">
-      <span class="nav-icon">⚠</span> <span data-i18n="nav.hedge">Hedge Radar &amp; History</span>
-      <span id="nav-hedge-badge" style="display:none;margin-left:auto;background:var(--neg);color:#fff;font-family:var(--fm);font-size:9px;font-weight:600;padding:1px 6px;border-radius:100px;"></span>
-    </div>
     <div class="nav-item p03" data-page="manoeuvre">
       <span class="nav-icon">⟳</span> Manoeuvre
-    </div>
-    <div class="nav-item p04" data-page="hedge-advisor">
-      <span class="nav-icon">&#9670;</span> Hedge Advisor
-      <span style="margin-left:auto;background:var(--p04-bg);color:var(--p04);font-family:var(--fm);font-size:9px;font-weight:600;padding:1px 6px;border-radius:100px;">F31</span>
     </div>
     <div class="nav-item p02" data-page="study">
       <span class="nav-icon">📊</span> Study
@@ -1250,8 +1243,8 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     <div id="hw-step-exposure">
       <div id="hw-exp-hqs-banner" class="kpi" style="margin-bottom:16px;"></div>
 
+      <div id="hw-exp-instrument-select" style="margin-bottom:6px;"></div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
-        <div id="hw-exp-instrument-select" class="kpi" style="min-width:200px;"></div>
         <div class="kpi" style="flex:1;min-width:280px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
           <div id="hw-exp-greeks-kpis" style="display:flex;gap:16px;flex-wrap:wrap;"></div>
           <span id="hw-exp-live-badge"></span>
@@ -1267,8 +1260,8 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
 
     <!-- Step 2 — Recommendation (F39 Phase 3) -->
     <div id="hw-step-recommendation" style="display:none;">
+      <div id="hw-rec-instrument-select" style="margin-bottom:6px;"></div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;align-items:flex-start;">
-        <div id="hw-rec-instrument-select" class="kpi" style="min-width:200px;"></div>
         <div id="hw-rec-status" style="flex:1;min-width:240px;padding-top:8px;"></div>
       </div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
