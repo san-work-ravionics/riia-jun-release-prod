@@ -3,7 +3,6 @@ import { state } from './state.js';
 
 // Section loaders registry — modules register themselves in main.js
 export const _sectionLoaders = {};
-import { renderDashboard } from './dashboard.js';
 import { renderGreeksCards, renderGreeksTable, updateRiskSections } from './greeks.js';
 import { renderStressScenarios } from './stress.js';
 import { renderPayoffChart } from './payoff.js';
@@ -61,7 +60,6 @@ export function setUnderlying(und) {
     el.classList.toggle('active', el.dataset.und === und);
   });
   buildExpiryPills();
-  renderDashboard();
   updateRiskSections();
   renderGreeksCards();
   renderGreeksTable();
@@ -85,7 +83,6 @@ export function setExpiry(exp, btn) {
   state.currentExpiry = exp;
   document.querySelectorAll('.exp-pill').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  renderDashboard();
   updateRiskSections();
   renderGreeksCards();
   renderGreeksTable();

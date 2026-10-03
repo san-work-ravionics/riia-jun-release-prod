@@ -258,7 +258,7 @@ window.loadFnoMyPortfolio = loadFnoMyPortfolio;
 
 // ── Analytics-state Overview (F30 Phase 3) ────────────────────────────────────
 export function renderOverviewFromState() {
-  // renderGeoOverview() in dashboard.js handles the instrument view.
+  // (The old geo instrument overview was removed in F39 Phase 4; the workflow tiles replace it.)
   // renderDashKpis() handles the merged KPI row.
   // Nothing left to do here for the overview from state.
 }

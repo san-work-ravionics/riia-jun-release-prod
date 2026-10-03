@@ -28,7 +28,7 @@ _HTML = _DASH / "fno.html"
 _node_missing = pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
 
 # Ids lost from fno.html in Tier B (git show 0cd9ba6^:dashboard/fno.html vs HEAD). fno-geo-overview
-# is deliberately excluded: dashboard.js keeps a guarded no-op lookup for it.
+# is checked separately (test_fno_geo_overview_and_its_painter_are_fully_removed): its painter renderGeoOverview() was removed in the cleanup round.
 _DELETED_IDS = (
     "anchor-sub anchor-tbody budget-bars budget-summary eh-cc-breakeven eh-cc-desc eh-cc-max-value "
     "eh-cc-premium eh-cc-source-badge eh-cc-strike eh-kpi-date-range eh-kpi-end-price eh-kpi-hedge-return "
@@ -137,12 +137,12 @@ def test_no_remaining_reference_to_deleted_ids_or_symbols():
     assert not hits, "dangling references:\n" + "\n".join(hits)
 
 
-def test_fno_geo_overview_is_only_a_guarded_noop_lookup():
+def test_fno_geo_overview_and_its_painter_are_fully_removed():
     for p in _FNO.glob("*.js"):
         text = _strip_js_comments(p.read_text(encoding="utf-8"))
-        for m in re.finditer(r"getElementById\('fno-geo-overview'\)", text):
-            tail = text[m.end(): m.end() + 200]
-            assert re.search(r"if\s*\(\s*!\w+\s*\)\s*return|\?\.", tail) or "if (!" in text[max(0, m.start() - 120): m.start()], p.name
+        assert "fno-geo-overview" not in text, p.name
+        assert "renderGeoOverview" not in text and "renderDashboard" not in text, p.name
+    assert 'id="fno-geo-overview"' not in _HTML.read_text(encoding="utf-8")
 
 
 # ── (d) node boot harness ─────────────────────────────────────────────────────────────
@@ -227,7 +227,7 @@ def test_boot_chain_with_risk_ids_also_absent_is_guarded(tmp_path):
 @_node_missing
 @pytest.mark.parametrize("absent_risk", [False, True])
 def test_set_underlying_chain_runs_without_throwing(tmp_path, absent_risk):
-    """nav.setUnderlying drives the same render chain (+ renderDashboard/renderScenarios/initManoeuvre)."""
+    """nav.setUnderlying drives the same render chain (+ renderScenarios/initManoeuvre)."""
     absent = ["page-hedge", "page-equity-hedge", "page-portfolio-hedge", "fno-geo-overview"]
     if absent_risk:
         absent += _RELOCATED_IDS
@@ -293,11 +293,6 @@ def test_locale_key_sets_identical_across_en_nl_fr():
 _SPECS = _ROOT.parent / "riia-agentic-firm" / "project-office" / "specs"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="KNOWN spec drift found by QA: Spec_RITA_App.md still lists `hedge.js` (hedge-history row) and "
-           "`equity_hedge.js` (shares+cash note) as live consumers. Remove this marker once the spec is fixed.",
-)
 def test_specs_do_not_present_removed_modules_as_live():
     if not _SPECS.is_dir():
         pytest.skip(f"specs not reachable from worktree ({_SPECS})")

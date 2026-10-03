@@ -3,7 +3,6 @@
 import { apiBase, RITA_API_KEY } from './api.js';
 import { state } from './state.js';
 import { buildExpiryPills } from './nav.js';
-import { renderDashboard } from './dashboard.js';
 import { renderGreeksCards, renderGreeksTable, updateRiskSections } from './greeks.js';
 import { renderStressScenarios } from './stress.js';
 import { renderPayoffChart } from './payoff.js';
@@ -126,7 +125,6 @@ export async function initApp(mode = 'mock') {
 }
 
 function _renderAll() {
-  renderDashboard();
   updateRiskSections();
   renderGreeksCards();
   renderGreeksTable();
