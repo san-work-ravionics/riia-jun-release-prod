@@ -77,6 +77,7 @@ def _make_plan(
     plan.coverage = coverage
     plan.scenario_tab = scenario_tab
     plan.duration = duration
+    plan.last_step = "exposure"
     plan.updated_at = updated_at or _NOW
     return plan
 

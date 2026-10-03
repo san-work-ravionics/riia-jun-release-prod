@@ -30,6 +30,7 @@ class UserHedgePlanRepo:
             existing.coverage = plan.coverage
             existing.scenario_tab = plan.scenario_tab
             existing.duration = plan.duration
+            existing.last_step = plan.last_step
             existing.updated_at = plan.updated_at
         else:
             self._db.add(plan)

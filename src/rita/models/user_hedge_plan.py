@@ -10,6 +10,9 @@ hedged_ids   JSON list of instrument_id strings selected for hedging
 coverage     Integer 0–100, the coverage slider value
 scenario_tab The active scenario tab key (e.g. 'pp', 'ps')
 duration     Always "1y" — stored for completeness; updated via PUT only
+last_step    The unified hedge-workflow step the user last reached — one of
+             "exposure" | "recommendation" | "whatif" | "save" (F39 Phase 2).
+             Nullable; defaults to "exposure".
 updated_at   Auto-updated timestamp
 """
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, String
@@ -26,4 +29,5 @@ class UserHedgePlanModel(Base):
     coverage = Column(Integer, nullable=False, default=50)
     scenario_tab = Column(String, nullable=False, default="pp")
     duration = Column(String, nullable=False, default="1y")
+    last_step = Column(String, nullable=True, default="exposure")
     updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())

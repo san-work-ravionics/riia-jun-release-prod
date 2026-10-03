@@ -18,6 +18,7 @@ class HedgePlanCreate(BaseModel):
     coverage: int
     scenario_tab: str
     duration: str | None = None  # accepted but always overwritten with "1y"
+    last_step: str | None = None  # "exposure" | "recommendation" | "whatif" | "save"
 
     @field_validator("coverage")
     @classmethod
@@ -35,6 +36,7 @@ class HedgePlanOut(BaseModel):
     coverage: int
     scenario_tab: str
     duration: str
+    last_step: str | None = None
     updated_at: datetime
 
     model_config = {"from_attributes": True}
