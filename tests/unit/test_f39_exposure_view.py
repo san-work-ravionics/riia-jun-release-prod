@@ -198,6 +198,8 @@ console.log(JSON.stringify({
   summary: document.getElementById('hw-exp-latest-view').innerHTML,
   oldSummary: 'hw-exp-challenge-summary' in els,
   yBegin: candle?.cfg.options.scales.y.beginAtZero,
+  candleColors: candle?.cfg.data.datasets.slice(1).map(d => d.borderColor),
+  changeColors: change?.cfg.data.datasets.slice(1).map(d => d.borderColor),
   changeLabels: change?.cfg.data.datasets.map(d => d.label),
   lastClose: daily.at(-1).price,
   holdingsTouched: 'hw-exp-holdings-table' in els,
@@ -221,6 +223,9 @@ console.log(JSON.stringify({
     last = 2000 + 6 * 50 + 28
     assert r["lastClose"] == last
     assert r["bandVals"] == pytest.approx([last * (1 + s), last * (1 - s)], rel=1e-12)
+    # +1σ blue, −1σ red (distinct), on both charts
+    for cols in (r["candleColors"], r["changeColors"]):
+        assert cols == ["#0056B8", "#9B1C1C"] and cols[0] != cols[1]
     assert r["yBegin"] is False  # candles must not be squashed against a zero baseline
     assert len(r["changeLabels"]) == 3 and r["changeLabels"][1].startswith("+1σ") and r["changeLabels"][2].startswith("−1σ")
     assert r["changeBars"] == 5
@@ -276,8 +281,10 @@ const c2 = ch.renderMonthlyCandles('y', daily, {{}});
 const c3 = ch.renderMonthlyChange('z', daily, {{}});
 const lows = c1.cfg.data.datasets[0].data.map(d=>d[0]);
 console.log(JSON.stringify({{ line: c1.cfg.data.datasets[1].data[0], minLow: Math.min(...lows), maxHigh: Math.max(...c1.cfg.data.datasets[0].data.map(d=>d[1])),
+  eqUp: c3.cfg.data.datasets[1].borderColor,
   zeroDefault: c2.cfg.options.scales.y.beginAtZero, nLines: c2.cfg.data.datasets.length, mom: c3.cfg.data.datasets.length }}));""")
     assert 0.5 * r["minLow"] < r["line"] < r["maxHigh"]
+    assert r["eqUp"] == "#9B1C1C"  # Equity Hedge keeps its original red ±1σ
     assert r["zeroDefault"] is True and r["nLines"] == 1 and r["mom"] == 4
 
 

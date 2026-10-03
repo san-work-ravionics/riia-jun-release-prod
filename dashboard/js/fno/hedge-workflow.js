@@ -312,8 +312,8 @@ function _drawCharts(id, hist) {
   const lv = sigmaLevels(last, _volFor(id)) || [];
   const d1 = lv[0];
   const bands = d1 ? [
-    { label: `+1σ monthly (+${d1.sigmaPct.toFixed(1)}%)`, value: d1.up, color: BAND_COLORS.k3, dash: [3, 3] },
-    { label: `−1σ monthly (${d1.downPct.toFixed(1)}%)`, value: d1.down, color: BAND_COLORS.k3, dash: [3, 3] },
+    { label: `+1σ monthly (+${d1.sigmaPct.toFixed(1)}%)`, value: d1.up, color: BAND_COLORS.up, dash: [3, 3] },
+    { label: `−1σ monthly (${d1.downPct.toFixed(1)}%)`, value: d1.down, color: BAND_COLORS.down, dash: [3, 3] },
   ] : [];
   _candleChart = renderMonthlyCandles('hw-exp-candle-chart', hist.daily, {
     fmt: (v) => sym + Number(v).toLocaleString('en-US', { maximumFractionDigits: 2 }), bands, beginAtZero: false, prev: _candleChart,
