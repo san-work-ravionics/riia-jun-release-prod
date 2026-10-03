@@ -159,3 +159,92 @@ export function estimateEquityHedgeMargin(eqScenarios, strategy) {
   if (!hs.strong_bearish) return null;
   return Math.abs(hs.strong_bearish.total_premium_eur);
 }
+
+// ── Monthly σ risk + hedge impact (F39 exposure/save redesign) ───────────────
+// Monthly σ convention: ann_vol_pct / 100 / sqrt(12) (annual vol scaled to one month,
+// 12 months/yr). The Risk page (stress.js renderStdDevTable) uses the raw annual vol
+// as "1σ"; this is the monthly counterpart and does NOT replace or alter it.
+
+export const SIGMA_KS = [1, 2, 3];
+
+// Monthly σ as a fraction (0.0867 = 8.67%); null when vol is missing / not positive.
+export function monthlySigma(annVolPct) {
+  const v = parseFloat(annVolPct);
+  if (!Number.isFinite(v) || v <= 0) return null;
+  return v / 100 / Math.sqrt(12);
+}
+
+// Downside / upside price levels for k = 1,2,3 monthly σ. price × (1 ∓ kσ).
+export function sigmaLevels(price, annVolPct, ks = SIGMA_KS) {
+  const s = monthlySigma(annVolPct);
+  const p = parseFloat(price);
+  if (s == null) return null;
+  return ks.map((k) => ({
+    k,
+    sigmaPct: s * k * 100,
+    downPct: -s * k * 100,
+    down: Number.isFinite(p) ? p * (1 - k * s) : null,
+    up: Number.isFinite(p) ? p * (1 + k * s) : null,
+  }));
+}
+
+// Allocation-weighted annual vol (pct). Same weighting as stress.js renderStdDevTable's
+// portfolio row (sum(alloc × vol) / sum(alloc), items with both fields only), copied
+// read-only — stress.js is not imported or modified. items: [{allocation_pct, ann_vol_pct}].
+export function weightedVolPct(items) {
+  let wSum = 0, aSum = 0;
+  for (const g of items || []) {
+    if (g && g.ann_vol_pct != null && g.allocation_pct != null) {
+      wSum += g.allocation_pct * g.ann_vol_pct;
+      aSum += g.allocation_pct;
+    }
+  }
+  return aSum > 0 ? wSum / aSum : null;
+}
+
+// id -> ann_vol_pct. Precedence: option/equity positions (same source as the Risk
+// page), then analytics greeks, then portfolio-hedge holdings.
+export function buildVolMap(positions, greeks, apiHedge) {
+  const m = {};
+  const add = (id, v) => {
+    if (id != null && v != null && !Number.isNaN(parseFloat(v)) && m[id] == null) m[id] = parseFloat(v);
+  };
+  for (const p of positions || []) add(p.und, p.ann_vol_pct);
+  for (const g of greeks || []) add(g.und, g.ann_vol_pct);
+  for (const h of apiHedge?.holdings || []) add(h.instrument_id, h.ann_vol_pct);
+  return m;
+}
+
+// Chosen hedge's before/after at monthly -1σ/-2σ/-3σ (plus flat). m = move in % of the
+// hedged exposure; hedged P&L = hedgedPL(m, ...) (unchanged pricing, % of exposure);
+// protected = hedged − unhedged. exposureEur (optional) converts % to €.
+export function hedgeImpact(rows, apiHedge, tab, volPct, exposureEur) {
+  if (!rows || !rows.length) return null;
+  const agg = aggregates(rows, apiHedge);
+  const s = monthlySigma(volPct);
+  const eur = (pct) => (exposureEur != null && Number.isFinite(exposureEur) ? exposureEur * pct / 100 : null);
+  const moves = [{ label: 'Flat', k: 0, m: 0 }];
+  if (s != null) for (const k of SIGMA_KS) moves.push({ label: `−${k}σ`, k, m: -s * k * 100 });
+  const scenarios = moves.map(({ label, k, m }) => {
+    const h = hedgedPL(m, tab, agg.avgStrike, agg.totalCost);
+    return {
+      label, k, movePct: m, unhedgedPct: m, hedgedPct: h, protectedPct: h - m,
+      unhedgedEur: eur(m), hedgedEur: eur(h), protectedEur: eur(h - m),
+    };
+  });
+  return {
+    agg, scenarios, monthlySigmaPct: s != null ? s * 100 : null,
+    premiumPct: agg.totalCost, premiumEur: eur(agg.totalCost),
+    maxDdProtectedPct: agg.maxDdHedged - agg.maxDdUnhedged,
+  };
+}
+
+// Portfolio annual vol (pct): allocation-weighted analytics greeks (the Risk page's
+// Portfolio row), else weighted over holdings that have a vol in volMap.
+export function portfolioVolPct(greeks, holdings, volMap) {
+  const w = weightedVolPct(greeks);
+  if (w != null) return w;
+  return weightedVolPct((holdings || []).map((h) => ({
+    allocation_pct: h.allocation_pct, ann_vol_pct: (volMap || {})[h.instrument_id],
+  })));
+}

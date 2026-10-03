@@ -4,6 +4,7 @@ import { apiBase } from './api.js';
 import { renderGreeksCards, renderGreeksTable } from './greeks.js';
 import { renderStressScenarios } from './stress.js';
 import { computeNShares, coveredCallMargin } from './hedge-calc.js';
+import { renderMonthlyCandles, renderMonthlyChange } from './hedge-charts.js';
 
 const RITA_API_KEY = '';
 
@@ -257,150 +258,10 @@ export function renderEquityHedge(data) {
   setEl('eh-pp-breakeven', fmt(sb.breakeven_price));
   setEl('eh-pp-desc',      sb.description);
 
-  // ── Chart style constants (matches RITA shared/charts.js) ──
-  const _cf = 'Epilogue, sans-serif';
-  const _cm = 'IBM Plex Mono, monospace';
-  const _gridClr = 'rgba(0,0,0,.035)';
-  const _cRun = '#0056B8';
-  const _cWarn = '#92480A';
-  const _cDanger = '#9B1C1C';
-  const _cBuild = '#1A6B3C';
-  const _cMon = '#6B2FA0';
-  const _cT3 = '#8C877A';
-  const _legendCfg = { position: 'top', labels: { usePointStyle: true, pointStyle: 'line', boxWidth: 24, font: { family: _cf, size: 11 } } };
-
-  // Portfolio value chart — monthly candlesticks
-  if (_portfolioChart) { _portfolioChart.destroy(); _portfolioChart = null; }
-  const portCtx = document.getElementById('eh-portfolio-chart');
-  if (portCtx && p.daily && p.daily.length > 1) {
-    const byMonth = {};
-    for (const d of p.daily) {
-      const key = d.date.slice(0, 7);
-      if (!byMonth[key]) byMonth[key] = [];
-      byMonth[key].push(d.price);
-    }
-    const monthKeys = Object.keys(byMonth).sort();
-    const candles = monthKeys.map(k => {
-      const prices = byMonth[k];
-      return { o: prices[0], h: Math.max(...prices), l: Math.min(...prices), c: prices.at(-1) };
-    });
-    const labels = monthKeys.map(m => { const [y, mo] = m.split('-'); return _MONTHS[parseInt(mo, 10) - 1] + ' ' + y.slice(2); });
-    const bodyColors = candles.map(c => c.c >= c.o ? _cBuild : _cDanger);
-
-    const wickPlugin = {
-      id: 'candlestickWicks',
-      afterDatasetsDraw(chart) {
-        const { ctx } = chart;
-        const meta = chart.getDatasetMeta(0);
-        meta.data.forEach((bar, i) => {
-          const c = candles[i];
-          const yHigh = chart.scales.y.getPixelForValue(c.h);
-          const yLow  = chart.scales.y.getPixelForValue(c.l);
-          const xCenter = bar.x;
-          ctx.save();
-          ctx.beginPath();
-          ctx.strokeStyle = c.c >= c.o ? _cBuild : _cDanger;
-          ctx.lineWidth = 1.5;
-          ctx.moveTo(xCenter, yHigh);
-          ctx.lineTo(xCenter, yLow);
-          ctx.stroke();
-          ctx.restore();
-        });
-      },
-    };
-
-    _portfolioChart = new Chart(portCtx, {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [{
-          label: 'Body',
-          data: candles.map(c => [Math.min(c.o, c.c), Math.max(c.o, c.c)]),
-          backgroundColor: bodyColors,
-          borderColor: bodyColors,
-          borderWidth: 1,
-          borderSkipped: false,
-          barPercentage: 0.9,
-          categoryPercentage: 0.9,
-        }],
-      },
-      plugins: [wickPlugin],
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              title: ctx => ctx[0].label,
-              label: ctx => {
-                const c = candles[ctx.dataIndex];
-                return [`O: ${fmt(c.o)}  H: ${fmt(c.h)}`, `L: ${fmt(c.l)}  C: ${fmt(c.c)}`];
-              },
-            },
-          },
-        },
-        scales: {
-          x: { grid: { color: _gridClr }, ticks: { font: { family: _cm, size: 10 } } },
-          y: { grid: { color: _gridClr }, ticks: { font: { family: _cm, size: 10 }, callback: v => fmt(v) } },
-        },
-      },
-    });
-  }
-
-  // Monthly price change chart with ±1σ bands
-  if (_monthlyChangeChart) { _monthlyChangeChart.destroy(); _monthlyChangeChart = null; }
-  const mcCtx = document.getElementById('eh-monthly-change-chart');
-  if (mcCtx && p.daily && p.daily.length > 1) {
-    const titleEl = document.getElementById('eh-monthly-chart-title');
-    if (titleEl) titleEl.textContent = `Monthly Price Change — ${_ehInstrument}`;
-
-    const byMonth = {};
-    for (const d of p.daily) {
-      const key = d.date.slice(0, 7);
-      if (!byMonth[key]) byMonth[key] = [];
-      byMonth[key].push(d.price);
-    }
-    const months = Object.keys(byMonth).sort();
-    const labels = [];
-    const changes = [];
-    for (let i = 1; i < months.length; i++) {
-      const prevClose = byMonth[months[i - 1]].at(-1);
-      const curClose  = byMonth[months[i]].at(-1);
-      if (prevClose > 0) {
-        labels.push(months[i]);
-        changes.push(((curClose - prevClose) / prevClose) * 100);
-      }
-    }
-
-    const mean = changes.reduce((s, v) => s + v, 0) / (changes.length || 1);
-    const stdDev = Math.sqrt(changes.reduce((s, v) => s + (v - mean) ** 2, 0) / (changes.length || 1));
-    const upper1 = mean + stdDev;
-    const lower1 = mean - stdDev;
-
-    const barColors = changes.map(v => (Math.abs(v) > stdDev) ? 'rgba(155,28,28,0.65)' : 'rgba(0,86,184,0.55)');
-
-    _monthlyChangeChart = new Chart(mcCtx, {
-      type: 'bar',
-      data: {
-        labels: labels.map(m => { const [y, mo] = m.split('-'); return _MONTHS[parseInt(mo, 10) - 1] + ' ' + y.slice(2); }),
-        datasets: [
-          { label: 'Monthly Chg %', data: changes, backgroundColor: barColors, borderRadius: 3, order: 2 },
-          { label: `+1σ (${upper1.toFixed(1)}%)`, data: Array(labels.length).fill(upper1), type: 'line', borderColor: _cDanger, borderWidth: 1.5, borderDash: [6, 4], pointRadius: 0, fill: false, order: 1 },
-          { label: `−1σ (${lower1.toFixed(1)}%)`, data: Array(labels.length).fill(lower1), type: 'line', borderColor: _cDanger, borderWidth: 1.5, borderDash: [6, 4], pointRadius: 0, fill: false, order: 1 },
-          { label: `Mean (${mean.toFixed(1)}%)`, data: Array(labels.length).fill(mean), type: 'line', borderColor: _cT3, borderWidth: 1, borderDash: [3, 3], pointRadius: 0, fill: false, order: 1 },
-        ],
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: _legendCfg,
-          tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)}%` } },
-        },
-        scales: {
-          x: { grid: { color: _gridClr }, ticks: { font: { family: _cm, size: 10 } } },
-          y: { grid: { color: _gridClr }, ticks: { font: { family: _cm, size: 10 }, callback: v => v.toFixed(1) + '%' } },
-        },
-      },
-    });
-  }
+  // Portfolio value (monthly candles) + monthly change (±1σ) — shared with the Hedge Workflow
+  // Exposure step (hedge-charts.js; extracted verbatim, no behaviour change).
+  _portfolioChart = renderMonthlyCandles('eh-portfolio-chart', p.daily, { fmt, prev: _portfolioChart });
+  _monthlyChangeChart = renderMonthlyChange('eh-monthly-change-chart', p.daily, {
+    prev: _monthlyChangeChart, titleId: 'eh-monthly-chart-title', title: `Monthly Price Change — ${_ehInstrument}`,
+  });
 }

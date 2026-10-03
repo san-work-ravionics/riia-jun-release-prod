@@ -1247,11 +1247,34 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
         <div class="kpi" style="flex:1;min-width:280px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
           <div id="hw-exp-greeks-kpis" style="display:flex;gap:16px;flex-wrap:wrap;"></div>
+          <div id="hw-exp-sigma-kpis" style="display:flex;gap:16px;flex-wrap:wrap;"></div>
           <span id="hw-exp-live-badge"></span>
         </div>
       </div>
 
-      <div id="hw-exp-holdings-table" class="kpi" style="margin-bottom:16px;"></div>
+      <!-- Your current challenge: monthly 1/2/3σ risk + candles vs σ bands -->
+      <div id="hw-exp-challenge-summary" class="kpi" style="margin-bottom:16px;"></div>
+      <div class="two-col" style="margin-bottom:16px;">
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title" id="hw-exp-candle-title">Price vs monthly risk bands</span>
+            <span class="card-sub">Monthly OHLC candles · monthly -1σ/-2σ/-3σ levels</span>
+          </div>
+          <div class="card-body">
+            <div id="hw-exp-candle-msg" class="kpi-sub"></div>
+            <div class="chart-wrap"><canvas id="hw-exp-candle-chart"></canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title" id="hw-exp-change-title">Monthly Price Change</span>
+            <span class="card-sub">MoM % change · ±1σ bands</span>
+          </div>
+          <div class="card-body">
+            <div class="chart-wrap"><canvas id="hw-exp-change-chart"></canvas></div>
+          </div>
+        </div>
+      </div>
 
       <div style="text-align:right;">
         <button onclick="hwGoToStep('recommendation')" style="padding:6px 16px;border:none;border-radius:6px;background:var(--p03);color:#fff;font-family:var(--fm);font-size:12px;font-weight:600;cursor:pointer">Next: Recommendation &gt;</button>
@@ -1329,6 +1352,14 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     <!-- Step 4 — Save + history (F39 Phase 3) -->
     <div id="hw-step-save" style="display:none;">
       <div id="hw-save-summary" class="kpi" style="margin-bottom:16px;"></div>
+      <!-- How this hedge is helping: before/after at monthly -1σ/-2σ/-3σ -->
+      <div class="kpi" style="margin-bottom:16px;">
+        <div class="chart-title">How this hedge helps (monthly -1σ / -2σ / -3σ move)</div>
+        <div id="hw-save-impact-kpis" style="margin:8px 0;"></div>
+        <div id="hw-save-impact-table"></div>
+        <div class="chart-wrap" style="margin-top:8px;"><canvas id="hw-save-impact-chart"></canvas></div>
+        <div id="hw-save-impact-note" class="kpi-sub" style="opacity:.7;margin-top:4px;"></div>
+      </div>
       <div class="kpi" style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
         <button id="hw-save-btn" class="hw-nav-btn" onclick="hwSave()">Save Hedge Plan</button>
         <span id="hw-save-status" class="kpi-sub"></span>
