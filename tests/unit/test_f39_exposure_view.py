@@ -294,12 +294,15 @@ const rec = await import(base + 'fno/hedge-workflow-recommendation.js');
 console.log(JSON.stringify({
   step: hw.step, sel: hw.selections['RELIANCE'],
   res: els['ha-results'].style.display, s0: els['ha-step-0-narrative'].textContent, s6: els['ha-step-6-verdict'].textContent,
-  final: els['ha-final-verdict'].textContent, table: els['hw-rec-selection-table'].innerHTML.includes('Hedged?'),
+  detail: els['hw-rec-detail'].innerHTML, table: els['hw-rec-selection-table'].innerHTML.includes('Hedged?'),
   oldCard: 'hw-rec-verdict-card' in els || 'hw-rec-cascade' in els,
 }));""")
     assert r["step"] == "recommendation" and r["sel"] == "call_sell"
     assert r["res"] == "" and r["s0"] == "n0" and r["s6"] == "Bullish"
-    assert r["final"] == "CALL SELL" and r["table"] is True and r["oldCard"] is False
+    d = r["detail"]
+    assert d.count('class="kpi"') == 6 and "CALL SELL" in d and "High" in d
+    assert all(k in d for k in ("Recommendation", "Confidence", "Spot", "Data source", "Call sell", "Put buy"))
+    assert r["table"] is True and r["oldCard"] is False
 
 
 def test_advisor_markup_six_up_row_then_separate_hedge_advisor_row():
@@ -311,6 +314,7 @@ def test_advisor_markup_six_up_row_then_separate_hedge_advisor_row():
     for i in range(6):
         assert grid1 < seg.index(f'id="ha-step-{i}"') < grid2
     assert seg.index('id="ha-step-6"') > grid2
-    assert seg.count('id="ha-step-6"') == 1 and seg.index('id="ha-final-verdict"') > seg.index('id="ha-step-6"')
+    assert seg.count('id="ha-step-6"') == 1 and 'id="ha-final-verdict"' not in seg
+    assert seg.index('id="ha-step-6"') < seg.index('id="hw-rec-detail"') < seg.index('id="hw-rec-selection-table"')
     assert seg.index('id="hw-rec-selection-table"') < seg.index('id="hw-rec-next-btn"')
     assert "repeat(6,minmax(0,1fr))" in html and "ha-steps-grid--row2{grid-template-columns:minmax(0,1fr)" in html
