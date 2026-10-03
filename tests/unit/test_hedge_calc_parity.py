@@ -200,8 +200,12 @@ console.log(JSON.stringify([calc.estimateEquityHedgeMargin(eq, 'call_sell'),
 
 def test_old_pages_import_shared_calc_and_do_not_redefine_it() -> None:
     ph = (_FNO_JS / "portfolio-hedge.js").read_text(encoding="utf-8")
-    eh = (_FNO_JS / "equity_hedge.js").read_text(encoding="utf-8")
-    assert "from './hedge-calc.js'" in ph and "from './hedge-calc.js'" in eh
+    assert "from './hedge-calc.js'" in ph
     for removed in ("function _hedgedPL", "function _rowParams", "function _hedgeType", "_FNO_ELIGIBLE"):
         assert removed not in ph
-    assert "* 0.12" not in eh and "* 0.08" not in eh  # factors live only in hedge-calc.js
+    # equity_hedge.js is deleted in F39 Phase 4 Tier B: tolerate either state (exists-guarded).
+    eh_path = _FNO_JS / "equity_hedge.js"
+    if eh_path.exists():
+        eh = eh_path.read_text(encoding="utf-8")
+        assert "from './hedge-calc.js'" in eh
+        assert "* 0.12" not in eh and "* 0.08" not in eh  # factors live only in hedge-calc.js
