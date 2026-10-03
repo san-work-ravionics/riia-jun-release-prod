@@ -19,8 +19,6 @@ export const state = {
   stressData: [],
   payoffData: {},
   hedgeQuality: {},
-  hedgeHistory: {},
-  hedgeHistoryLoaded: false,
   equityHedgeData: null,
 
   // UI state
@@ -36,7 +34,6 @@ export const state = {
   marginChart: null,
   payoffChart: null,
   payoffChartBnkn: null,
-  hedgeTimelineChart: null,
 
   // ── Unified Hedge Workflow (F39 Phase 2) ───────────────────────────────────
   // Shared across hedge-workflow.js's shell + Exposure step this phase; the

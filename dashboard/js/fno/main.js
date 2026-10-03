@@ -83,7 +83,6 @@ window.manToggleView    = manToggleView;
 window.manSaveCsv       = manSaveCsv;
 window.manSaveSnapshot  = manSaveSnapshot;
 
-import { loadEquityHedge } from './equity_hedge.js';
 import { init as loadEquityScenarios } from '../scenarios/equity-scenarios.js';
 import { initI18n, setLanguage, applyTranslations } from '../shared/i18n.js';
 import { loadPortfolioHedge, phSetCoverage, phSetDuration, phToggleHedge, phPickStrategy, phSetScenarioTab } from './portfolio-hedge.js';
@@ -96,12 +95,12 @@ import { hwSetCoverage, hwSetScenarioTab } from './hedge-workflow-whatif.js';
 import { hwSave } from './hedge-workflow-save.js';
 
 window.setLanguage        = setLanguage;
-window.loadEquityHedge      = loadEquityHedge;
 _sectionLoaders['equity-scenarios'] = loadEquityScenarios;
 window.fnoSelectInstrument = fnoSelectInstrument;
 
-// Portfolio Hedge wizard — kept for direct programmatic use (debug/back-compat);
-// nav no longer reaches this page directly, see Hedge Workflow aliases below.
+// Overview Portfolio Hedge block (ph-* DOM inside #page-overview): loadPortfolioHedge() is
+// called on every boot (see window 'load' handler below); ph* handlers are used by inline
+// onclick/oninput in fno.html. NOT a separate page.
 window.loadPortfolioHedge = loadPortfolioHedge;
 window.phSetCoverage      = phSetCoverage;
 window.phSetDuration      = phSetDuration;

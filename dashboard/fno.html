@@ -298,19 +298,6 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
 .hqs-badge.green{background:var(--p01-bg);color:var(--p01);border:1px solid var(--p01-bd);}
 .hqs-badge.yellow{background:var(--p03-bg);color:var(--p03);border:1px solid var(--p03-bd);}
 .hqs-badge.red{background:var(--neg-bg);color:var(--neg);border:1px solid var(--neg-bd);}
-.hqs-score{font-family:var(--fm);font-size:11px;font-weight:600;}
-.hqs-score.green{color:var(--p01);}
-.hqs-score.yellow{color:var(--p03);}
-.hqs-score.red{color:var(--neg);}
-.alert-bar{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:var(--r);margin-bottom:16px;font-family:var(--fm);font-size:12px;}
-.alert-bar.red{background:var(--neg-bg);border:1px solid var(--neg-bd);color:var(--neg);}
-.alert-bar.yellow{background:var(--p03-bg);border:1px solid var(--p03-bd);color:var(--p03);}
-.alert-bar.green{background:var(--p01-bg);border:1px solid var(--p01-bd);color:var(--p01);}
-.hqs-tier-bar{display:flex;gap:0;height:8px;border-radius:100px;overflow:hidden;margin-top:10px;}
-.hqs-tier-seg{height:100%;transition:width .4s ease;}
-.hqs-tier-seg.red{background:var(--neg);}
-.hqs-tier-seg.yellow{background:var(--p03);}
-.hqs-tier-seg.green{background:var(--p01);}
 
 /* ── Manoeuvre page ──────────────────────────────────── */
 /* Month tiles */
@@ -812,6 +799,65 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
         </div>
       </div>
     </div>
+
+    <!-- F39 Phase 4 (D2): Greeks / stress / expiry-payoff blocks relocated from the retired Equity Hedge page.
+         Ids unchanged — painted by greeks.js / stress.js / payoff.js from _renderAll() and setUnderlying()/setExpiry(). -->
+    <!-- Net Greeks + Stress Scenarios + Per-Instrument Greeks -->
+    <div class="three-col" style="margin-top:18px;margin-bottom:16px;">
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-title">Net Greeks</span>
+          <span class="card-sub">Black-Scholes estimates at current spot</span>
+        </div>
+        <div class="card-body">
+          <div id="greeks-all-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-title">Stress Scenarios</span>
+          <span class="card-sub" id="stress-card-sub">Estimated P&amp;L for market moves</span>
+        </div>
+        <div class="card-body">
+          <div class="scenario-row" id="stress-row"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-title">Per-Instrument Greeks</span>
+          <span class="card-sub" id="greeks-table-sub">All positions</span>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>Instrument</th><th>Underlying</th><th>Exp</th><th>Type</th><th>Side</th><th>Delta</th><th>Theta/day</th><th>Vega</th><th>IV%</th></tr></thead>
+              <tbody id="greeks-tbody"></tbody>
+            </table>
+          </div>
+          <div class="tbl-footer" id="greeks-footer"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FnO Payoff charts (NIFTY / BANKNIFTY) — full width at bottom -->
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Payoff at Expiry</span>
+        <span class="card-sub">FnO position sensitivity across underlying price range</span>
+      </div>
+      <div class="card-body">
+        <div id="payoff-charts-grid" style="display:grid;gap:18px;margin-top:4px;">
+          <div id="payoff-nifty-wrap">
+            <div style="font-family:var(--fm);font-size:10px;font-weight:500;color:var(--p02);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">NIFTY Payoff at Expiry</div>
+            <div class="chart-wrap tall"><canvas id="payoff-chart"></canvas></div>
+          </div>
+          <div id="payoff-bnkn-wrap">
+            <div style="font-family:var(--fm);font-size:10px;font-weight:500;color:var(--p04);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">BANKNIFTY Payoff at Expiry</div>
+            <div class="chart-wrap tall"><canvas id="payoff-chart-bnkn"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ═══════════════════════════════════════════════
@@ -836,152 +882,6 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
 
     <!-- Daily history -->
     <div id="rr-history"></div>
-  </div>
-
-
-  <!-- ═══════════════════════════════════════════════
-       HEDGE RADAR
-  ════════════════════════════════════════════════ -->
-  <div class="section" id="page-hedge">
-    <div class="page-hdr">
-      <div>
-        <div class="page-title">Hedge Radar</div>
-        <div class="page-sub">Long option quality · Strike distance · Theta decay risk · DTE scoring</div>
-      </div>
-      <span class="phase-tag p03">Hedge Quality</span>
-    </div>
-
-    <!-- KPI summary row -->
-    <div class="kpi-row c4" id="hqs-kpis"></div>
-
-    <!-- Alert banner -->
-    <div id="hqs-alert-banner"></div>
-
-    <!-- Tier breakdown bar -->
-    <div class="card" style="margin-bottom:18px;" id="hqs-tier-card"></div>
-
-    <!-- Scored positions table -->
-    <div class="card">
-      <div class="card-hdr">
-        <span class="card-title">Long Options — Hedge Quality Scores</span>
-        <span class="card-sub">Sorted by score ascending (worst first) · Only long options are scored</span>
-      </div>
-      <div class="card-body" style="padding:0">
-        <div class="tbl-wrap" style="max-height:420px;">
-          <table>
-            <thead><tr>
-              <th>Instrument</th><th>Exp</th><th>Type</th><th>Strike</th>
-              <th>Qty</th><th>Avg</th><th>LTP</th><th>P&amp;L</th>
-              <th>% OTM</th><th>DTE</th><th>Delta</th><th>Premium</th>
-              <th>Score</th><th>Rating</th>
-            </tr></thead>
-            <tbody id="hqs-tbody"></tbody>
-          </table>
-        </div>
-        <div class="tbl-footer" id="hqs-footer"></div>
-      </div>
-    </div>
-
-    <!-- Scoring methodology note -->
-    <div class="info-note" style="margin-top:14px;">
-      <strong>How scoring works:</strong> &nbsp;Score (0–100) penalises three risk factors independently:
-      <strong>Strike distance</strong> (>5% OTM = −15 pts, >10% = −35 pts, >15% = −45 pts) ·
-      <strong>DTE</strong> (&lt;7 days = −35 pts, &lt;14 = −20 pts, &lt;21 = −10 pts) ·
-      <strong>Delta</strong> (&lt;0.05 = −20 pts, &lt;0.10 = −12 pts, &lt;0.20 = −5 pts).
-      &nbsp;🟢 Good Hedge ≥65 · 🟡 Watch 40–64 · 🔴 Lottery Ticket &lt;40
-    </div>
-
-    <!-- ── Hedge History ─────────────────────────────────────────── -->
-    <div class="section-divider" style="margin-top:32px">Hedge History</div>
-    <div style="font-size:12px;color:var(--t2);font-family:var(--fm);margin-bottom:16px">Multi-day premium trends · Reactive hedging patterns · Anchor positions · Budget utilisation</div>
-
-    <div id="hist-loading" style="display:flex;align-items:center;justify-content:center;height:200px;font-family:var(--fm);font-size:12px;color:var(--t3);">Loading hedge history...</div>
-    <div id="hist-content" style="display:none;">
-
-      <div class="kpi-row c4" id="hist-kpis"></div>
-
-      <div class="card" style="margin-bottom:18px;">
-        <div class="card-hdr">
-          <span class="card-title">Hedge Premium Timeline</span>
-          <span class="card-sub">Daily premium by OTM distance · ▼ = down day for NIFTY</span>
-        </div>
-        <div class="card-body">
-          <div class="chart-wrap tall"><canvas id="hedge-timeline-chart"></canvas></div>
-          <div style="display:flex;gap:20px;margin-top:10px;font-family:var(--fm);font-size:10px;flex-wrap:wrap;">
-            <span><span style="display:inline-block;width:10px;height:10px;background:rgba(26,107,60,0.7);border-radius:2px;margin-right:4px;"></span>Near-ATM (≤5% OTM)</span>
-            <span><span style="display:inline-block;width:10px;height:10px;background:rgba(146,72,10,0.7);border-radius:2px;margin-right:4px;"></span>Mid-OTM (5–10%)</span>
-            <span><span style="display:inline-block;width:10px;height:10px;background:rgba(155,28,28,0.75);border-radius:2px;margin-right:4px;"></span>Far-OTM (>10%)</span>
-            <span style="color:var(--p02);"><span style="display:inline-block;width:20px;height:2px;background:var(--p02);margin-right:4px;vertical-align:middle;"></span>NIFTY close →</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="two-col" style="margin-bottom:18px;">
-        <div class="card">
-          <div class="card-hdr">
-            <span class="card-title">Reactive Hedging Analysis</span>
-            <span class="card-sub">New hedges added on down days vs calm days</span>
-          </div>
-          <div class="card-body" style="padding:0">
-            <div id="reactive-summary" style="padding:14px 16px 8px;"></div>
-            <div class="tbl-wrap" style="max-height:220px;">
-              <table>
-                <thead><tr><th>Date</th><th>NIFTY Chg</th><th>New Opts</th><th>Reactive</th><th>Context</th></tr></thead>
-                <tbody id="reactive-tbody"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-hdr">
-            <span class="card-title">Hedge Budget Utilisation</span>
-            <span class="card-sub">Total long option premium ÷ futures notional</span>
-          </div>
-          <div class="card-body" style="padding:12px 16px;">
-            <div id="budget-summary" style="margin-bottom:14px;"></div>
-            <div id="budget-bars"></div>
-            <div style="font-family:var(--fm);font-size:10px;color:var(--t3);margin-top:8px;">
-              Recommended max: 5% of futures notional &nbsp;·&nbsp; Rule of thumb: insurance should not cost more than your expected alpha
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card" style="margin-bottom:18px;">
-        <div class="card-hdr">
-          <span class="card-title">Anchor Positions</span>
-          <span class="card-sub" id="anchor-sub">Long options held 4+ days with below-average hedge quality</span>
-        </div>
-        <div class="card-body" style="padding:0">
-          <div class="tbl-wrap">
-            <table>
-              <thead><tr>
-                <th>Instrument</th><th>Days</th><th>% OTM at Entry</th>
-                <th>Entry Avg</th><th>Current LTP</th><th>% Decay</th>
-                <th>HQS Entry→Now</th><th>Current P&L</th><th>LTP Trail</th>
-              </tr></thead>
-              <tbody id="anchor-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-hdr">
-          <span class="card-title">Daily Hedge Quality Distribution</span>
-          <span class="card-sub">🟢 Good · 🟡 Watch · 🔴 Lottery Ticket — counts per day</span>
-        </div>
-        <div class="card-body" style="padding:0">
-          <div class="tbl-wrap">
-            <table>
-              <thead><tr><th>Date</th><th>NIFTY</th><th>Chg</th><th>Total Premium</th><th>Near-ATM</th><th>Far-OTM</th><th>Budget %</th><th>🟢</th><th>🟡</th><th>🔴</th><th>New Added</th></tr></thead>
-              <tbody id="hist-day-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /hist-content -->
   </div>
 
 
@@ -1032,213 +932,11 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
   <!-- ═══════════════════════════════════════════════
        PORTFOLIO BUILDER — Feature 28 Phase 1
   ════════════════════════════════════════════════ -->
-  <!-- ═══════════════════════════════════════════════
-       EQUITY HEDGE SCENARIOS
-  ════════════════════════════════════════════════ -->
-  <div class="section" id="page-equity-hedge">
-    <div class="page-hdr">
-      <div>
-        <div class="page-title">Equity Hedge Scenarios</div>
-        <div class="page-sub">Click an instrument below · Covered Call · Protective Put · Payoff comparison</div>
-      </div>
-      <span class="phase-tag p04">Equity Hedge</span>
-    </div>
-
-    <!-- Geo-region instrument selector — click a tile to select instrument and reload -->
-    <div id="fno-geo-overview" class="card-row" style="margin-bottom:16px;"></div>
-
-    <!-- Loading / Error state -->
-    <div id="eh-loading" style="display:none;align-items:center;justify-content:center;height:80px;font-family:var(--fm);font-size:12px;color:var(--t3);"></div>
-
-    <!-- Results wrapper -->
-    <div id="eh-results" style="display:none;">
-
-      <!-- KPI row — all metrics in single row -->
-      <div style="display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:8px;margin-bottom:16px;">
-        <div class="kpi">
-          <div class="kpi-label">Date Range</div>
-          <div id="eh-kpi-date-range"><div class="kpi-value" style="font-size:12px">—</div></div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Start Price</div>
-          <div id="eh-kpi-start-price"><div class="kpi-value">—</div></div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">End Price</div>
-          <div id="eh-kpi-end-price"><div class="kpi-value">—</div></div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Shares Held</div>
-          <div id="eh-kpi-shares"><div class="kpi-value">—</div></div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Lot Size</div>
-          <div id="eh-kpi-lot"><div class="kpi-value">—</div></div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">30d Volatility</div>
-          <div id="eh-kpi-vol"><div class="kpi-value">—</div></div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Period Return</div>
-          <div id="eh-kpi-return"><div class="kpi-value">—</div></div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Hedge Return</div>
-          <div id="eh-kpi-hedge-return"><div class="kpi-value">—</div></div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Net Return</div>
-          <div id="eh-kpi-net-return"><div class="kpi-value">—</div></div>
-        </div>
-      </div>
-
-      <!-- Row 1: Portfolio Value + Monthly Price Change -->
-      <div class="two-col" style="margin-bottom:16px;">
-        <div class="card">
-          <div class="card-hdr">
-            <span class="card-title" id="eh-portfolio-chart-title">Portfolio Value</span>
-            <span class="card-sub">Monthly OHLC candles</span>
-          </div>
-          <div class="card-body">
-            <div class="chart-wrap"><canvas id="eh-portfolio-chart"></canvas></div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-hdr">
-            <span class="card-title" id="eh-monthly-chart-title">Monthly Price Change</span>
-            <span class="card-sub">MoM % change · ±1σ bands</span>
-          </div>
-          <div class="card-body">
-            <div class="chart-wrap"><canvas id="eh-monthly-change-chart"></canvas></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Row 2: Hedge Overview (left) + Covered Call / Protective Put stacked (right) -->
-      <div class="two-col" style="margin-bottom:16px;">
-        <div class="card">
-          <div class="card-hdr">
-            <span class="card-title">Hedge Overview</span>
-            <span class="card-sub">At period end</span>
-          </div>
-          <div class="card-body">
-            <div id="eh-overview-lot" style="display:none;margin-bottom:10px;padding:6px 8px;background:rgba(0,0,0,.03);border-left:2px solid var(--p04);font-family:var(--fm);font-size:11px;color:var(--t2);"></div>
-            <div style="margin-bottom:12px;">
-              <div style="font-family:var(--fm);font-size:10px;font-weight:600;color:var(--p01);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Mild Bearish — Covered Call</div>
-              <div id="eh-cc-desc" style="font-family:var(--fm);font-size:12px;color:var(--t2);">—</div>
-            </div>
-            <div>
-              <div style="font-family:var(--fm);font-size:10px;font-weight:600;color:var(--neg);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Strong Bearish — Protective Put</div>
-              <div id="eh-pp-desc" style="font-family:var(--fm);font-size:12px;color:var(--t2);">—</div>
-            </div>
-            <div style="margin-top:12px;padding:8px;background:rgba(0,0,0,.03);border-left:2px solid var(--t3);font-family:var(--fm);font-size:10px;color:var(--t3);">
-              Strikes marked <strong>~</strong> are indicative — derived from Black-Scholes (+/−1σ) on realised vol. Verify actual listed strikes on your exchange before trading.
-            </div>
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:12px;">
-          <div class="card">
-            <div class="card-hdr">
-              <span class="card-title">Covered Call</span>
-              <span class="phase-tag p01">Mild Bearish</span>
-              <span id="eh-cc-source-badge"></span>
-            </div>
-            <div class="card-body">
-              <div class="kpi-row c4">
-                <div class="kpi"><div class="kpi-label">Strike</div><div class="kpi-value" id="eh-cc-strike">—</div></div>
-                <div class="kpi"><div class="kpi-label">Premium Rcvd</div><div class="kpi-value pos" id="eh-cc-premium">—</div></div>
-                <div class="kpi"><div class="kpi-label">Max Value</div><div class="kpi-value" id="eh-cc-max-value">—</div></div>
-                <div class="kpi"><div class="kpi-label">Breakeven</div><div class="kpi-value" id="eh-cc-breakeven">—</div></div>
-              </div>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-hdr">
-              <span class="card-title">Protective Put</span>
-              <span class="phase-tag p03">Strong Bearish</span>
-              <span id="eh-pp-source-badge"></span>
-            </div>
-            <div class="card-body">
-              <div class="kpi-row c4">
-                <div class="kpi"><div class="kpi-label">Strike</div><div class="kpi-value" id="eh-pp-strike">—</div></div>
-                <div class="kpi"><div class="kpi-label">Premium Paid</div><div class="kpi-value neg" id="eh-pp-premium">—</div></div>
-                <div class="kpi"><div class="kpi-label">Floor Value</div><div class="kpi-value" id="eh-pp-floor">—</div></div>
-                <div class="kpi"><div class="kpi-label">Breakeven</div><div class="kpi-value" id="eh-pp-breakeven">—</div></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Row 3: Net Greeks + Stress Scenarios + Per-Instrument Greeks -->
-      <div class="three-col" style="margin-bottom:16px;">
-        <div class="card">
-          <div class="card-hdr">
-            <span class="card-title">Net Greeks</span>
-            <span class="card-sub">Black-Scholes estimates at current spot</span>
-          </div>
-          <div class="card-body">
-            <div id="greeks-all-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;"></div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-hdr">
-            <span class="card-title">Stress Scenarios</span>
-            <span class="card-sub" id="stress-card-sub">Estimated P&amp;L for market moves</span>
-          </div>
-          <div class="card-body">
-            <div class="scenario-row" id="stress-row"></div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-hdr">
-            <span class="card-title">Per-Instrument Greeks</span>
-            <span class="card-sub" id="greeks-table-sub">All positions</span>
-          </div>
-          <div class="card-body" style="padding:0">
-            <div class="tbl-wrap">
-              <table>
-                <thead><tr><th>Instrument</th><th>Underlying</th><th>Exp</th><th>Type</th><th>Side</th><th>Delta</th><th>Theta/day</th><th>Vega</th><th>IV%</th></tr></thead>
-                <tbody id="greeks-tbody"></tbody>
-              </table>
-            </div>
-            <div class="tbl-footer" id="greeks-footer"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- FnO Payoff charts (NIFTY / BANKNIFTY) — full width at bottom -->
-      <div class="card">
-        <div class="card-hdr">
-          <span class="card-title">Payoff at Expiry</span>
-          <span class="card-sub">FnO position sensitivity across underlying price range</span>
-        </div>
-        <div class="card-body">
-          <div id="payoff-charts-grid" style="display:grid;gap:18px;margin-top:4px;">
-            <div id="payoff-nifty-wrap">
-              <div style="font-family:var(--fm);font-size:10px;font-weight:500;color:var(--p02);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">NIFTY Payoff at Expiry</div>
-              <div class="chart-wrap tall"><canvas id="payoff-chart"></canvas></div>
-            </div>
-            <div id="payoff-bnkn-wrap">
-              <div style="font-family:var(--fm);font-size:10px;font-weight:500;color:var(--p04);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">BANKNIFTY Payoff at Expiry</div>
-              <div class="chart-wrap tall"><canvas id="payoff-chart-bnkn"></canvas></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /eh-results -->
-  </div>
 
   <!-- ═══════════════════════════════════════════════
        MY PORTFOLIO
   ════════════════════════════════════════════════ -->
 
-  <!-- ═══════════════════════════════════════════════
-       PORTFOLIO HEDGE (Feature 28 Phase 3)
-  ════════════════════════════════════════════════ -->
-  <div class="section" id="page-portfolio-hedge"></div>
 
   <!-- ═══════════════════════════════════════════════
        UNIFIED HEDGE WORKFLOW (Feature 39 Phase 2/3 — shell + 4 step panels)

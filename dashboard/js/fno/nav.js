@@ -8,9 +8,7 @@ import { renderGreeksCards, renderGreeksTable, updateRiskSections } from './gree
 import { renderStressScenarios } from './stress.js';
 import { renderPayoffChart } from './payoff.js';
 import { renderScenarios } from './rr.js';
-import { renderHedgeRadar } from './hedge.js';
 import { initManoeuvre, renderMonthTiles } from './manoeuvre.js';
-import { loadEquityHedge } from './equity_hedge.js';
 
 // ── Hedge Workflow redirect aliases (F39 Phase 2) ───────────────────────────
 // Old nav keys stay registered (not deleted) but now deep-link into the
@@ -23,6 +21,8 @@ import { loadEquityHedge } from './equity_hedge.js';
 //   hedge-advisor   -> recommendation  (Advisor: recommend a strategy)
 //   equity-hedge    -> recommendation  (equity strategy pick/sizing)
 //   portfolio-hedge -> exposure        (was the single-page workflow entry)
+// Dormant reachability: no nav item or URL/hash routing targets these keys any more (the
+// sidebar items were removed); kept as zero-cost defence for programmatic/legacy callers.
 const HEDGE_WORKFLOW_ALIASES = {
   hedge: 'exposure',
   'hedge-advisor': 'recommendation',
@@ -68,13 +68,7 @@ export function setUnderlying(und) {
   renderStressScenarios();
   renderPayoffChart();
   renderScenarios();
-  renderHedgeRadar();
   initManoeuvre();
-  // If equity hedge page is visible, reload data for the new instrument
-  const ehPage = document.getElementById('page-equity-hedge');
-  if (ehPage?.classList.contains('active')) {
-    loadEquityHedge(true);
-  }
 }
 
 export function buildExpiryPills() {
@@ -98,7 +92,6 @@ export function setExpiry(exp, btn) {
   renderStressScenarios();
   renderPayoffChart();
   renderScenarios();
-  renderHedgeRadar();
   // Manoeuvre has its own month selector — only refresh the tiles summary
   renderMonthTiles();
 }

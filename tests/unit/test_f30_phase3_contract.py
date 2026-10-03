@@ -242,7 +242,7 @@ class TestPayoffSchema:
 class TestHedgeQualitySchema:
     """Verify hedge_quality has positions list for renderPortfolioHedgeRadar.
 
-    Phase 3 added renderPortfolioHedgeRadar() in hedge.js that reads from
+    Phase 3 added renderPortfolioHedgeRadar() in hedge.js (retired in F39 Phase 4; state.hedgeQuality is now read by positions.js) that reads from
     state.hedgeQuality.positions — must be a list of HedgeQualityPositionSchema.
     """
 
@@ -421,7 +421,7 @@ class TestPortfolioAnalyticsResponsePhase3:
         "scenario_levels",  # rr.js — after _normScenarioLevels
         "payoff",           # payoff.js — portfolio-shape detection
         "stress",           # stress.js — renderAnalyticsStress
-        "hedge_quality",    # hedge.js — renderPortfolioHedgeRadar
+        "hedge_quality",    # positions.js / workflow Exposure (formerly hedge.js renderPortfolioHedgeRadar)
         "net_greeks",       # greeks.js — renderGreeksCards
         "greeks",           # greeks.js — renderGreeksTable (uses g.und + g.hedge_type)
     }

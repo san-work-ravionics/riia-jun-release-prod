@@ -189,8 +189,6 @@ def _unguarded_lookups() -> tuple[int, list[tuple[str, int, str]]]:
 def test_unguarded_getelementbyid_ids_exist_in_fno_html():
     total, unguarded = _unguarded_lookups()
     assert total > 100, f"getElementById scan looks vacuous ({total} call sites)"
-    assert any(f in ("greeks.js", "stress.js") for f, _, _ in unguarded), \
-        "expected greeks.js/stress.js to contain unguarded lookups at Tier A baseline"
     ids = _fno_html_ids()
     new_gaps = [
         f"{f}:{ln} getElementById('{i}')"
@@ -203,15 +201,41 @@ def test_unguarded_getelementbyid_ids_exist_in_fno_html():
     )
 
 
-def test_greeks_and_stress_host_ids_are_in_fno_html_while_unguarded():
-    """The 12 shared-host ids from finding 2: present today; guard them before deleting."""
-    ids = _fno_html_ids()
-    host_ids = ["greeks-all-grid", "greeks-tbody", "greeks-footer", "greeks-table-sub",
-                "stress-row", "stress-card-sub", "payoff-charts-grid", "payoff-nifty-wrap",
-                "payoff-bnkn-wrap"]
+def _section(html: str, section_id: str) -> str:
+    start = html.index(f'id="{section_id}"')
+    nxt = html.find('<div class="section"', start)
+    return html[start: nxt if nxt != -1 else len(html)]
+
+
+# ── Tier B (F39 Phase 4): retired modules gone, D2 blocks relocated to #page-risk ────
+
+_RELOCATED_IDS = ["greeks-all-grid", "greeks-tbody", "greeks-footer", "greeks-table-sub",
+                  "stress-row", "stress-card-sub", "payoff-charts-grid", "payoff-nifty-wrap",
+                  "payoff-bnkn-wrap", "payoff-chart", "payoff-chart-bnkn"]
+
+
+def test_relocated_greeks_stress_payoff_ids_live_inside_page_risk():
+    html = _FNO_HTML.read_text(encoding="utf-8")
+    risk = _section(html, "page-risk")
+    for i in _RELOCATED_IDS:
+        assert f'id="{i}"' in risk, f"{i} missing from #page-risk"
+        assert html.count(f'id="{i}"') == 1, f"{i} duplicated"
+
+
+def test_greeks_and_stress_have_no_unguarded_lookups_at_all():
     _, unguarded = _unguarded_lookups()
-    unguarded_in = {i for f, _, i in unguarded if f in ("greeks.js", "stress.js")}
-    for i in unguarded_in:
-        assert i in ids, i
-    assert {"greeks-all-grid", "stress-row"} <= unguarded_in
-    assert all(h in ids for h in host_ids)
+    assert [(f, i) for f, _, i in unguarded if f in ("greeks.js", "stress.js")] == []
+
+
+def test_retired_modules_and_sections_are_gone_and_not_imported():
+    for name in _DELETE_LIST:
+        assert not (_FNO / name).exists(), name
+    for f in sorted(_JS.rglob("*.js")):
+        bad = [s for s in _imports(f) if Path(s).name in _DELETE_LIST]
+        assert not bad, f"{f.name} imports retired module {bad}"
+    html = _FNO_HTML.read_text(encoding="utf-8")
+    for sid in ("page-hedge", "page-equity-hedge", "page-portfolio-hedge"):
+        assert f'id="{sid}"' not in html, sid
+    assert html.count('id="page-manoeuvre"') == 1
+    assert (_FNO / "manoeuvre.js").is_file()
+    assert (_FNO / "portfolio-hedge.js").is_file()      # Overview block retained (D1)

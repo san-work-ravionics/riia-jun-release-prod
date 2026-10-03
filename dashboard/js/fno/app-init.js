@@ -8,7 +8,6 @@ import { renderGreeksCards, renderGreeksTable, updateRiskSections } from './gree
 import { renderStressScenarios } from './stress.js';
 import { renderPayoffChart } from './payoff.js';
 import { saveToday, syncPriceHistory, renderScenarios } from './rr.js';
-import { renderPortfolioHedgeRadar } from './hedge.js';
 import { initManoeuvre } from './manoeuvre.js';
 import { fetchAndRenderRiskCharts, highlightRiskChart } from './risk_chart.js';
 
@@ -134,7 +133,6 @@ function _renderAll() {
   renderStressScenarios();
   renderScenarios();
   renderPayoffChart();
-  renderPortfolioHedgeRadar();
   initManoeuvre();
 }
 
