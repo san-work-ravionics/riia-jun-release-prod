@@ -1,0 +1,156 @@
+{
+  "run_id": "20261003-1806",
+  "app": "fno",
+  "request": "Feature 39 Phase 4 \u2014 Migration + cleanup",
+  "skill_file": "project-office/skills/skill-add-fno-feature.md",
+  "agents": [
+    {
+      "role": "pm",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 35000,
+      "actual_tokens": {
+        "total_tokens": 50810,
+        "tool_uses": 4
+      },
+      "grounding_checks": {
+        "plan_status_read": true,
+        "sprint_fit_confirmed": true,
+        "risk_flags_assessed": true,
+        "approved": true
+      },
+      "failure_modes": [],
+      "notes": "Approved conditionally: user parity sign-off required before deletions."
+    },
+    {
+      "role": "architect",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 30000,
+      "actual_tokens": {
+        "total_tokens": 155034,
+        "tool_uses": 51
+      },
+      "grounding_checks": {
+        "api_contract_present": true,
+        "files_listed": true,
+        "dod_checklist_filled": true,
+        "spec_reference_valid": true
+      },
+      "failure_modes": [],
+      "notes": "Found portfolio-hedge.js is the live Overview block; deleting equity-hedge page would break boot incl. Manoeuvre without guards; Phase 1 matrix errors."
+    },
+    {
+      "role": "design_reviewer",
+      "status": "pass",
+      "steps_required": 5,
+      "steps_completed": 5,
+      "adherence_score": 1.0,
+      "token_estimate": 30000,
+      "actual_tokens": {
+        "total_tokens": 56409,
+        "tool_uses": 6
+      },
+      "grounding_checks": {
+        "requirements_coverage": true,
+        "api_contract_complete": true,
+        "frontend_contract_complete": true,
+        "files_to_touch_complete": true,
+        "dod_populated": true
+      },
+      "failure_modes": [],
+      "notes": "0 blocking, 7 advisory."
+    },
+    {
+      "role": "engineer",
+      "status": "pass_with_warnings",
+      "steps_required": 5,
+      "steps_completed": 5,
+      "adherence_score": 1.0,
+      "token_estimate": 90000,
+      "actual_tokens": {
+        "total_tokens": 244303,
+        "tool_uses": 107
+      },
+      "grounding_checks": {
+        "branch_created": true,
+        "code_changed": true,
+        "spec_updated": true,
+        "ruff_passed": true,
+        "contract_matches_architect": true
+      },
+      "failure_modes": [],
+      "notes": "Tier A tests, Tier B deletion + D2 relocation (one revertable commit), cleanup round. First Tier B attempt blocked by permission classifier until user approved."
+    },
+    {
+      "role": "code_reviewer",
+      "status": "conditional",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 70000,
+      "actual_tokens": {
+        "total_tokens": 78381,
+        "tool_uses": 15
+      },
+      "grounding_checks": {
+        "implementation_matches_design": true,
+        "js_contract_verified": true,
+        "engineer_guardrails_followed": true,
+        "spec_updated": true
+      },
+      "failure_modes": [],
+      "notes": "0 blocking, 4 advisory; missed 2 stale Spec_RITA_App.md mentions that QA caught."
+    },
+    {
+      "role": "qa",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 75000,
+      "actual_tokens": {
+        "total_tokens": 131098,
+        "tool_uses": 44
+      },
+      "grounding_checks": {
+        "tests_written": true,
+        "tests_passed": true,
+        "coverage_delta_recorded": true,
+        "contract_check_done": true
+      },
+      "failure_modes": [],
+      "notes": "15 new tests + 1 strict xfail (spec drift, fixed after). e2e hedge 6/6 against a DB copy; Save leg not verified on real dev DB (D5)."
+    },
+    {
+      "role": "techwriter",
+      "status": "pass_with_warnings",
+      "steps_required": 3,
+      "steps_completed": 2,
+      "adherence_score": 0.67,
+      "token_estimate": 55000,
+      "actual_tokens": {
+        "total_tokens": 57850,
+        "tool_uses": 4
+      },
+      "grounding_checks": {
+        "confluence_updated": false,
+        "spec_file_confirmed": true,
+        "branch_noted": true
+      },
+      "failure_modes": [],
+      "notes": "Design recorded; docs finished by Engineer/orchestrator; Confluence n/a (HTTP 403 on stale token)."
+    }
+  ],
+  "overall_status": "pass_with_warnings",
+  "total_tokens_estimated": 385000,
+  "total_actual_tokens": 773885,
+  "duration_minutes": null,
+  "branch": "feature/f39-phase4-cleanup-fno",
+  "merge_status": "merged",
+  "merge_commit": "3fe2663"
+}
