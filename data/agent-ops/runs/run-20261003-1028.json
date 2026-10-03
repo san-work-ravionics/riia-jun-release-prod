@@ -1,0 +1,81 @@
+{
+  "run_id": "20261003-1028",
+  "app": "fno",
+  "request": "Feature 39 — fno-unified-hedge-workflow. Phase 1 (Design pass) — open questions 1-4 already answered and written to REQUIREMENTS.md/PLAN_STATUS.md/eng-context.md. Remaining Phase 1 tasks: 1.1 parity-matrix inventory, 1.3 wireframes + shared state model, 1.4 API reuse plan, 1.5 Design Review. Phase 1 design pass only — Phase 2 (Engineer) deferred to a future /enhance run.",
+  "skill_file": "project-office/skills/skill-add-fno-feature.md",
+  "scope_note": "Phase 1 (design) only. Engineer / Code Review / QA / TechWriter(Confluence) steps did not run this session — Phase 2 is blocked on this Design Review and is a separate future /enhance fno run.",
+  "agents": [
+    {
+      "role": "pm",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 35000,
+      "actual_tokens": 55169,
+      "tool_uses": 10,
+      "grounding_checks": {
+        "plan_status_read": true,
+        "sprint_fit_confirmed": true,
+        "risk_flags_assessed": true,
+        "approved": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "architect",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 30000,
+      "actual_tokens": 119355,
+      "tool_uses": 30,
+      "grounding_checks": {
+        "api_contract_present": true,
+        "files_listed": true,
+        "dod_checklist_filled": true,
+        "spec_reference_valid": true
+      },
+      "failure_modes": [],
+      "notes": "Two invocations: initial Phase 1 design (79485 tokens, 21 tool_uses, passed the 5-check structural gate first attempt) + one re-invocation to produce the missing wireframe artifact after Design Review's blocking finding (39870 tokens, 9 tool_uses)."
+    },
+    {
+      "role": "design_reviewer",
+      "status": "pass",
+      "steps_required": 5,
+      "steps_completed": 5,
+      "adherence_score": 1.0,
+      "token_estimate": 30000,
+      "actual_tokens": 137314,
+      "tool_uses": 13,
+      "grounding_checks": {
+        "requirements_coverage": true,
+        "api_contract_complete": true,
+        "frontend_contract_complete": true,
+        "files_to_touch_complete": true,
+        "dod_populated": true
+      },
+      "failure_modes": [],
+      "notes": "First pass (65889 tokens, 6 tool_uses): FAIL, 1 BLOCKING (wireframes missing) + 5 ADVISORY. Second pass after fix (71425 tokens, 7 tool_uses): PASS, 0 BLOCKING, 2 ADVISORY remaining (both closed by the orchestrator directly after the review: DoD checkbox ticked, ADR-001 citation corrected to project.md §1's opening rule)."
+    }
+  ],
+  "overall_status": "pass",
+  "total_tokens_estimated": 95000,
+  "total_actual_tokens": 409653,
+  "total_actual_tokens_breakdown_note": "Includes 2 non-pipeline TechWriter-recording helper calls (48978 + 48837 tokens) used to transcribe Architect output into the brief — not a distinct AGENT_RESULTS role in this run, folded into total only.",
+  "duration_minutes": 48,
+  "branch": "",
+  "merge_status": "n/a — design-only run, no src/ or dashboard/js/ changes",
+  "merge_commit": null,
+  "deliverables": [
+    "project-office/task-briefs/task-brief-20261003-1028.md",
+    "project-office/features/Aug/39 fno-unified-hedge-workflow/docs/wireframes.md",
+    "project-office/features/Aug/39 fno-unified-hedge-workflow/REQUIREMENTS.md (open questions answered, wireframe scope corrected)",
+    "project-office/features/Aug/39 fno-unified-hedge-workflow/PLAN_STATUS.md (Phase 1 marked complete)"
+  ],
+  "known_gaps_carried_forward": [
+    "Hedge Advisor reasoning endpoint path undocumented in spec — Engineer must confirm from source in Phase 3, not fabricate.",
+    "Separate out-of-scope bug found during review: Manoeuvre's hardcoded MAN_LOT.NIFTY=65 contradicts project.md §2's documented NIFTY lot size of 75 — needs its own defect fix, not bundled into F39."
+  ]
+}

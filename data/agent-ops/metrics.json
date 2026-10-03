@@ -1,53 +1,53 @@
 {
-  "generated_at": "2026-09-20T21:28:33",
-  "total_runs": 13,
+  "generated_at": "2026-10-03T16:04:15",
+  "total_runs": 17,
   "status_counts": {
-    "pass_with_warnings": 6,
-    "pass": 7
+    "pass_with_warnings": 8,
+    "pass": 9
   },
   "app_counts": {
     "rl": 2,
     "rita": 5,
     "ops": 1,
-    "fno": 5
+    "fno": 9
   },
-  "total_estimated_tokens": 2473800,
-  "total_actual_tokens": 2134540,
-  "total_duration_minutes": 765,
-  "avg_duration_minutes": 58.8,
+  "total_estimated_tokens": 3433800,
+  "total_actual_tokens": 4739495,
+  "total_duration_minutes": 949,
+  "avg_duration_minutes": 55.8,
   "per_agent": {
     "pm": {
-      "runs": 8,
+      "runs": 12,
       "avg_adherence": 1.0,
-      "total_estimated_tokens": 215000,
+      "total_estimated_tokens": 355000,
       "total_actual_tokens": 245631,
-      "token_overrun_ratio": 1.14,
+      "token_overrun_ratio": 0.69,
       "top_failure_modes": {}
     },
     "architect": {
-      "runs": 8,
+      "runs": 12,
       "avg_adherence": 1.0,
-      "total_estimated_tokens": 200000,
+      "total_estimated_tokens": 320000,
       "total_actual_tokens": 35108,
-      "token_overrun_ratio": 0.18,
+      "token_overrun_ratio": 0.11,
       "top_failure_modes": {}
     },
     "design_reviewer": {
-      "runs": 8,
+      "runs": 12,
       "avg_adherence": 1.0,
-      "total_estimated_tokens": 174000,
+      "total_estimated_tokens": 294000,
       "total_actual_tokens": 163824,
-      "token_overrun_ratio": 0.94,
+      "token_overrun_ratio": 0.56,
       "top_failure_modes": {
         "DR-001": 1
       }
     },
     "engineer": {
-      "runs": 14,
-      "avg_adherence": 0.975,
-      "total_estimated_tokens": 613000,
+      "runs": 16,
+      "avg_adherence": 0.978,
+      "total_estimated_tokens": 793000,
       "total_actual_tokens": 604213,
-      "token_overrun_ratio": 0.99,
+      "token_overrun_ratio": 0.76,
       "top_failure_modes": {
         "FC-LINT: unused import shipped, caught by CI ruff gate": 1,
         "FC-COV: new 538-line module shipped without coverage omit entry": 1,
@@ -55,31 +55,31 @@
       }
     },
     "code_reviewer": {
-      "runs": 8,
-      "avg_adherence": 0.969,
-      "total_estimated_tokens": 366000,
+      "runs": 10,
+      "avg_adherence": 0.975,
+      "total_estimated_tokens": 506000,
       "total_actual_tokens": 342029,
-      "token_overrun_ratio": 0.93,
+      "token_overrun_ratio": 0.68,
       "top_failure_modes": {
         "CR-WORKTREE-FALSE-POSITIVE: spec blocking findings overridden \u2014 specs confirmed present in worktree branch": 1
       }
     },
     "qa": {
-      "runs": 8,
-      "avg_adherence": 0.938,
-      "total_estimated_tokens": 550000,
+      "runs": 10,
+      "avg_adherence": 0.95,
+      "total_estimated_tokens": 700000,
       "total_actual_tokens": 358759,
-      "token_overrun_ratio": 0.65,
+      "token_overrun_ratio": 0.51,
       "top_failure_modes": {
         "No unit tests \u2014 no RITA backend code to test (external middleware)": 1
       }
     },
     "techwriter": {
-      "runs": 8,
-      "avg_adherence": 0.794,
-      "total_estimated_tokens": 355000,
+      "runs": 10,
+      "avg_adherence": 0.802,
+      "total_estimated_tokens": 465000,
       "total_actual_tokens": 384976,
-      "token_overrun_ratio": 1.08,
+      "token_overrun_ratio": 0.83,
       "top_failure_modes": {
         "Confluence key not present in aug workspace": 1
       }
@@ -99,7 +99,8 @@
     "[ALERT] techwriter adherence 0.67 < 0.7 in run 20260809-0908",
     "[ALERT] qa adherence 0.50 < 0.7 in run 20260918-1049",
     "[ALERT] techwriter adherence 0.67 < 0.7 in run 20260918-1049",
-    "[ALERT] techwriter adherence 0.67 < 0.7 in run 20260918-1101"
+    "[ALERT] techwriter adherence 0.67 < 0.7 in run 20260918-1101",
+    "[ALERT] techwriter adherence 0.67 < 0.7 in run 20261003-1114"
   ],
   "skill_version_history": [
     {
