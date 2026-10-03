@@ -156,7 +156,7 @@ globalThis.window = globalThis;
 globalThis.sessionStorage = { getItem:k=>store[k]??null, setItem:(k,v)=>{store[k]=String(v)}, removeItem:k=>{delete store[k]} };
 globalThis.location = { hostname:'localhost', href:'http://localhost/' };
 const els = {};
-globalThis.document = { getElementById:(id)=> els[id] ??= { id, innerHTML:'', textContent:'', style:{}, dataset:{}, closest:()=>null, getContext:()=>({}) },
+globalThis.document = { getElementById:(id)=> els[id] ??= { id, innerHTML:'', textContent:'', style:{}, dataset:{}, classList:{add(){}}, closest:()=>null, getContext:()=>({}) },
   querySelector:()=>null, querySelectorAll:()=>[], addEventListener(){} };
 const charts = [];
 globalThis.Chart = class { constructor(ctx, cfg){ this.cfg=cfg; this.id=ctx.id; charts.push(this); } destroy(){ this.destroyed=true; } update(){} static register(){} };
@@ -195,7 +195,11 @@ const change = charts.filter(c => c.id === 'hw-exp-change-chart').at(-1);
 console.log(JSON.stringify({
   inst: hw.instrumentId,
   tiles: document.getElementById('hw-exp-sigma-kpis').innerHTML,
-  summary: document.getElementById('hw-exp-challenge-summary').innerHTML,
+  summary: document.getElementById('hw-exp-latest-view').innerHTML,
+  oldSummary: 'hw-exp-challenge-summary' in els,
+  yBegin: candle?.cfg.options.scales.y.beginAtZero,
+  changeLabels: change?.cfg.data.datasets.map(d => d.label),
+  lastClose: daily.at(-1).price,
   holdingsTouched: 'hw-exp-holdings-table' in els,
   labels: candle?.cfg.data.datasets.map(d => d.label),
   bandVals: candle?.cfg.data.datasets.slice(1).map(d => d.data[0]),
@@ -205,10 +209,15 @@ console.log(JSON.stringify({
     assert r["inst"] == "RELIANCE" and r["holdingsTouched"] is False
     s = 30 / 100 / math.sqrt(12)
     assert f"{-s * 100:.1f}%" in r["tiles"] and f"{-s * 300:.1f}%" in r["tiles"]
-    assert "Your current challenge" in r["summary"] and "√12" in r["summary"]
-    assert r["labels"][0] == "Body" and len(r["labels"]) == 5  # body + −1σ/−2σ/−3σ + +1σ
+    assert "Latest Price View" in r["summary"] and "√12" in r["summary"]
+    assert "Your current challenge" not in r["summary"] and r["oldSummary"] is False
+    # ONE dotted σ line only (−1σ), anchored on the candle series' last close
+    assert r["labels"][0] == "Body" and len(r["labels"]) == 2
     last = 2000 + 6 * 50 + 28
-    assert r["bandVals"][:3] == pytest.approx([last * (1 - k * s) for k in (1, 2, 3)])
+    assert r["lastClose"] == last
+    assert r["bandVals"] == pytest.approx([last * (1 - s)], rel=1e-12)
+    assert r["yBegin"] is False  # candles must not be squashed against a zero baseline
+    assert len(r["changeLabels"]) == 2 and r["changeLabels"][1].startswith("−1σ")
     assert r["changeBars"] == 5
     assert len(r["post"]) == 1 and '"n_shares":10' in r["post"][0]
 
@@ -248,3 +257,41 @@ console.log(JSON.stringify({ step: hw.step, imp, kpis: document.getElementById('
     assert r["labels"] == ["Flat", "−1σ", "−2σ", "−3σ"]
     assert "Unhedged P&amp;L" in r["imp"] and "Protected" in r["imp"]
     assert "Max drawdown" in r["kpis"] and "Premium cost" in r["kpis"]
+
+
+def test_sigma_line_within_candle_value_range_scale_and_equity_chart_unchanged(jsroot):
+    """The σ line is lastClose×(1−σ) on the candle series itself, so it can never sit in a
+    different unit scale; the Equity Hedge page keeps its original zero-based axis + ±1σ."""
+    uri = (jsroot / "fno" / "hedge-charts.js").as_uri()
+    r = _node(jsroot, _PRELUDE.split("const base")[0] + f"""
+import * as ch from {json.dumps(uri)};
+const bands = [{{label:'b', value: daily.at(-1).price*(1-0.05)}}];
+const c1 = ch.renderMonthlyCandles('x', daily, {{ bands, beginAtZero:false }});
+const c2 = ch.renderMonthlyCandles('y', daily, {{}});
+const c3 = ch.renderMonthlyChange('z', daily, {{}});
+const lows = c1.cfg.data.datasets[0].data.map(d=>d[0]);
+console.log(JSON.stringify({{ line: c1.cfg.data.datasets[1].data[0], minLow: Math.min(...lows), maxHigh: Math.max(...c1.cfg.data.datasets[0].data.map(d=>d[1])),
+  zeroDefault: c2.cfg.options.scales.y.beginAtZero, nLines: c2.cfg.data.datasets.length, mom: c3.cfg.data.datasets.length }}));""")
+    assert 0.5 * r["minLow"] < r["line"] < r["maxHigh"]
+    assert r["zeroDefault"] is True and r["nLines"] == 1 and r["mom"] == 4
+
+
+def test_recommendation_step_renders_original_advisor_screen_and_selection_table(jsroot):
+    r = _node(jsroot, _PRELUDE + r"""
+const orig = globalThis.fetch;
+const steps = ['REGIME','TECHNICAL','SENTIMENT','ALLOC','VOL','GOAL','HEDGE_ADVISOR'].map((a, i) => ({ agent: a, title: 't'+i, narrative: 'n'+i, verdict: 'Bullish', data: i === 6 ? { primary_recommendation: 'call_sell', call_sell: {}, put_buy: {} } : {} }));
+globalThis.fetch = async (u, o = {}) => u.includes('/hedge-reasoning')
+  ? jr({ steps, recommendation: 'call_sell', confidence: 'High', spot_price: 2500, data_source: 'x', timestamp: null })
+  : orig(u, o);
+await wf.loadHedgeWorkflow('recommendation');
+await new Promise(r => setTimeout(r, 4000));
+const rec = await import(base + 'fno/hedge-workflow-recommendation.js');
+console.log(JSON.stringify({
+  step: hw.step, sel: hw.selections['RELIANCE'],
+  res: els['ha-results'].style.display, s0: els['ha-step-0-narrative'].textContent, s6: els['ha-step-6-verdict'].textContent,
+  final: els['ha-final-verdict'].textContent, table: els['hw-rec-selection-table'].innerHTML.includes('Hedged?'),
+  oldCard: 'hw-rec-verdict-card' in els || 'hw-rec-cascade' in els,
+}));""")
+    assert r["step"] == "recommendation" and r["sel"] == "call_sell"
+    assert r["res"] == "" and r["s0"] == "n0" and r["s6"] == "Bullish"
+    assert r["final"] == "CALL SELL" and r["table"] is True and r["oldCard"] is False

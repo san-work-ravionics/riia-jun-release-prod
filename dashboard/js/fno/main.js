@@ -87,7 +87,7 @@ import { loadEquityHedge } from './equity_hedge.js';
 import { init as loadEquityScenarios } from '../scenarios/equity-scenarios.js';
 import { initI18n, setLanguage, applyTranslations } from '../shared/i18n.js';
 import { loadPortfolioHedge, phSetCoverage, phSetDuration, phToggleHedge, phPickStrategy, phSetScenarioTab } from './portfolio-hedge.js';
-import { loadHedgeAdvisor, haAnalyse, haSkipToVerdict } from './hedge-reasoning.js';
+import { haSkipToVerdict } from './hedge-reasoning.js';
 import { loadStudy } from './study.js';
 import { loadExperiment, fetchExpData, switchExpTab } from './experiment.js';
 import { loadHedgeWorkflow, hwGoToStep, hwSelectInstrument, hwRefreshStep } from './hedge-workflow.js';
@@ -109,10 +109,7 @@ window.phToggleHedge      = phToggleHedge;
 window.phPickStrategy     = phPickStrategy;
 window.phSetScenarioTab   = phSetScenarioTab;
 
-// Hedge Advisor reasoning page — kept for direct programmatic use (debug/back-compat);
-// nav no longer reaches this page directly, see Hedge Workflow aliases below.
-window.loadHedgeAdvisor   = loadHedgeAdvisor;
-window.haAnalyse          = haAnalyse;
+// Hedge Advisor reasoning screen now lives in the Recommendation step (Skip button handler).
 window.haSkipToVerdict    = haSkipToVerdict;
 
 // ── Unified Hedge Workflow (F39 Phase 2/3) ───────────────────────────────────
