@@ -216,13 +216,6 @@ def _flow(jsroot: Path, body: str) -> object:
     return _node(jsroot, _PRELUDE + "\n" + body)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="Code Review advisory #1 CONFIRMED: hwSave() sends its PUT while an autosave PUT is in "
-    "flight (no await/cancel), so the autosave (last_step='whatif') can land last; UI shows Saved, "
-    "hw.savedPlan.last_step=='whatif', DB 'whatif'. Source intentionally not fixed by QA. "
-    "Remove xfail once hwSave awaits/cancels the in-flight autosave.",
-)
 def test_autosave_in_flight_then_explicit_save_ends_with_last_step_save(jsroot):
     """Code Review advisory #1. An autosave PUT (last_step 'whatif') still in flight when
     the user clicks Save must not be able to land AFTER the explicit 'save' write."""

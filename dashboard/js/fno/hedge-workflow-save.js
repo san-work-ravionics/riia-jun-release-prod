@@ -15,6 +15,7 @@ import { state } from './state.js';
 const _SAVE_DEBOUNCE_MS = 400;
 let _saveTimer = null;
 let _saveToken = 0;
+let _inflight = null; // promise of the autosave PUT currently on the wire
 
 export const TAB_LABELS = { pp: 'Protective put', ps: 'Put spread', collar: 'Collar' };
 export const STRATEGY_LABELS = { put_buy: 'Protective put', call_sell: 'Covered call' };
@@ -54,9 +55,15 @@ export function hwScheduleSave() {
   _saveTimer = setTimeout(_autosave, _SAVE_DEBOUNCE_MS);
 }
 
-async function _autosave() {
+function _autosave() {
   const hw = _hw();
-  if (hw.saveStatus === 'saving') return;
+  if (hw.saveStatus === 'saving') return Promise.resolve();
+  const p = _doAutosave(hw).finally(() => { if (_inflight === p) _inflight = null; });
+  _inflight = p;
+  return p;
+}
+
+async function _doAutosave(hw) {
   try {
     // Entering the Save step must not itself count as "Saved": only an explicit
     // hwSave() writes last_step:'save'.
@@ -76,6 +83,9 @@ export async function hwSave() {
   clearTimeout(_saveTimer);
   hw.saveStatus = 'saving';
   _renderSaveStatus();
+  // An autosave PUT already on the wire must land BEFORE the explicit write, so the
+  // final DB row (and savedPlan/UI) always carries last_step 'save'.
+  if (_inflight) await _inflight.catch(() => {});
   try {
     const res = await api('/api/v1/experience/fno/hedge-plan', 'PUT', _planBody('save'));
     if (!res) throw new Error('Not signed in or no response');

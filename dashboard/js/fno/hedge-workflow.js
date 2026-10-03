@@ -114,8 +114,9 @@ export function hwRefreshStep() {
 export function hwSelectInstrument(id) {
   state.hedgeWorkflow.instrumentId = id;
   _renderInstrumentSelect();
-  _fetchLiveData(id);
   const step = state.hedgeWorkflow.step;
+  // What-if fetches kite-live itself (with the chosen hedge's strike); avoid a duplicate.
+  if (step !== 'whatif') _fetchLiveData(id);
   if (step === 'recommendation') loadRecommendationStep();
   else if (step === 'whatif') loadWhatIfStep();
 }
