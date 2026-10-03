@@ -390,6 +390,25 @@ def step_log(db: Session = Depends(get_db)) -> list[dict[str, Any]]:
     return response
 
 
+def _normalize_actual_tokens(agent_json: dict[str, Any]) -> Optional[dict]:
+    """Return actual_tokens as {"total_tokens": N, "tool_uses": M} from a run-JSON agent.
+
+    Run logs store it either as that dict (older logs) or as a bare int with a
+    sibling ``tool_uses`` (newer logs). A bare int previously failed AgentOut
+    validation and 500'd the whole endpoint, so accept both.
+    """
+    raw = agent_json.get("actual_tokens")
+    if isinstance(raw, dict):
+        return raw
+    if isinstance(raw, (int, float)) and not isinstance(raw, bool):
+        tool_uses = agent_json.get("tool_uses")
+        return {
+            "total_tokens": int(raw),
+            "tool_uses": tool_uses if isinstance(tool_uses, int) else None,
+        }
+    return None
+
+
 # ── GET /api/experience/ops/agent-builds ─────────────────────────────────────
 
 @router.get("/agent-builds", response_model=AgentBuildsResponse)
@@ -531,7 +550,7 @@ def get_agent_builds(
                 steps_completed=a.steps_completed,
                 grounding_checks=a.grounding_checks,
                 failure_modes=a.failure_modes,
-                actual_tokens=_json_agents_by_role.get(a.role, {}).get("actual_tokens"),
+                actual_tokens=_normalize_actual_tokens(_json_agents_by_role.get(a.role, {})),
             )
             for a in agents_for_run
         ]
