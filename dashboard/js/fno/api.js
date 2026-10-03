@@ -1,6 +1,6 @@
 // ── FnO API — thin re-export wrapper ──────────────────────────────────────────
 // HTTP primitives come from the shared layer. This file re-exports them so
-// existing consumers (rr.js, hedge.js, manoeuvre.js) need no import changes.
+// existing consumers (rr.js, manoeuvre.js) need no import changes.
 export { apiBase, api, apiFetch } from '../shared/api.js';
 
 // API key — set to match PORTFOLIO_API_KEY env var if configured.

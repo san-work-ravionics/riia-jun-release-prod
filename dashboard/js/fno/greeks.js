@@ -8,6 +8,7 @@ export function renderGreeksCards() {
   const allUnds = [...new Set(state.greeksData.map(g => g.und))];
   const unds  = sel ? (allUnds.includes(sel) ? [sel] : []) : allUnds;
   const grid  = document.getElementById('greeks-all-grid');
+  if (!grid) return;
   if (!unds.length) {
     grid.innerHTML = `<div style="padding:16px;color:var(--t4);font-size:13px;">No Greeks data — select a portfolio instrument above or check API response</div>`;
     return;
@@ -52,8 +53,9 @@ export function renderGreeksTable() {
   const subEl = document.getElementById('greeks-table-sub');
   const noHedgeNote = filtered.length && filtered.every(g => g.theta === 0 && g.vega === 0 && g.gamma === 0)
     ? ' · Θ/V/Γ = 0 — add a hedge plan to see option Greeks' : '';
-  subEl.textContent = (sel ? sel : (state.currentUnd === 'ALL' ? t('greeks.all_positions') : state.currentUnd + t('greeks.positions_suffix'))) + noHedgeNote;
-  document.getElementById('greeks-tbody').innerHTML = filtered.map(g => {
+  if (subEl) subEl.textContent = (sel ? sel : (state.currentUnd === 'ALL' ? t('greeks.all_positions') : state.currentUnd + t('greeks.positions_suffix'))) + noHedgeNote;
+  const tbodyEl = document.getElementById('greeks-tbody');
+  if (tbodyEl) tbodyEl.innerHTML = filtered.map(g => {
     const dStr = g.delta >= 0 ? `+${g.delta}` : String(g.delta);
     const tStr = g.theta > 0 ? `+₹${g.theta}` : g.theta === 0 ? '₹0' : `−₹${Math.abs(g.theta)}`;
     const vStr = g.vega  > 0 ? `+₹${g.vega}`  : g.vega  === 0 ? '₹0' : `−₹${Math.abs(g.vega)}`;
@@ -74,7 +76,8 @@ export function renderGreeksTable() {
   const totDelta = filtered.reduce((s, g) => s + g.delta, 0);
   const totTheta = filtered.reduce((s, g) => s + g.theta, 0);
   const totVega  = filtered.reduce((s, g) => s + g.vega,  0);
-  document.getElementById('greeks-footer').innerHTML = `
+  const footerEl = document.getElementById('greeks-footer');
+  if (footerEl) footerEl.innerHTML = `
     <span class="lbl">${t('greeks.net_delta_lbl')}</span><span class="val ${pnlClass(totDelta)}">${totDelta >= 0 ? '+' : ''}${totDelta}</span>
     <span class="lbl">${t('greeks.net_theta_lbl')}</span><span class="val ${pnlClass(totTheta)}">${totTheta >= 0 ? '+₹' : '−₹'}${Math.abs(totTheta)}${t('greeks.per_day')}</span>
     <span class="lbl">${t('greeks.net_vega_lbl')}</span><span class="val ${pnlClass(totVega)}">${totVega >= 0 ? '+₹' : '−₹'}${Math.abs(totVega)}</span>`;
@@ -85,9 +88,12 @@ export function updateRiskSections() {
   const showBnkn   = state.currentUnd !== 'NIFTY';
   const sideBySide = state.currentUnd === 'ALL';
 
-  document.getElementById('payoff-nifty-wrap').style.display = showNifty ? '' : 'none';
-  document.getElementById('payoff-bnkn-wrap').style.display  = showBnkn  ? '' : 'none';
-  document.getElementById('payoff-charts-grid').style.gridTemplateColumns = sideBySide ? '1fr 1fr' : '1fr';
+  const niftyWrap = document.getElementById('payoff-nifty-wrap');
+  const bnknWrap  = document.getElementById('payoff-bnkn-wrap');
+  const chartGrid = document.getElementById('payoff-charts-grid');
+  if (niftyWrap) niftyWrap.style.display = showNifty ? '' : 'none';
+  if (bnknWrap)  bnknWrap.style.display  = showBnkn  ? '' : 'none';
+  if (chartGrid) chartGrid.style.gridTemplateColumns = sideBySide ? '1fr 1fr' : '1fr';
 
   // stress-card-sub is now set by renderStressScenarios() in stress.js
 }

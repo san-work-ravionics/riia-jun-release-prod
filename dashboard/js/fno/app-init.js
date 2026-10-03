@@ -3,12 +3,10 @@
 import { apiBase, RITA_API_KEY } from './api.js';
 import { state } from './state.js';
 import { buildExpiryPills } from './nav.js';
-import { renderDashboard } from './dashboard.js';
 import { renderGreeksCards, renderGreeksTable, updateRiskSections } from './greeks.js';
 import { renderStressScenarios } from './stress.js';
 import { renderPayoffChart } from './payoff.js';
 import { saveToday, syncPriceHistory, renderScenarios } from './rr.js';
-import { renderPortfolioHedgeRadar } from './hedge.js';
 import { initManoeuvre } from './manoeuvre.js';
 import { fetchAndRenderRiskCharts, highlightRiskChart } from './risk_chart.js';
 
@@ -127,14 +125,12 @@ export async function initApp(mode = 'mock') {
 }
 
 function _renderAll() {
-  renderDashboard();
   updateRiskSections();
   renderGreeksCards();
   renderGreeksTable();
   renderStressScenarios();
   renderScenarios();
   renderPayoffChart();
-  renderPortfolioHedgeRadar();
   initManoeuvre();
 }
 

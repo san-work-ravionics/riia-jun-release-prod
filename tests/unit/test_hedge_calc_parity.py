@@ -1,7 +1,7 @@
 """F39 Phase 3 — parity of dashboard/js/fno/hedge-calc.js with the pre-extraction maths.
 
 hedge-calc.js holds the calculations extracted verbatim from portfolio-hedge.js
-(_buildRows, _aggregates, _hedgedPL, _rowParams, ...) and equity_hedge.js
+(_buildRows, _aggregates, _hedgedPL, _rowParams, ...) and the retired equity_hedge.js
 (_computeNShares, covered-call margin factors). The repo has no JS test runner, so this
 test runs the module under node and compares against a Python port of the ORIGINAL
 formulas (golden vectors). Skipped when node is not installed.
@@ -177,7 +177,7 @@ def test_compute_n_shares(tmp_path: Path, holding, inst, total, expected) -> Non
 
 
 def test_margin_estimate_equals_inject_asml_formula(tmp_path: Path) -> None:
-    """estimateEquityHedgeMargin == the injectAsmlToState formula in equity_hedge.js."""
+    """estimateEquityHedgeMargin == the injectAsmlToState formula (formerly equity_hedge.js, retired F39 Phase 4)."""
     eq = {
         "hedge_scenarios": {
             "mild_bearish": {"max_value_eur": 12345.67, "total_premium_eur": 40.0},
@@ -200,8 +200,8 @@ console.log(JSON.stringify([calc.estimateEquityHedgeMargin(eq, 'call_sell'),
 
 def test_old_pages_import_shared_calc_and_do_not_redefine_it() -> None:
     ph = (_FNO_JS / "portfolio-hedge.js").read_text(encoding="utf-8")
-    eh = (_FNO_JS / "equity_hedge.js").read_text(encoding="utf-8")
-    assert "from './hedge-calc.js'" in ph and "from './hedge-calc.js'" in eh
+    assert "from './hedge-calc.js'" in ph
     for removed in ("function _hedgedPL", "function _rowParams", "function _hedgeType", "_FNO_ELIGIBLE"):
         assert removed not in ph
-    assert "* 0.12" not in eh and "* 0.08" not in eh  # factors live only in hedge-calc.js
+    assert not (_FNO_JS / "equity_hedge.js").exists()  # retired in F39 Phase 4 Tier B
+

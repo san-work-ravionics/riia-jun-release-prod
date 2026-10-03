@@ -39,7 +39,8 @@ export function renderStressScenarios() {
     const spotStr = refSpot ? ` ~${refSpot.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : '';
     subEl.textContent = `${t('greeks.stress_sub')}${refInst}${spotStr}${sel ? '' : ' · all instruments'}`;
   }
-  document.getElementById('stress-row').innerHTML = scenarios.map(s => {
+  const rowEl = document.getElementById('stress-row');
+  if (rowEl) rowEl.innerHTML = scenarios.map(s => {
     const isFlat = s.move_pct === 0;
     const instLbl = s.nifty_level ? `${s.ref_label} ~${s.nifty_level.toLocaleString('en-IN')}` : '—';
     return `<div class="scenario-card${isFlat ? ' flat' : ''}">

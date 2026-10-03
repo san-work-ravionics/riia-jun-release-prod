@@ -9,6 +9,7 @@ Failing test = that FnO section will be empty or error on load.
 from __future__ import annotations
 
 import time
+from datetime import date, timedelta
 
 import requests
 import pytest
@@ -95,11 +96,11 @@ def test_fno_risk_reward_price_history(base_url):
 
 
 # ---------------------------------------------------------------------------
-# UC-F06  Hedge Radar
+# UC-F06  Hedge Radar (retired page; endpoint still feeds the workflow Save step)
 # ---------------------------------------------------------------------------
 
 def test_fno_hedge_history(base_url):
-    """hedge.js: GET /api/v1/portfolio/hedge-history — hedge suggestions table."""
+    """Workflow Save step: GET /api/v1/portfolio/hedge-history — hedge action log (flat list)."""
     r = requests.get(f"{base_url}/api/v1/portfolio/hedge-history", timeout=TIMEOUT)
     assert r.status_code == 200, f"portfolio/hedge-history missing — Hedge Radar will be empty: {r.status_code}"
 
@@ -109,7 +110,7 @@ def test_fno_hedge_history(base_url):
 # ---------------------------------------------------------------------------
 
 def test_fno_hedge_history_list(base_url):
-    """hedge.js: GET /api/v1/portfolio/hedge-history — historical hedge list."""
+    """Workflow Save step (history table): GET /api/v1/portfolio/hedge-history — flat list shape."""
     r = requests.get(f"{base_url}/api/v1/portfolio/hedge-history", timeout=TIMEOUT)
     assert r.status_code == 200, f"portfolio/hedge-history missing: {r.status_code}"
     assert isinstance(r.json(), list)
@@ -143,10 +144,41 @@ def test_fno_manoeuvre_pnl_history(base_url):
 #         Pure HTTP: exercises the exact endpoints the 4 step modules call.
 # ---------------------------------------------------------------------------
 
-def test_fno_hedge_workflow_flow(base_url, auth_token):
-    headers = {"Authorization": f"Bearer {auth_token}"}
+def _auth(auth_token) -> dict:
+    return {"Authorization": f"Bearer {auth_token}"}
 
-    # Recommendation: Hedge Advisor cascade (no auth, deterministic)
+
+def test_fno_hedge_workflow_exposure_leg(base_url, auth_token):
+    """Exposure leg: portfolio-analytics, portfolio-hedge, POST equity-hedge-scenarios."""
+    headers = _auth(auth_token)
+
+    r = requests.get(f"{base_url}/api/v1/experience/fno/portfolio-analytics",
+                     params={"mode": "real"}, headers=headers, timeout=TIMEOUT)
+    assert r.status_code == 200, f"portfolio-analytics failed: {r.status_code} {r.text}"
+    data = r.json()
+    for key in ("positions", "greeks", "net_greeks", "hedge_quality"):
+        assert key in data, f"portfolio-analytics missing '{key}'"
+
+    # portfolio-hedge needs an active portfolio: 404 'No active portfolio found' is the
+    # documented dev-user state (no portfolio key). 200 is verified for shape.
+    r = requests.get(f"{base_url}/api/v1/experience/fno/portfolio-hedge",
+                     params={"coverage": 50}, headers=headers, timeout=TIMEOUT)
+    assert r.status_code in (200, 404), f"portfolio-hedge unexpected: {r.status_code} {r.text}"
+    if r.status_code == 200:
+        assert "holdings" in r.json()
+
+    end = date.today()
+    body = {"instrument": "NIFTY", "n_shares": 1,
+            "start_date": (end - timedelta(days=365)).isoformat(), "end_date": end.isoformat()}
+    r = requests.post(f"{base_url}/api/v1/portfolio/equity-hedge-scenarios", json=body, timeout=TIMEOUT)
+    if r.status_code == 422:
+        pytest.skip(f"equity-hedge-scenarios has no price data for NIFTY here: {r.text[:120]}")
+    assert r.status_code == 200, f"equity-hedge-scenarios failed: {r.status_code} {r.text[:200]}"
+    assert "portfolio" in r.json()
+
+
+def test_fno_hedge_workflow_recommendation_leg(base_url):
+    """Recommendation leg: Hedge Advisor cascade (no auth, deterministic)."""
     r = requests.get(
         f"{base_url}/api/v1/experience/fno/hedge-reasoning",
         params={"instrument": "NIFTY", "n_shares": 10},
@@ -159,21 +191,31 @@ def test_fno_hedge_workflow_flow(base_url, auth_token):
         assert key in adv, f"hedge-reasoning missing '{key}'"
     assert adv["recommendation"] in ("call_sell", "put_buy", "no_hedge")
 
-    # What-if: kite-live always answers 200 (fallback in-payload when middleware is down)
+
+def test_fno_hedge_workflow_whatif_leg(base_url, auth_token):
+    """What-if leg: kite-live always answers 200 (fallback in-payload when middleware is down)."""
     r = requests.get(
         f"{base_url}/api/v1/experience/fno/kite-live",
         params={"instrument_id": "NIFTY"},
-        headers=headers,
+        headers=_auth(auth_token),
         timeout=TIMEOUT,
     )
     assert r.status_code == 200, f"kite-live must never fail: {r.status_code} {r.text}"
     assert r.json()["source"] in ("kite", "fallback")
 
-    # Save: PUT then GET restores last_step + history row (needs a portfolio key)
+
+def test_fno_hedge_workflow_save_leg(base_url, auth_token):
+    """Save leg: PUT then GET restores last_step; plus the hedge-history action log.
+
+    Needs a portfolio key. The dev user has none (PUT -> 404), so this leg is a DISCLOSED
+    SKIP, not a pass: the Save leg is NOT verified by e2e (F39 Phase 4 decision D5 pending:
+    seed a portfolio vs keep the skip). Unit coverage: test_f39_phase3_qa_js.py.
+    """
+    headers = _auth(auth_token)
     body = {"hedged_ids": ["NIFTY"], "coverage": 60, "scenario_tab": "collar", "last_step": "save"}
     r = requests.put(f"{base_url}/api/v1/experience/fno/hedge-plan", json=body, headers=headers, timeout=TIMEOUT)
     if r.status_code == 404:
-        pytest.skip("dev user has no saved portfolio key — hedge-plan save not exercisable")
+        pytest.skip("dev user has no portfolio key — Save leg NOT verified")
     assert r.status_code == 200, f"hedge-plan PUT failed: {r.status_code} {r.text}"
     r = requests.get(f"{base_url}/api/v1/experience/fno/hedge-plan", headers=headers, timeout=TIMEOUT)
     assert r.status_code == 200

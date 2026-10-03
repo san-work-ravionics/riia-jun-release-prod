@@ -142,8 +142,6 @@ class TestPhase2KeysPresent:
         "greeks.gamma",
         "greeks.theta_day",
         # Hedge
-        "hedge.reactive_score",
-        "hedge.tier_lottery",
         # Manoeuvre
         "man.pool_title",
         "man.save_snapshot_btn",
