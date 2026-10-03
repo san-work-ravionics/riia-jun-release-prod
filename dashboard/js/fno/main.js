@@ -90,14 +90,15 @@ import { loadPortfolioHedge, phSetCoverage, phSetDuration, phToggleHedge, phPick
 import { loadHedgeAdvisor, haAnalyse, haSkipToVerdict } from './hedge-reasoning.js';
 import { loadStudy } from './study.js';
 import { loadExperiment, fetchExpData, switchExpTab } from './experiment.js';
+import { loadHedgeWorkflow, hwGoToStep, hwSelectInstrument } from './hedge-workflow.js';
 
 window.setLanguage        = setLanguage;
 window.loadEquityHedge      = loadEquityHedge;
 _sectionLoaders['equity-scenarios'] = loadEquityScenarios;
 window.fnoSelectInstrument = fnoSelectInstrument;
 
-// Portfolio Hedge wizard
-_sectionLoaders['portfolio-hedge'] = loadPortfolioHedge;
+// Portfolio Hedge wizard — kept for direct programmatic use (debug/back-compat);
+// nav no longer reaches this page directly, see Hedge Workflow aliases below.
 window.loadPortfolioHedge = loadPortfolioHedge;
 window.phSetCoverage      = phSetCoverage;
 window.phSetDuration      = phSetDuration;
@@ -105,8 +106,33 @@ window.phToggleHedge      = phToggleHedge;
 window.phPickStrategy     = phPickStrategy;
 window.phSetScenarioTab   = phSetScenarioTab;
 
-// Hedge Advisor reasoning page
-_sectionLoaders['hedge-advisor'] = loadHedgeAdvisor;
+// Hedge Advisor reasoning page — kept for direct programmatic use (debug/back-compat);
+// nav no longer reaches this page directly, see Hedge Workflow aliases below.
+window.loadHedgeAdvisor   = loadHedgeAdvisor;
+window.haAnalyse          = haAnalyse;
+window.haSkipToVerdict    = haSkipToVerdict;
+
+// ── Unified Hedge Workflow (F39 Phase 2) ───────────────────────────────────
+_sectionLoaders['hedge-workflow'] = loadHedgeWorkflow;
+window.loadHedgeWorkflow   = loadHedgeWorkflow;
+window.hwGoToStep          = hwGoToStep;
+window.hwSelectInstrument  = hwSelectInstrument;
+
+// Redirect aliases — old nav keys stay registered in _sectionLoaders but now
+// deep-link into the unified workflow (Migration Plan; see nav.js comment for
+// the exact old-key -> step mapping). hedge/equity-hedge previously had no
+// _sectionLoaders entry (nav.js special-cased them directly) — now registered
+// here too so any direct `_sectionLoaders['hedge']()`-style call also redirects.
+function _hwAlias(step) {
+  return function () {
+    loadHedgeWorkflow();
+    if (typeof window.hwGoToStep === 'function') window.hwGoToStep(step);
+  };
+}
+_sectionLoaders['hedge'] = _hwAlias('exposure');
+_sectionLoaders['hedge-advisor'] = _hwAlias('recommendation');
+_sectionLoaders['equity-hedge'] = _hwAlias('recommendation');
+_sectionLoaders['portfolio-hedge'] = _hwAlias('exposure');
 
 // Study — Rolling Futures Backtest
 _sectionLoaders['study'] = loadStudy;
@@ -116,21 +142,22 @@ _sectionLoaders['experiment'] = loadExperiment;
 window.loadExperiment = loadExperiment;
 window.fetchExpData = fetchExpData;
 window.switchExpTab = switchExpTab;
-window.loadHedgeAdvisor   = loadHedgeAdvisor;
-window.haAnalyse          = haAnalyse;
-window.haSkipToVerdict    = haSkipToVerdict;
 
-// My Portfolio CTA — navigates to portfolio-hedge section from Overview
+// My Portfolio CTA — navigates to the Hedge Workflow (Exposure step) from Overview.
+// Was "navItem = ...[data-section=...]" (stale selector — nav markup uses
+// data-page, not data-section, so this lookup was already always null before
+// this change); now points at the real hedge-workflow nav item/section.
 window.fnoMpGoHedge = function () {
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
-  const navItem = document.querySelector('.nav-item[data-section="portfolio-hedge"]');
+  const navItem = document.querySelector('.nav-item[data-page="hedge-workflow"]');
   if (navItem) navItem.classList.add('active');
-  const section = document.getElementById('page-portfolio-hedge');
+  const section = document.getElementById('page-hedge-workflow');
   if (section) section.classList.add('active');
-  if (typeof _sectionLoaders['portfolio-hedge'] === 'function') {
-    _sectionLoaders['portfolio-hedge']();
+  if (typeof _sectionLoaders['hedge-workflow'] === 'function') {
+    _sectionLoaders['hedge-workflow']();
   }
+  if (typeof window.hwGoToStep === 'function') { window.hwGoToStep('exposure'); }
 };
 
 // ── Boot ──────────────────────────────────────────────────────────────────────

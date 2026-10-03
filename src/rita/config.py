@@ -133,6 +133,19 @@ class DatabaseSettings(BaseSettings):
     database_url: str = "sqlite:///./rita_output/rita.db"
 
 
+class IntegrationsSettings(BaseSettings):
+    """Settings for best-effort local-dev-only external middleware integrations.
+
+    No credential fields live here — e.g. the Kite API key/secret/access-token for
+    `fno-margin-fetch` stay entirely inside that service's own local config, outside
+    this workspace (F39 Phase 2 addendum).
+    """
+
+    model_config = SettingsConfigDict(extra="forbid")
+
+    fno_margin_fetch_base_url: str = "http://localhost:8000"
+
+
 class SecuritySettings(BaseSettings):
     """
     Security settings.
@@ -189,6 +202,7 @@ class Settings(BaseSettings):
     optimizer: OptimizerSettings = OptimizerSettings()
     security: SecuritySettings = SecuritySettings()
     database: DatabaseSettings = DatabaseSettings()
+    integrations: IntegrationsSettings = IntegrationsSettings()
 
     # The active environment name (informational — used during construction).
     env: str = "development"
@@ -228,6 +242,8 @@ class Settings(BaseSettings):
             merged.setdefault("model", {})["path"] = v
         if (v := os.environ.get("RITA_CHAT_EMBED_MODEL_PATH")):
             merged.setdefault("chat", {})["embed_model_path"] = v
+        if (v := os.environ.get("FNO_MARGIN_FETCH_BASE_URL")):
+            merged.setdefault("integrations", {})["fno_margin_fetch_base_url"] = v
 
         merged["env"] = rita_env
         return merged

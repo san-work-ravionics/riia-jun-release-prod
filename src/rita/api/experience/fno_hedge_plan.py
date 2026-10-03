@@ -74,6 +74,7 @@ def put_hedge_plan(
         coverage=body.coverage,
         scenario_tab=body.scenario_tab,
         duration="1y",  # business rule: always 1-year horizon
+        last_step=body.last_step or "exposure",
         updated_at=datetime.now(timezone.utc),
     )
     repo.upsert(plan)

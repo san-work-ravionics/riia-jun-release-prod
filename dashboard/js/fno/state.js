@@ -37,6 +37,43 @@ export const state = {
   payoffChart: null,
   payoffChartBnkn: null,
   hedgeTimelineChart: null,
+
+  // ── Unified Hedge Workflow (F39 Phase 2) ───────────────────────────────────
+  // Shared across hedge-workflow.js's shell + Exposure step this phase; the
+  // Recommendation/What-if/Save fields (recommendation, selections, coverage,
+  // duration, scenarioTab, payoff, marginImpact, hedgedIds) are populated by
+  // the Phase 3 modules — declared here now so the shape is stable across phases.
+  hedgeWorkflow: {
+    instrumentId: null,
+    knownInstruments: [],
+    shares: null,
+    cashEur: null,
+    holdings: [],
+    positions: [],
+    netGreeks: {},
+    hedgeQuality: { positions: [] },
+    recommendation: null,
+    selections: {},
+    coverage: 50,
+    duration: '1y',
+    scenarioTab: null,
+    payoff: null,
+    marginImpact: null,
+    hedgedIds: [],
+    step: 'exposure',
+    reached: new Set(['exposure']),
+    // Addendum (F39 Phase 2 — Zerodha/fno-margin-fetch): best-effort live
+    // overlay. Distinct from marginImpact (BSM/computed What-if figure) above —
+    // liveData.margin is the live Kite margin figure. Do not conflate the two.
+    liveData: {
+      available: false,
+      source: 'fallback',
+      lotSize: null,
+      quote: null,
+      margin: null,
+      fetchedAt: null,
+    },
+  },
 };
 
 // Derived helper: active positions filtered by currentUnd + currentExpiry

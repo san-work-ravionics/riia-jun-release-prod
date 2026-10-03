@@ -551,6 +551,10 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     <div class="nav-item p04" data-page="risk">
       <span class="nav-icon">⬡</span> <span data-i18n="nav.risk">Risk &amp; Greeks</span>
     </div>
+    <div class="nav-item p03" data-page="hedge-workflow">
+      <span class="nav-icon">🛡</span> Hedge Workflow
+      <span style="margin-left:auto;background:var(--p03-bg);color:var(--p03);font-family:var(--fm);font-size:9px;font-weight:600;padding:1px 6px;border-radius:100px;">F39</span>
+    </div>
     <div class="nav-item p04" data-page="equity-hedge">
       <span class="nav-icon">⬗</span> <span data-i18n="nav.equity_hedge">Equity Hedge</span>
     </div>
@@ -1228,6 +1232,36 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
        PORTFOLIO HEDGE (Feature 28 Phase 3)
   ════════════════════════════════════════════════ -->
   <div class="section" id="page-portfolio-hedge"></div>
+
+  <!-- ═══════════════════════════════════════════════
+       UNIFIED HEDGE WORKFLOW (Feature 39 Phase 2 — shell + Exposure step)
+       Other 3 step panels are empty stub containers — content is Phase 3 scope.
+  ════════════════════════════════════════════════ -->
+  <div class="section" id="page-hedge-workflow">
+    <div id="hw-stepper" style="display:flex;align-items:center;gap:4px;margin-bottom:16px;"></div>
+
+    <div id="hw-step-exposure">
+      <div id="hw-exp-hqs-banner" class="kpi" style="margin-bottom:16px;"></div>
+
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
+        <div id="hw-exp-instrument-select" class="kpi" style="min-width:200px;"></div>
+        <div class="kpi" style="flex:1;min-width:280px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div id="hw-exp-greeks-kpis" style="display:flex;gap:16px;flex-wrap:wrap;"></div>
+          <span id="hw-exp-live-badge"></span>
+        </div>
+      </div>
+
+      <div id="hw-exp-holdings-table" class="kpi" style="margin-bottom:16px;"></div>
+
+      <div style="text-align:right;">
+        <button onclick="hwGoToStep('recommendation')" style="padding:6px 16px;border:none;border-radius:6px;background:var(--p03);color:#fff;font-family:var(--fm);font-size:12px;font-weight:600;cursor:pointer">Next: Recommendation &gt;</button>
+      </div>
+    </div>
+
+    <div id="hw-step-recommendation" style="display:none;"></div>
+    <div id="hw-step-whatif" style="display:none;"></div>
+    <div id="hw-step-save" style="display:none;"></div>
+  </div>
 
   <!-- ═══════════════════════════════════════════════
        EQUITY SCENARIOS (Feature 27)
