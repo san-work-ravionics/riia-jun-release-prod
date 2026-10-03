@@ -87,6 +87,7 @@ function _renderAdvisor(instant = false) {
   if (!d) {
     haClear();
     setEl('hw-rec-detail', '');
+    setEl('hw-rec-note', '');
     return;
   }
   haShowReasoning(d, instant);
@@ -96,33 +97,34 @@ function _renderAdvisor(instant = false) {
   const id = _hw().instrumentId;
   const sym = { EUR: '€', INR: '₹', USD: '$' }[_hw().instruments[id]?.currency] || '';
   const tile = (label, value, sub, cls = '') =>
-    `<div class="kpi"><div class="kpi-label">${label}</div><div class="kpi-value ${cls}">${value}</div><div class="kpi-sub">${sub}</div></div>`;
-  const leg = (name, o) => {
+    `<div class="kpi" style="flex:1 1 120px;"><div class="kpi-label">${label}</div><div class="kpi-value ${cls}" style="font-size:16px;">${value}</div><div class="kpi-sub">${sub}</div></div>`;
+  const eur = (n) => (n == null ? '—' : (n >= 0 ? '+' : '−') + '€' + Math.abs(n).toLocaleString('en-EU', { maximumFractionDigits: 0 }));
+  const primary = hd.primary_recommendation || d.recommendation;
+  const leg = (name, key, o) => {
     const ok = o && o.strike_label && o.strike_label !== 'n/a';
+    const star = primary === key ? '&#9733; ' : '';
     return tile(
-      name,
+      star + name,
       ok ? _esc(o.strike_label) : '—',
-      ok ? `premium ${o.premium_pct != null ? Number(o.premium_pct).toFixed(2) : '—'}% &middot; EUR ${o.premium_eur != null ? Number(o.premium_eur).toFixed(2) : '—'}` : 'n/a'
+      ok ? `${key === 'put_buy' ? 'Cost' : 'Premium'}: ${o.premium_pct != null ? Number(o.premium_pct).toFixed(2) : '—'}% ${eur(o.premium_eur)}` : 'n/a'
     );
   };
   const rec = d.recommendation || 'no_hedge';
   const recLabel = { call_sell: 'CALL SELL', put_buy: 'PUT BUY', no_hedge: 'NO HEDGE' }[rec] || String(rec).toUpperCase();
-  const note = [hd.primary_rationale, hd.secondary_recommendation
-    ? `Secondary: ${STRATEGY_LABELS[hd.secondary_recommendation] || hd.secondary_recommendation} — ${hd.secondary_rationale || ''}` : '']
-    .filter(Boolean).map(_esc).join(' · ');
   setEl(
     'hw-rec-detail',
-    `<div style="display:flex;gap:16px;flex-wrap:wrap;">
-       ${tile('Recommendation', _esc(recLabel), 'advisor verdict')}
-       ${tile('Confidence', _esc(d.confidence || '—'), 'advisor confidence')}
-       ${tile('Spot', d.spot_price != null ? sym + Number(d.spot_price).toFixed(2) : '—', _esc(id || ''))}
-       ${tile('Data source', _esc(d.data_source || '—'), 'pricing basis')}
-       ${leg('Call sell', hd.call_sell)}
-       ${leg('Put buy', hd.put_buy)}
-     </div>
-     ${note ? `<div class="kpi-sub" style="margin-top:6px;">${note}</div>` : ''}
-     ${_nSharesFor(id) == null ? `<div class="kpi-sub" style="opacity:.7">No equity holding for this instrument — EUR amounts are illustrative.</div>` : ''}`
+    [
+      tile('Recommendation', _esc(recLabel), 'advisor verdict'),
+      tile('Confidence', _esc(d.confidence || '—'), 'advisor confidence'),
+      tile('Spot', d.spot_price != null ? sym + Number(d.spot_price).toFixed(2) : '—', _esc(id || '')),
+      tile('Data source', _esc(d.data_source || '—'), 'pricing basis'),
+      leg('Call sell', 'call_sell', hd.call_sell),
+      leg('Put buy', 'put_buy', hd.put_buy),
+    ].join('')
   );
+  // The long advisor narrative is the typewriter panel (#ha-step-6); only the
+  // no-holding caveat goes in the note line.
+  setEl('hw-rec-note', _nSharesFor(id) == null ? `<span style="opacity:.7">No equity holding for this instrument — EUR amounts are illustrative.</span>` : '');
 }
 
 function _renderSelectionTable() {
@@ -220,6 +222,7 @@ export async function loadRecommendationStep() {
   if (!(hw.portfolioHoldings || []).length) {
     haClear();
     setEl('hw-rec-detail', '');
+    setEl('hw-rec-note', '');
     _renderStatus('', false);
     _renderSelectionTable();
     return;

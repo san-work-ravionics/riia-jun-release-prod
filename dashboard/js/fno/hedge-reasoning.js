@@ -300,24 +300,10 @@ function _stepGoalAnalyst(d) {
   </div>`;
 }
 
-function _stepHedgeAdvisor(d) {
-  const cs = d.call_sell || {};
-  const pb = d.put_buy || {};
-  const primary = d.primary_recommendation;
-  return `<div class="reasoning-strategy-cards">
-    <div class="reasoning-card${primary === 'call_sell' ? ' reasoning-card--primary' : ''}">
-      <div class="reasoning-card-title">${primary === 'call_sell' ? '&#9733; ' : ''}CALL SELL</div>
-      <div class="reasoning-card-detail">${_v(cs.strike_label)}</div>
-      <div class="reasoning-card-detail">Premium: ${_v(cs.premium_pct, '%')}</div>
-      <div class="reasoning-card-detail">${cs.premium_eur != null ? _fmtEur(cs.premium_eur) : '--'}</div>
-    </div>
-    <div class="reasoning-card${primary === 'put_buy' ? ' reasoning-card--primary' : ''}">
-      <div class="reasoning-card-title">${primary === 'put_buy' ? '&#9733; ' : ''}PUT BUY</div>
-      <div class="reasoning-card-detail">${_v(pb.strike_label)}</div>
-      <div class="reasoning-card-detail">Cost: ${_v(pb.premium_pct, '%')}</div>
-      <div class="reasoning-card-detail">${pb.premium_eur != null ? _fmtEur(pb.premium_eur) : '--'}</div>
-    </div>
-  </div>`;
+// The call-sell / put-buy legs are shown as panels beside the narrative by the workflow
+// Recommendation step (hedge-workflow-recommendation.js) — no duplicate cards here.
+function _stepHedgeAdvisor() {
+  return '';
 }
 
 function _fmtEur(n) {
