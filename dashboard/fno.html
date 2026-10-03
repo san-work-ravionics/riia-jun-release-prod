@@ -453,8 +453,14 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
 .ha-spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--border2);border-top-color:var(--p04);border-radius:50%;animation:ha-spin .6s linear infinite;}
 @keyframes ha-spin{to{transform:rotate(360deg)}}
 .ha-timestamp{font-family:var(--fm);font-size:10px;color:var(--t4);margin-bottom:12px;}
-.ha-steps-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px;}
-.ha-steps-grid--row2{grid-template-columns:repeat(2,1fr);}
+.ha-steps-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-bottom:16px;}
+.ha-steps-grid--row2{grid-template-columns:minmax(0,1fr);}
+.ha-steps-grid:not(.ha-steps-grid--row2) .reasoning-step{padding:10px 10px;max-height:380px;overflow:auto;font-size:10px;}
+.ha-steps-grid:not(.ha-steps-grid--row2) .reasoning-narrative{font-size:10px;line-height:1.4;}
+.ha-steps-grid:not(.ha-steps-grid--row2) .reasoning-kpi{font-size:10px;}
+@media (max-width:1400px){.ha-steps-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}
+@media (max-width:900px){.ha-steps-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media (max-width:560px){.ha-steps-grid{grid-template-columns:minmax(0,1fr);}}
 .ha-steps-grid .reasoning-connector{display:none;}
 .reasoning-step{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:0;display:flex;flex-direction:column;min-width:0;box-shadow:0 1px 3px rgba(0,0,0,.06);}
 .reasoning-step-title{font-family:var(--fd);font-size:11px;font-weight:600;color:var(--text);margin-bottom:6px;line-height:1.3;}
@@ -1248,7 +1254,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
         <div class="kpi" style="flex:1;min-width:280px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
           <div id="hw-exp-greeks-kpis" style="display:flex;gap:16px;flex-wrap:wrap;"></div>
           <div id="hw-exp-sigma-kpis" style="display:flex;gap:16px;flex-wrap:wrap;"></div>
-          <div id="hw-exp-latest-view" style="flex:1;min-width:240px;font-size:11px;"></div>
+          <div id="hw-exp-latest-view" style="display:flex;gap:16px;flex-wrap:wrap;"></div>
           <span id="hw-exp-live-badge"></span>
         </div>
       </div>
@@ -1352,9 +1358,6 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
           <div class="reasoning-narrative" id="ha-step-4-narrative"></div>
           <div class="reasoning-data" id="ha-step-4-data" style="opacity:0"></div>
         </div>
-        </div><!-- /ha-steps-grid -->
-
-        <div class="ha-steps-grid ha-steps-grid--row2">
         <div class="reasoning-step" id="ha-step-5" style="display:none;opacity:0">
           <div class="reasoning-step-hdr">
             <span class="reasoning-agent">GOAL ANALYST</span>
@@ -1364,8 +1367,9 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
           <div class="reasoning-narrative" id="ha-step-5-narrative"></div>
           <div class="reasoning-data" id="ha-step-5-data" style="opacity:0"></div>
         </div>
-        <div class="reasoning-connector"></div>
+        </div><!-- /ha-steps-grid (6 analysis panels, one row) -->
 
+        <div class="ha-steps-grid ha-steps-grid--row2">
         <div class="reasoning-step" id="ha-step-6" style="display:none;opacity:0">
           <div class="reasoning-step-hdr">
             <span class="reasoning-agent">HEDGE ADVISOR</span>

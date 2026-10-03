@@ -209,7 +209,12 @@ console.log(JSON.stringify({
     assert r["inst"] == "RELIANCE" and r["holdingsTouched"] is False
     s = 30 / 100 / math.sqrt(12)
     assert f"{-s * 100:.1f}%" in r["tiles"] and f"{-s * 300:.1f}%" in r["tiles"]
-    assert "Latest Price View" in r["summary"] and "√12" in r["summary"]
+    # panels, not prose: .kpi tiles with label/value/sub; last price from the candle series
+    assert r["summary"].count('class="kpi"') >= 4 and "Latest Price View" in r["summary"]
+    assert "kpi-sub" in r["summary"] and "<strong" not in r["summary"]
+    assert "₹2,328.00" in r["summary"] or "2,328.00" in r["summary"]
+    assert "Portfolio monthly −1σ" in r["summary"] and "Portfolio monthly −3σ" in r["summary"]
+    assert f"−€{100000 * s:,.0f}".replace("−€", "−€") in r["summary"]
     assert "Your current challenge" not in r["summary"] and r["oldSummary"] is False
     # ONE dotted σ line only (−1σ), anchored on the candle series' last close
     assert r["labels"][0] == "Body" and len(r["labels"]) == 2
@@ -295,3 +300,17 @@ console.log(JSON.stringify({
     assert r["step"] == "recommendation" and r["sel"] == "call_sell"
     assert r["res"] == "" and r["s0"] == "n0" and r["s6"] == "Bullish"
     assert r["final"] == "CALL SELL" and r["table"] is True and r["oldCard"] is False
+
+
+def test_advisor_markup_six_up_row_then_separate_hedge_advisor_row():
+    html = (_ROOT / "dashboard" / "fno.html").read_text(encoding="utf-8")
+    a = html.index('id="hw-step-recommendation"')
+    seg = html[a: html.index('id="hw-step-whatif"')]
+    grid1 = seg.index('class="ha-steps-grid"')
+    grid2 = seg.index('class="ha-steps-grid ha-steps-grid--row2"')
+    for i in range(6):
+        assert grid1 < seg.index(f'id="ha-step-{i}"') < grid2
+    assert seg.index('id="ha-step-6"') > grid2
+    assert seg.count('id="ha-step-6"') == 1 and seg.index('id="ha-final-verdict"') > seg.index('id="ha-step-6"')
+    assert seg.index('id="hw-rec-selection-table"') < seg.index('id="hw-rec-next-btn"')
+    assert "repeat(6,minmax(0,1fr))" in html and "ha-steps-grid--row2{grid-template-columns:minmax(0,1fr)" in html
