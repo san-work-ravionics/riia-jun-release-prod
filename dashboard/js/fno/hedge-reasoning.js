@@ -120,7 +120,6 @@ function _renderCascade(data) {
 function _cascadeStep(data, idx) {
   const myToken = _twToken;
   if (idx >= data.steps.length) {
-    _renderFinalVerdict(data);
     return;
   }
 
@@ -208,7 +207,6 @@ function _renderAllInstant(data) {
     }
   }
 
-  _renderFinalVerdict(data);
 }
 
 // ── Internal: Per-Step Data Cards ─────────────────────────────────────────────
@@ -326,23 +324,6 @@ function _fmtEur(n) {
   if (n == null) return '--';
   const abs = Math.abs(n).toLocaleString('en-EU', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   return n >= 0 ? `+€${abs}` : `−€${abs}`;
-}
-
-// ── Internal: Final Verdict ───────────────────────────────────────────────────
-
-function _renderFinalVerdict(data) {
-  const el = document.getElementById('ha-final-verdict');
-  const confEl = document.getElementById('ha-confidence');
-
-  if (el) {
-    const rec = data.recommendation || 'no_hedge';
-    const labels = { call_sell: 'CALL SELL', put_buy: 'PUT BUY', no_hedge: 'NO HEDGE' };
-    el.textContent = labels[rec] || rec.toUpperCase();
-    el.className = 'reasoning-final-verdict reasoning-final-verdict--' + rec.replace('_', '-');
-  }
-  if (confEl) {
-    confEl.textContent = data.confidence ? `Confidence: ${data.confidence}` : '';
-  }
 }
 
 // ── Internal: Helpers ─────────────────────────────────────────────────────────

@@ -93,17 +93,35 @@ function _renderAdvisor(instant = false) {
   const steps = d.steps || [];
   const hs = steps.find((s) => s.agent === 'HEDGE_ADVISOR') || steps[steps.length - 1];
   const hd = hs?.data || {};
-  const leg = (name, o) =>
-    o && o.strike_label && o.strike_label !== 'n/a'
-      ? `<div class="kpi-sub">${name}: ${_esc(o.strike_label)} &middot; premium ${o.premium_pct != null ? Number(o.premium_pct).toFixed(2) : '—'}% (EUR ${o.premium_eur != null ? Number(o.premium_eur).toFixed(2) : '—'})</div>`
-      : '';
+  const id = _hw().instrumentId;
+  const sym = { EUR: '€', INR: '₹', USD: '$' }[_hw().instruments[id]?.currency] || '';
+  const tile = (label, value, sub, cls = '') =>
+    `<div class="kpi"><div class="kpi-label">${label}</div><div class="kpi-value ${cls}">${value}</div><div class="kpi-sub">${sub}</div></div>`;
+  const leg = (name, o) => {
+    const ok = o && o.strike_label && o.strike_label !== 'n/a';
+    return tile(
+      name,
+      ok ? _esc(o.strike_label) : '—',
+      ok ? `premium ${o.premium_pct != null ? Number(o.premium_pct).toFixed(2) : '—'}% &middot; EUR ${o.premium_eur != null ? Number(o.premium_eur).toFixed(2) : '—'}` : 'n/a'
+    );
+  };
+  const rec = d.recommendation || 'no_hedge';
+  const recLabel = { call_sell: 'CALL SELL', put_buy: 'PUT BUY', no_hedge: 'NO HEDGE' }[rec] || String(rec).toUpperCase();
+  const note = [hd.primary_rationale, hd.secondary_recommendation
+    ? `Secondary: ${STRATEGY_LABELS[hd.secondary_recommendation] || hd.secondary_recommendation} — ${hd.secondary_rationale || ''}` : '']
+    .filter(Boolean).map(_esc).join(' · ');
   setEl(
     'hw-rec-detail',
-    `<div class="kpi-sub">Spot: ${d.spot_price != null ? Number(d.spot_price).toFixed(2) : '—'} &middot; Source: ${_esc(d.data_source)}</div>
-     <div class="kpi-sub">${_esc(hd.primary_rationale || '')}</div>
-     ${hd.secondary_recommendation ? `<div class="kpi-sub">Secondary: ${_esc(STRATEGY_LABELS[hd.secondary_recommendation] || hd.secondary_recommendation)} — ${_esc(hd.secondary_rationale || '')}</div>` : ''}
-     ${leg('Covered call', hd.call_sell)}${leg('Protective put', hd.put_buy)}
-     ${_nSharesFor(_hw().instrumentId) == null ? `<div class="kpi-sub" style="opacity:.7">No equity holding for this instrument — EUR amounts are illustrative.</div>` : ''}`
+    `<div style="display:flex;gap:16px;flex-wrap:wrap;">
+       ${tile('Recommendation', _esc(recLabel), 'advisor verdict')}
+       ${tile('Confidence', _esc(d.confidence || '—'), 'advisor confidence')}
+       ${tile('Spot', d.spot_price != null ? sym + Number(d.spot_price).toFixed(2) : '—', _esc(id || ''))}
+       ${tile('Data source', _esc(d.data_source || '—'), 'pricing basis')}
+       ${leg('Call sell', hd.call_sell)}
+       ${leg('Put buy', hd.put_buy)}
+     </div>
+     ${note ? `<div class="kpi-sub" style="margin-top:6px;">${note}</div>` : ''}
+     ${_nSharesFor(id) == null ? `<div class="kpi-sub" style="opacity:.7">No equity holding for this instrument — EUR amounts are illustrative.</div>` : ''}`
   );
 }
 
