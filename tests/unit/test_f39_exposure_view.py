@@ -198,6 +198,8 @@ console.log(JSON.stringify({
   summary: document.getElementById('hw-exp-latest-view').innerHTML,
   oldSummary: 'hw-exp-challenge-summary' in els,
   yBegin: candle?.cfg.options.scales.y.beginAtZero,
+  candleColors: candle?.cfg.data.datasets.slice(1).map(d => d.borderColor),
+  changeColors: change?.cfg.data.datasets.slice(1).map(d => d.borderColor),
   changeLabels: change?.cfg.data.datasets.map(d => d.label),
   lastClose: daily.at(-1).price,
   holdingsTouched: 'hw-exp-holdings-table' in els,
@@ -221,6 +223,9 @@ console.log(JSON.stringify({
     last = 2000 + 6 * 50 + 28
     assert r["lastClose"] == last
     assert r["bandVals"] == pytest.approx([last * (1 + s), last * (1 - s)], rel=1e-12)
+    # +1σ blue, −1σ red (distinct), on both charts
+    for cols in (r["candleColors"], r["changeColors"]):
+        assert cols == ["#0056B8", "#9B1C1C"] and cols[0] != cols[1]
     assert r["yBegin"] is False  # candles must not be squashed against a zero baseline
     assert len(r["changeLabels"]) == 3 and r["changeLabels"][1].startswith("+1σ") and r["changeLabels"][2].startswith("−1σ")
     assert r["changeBars"] == 5
@@ -276,8 +281,10 @@ const c2 = ch.renderMonthlyCandles('y', daily, {{}});
 const c3 = ch.renderMonthlyChange('z', daily, {{}});
 const lows = c1.cfg.data.datasets[0].data.map(d=>d[0]);
 console.log(JSON.stringify({{ line: c1.cfg.data.datasets[1].data[0], minLow: Math.min(...lows), maxHigh: Math.max(...c1.cfg.data.datasets[0].data.map(d=>d[1])),
+  eqUp: c3.cfg.data.datasets[1].borderColor,
   zeroDefault: c2.cfg.options.scales.y.beginAtZero, nLines: c2.cfg.data.datasets.length, mom: c3.cfg.data.datasets.length }}));""")
     assert 0.5 * r["minLow"] < r["line"] < r["maxHigh"]
+    assert r["eqUp"] == "#9B1C1C"  # Equity Hedge keeps its original red ±1σ
     assert r["zeroDefault"] is True and r["nLines"] == 1 and r["mom"] == 4
 
 
@@ -294,7 +301,7 @@ const rec = await import(base + 'fno/hedge-workflow-recommendation.js');
 console.log(JSON.stringify({
   step: hw.step, sel: hw.selections['RELIANCE'],
   res: els['ha-results'].style.display, s0: els['ha-step-0-narrative'].textContent, s6: els['ha-step-6-verdict'].textContent,
-  detail: els['hw-rec-detail'].innerHTML, table: els['hw-rec-selection-table'].innerHTML.includes('Hedged?'),
+  detail: els['hw-rec-detail'].innerHTML, step6data: els['ha-step-6-data'].innerHTML, table: els['hw-rec-selection-table'].innerHTML.includes('Hedged?'),
   oldCard: 'hw-rec-verdict-card' in els || 'hw-rec-cascade' in els,
 }));""")
     assert r["step"] == "recommendation" and r["sel"] == "call_sell"
@@ -302,6 +309,8 @@ console.log(JSON.stringify({
     d = r["detail"]
     assert d.count('class="kpi"') == 6 and "CALL SELL" in d and "High" in d
     assert all(k in d for k in ("Recommendation", "Confidence", "Spot", "Data source", "Call sell", "Put buy"))
+    assert r["step6data"] == "" and "reasoning-card" not in r["step6data"]  # no duplicate call/put cards
+    assert "&#9733; Call sell" in d and "&#9733; Put buy" not in d  # ★ on the recommended leg only
     assert r["table"] is True and r["oldCard"] is False
 
 
@@ -310,11 +319,14 @@ def test_advisor_markup_six_up_row_then_separate_hedge_advisor_row():
     a = html.index('id="hw-step-recommendation"')
     seg = html[a: html.index('id="hw-step-whatif"')]
     grid1 = seg.index('class="ha-steps-grid"')
-    grid2 = seg.index('class="ha-steps-grid ha-steps-grid--row2"')
+    grid2 = seg.index('id="hw-rec-advisor-row"')
     for i in range(6):
         assert grid1 < seg.index(f'id="ha-step-{i}"') < grid2
     assert seg.index('id="ha-step-6"') > grid2
     assert seg.count('id="ha-step-6"') == 1 and 'id="ha-final-verdict"' not in seg
-    assert seg.index('id="ha-step-6"') < seg.index('id="hw-rec-detail"') < seg.index('id="hw-rec-selection-table"')
+    # ONE row: narrative panel (#ha-step-6) and the summary panels share #hw-rec-advisor-row
+    row_end = seg.index('<!-- /hw-rec-advisor-row -->')
+    assert grid2 < seg.index('id="ha-step-6"') < seg.index('id="hw-rec-detail"') < row_end < seg.index('id="hw-rec-selection-table"')
+    assert 'id="ha-step-6-verdict" style="display:none' in seg  # no separate 7th-panel verdict heading
     assert seg.index('id="hw-rec-selection-table"') < seg.index('id="hw-rec-next-btn"')
     assert "repeat(6,minmax(0,1fr))" in html and "ha-steps-grid--row2{grid-template-columns:minmax(0,1fr)" in html

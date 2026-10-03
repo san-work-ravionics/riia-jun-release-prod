@@ -13,6 +13,7 @@ const _gridClr = 'rgba(0,0,0,.035)';
 const _cWarn = '#92480A';
 const _cDanger = '#9B1C1C';
 const _cBuild = '#1A6B3C';
+const _cBlue = '#0056B8'; // same blue as the MoM bars (rgba(0,86,184,…))
 const _cT3 = '#8C877A';
 const _legendCfg = { position: 'top', labels: { usePointStyle: true, pointStyle: 'line', boxWidth: 24, font: { family: _cf, size: 11 } } };
 
@@ -166,7 +167,7 @@ export function renderMonthlyChange(canvasId, daily, opts = {}) {
   const lower1 = mean - stdDev;
   const barColors = changes.map(v => (Math.abs(v) > stdDev) ? 'rgba(155,28,28,0.65)' : 'rgba(0,86,184,0.55)');
   const lineDs = [
-    { label: `+1σ (${upper1.toFixed(1)}%)`, data: Array(labels.length).fill(upper1), type: 'line', borderColor: _cDanger, borderWidth: 1.5, borderDash: [6, 4], pointRadius: 0, fill: false, order: 1 },
+    { label: `+1σ (${upper1.toFixed(1)}%)`, data: Array(labels.length).fill(upper1), type: 'line', borderColor: opts.sigmaOnly ? _cBlue : _cDanger, borderWidth: 1.5, borderDash: [6, 4], pointRadius: 0, fill: false, order: 1 },
     { label: `−1σ (${lower1.toFixed(1)}%)`, data: Array(labels.length).fill(lower1), type: 'line', borderColor: _cDanger, borderWidth: 1.5, borderDash: [6, 4], pointRadius: 0, fill: false, order: 1 },
     { label: `Mean (${mean.toFixed(1)}%)`, data: Array(labels.length).fill(mean), type: 'line', borderColor: _cT3, borderWidth: 1, borderDash: [3, 3], pointRadius: 0, fill: false, order: 1 },
   ];
@@ -194,4 +195,4 @@ export function renderMonthlyChange(canvasId, daily, opts = {}) {
   });
 }
 
-export const BAND_COLORS = { k1: _cWarn, k2: '#B45309', k3: _cDanger };
+export const BAND_COLORS = { k1: _cWarn, k2: '#B45309', k3: _cDanger, up: _cBlue, down: _cDanger };

@@ -1369,20 +1369,21 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
         </div>
         </div><!-- /ha-steps-grid (6 analysis panels, one row) -->
 
-        <div class="ha-steps-grid ha-steps-grid--row2">
-        <div class="reasoning-step" id="ha-step-6" style="display:none;opacity:0">
+        <div id="hw-rec-advisor-row" style="display:flex;gap:12px;flex-wrap:wrap;align-items:stretch;margin-bottom:16px;">
+        <div class="reasoning-step" id="ha-step-6" style="display:none;opacity:0;flex:3 1 380px;max-height:260px;overflow:auto;font-size:11px;">
           <div class="reasoning-step-hdr">
             <span class="reasoning-agent">HEDGE ADVISOR</span>
-            <span class="reasoning-verdict" id="ha-step-6-verdict" style="opacity:0;transform:scale(0)"></span>
+            <span class="reasoning-verdict" id="ha-step-6-verdict" style="display:none;opacity:0;transform:scale(0)"></span>
           </div>
           <div class="reasoning-step-title">Hedge Recommendation</div>
           <div class="reasoning-narrative" id="ha-step-6-narrative"></div>
           <div class="reasoning-data" id="ha-step-6-data" style="opacity:0"></div>
         </div>
-        </div><!-- /ha-steps-grid row2 -->
-
+        <!-- Recommendation / Confidence / Spot / Data source / Call sell / Put buy panels (same row) -->
+        <div id="hw-rec-detail" style="display:contents;"></div>
+        </div><!-- /hw-rec-advisor-row -->
+        <div id="hw-rec-note" class="kpi-sub" style="margin-bottom:16px;"></div>
       </div>
-      <div id="hw-rec-detail" style="margin:16px 0;"></div>
       <div id="hw-rec-selection-table" class="kpi" style="margin-bottom:16px;"></div>
       <div style="display:flex;justify-content:space-between;">
         <button id="hw-rec-back-btn" class="hw-nav-btn hw-secondary" onclick="hwGoToStep('exposure')">&lt; Back: Exposure</button>
