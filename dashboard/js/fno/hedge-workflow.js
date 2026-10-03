@@ -5,6 +5,12 @@
 // hedge-workflow-recommendation.js / -whatif.js / -save.js (Phase 3) and are loaded
 // on step entry by hwGoToStep().
 //
+// Exposure = "your current challenge": net Greeks + monthly 1/2/3 sigma risk tiles on one
+// row, a summary line, and the shared monthly candle / MoM charts (hedge-charts.js, same
+// equity-hedge-scenarios source as the old Equity Hedge page) with monthly sigma bands.
+// The old holdings table was removed (no decision value); "how the hedge helps" is
+// shown on the Save step.
+//
 // Exposure reuses 3 existing read-only sources (same "parallel fetch, partial
 // fallback" pattern as my-portfolio.js) — user-portfolio, portfolio-analytics,
 // geography-overview — plus the kite-live endpoint for a best-effort live
@@ -20,10 +26,12 @@
 // Refresh strategy: on step entry, no polling. hwRefreshStep() re-runs the current
 // step on demand.
 
-import { apiFetch } from './api.js';
+import { api, apiFetch } from './api.js';
 import { setEl, badge } from '../shared/utils.js';
 import { state } from './state.js';
 import { renderInstrumentTiles } from './hedge-instrument-tiles.js';
+import { computeNShares, monthlySigma, sigmaLevels, portfolioVolPct, buildVolMap } from './hedge-calc.js';
+import { renderMonthlyCandles, renderMonthlyChange, BAND_COLORS } from './hedge-charts.js';
 import { loadRecommendationStep } from './hedge-workflow-recommendation.js';
 import { loadWhatIfStep } from './hedge-workflow-whatif.js';
 import { loadSaveStep, hwScheduleSave, authHeaders as _authHeaders } from './hedge-workflow-save.js';
@@ -118,6 +126,7 @@ export function hwSelectInstrument(id) {
   const step = state.hedgeWorkflow.step;
   // What-if fetches kite-live itself (with the chosen hedge's strike); avoid a duplicate.
   if (step !== 'whatif') _fetchLiveData(id);
+  if (step === 'exposure') _renderChallenge();
   if (step === 'recommendation') loadRecommendationStep();
   else if (step === 'whatif') loadWhatIfStep();
 }
@@ -171,41 +180,171 @@ function _renderLiveBadge() {
   setEl('hw-exp-live-badge', badge(live.available ? 'Live' : 'Estimated'));
 }
 
-// ── Exposure step — combined holdings table (#hw-exp-holdings-table) ───────
-// Combined equity + options, one view (wireframe Q2 — not tabs). Segments rows
-// by instrument; never merges equity and option rows into one computed row.
-function _renderHoldingsTable() {
-  const rows = state.hedgeWorkflow.holdings || [];
-  if (rows.length === 0) {
-    setEl(
-      'hw-exp-holdings-table',
-      `<div class="kpi-sub">No holdings or positions yet.</div>`
-    );
+// ── Exposure step — current challenge (monthly σ tiles, summary, charts) ───
+// Monthly σ = ann_vol_pct / 100 / sqrt(12) (hedge-calc.js monthlySigma). The Risk page's
+// std-dev table is untouched; this is the monthly counterpart for the selected instrument.
+const _CCY_SYMBOL = { EUR: '€', INR: '₹', USD: '$' };
+let _candleChart = null;
+let _changeChart = null;
+let _histToken = 0;
+
+function _esc(v) {
+  return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function _sym(id) {
+  const hw = state.hedgeWorkflow;
+  const pos = (hw.positions || []).find((p) => p.und === id);
+  return _CCY_SYMBOL[hw.instruments[id]?.currency || pos?.currency] || '';
+}
+
+function _price(id) {
+  const hw = state.hedgeWorkflow;
+  const close = hw.instruments[id]?.close;
+  if (close != null) return parseFloat(close);
+  const pos = (hw.positions || []).find((p) => p.und === id);
+  const v = pos?.ltp ?? pos?.avg;
+  return v != null ? parseFloat(v) : null;
+}
+
+function _fmtNum(v, d = 2) {
+  return v == null || Number.isNaN(Number(v)) ? '—' : Number(v).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+}
+
+function _eur(v) {
+  return v == null || Number.isNaN(Number(v)) ? '—' : '€' + Number(v).toLocaleString('en-US', { maximumFractionDigits: 0 });
+}
+
+function _volFor(id) {
+  const hw = state.hedgeWorkflow;
+  return buildVolMap(hw.positions, hw.greeks, hw.apiHedge)[id] ?? null;
+}
+
+function _portfolioVolPct() {
+  const hw = state.hedgeWorkflow;
+  return portfolioVolPct(hw.greeks, hw.portfolioHoldings, buildVolMap(hw.positions, hw.greeks, hw.apiHedge));
+}
+
+function _renderSigmaKpis() {
+  const hw = state.hedgeWorkflow;
+  const id = hw.instrumentId;
+  const lv = id ? sigmaLevels(_price(id), _volFor(id)) : null;
+  if (!lv) {
+    setEl('hw-exp-sigma-kpis', `<div class="kpi"><div class="kpi-label">Monthly 1σ / 2σ / 3σ</div><div class="kpi-value">—</div><div class="kpi-sub">no volatility for ${_esc(id || 'instrument')}</div></div>`);
     return;
   }
-  const body = rows
-    .map((r) => {
-      const pnlCls = r.pnl == null ? '' : r.pnl >= 0 ? 'pos' : 'neg';
-      return `<tr>
-        <td>${r.instrument_id}</td>
-        <td>${r.type}</td>
-        <td>${r.qty_label}</td>
-        <td>${_fmt(r.avg_price)}</td>
-        <td>${_fmt(r.market_value)}</td>
-        <td>${_fmt(r.delta)}</td>
-        <td class="${pnlCls}">${_fmt(r.pnl)}</td>
-      </tr>`;
-    })
-    .join('');
+  const sym = _sym(id);
   setEl(
-    'hw-exp-holdings-table',
-    `<table style="width:100%;font-family:var(--fm);font-size:12px;border-collapse:collapse;">
-       <thead><tr style="text-align:left;opacity:.7;">
-         <th>Instrument</th><th>Type</th><th>Qty/Lots</th><th>Avg Px</th><th>Mkt Val</th><th>Delta</th><th>P&amp;L</th>
-       </tr></thead>
-       <tbody>${body}</tbody>
-     </table>`
+    'hw-exp-sigma-kpis',
+    lv.map((l) => `<div class="kpi"><div class="kpi-label">Monthly −${l.k}σ</div>
+      <div class="kpi-value neg">${l.downPct.toFixed(1)}%</div>
+      <div class="kpi-sub">${l.down != null ? sym + _fmtNum(l.down) : '—'}</div></div>`).join('')
   );
+}
+
+function _renderChallengeSummary() {
+  const hw = state.hedgeWorkflow;
+  const id = hw.instrumentId;
+  if (!id) { setEl('hw-exp-challenge-summary', `<div class="kpi-sub">No exposure yet.</div>`); return; }
+  const parts = [];
+  const volI = _volFor(id);
+  const sI = monthlySigma(volI);
+  if (sI != null) parts.push(`<strong>${_esc(id)}</strong>: a 1σ bad month is <strong class="neg">−${(sI * 100).toFixed(1)}%</strong> (2σ −${(sI * 200).toFixed(1)}%, 3σ −${(sI * 300).toFixed(1)}%), ann. vol ${volI.toFixed(1)}%`);
+  const sP = monthlySigma(_portfolioVolPct());
+  const tv = hw.totalValueEur;
+  if (sP != null) {
+    parts.push(
+      tv != null
+        ? `Portfolio (${_eur(tv)}): 1σ bad month <strong class="neg">−${_eur(tv * sP)}</strong> · 2σ −${_eur(tv * sP * 2)} · 3σ −${_eur(tv * sP * 3)}`
+        : `Portfolio: 1σ bad month −${(sP * 100).toFixed(1)}%`
+    );
+  }
+  const a = (hw.apiHedge?.holdings || []).find((h) => h.instrument_id === id);
+  if (a && a.quarterly_var_pct != null) parts.push(`Quarterly VaR ${Number(a.quarterly_var_pct).toFixed(1)}%${a.quarterly_var_eur != null ? ' (' + _eur(a.quarterly_var_eur) + ')' : ''}`);
+  setEl(
+    'hw-exp-challenge-summary',
+    parts.length
+      ? `<div class="kpi-label">Your current challenge</div>${parts.map((t) => `<div class="kpi-sub">${t}</div>`).join('')}
+         <div class="kpi-sub" style="opacity:.7">Monthly σ = annual volatility ÷ √12.</div>`
+      : `<div class="kpi-sub">Your current challenge — volatility data unavailable.</div>`
+  );
+}
+
+function _rollingDateRange() {
+  const end = new Date();
+  const start = new Date();
+  start.setFullYear(start.getFullYear() - 1);
+  return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
+}
+
+// Same endpoint + inputs as the old Equity Hedge page (equity-hedge-scenarios, 1y range,
+// n_shares via computeNShares, ann_vol_pct from positions). Only portfolio.daily is used;
+// an instrument without an equity holding passes n_shares = 1 (price series is share-count
+// independent).
+async function _fetchHistory(id) {
+  const hw = state.hedgeWorkflow;
+  if (hw.priceHistory[id]) return hw.priceHistory[id];
+  const h = (hw.portfolioHoldings || []).find((x) => x.instrument_id === id);
+  const nShares = h ? computeNShares(h, hw.instruments[id], hw.totalValueEur) : 1;
+  const { start, end } = _rollingDateRange();
+  const volPos = (hw.positions || []).find((p) => p.und === id && p.ann_vol_pct != null);
+  const body = { instrument: id, n_shares: nShares, start_date: start, end_date: end };
+  if (volPos) body.ann_vol_pct = parseFloat(volPos.ann_vol_pct);
+  try {
+    const res = await api('/api/v1/portfolio/equity-hedge-scenarios', 'POST', body);
+    const daily = res?.portfolio?.daily;
+    if (Array.isArray(daily) && daily.length > 1) {
+      hw.priceHistory[id] = { daily, currency: res.portfolio.currency || null, holding: !!h };
+      return hw.priceHistory[id];
+    }
+  } catch (e) {
+    console.warn('[hedge-workflow] price history failed', id, e);
+  }
+  return null;
+}
+
+function _drawCharts(id, hist) {
+  const sym = _sym(id) || (_CCY_SYMBOL[hist.currency] || '');
+  const last = hist.daily[hist.daily.length - 1].price;
+  const lv = sigmaLevels(last, _volFor(id)) || [];
+  const bands = lv.map((l) => ({
+    label: `−${l.k}σ monthly (${l.downPct.toFixed(1)}%)`, value: l.down, color: BAND_COLORS['k' + l.k],
+  }));
+  const up = lv[0];
+  if (up) bands.push({ label: `+1σ monthly (+${up.sigmaPct.toFixed(1)}%)`, value: up.up, color: '#1A6B3C', dash: [3, 3] });
+  _candleChart = renderMonthlyCandles('hw-exp-candle-chart', hist.daily, {
+    fmt: (v) => sym + Number(v).toLocaleString('en-US', { maximumFractionDigits: 2 }), bands, prev: _candleChart,
+  });
+  _changeChart = renderMonthlyChange('hw-exp-change-chart', hist.daily, {
+    prev: _changeChart, titleId: 'hw-exp-change-title', title: `Monthly Price Change — ${id}`,
+  });
+  setEl('hw-exp-candle-title', `${_esc(id)} price vs monthly risk bands`);
+  setEl('hw-exp-candle-msg', hist.holding ? '' : `No equity holding for ${_esc(id)} — showing the instrument price (option exposure only).`);
+}
+
+async function _renderChallengeCharts() {
+  const hw = state.hedgeWorkflow;
+  const id = hw.instrumentId;
+  const token = ++_histToken;
+  if (!id) return;
+  const cached = hw.priceHistory[id];
+  if (cached) { _drawCharts(id, cached); return; }
+  setEl('hw-exp-candle-msg', `Loading ${_esc(id)} price history…`);
+  const hist = await _fetchHistory(id);
+  if (token !== _histToken || hw.instrumentId !== id) return; // user moved on
+  if (!hist) {
+    _candleChart = renderMonthlyCandles('hw-exp-candle-chart', [], { prev: _candleChart });
+    _changeChart = renderMonthlyChange('hw-exp-change-chart', [], { prev: _changeChart });
+    setEl('hw-exp-candle-msg', `Price history unavailable for ${_esc(id)}.`);
+    return;
+  }
+  _drawCharts(id, hist);
+}
+
+function _renderChallenge() {
+  _renderSigmaKpis();
+  _renderChallengeSummary();
+  return _renderChallengeCharts();
 }
 
 function _renderExposureFromState() {
@@ -213,7 +352,7 @@ function _renderExposureFromState() {
   _renderInstrumentSelect();
   _renderGreeksKpis();
   _renderLiveBadge();
-  _renderHoldingsTable();
+  _renderChallenge();
 }
 
 // ── kite-live fetch (addendum) — no-flash rule ──────────────────────────────
@@ -268,47 +407,13 @@ async function _loadExposure() {
   const equityHoldings = portfolio?.holdings || [];
   const totalValueEur = portfolio?.total_value_eur ?? null;
 
-  const equityRows = equityHoldings.map((h) => {
-    const close = instMap[h.instrument_id]?.close;
-    const marketValue =
-      close != null && h.shares != null
-        ? close * h.shares
-        : totalValueEur != null
-          ? (totalValueEur * h.allocation_pct) / 100
-          : null;
-    return {
-      instrument_id: h.instrument_id,
-      type: 'EQ',
-      qty_label: h.shares != null ? String(h.shares) : '—',
-      avg_price: null,
-      market_value: marketValue,
-      delta: null,
-      pnl: null,
-    };
-  });
-
   const optionPositions = analytics?.positions || [];
   const greeksList = analytics?.greeks || [];
-  const optionRows = optionPositions.map((p) => {
-    const matchingGreeks = greeksList.filter((g) => g.und === p.und && g.exp === p.exp);
-    const delta = matchingGreeks.length
-      ? matchingGreeks.reduce((s, g) => s + (g.delta || 0), 0)
-      : null;
-    return {
-      instrument_id: p.full || p.und,
-      type: p.type,
-      qty_label: `${p.qty} lots`,
-      avg_price: p.avg,
-      market_value: p.position_eur,
-      delta,
-      pnl: p.pnl,
-    };
-  });
 
   state.hedgeWorkflow.portfolioHoldings = equityHoldings;
   state.hedgeWorkflow.instruments = instMap;
   state.hedgeWorkflow.totalValueEur = totalValueEur;
-  state.hedgeWorkflow.holdings = [...equityRows, ...optionRows];
+  state.hedgeWorkflow.greeks = greeksList;
   state.hedgeWorkflow.positions = optionPositions;
   state.hedgeWorkflow.cashEur = equityHoldings.reduce((s, h) => s + (h.cash_eur || 0), 0) || null;
 
