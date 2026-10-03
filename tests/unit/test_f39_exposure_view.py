@@ -216,13 +216,13 @@ console.log(JSON.stringify({
     assert "Portfolio monthly −1σ" in r["summary"] and "Portfolio monthly −3σ" in r["summary"]
     assert f"−€{100000 * s:,.0f}".replace("−€", "−€") in r["summary"]
     assert "Your current challenge" not in r["summary"] and r["oldSummary"] is False
-    # ONE dotted σ line only (−1σ), anchored on the candle series' last close
-    assert r["labels"][0] == "Body" and len(r["labels"]) == 2
+    # ONE σ (±1σ dotted pair, no 2σ/3σ), anchored on the candle series' last close
+    assert r["labels"][0] == "Body" and len(r["labels"]) == 3
     last = 2000 + 6 * 50 + 28
     assert r["lastClose"] == last
-    assert r["bandVals"] == pytest.approx([last * (1 - s)], rel=1e-12)
+    assert r["bandVals"] == pytest.approx([last * (1 + s), last * (1 - s)], rel=1e-12)
     assert r["yBegin"] is False  # candles must not be squashed against a zero baseline
-    assert len(r["changeLabels"]) == 2 and r["changeLabels"][1].startswith("−1σ")
+    assert len(r["changeLabels"]) == 3 and r["changeLabels"][1].startswith("+1σ") and r["changeLabels"][2].startswith("−1σ")
     assert r["changeBars"] == 5
     assert len(r["post"]) == 1 and '"n_shares":10' in r["post"][0]
 

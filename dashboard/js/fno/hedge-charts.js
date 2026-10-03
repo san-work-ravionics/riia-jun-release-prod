@@ -151,7 +151,7 @@ export function renderMonthlyCandles(canvasId, daily, opts = {}) {
 }
 
 // Monthly MoM % change bars with ±1σ (empirical) and mean lines. opts: { titleId,
-// title, prev, singleSigma } — singleSigma draws only the −1σ dotted line. Returns the new Chart (or null).
+// title, prev, sigmaOnly } — sigmaOnly draws only the ±1σ dotted pair (no mean line). Returns the new Chart (or null).
 export function renderMonthlyChange(canvasId, daily, opts = {}) {
   if (opts.prev) opts.prev.destroy();
   const ctx = _canvas(canvasId);
@@ -177,7 +177,7 @@ export function renderMonthlyChange(canvasId, daily, opts = {}) {
       labels: labels.map(_monthLabel),
       datasets: [
         { label: 'Monthly Chg %', data: changes, backgroundColor: barColors, borderRadius: 3, order: 2 },
-        ...(opts.singleSigma ? [lineDs[1]] : lineDs),
+        ...(opts.sigmaOnly ? [lineDs[0], lineDs[1]] : lineDs),
       ],
     },
     options: {
