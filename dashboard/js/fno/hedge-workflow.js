@@ -242,32 +242,33 @@ function _renderSigmaKpis() {
   );
 }
 
+// Latest Price View panels (same .kpi tile style as the Greeks / σ tiles): last price,
+// portfolio € monthly 1σ/2σ/3σ and quarterly VaR (only when portfolio-hedge is loaded).
+function _tile(label, value, sub, cls = '') {
+  return `<div class="kpi"><div class="kpi-label">${label}</div><div class="kpi-value ${cls}">${value}</div><div class="kpi-sub">${sub}</div></div>`;
+}
+
 function _renderChallengeSummary() {
   const hw = state.hedgeWorkflow;
   const id = hw.instrumentId;
-  if (!id) { setEl('hw-exp-latest-view', `<div class="kpi-sub">No exposure yet.</div>`); return; }
-  const parts = [];
-  const volI = _volFor(id);
-  const sI = monthlySigma(volI);
-  if (sI != null) parts.push(`<strong>${_esc(id)}</strong> 1σ bad month <strong class="neg">−${(sI * 100).toFixed(1)}%</strong> (ann. vol ${volI.toFixed(1)}%)`);
+  if (!id) { setEl('hw-exp-latest-view', _tile('Latest Price View', '—', 'no exposure yet')); return; }
+  const tiles = [];
+  const hist = hw.priceHistory[id];
+  const last = hist ? hist.daily[hist.daily.length - 1].price : _price(id);
+  const sym = _sym(id) || (hist ? (_CCY_SYMBOL[hist.currency] || '') : '');
+  tiles.push(_tile('Latest Price View', last != null ? sym + _fmtNum(last) : '—', `${_esc(id)} last close`));
   const sP = monthlySigma(_portfolioVolPct());
   const tv = hw.totalValueEur;
   if (sP != null) {
-    parts.push(
-      tv != null
-        ? `Portfolio ${_eur(tv)}: 1σ <strong class="neg">−${_eur(tv * sP)}</strong> · 2σ −${_eur(tv * sP * 2)} · 3σ −${_eur(tv * sP * 3)}`
-        : `Portfolio 1σ −${(sP * 100).toFixed(1)}%`
-    );
+    for (const k of [1, 2, 3]) {
+      tiles.push(_tile(`Portfolio monthly −${k}σ`, tv != null ? '−' + _eur(tv * sP * k) : `−${(sP * k * 100).toFixed(1)}%`, tv != null ? `−${(sP * k * 100).toFixed(1)}% of ${_eur(tv)}` : 'of portfolio', 'neg'));
+    }
   }
   const a = (hw.apiHedge?.holdings || []).find((h) => h.instrument_id === id);
-  if (a && a.quarterly_var_pct != null) parts.push(`Qtr VaR ${Number(a.quarterly_var_pct).toFixed(1)}%${a.quarterly_var_eur != null ? ' (' + _eur(a.quarterly_var_eur) + ')' : ''}`);
-  setEl(
-    'hw-exp-latest-view',
-    parts.length
-      ? `<div class="kpi-label">Latest Price View</div>${parts.map((t) => `<div class="kpi-sub">${t}</div>`).join('')}
-         <div class="kpi-sub" style="opacity:.7">Monthly σ = annual vol ÷ √12</div>`
-      : `<div class="kpi-label">Latest Price View</div><div class="kpi-sub">volatility data unavailable</div>`
-  );
+  if (a && a.quarterly_var_pct != null) {
+    tiles.push(_tile('Quarterly VaR', `${Number(a.quarterly_var_pct).toFixed(1)}%`, a.quarterly_var_eur != null ? _eur(a.quarterly_var_eur) : '—', 'neg'));
+  }
+  setEl('hw-exp-latest-view', tiles.join(''));
 }
 
 function _rollingDateRange() {
@@ -317,6 +318,7 @@ function _drawCharts(id, hist) {
   _changeChart = renderMonthlyChange('hw-exp-change-chart', hist.daily, {
     prev: _changeChart, singleSigma: true, titleId: 'hw-exp-change-title', title: `Monthly Price Change — ${id}`,
   });
+  _renderChallengeSummary(); // last-price tile needs the candle series
   setEl('hw-exp-candle-title', `${_esc(id)} latest price vs monthly 1σ`);
   setEl('hw-exp-candle-msg', hist.holding ? '' : `No equity holding for ${_esc(id)} — showing the instrument price (option exposure only).`);
 }
