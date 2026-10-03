@@ -1,7 +1,7 @@
 // ── Hedge Workflow — Recommendation step (F39 Phase 3) ───────────────────────
-// Hedge Advisor verdict (GET /api/v1/experience/fno/hedge-reasoning, 7-step cascade
-// rendered as static cards — typewriter / skip-to-verdict dropped, animation only)
-// plus a per-holding selection table (hedged? + strategy) fed by portfolio-hedge.
+// Hedge Advisor (GET /api/v1/experience/fno/hedge-reasoning) shown as the ORIGINAL
+// 7-agent reasoning screen (hedge-reasoning.js: vertical agent panels, typewriter +
+// Skip to Verdict, final verdict) for the workflow's selected instrument, plus a per-holding selection table (hedged? + strategy) fed by portfolio-hedge.
 //
 // Refresh strategy: on step entry only (no polling). The advisor is re-fetched only
 // when its cache key `${instrumentId}|${nShares}` changes, or on "Re-run".
@@ -9,6 +9,7 @@
 import { apiFetch } from './api.js';
 import { setEl } from '../shared/utils.js';
 import { state } from './state.js';
+import { haShowReasoning, haShowLoading, haShowError, haClear } from './hedge-reasoning.js';
 import { renderInstrumentTiles } from './hedge-instrument-tiles.js';
 import { computeNShares, hedgeLabel, hedgeType, estRisk } from './hedge-calc.js';
 import { hwMarkDirty, authHeaders, STRATEGY_LABELS } from './hedge-workflow-save.js';
@@ -80,36 +81,16 @@ function _renderStatus(msg, withRerun) {
   );
 }
 
-function _renderAdvisor() {
-  const adv = _hw().advisor;
-  const d = adv.data;
+// instant=true: cached data on step re-entry — no typewriter replay.
+function _renderAdvisor(instant = false) {
+  const d = _hw().advisor.data;
   if (!d) {
-    setEl('hw-rec-cascade', '');
-    setEl('hw-rec-verdict-card', `<div class="kpi-sub">No advisor verdict available.</div>`);
+    haClear();
     setEl('hw-rec-detail', '');
     return;
   }
+  haShowReasoning(d, instant);
   const steps = d.steps || [];
-  setEl(
-    'hw-rec-cascade',
-    steps
-      .map(
-        (s, i) => `<div class="kpi" style="margin-bottom:8px;">
-          <div class="kpi-label">${i + 1}. ${_esc(s.title)} <span style="opacity:.6">(${_esc(s.agent)})</span></div>
-          <div class="kpi-sub">${_esc(s.narrative)}</div>
-          <div class="kpi-sub"><strong>${_esc(s.verdict)}</strong></div>
-        </div>`
-      )
-      .join('')
-  );
-  const recLabel =
-    d.recommendation === 'no_hedge' ? 'No hedge' : STRATEGY_LABELS[d.recommendation] || d.recommendation;
-  setEl(
-    'hw-rec-verdict-card',
-    `<div class="kpi-label">Verdict</div>
-     <div class="kpi-val">${_esc(recLabel)}</div>
-     <div class="kpi-sub">Confidence: ${_esc(d.confidence)} &middot; Spot: ${d.spot_price != null ? Number(d.spot_price).toFixed(2) : '—'} &middot; Source: ${_esc(d.data_source)}</div>`
-  );
   const hs = steps.find((s) => s.agent === 'HEDGE_ADVISOR') || steps[steps.length - 1];
   const hd = hs?.data || {};
   const leg = (name, o) =>
@@ -118,7 +99,8 @@ function _renderAdvisor() {
       : '';
   setEl(
     'hw-rec-detail',
-    `<div class="kpi-sub">${_esc(hd.primary_rationale || '')}</div>
+    `<div class="kpi-sub">Spot: ${d.spot_price != null ? Number(d.spot_price).toFixed(2) : '—'} &middot; Source: ${_esc(d.data_source)}</div>
+     <div class="kpi-sub">${_esc(hd.primary_rationale || '')}</div>
      ${hd.secondary_recommendation ? `<div class="kpi-sub">Secondary: ${_esc(STRATEGY_LABELS[hd.secondary_recommendation] || hd.secondary_recommendation)} — ${_esc(hd.secondary_rationale || '')}</div>` : ''}
      ${leg('Covered call', hd.call_sell)}${leg('Protective put', hd.put_buy)}
      ${_nSharesFor(_hw().instrumentId) == null ? `<div class="kpi-sub" style="opacity:.7">No equity holding for this instrument — EUR amounts are illustrative.</div>` : ''}`
@@ -183,12 +165,14 @@ async function _loadAdvisor(force) {
   const nShares = _nSharesFor(id);
   const key = `${id}|${nShares}`;
   if (!force && hw.advisor.key === key && hw.advisor.data) {
-    _renderAdvisor();
+    _renderAdvisor(true);
     _renderStatus(`Hedge Advisor (${_esc(hw.advisor.data.data_source)})`, true);
     return;
   }
   const token = ++_recToken;
   _renderStatus('Running Hedge Advisor…', false);
+  haClear();
+  haShowLoading(true);
   let url = `/api/v1/experience/fno/hedge-reasoning?instrument=${encodeURIComponent(id)}`;
   if (nShares != null) url += `&n_shares=${nShares}`;
   const data = await apiFetch(url);
@@ -196,7 +180,8 @@ async function _loadAdvisor(force) {
   if (!data) {
     hw.advisor = { key, data: null, error: 'Hedge Advisor unavailable' };
     _renderAdvisor();
-    _renderStatus('Hedge Advisor unavailable — defaults from portfolio-hedge are shown.', true);
+    haShowError('Hedge Advisor unavailable — defaults from portfolio-hedge are shown.');
+    _renderStatus('', true);
     return;
   }
   // The advisor's verdict seeds the strategy for the active instrument once per
@@ -205,7 +190,7 @@ async function _loadAdvisor(force) {
     hw.selections[id] = data.recommendation;
   }
   hw.advisor = { key, data, error: null };
-  _renderAdvisor();
+  _renderAdvisor(false);
   _renderStatus(`Hedge Advisor (${_esc(data.data_source)})`, true);
   _renderSelectionTable();
 }
@@ -215,14 +200,14 @@ export async function loadRecommendationStep() {
   const hw = _hw();
   _renderInstrumentSelect();
   if (!(hw.portfolioHoldings || []).length) {
-    _renderAdvisor();
+    haClear();
+    setEl('hw-rec-detail', '');
     _renderStatus('', false);
     _renderSelectionTable();
     return;
   }
   _ensureSelections();
   _renderSelectionTable();
-  _renderAdvisor();
   try {
     const [hedgeRes] = await Promise.allSettled([_fetchPortfolioHedge(), _loadAdvisor(false)]);
     if (hedgeRes.status === 'fulfilled' && hedgeRes.value) hw.apiHedge = hedgeRes.value;

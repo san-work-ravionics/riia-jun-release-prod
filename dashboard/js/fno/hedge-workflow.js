@@ -5,7 +5,7 @@
 // hedge-workflow-recommendation.js / -whatif.js / -save.js (Phase 3) and are loaded
 // on step entry by hwGoToStep().
 //
-// Exposure = "your current challenge": net Greeks + monthly 1/2/3 sigma risk tiles on one
+// Exposure = "Latest Price View": net Greeks + monthly 1/2/3 sigma risk tiles on one
 // row, a summary line, and the shared monthly candle / MoM charts (hedge-charts.js, same
 // equity-hedge-scenarios source as the old Equity Hedge page) with monthly sigma bands.
 // The old holdings table was removed (no decision value); "how the hedge helps" is
@@ -245,28 +245,28 @@ function _renderSigmaKpis() {
 function _renderChallengeSummary() {
   const hw = state.hedgeWorkflow;
   const id = hw.instrumentId;
-  if (!id) { setEl('hw-exp-challenge-summary', `<div class="kpi-sub">No exposure yet.</div>`); return; }
+  if (!id) { setEl('hw-exp-latest-view', `<div class="kpi-sub">No exposure yet.</div>`); return; }
   const parts = [];
   const volI = _volFor(id);
   const sI = monthlySigma(volI);
-  if (sI != null) parts.push(`<strong>${_esc(id)}</strong>: a 1σ bad month is <strong class="neg">−${(sI * 100).toFixed(1)}%</strong> (2σ −${(sI * 200).toFixed(1)}%, 3σ −${(sI * 300).toFixed(1)}%), ann. vol ${volI.toFixed(1)}%`);
+  if (sI != null) parts.push(`<strong>${_esc(id)}</strong> 1σ bad month <strong class="neg">−${(sI * 100).toFixed(1)}%</strong> (ann. vol ${volI.toFixed(1)}%)`);
   const sP = monthlySigma(_portfolioVolPct());
   const tv = hw.totalValueEur;
   if (sP != null) {
     parts.push(
       tv != null
-        ? `Portfolio (${_eur(tv)}): 1σ bad month <strong class="neg">−${_eur(tv * sP)}</strong> · 2σ −${_eur(tv * sP * 2)} · 3σ −${_eur(tv * sP * 3)}`
-        : `Portfolio: 1σ bad month −${(sP * 100).toFixed(1)}%`
+        ? `Portfolio ${_eur(tv)}: 1σ <strong class="neg">−${_eur(tv * sP)}</strong> · 2σ −${_eur(tv * sP * 2)} · 3σ −${_eur(tv * sP * 3)}`
+        : `Portfolio 1σ −${(sP * 100).toFixed(1)}%`
     );
   }
   const a = (hw.apiHedge?.holdings || []).find((h) => h.instrument_id === id);
-  if (a && a.quarterly_var_pct != null) parts.push(`Quarterly VaR ${Number(a.quarterly_var_pct).toFixed(1)}%${a.quarterly_var_eur != null ? ' (' + _eur(a.quarterly_var_eur) + ')' : ''}`);
+  if (a && a.quarterly_var_pct != null) parts.push(`Qtr VaR ${Number(a.quarterly_var_pct).toFixed(1)}%${a.quarterly_var_eur != null ? ' (' + _eur(a.quarterly_var_eur) + ')' : ''}`);
   setEl(
-    'hw-exp-challenge-summary',
+    'hw-exp-latest-view',
     parts.length
-      ? `<div class="kpi-label">Your current challenge</div>${parts.map((t) => `<div class="kpi-sub">${t}</div>`).join('')}
-         <div class="kpi-sub" style="opacity:.7">Monthly σ = annual volatility ÷ √12.</div>`
-      : `<div class="kpi-sub">Your current challenge — volatility data unavailable.</div>`
+      ? `<div class="kpi-label">Latest Price View</div>${parts.map((t) => `<div class="kpi-sub">${t}</div>`).join('')}
+         <div class="kpi-sub" style="opacity:.7">Monthly σ = annual vol ÷ √12</div>`
+      : `<div class="kpi-label">Latest Price View</div><div class="kpi-sub">volatility data unavailable</div>`
   );
 }
 
@@ -306,19 +306,18 @@ async function _fetchHistory(id) {
 function _drawCharts(id, hist) {
   const sym = _sym(id) || (_CCY_SYMBOL[hist.currency] || '');
   const last = hist.daily[hist.daily.length - 1].price;
+  // Anchor on the SAME series the candles are drawn from: last candle close (daily series),
+  // never on the geography/position price (different unit/currency/date).
   const lv = sigmaLevels(last, _volFor(id)) || [];
-  const bands = lv.map((l) => ({
-    label: `−${l.k}σ monthly (${l.downPct.toFixed(1)}%)`, value: l.down, color: BAND_COLORS['k' + l.k],
-  }));
-  const up = lv[0];
-  if (up) bands.push({ label: `+1σ monthly (+${up.sigmaPct.toFixed(1)}%)`, value: up.up, color: '#1A6B3C', dash: [3, 3] });
+  const d1 = lv[0];
+  const bands = d1 ? [{ label: `−1σ monthly (${d1.downPct.toFixed(1)}%)`, value: d1.down, color: BAND_COLORS.k3, dash: [3, 3] }] : [];
   _candleChart = renderMonthlyCandles('hw-exp-candle-chart', hist.daily, {
-    fmt: (v) => sym + Number(v).toLocaleString('en-US', { maximumFractionDigits: 2 }), bands, prev: _candleChart,
+    fmt: (v) => sym + Number(v).toLocaleString('en-US', { maximumFractionDigits: 2 }), bands, beginAtZero: false, prev: _candleChart,
   });
   _changeChart = renderMonthlyChange('hw-exp-change-chart', hist.daily, {
-    prev: _changeChart, titleId: 'hw-exp-change-title', title: `Monthly Price Change — ${id}`,
+    prev: _changeChart, singleSigma: true, titleId: 'hw-exp-change-title', title: `Monthly Price Change — ${id}`,
   });
-  setEl('hw-exp-candle-title', `${_esc(id)} price vs monthly risk bands`);
+  setEl('hw-exp-candle-title', `${_esc(id)} latest price vs monthly 1σ`);
   setEl('hw-exp-candle-msg', hist.holding ? '' : `No equity holding for ${_esc(id)} — showing the instrument price (option exposure only).`);
 }
 

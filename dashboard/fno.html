@@ -1248,17 +1248,17 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
         <div class="kpi" style="flex:1;min-width:280px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
           <div id="hw-exp-greeks-kpis" style="display:flex;gap:16px;flex-wrap:wrap;"></div>
           <div id="hw-exp-sigma-kpis" style="display:flex;gap:16px;flex-wrap:wrap;"></div>
+          <div id="hw-exp-latest-view" style="flex:1;min-width:240px;font-size:11px;"></div>
           <span id="hw-exp-live-badge"></span>
         </div>
       </div>
 
-      <!-- Your current challenge: monthly 1/2/3σ risk + candles vs σ bands -->
-      <div id="hw-exp-challenge-summary" class="kpi" style="margin-bottom:16px;"></div>
+      <!-- Latest Price View: monthly 1/2/3σ tiles + narrative sit in the Greeks row above; candles vs 1σ line -->
       <div class="two-col" style="margin-bottom:16px;">
         <div class="card">
           <div class="card-hdr">
-            <span class="card-title" id="hw-exp-candle-title">Price vs monthly risk bands</span>
-            <span class="card-sub">Monthly OHLC candles · monthly -1σ/-2σ/-3σ levels</span>
+            <span class="card-title" id="hw-exp-candle-title">Latest price vs monthly 1σ</span>
+            <span class="card-sub">Monthly OHLC candles · dotted = monthly −1σ level</span>
           </div>
           <div class="card-body">
             <div id="hw-exp-candle-msg" class="kpi-sub"></div>
@@ -1268,7 +1268,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
         <div class="card">
           <div class="card-hdr">
             <span class="card-title" id="hw-exp-change-title">Monthly Price Change</span>
-            <span class="card-sub">MoM % change · ±1σ bands</span>
+            <span class="card-sub">MoM % change · dotted = −1σ</span>
           </div>
           <div class="card-body">
             <div class="chart-wrap"><canvas id="hw-exp-change-chart"></canvas></div>
@@ -1284,14 +1284,105 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     <!-- Step 2 — Recommendation (F39 Phase 3) -->
     <div id="hw-step-recommendation" style="display:none;">
       <div id="hw-rec-instrument-select" style="margin-bottom:6px;"></div>
-      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;align-items:flex-start;">
-        <div id="hw-rec-status" style="flex:1;min-width:240px;padding-top:8px;"></div>
+      <!-- Hedge Advisor — original agent reasoning screen (moved from the retired #page-hedge-advisor) -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+        <div class="page-sub" style="flex:1;min-width:240px;">7-agent reasoning chain — regime, technicals, sentiment, allocation, volatility, goal, hedge (indicative)</div>
+        <div id="hw-rec-status"></div>
+        <button id="ha-skip-btn" class="ha-btn ha-btn--skip" onclick="haSkipToVerdict()" style="display:none">Skip to Verdict</button>
       </div>
-      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
-        <div id="hw-rec-verdict-card" class="kpi" style="min-width:260px;"></div>
-        <div id="hw-rec-detail" class="kpi" style="flex:1;min-width:280px;"></div>
+      <div id="ha-loading" class="ha-loading" style="display:none">
+        <span class="ha-spinner"></span> Running reasoning chain...
       </div>
-      <div id="hw-rec-cascade" style="margin-bottom:16px;"></div>
+      <div id="ha-error" class="load-err" style="display:none"></div>
+
+      <div id="ha-results" style="display:none">
+        <div class="ha-timestamp" id="ha-timestamp"></div>
+
+        <div class="ha-steps-grid">
+        <div class="reasoning-step" id="ha-step-0" style="display:none;opacity:0">
+          <div class="reasoning-step-hdr">
+            <span class="reasoning-agent">REGIME ANALYST</span>
+            <span class="reasoning-verdict" id="ha-step-0-verdict" style="opacity:0;transform:scale(0)"></span>
+          </div>
+          <div class="reasoning-step-title">Market Regime Analysis</div>
+          <div class="reasoning-narrative" id="ha-step-0-narrative"></div>
+          <div class="reasoning-data" id="ha-step-0-data" style="opacity:0"></div>
+        </div>
+        <div class="reasoning-connector"></div>
+
+        <div class="reasoning-step" id="ha-step-1" style="display:none;opacity:0">
+          <div class="reasoning-step-hdr">
+            <span class="reasoning-agent">TECHNICAL ANALYST</span>
+            <span class="reasoning-verdict" id="ha-step-1-verdict" style="opacity:0;transform:scale(0)"></span>
+          </div>
+          <div class="reasoning-step-title">Technical Indicator Reading</div>
+          <div class="reasoning-narrative" id="ha-step-1-narrative"></div>
+          <div class="reasoning-data" id="ha-step-1-data" style="opacity:0"></div>
+        </div>
+        <div class="reasoning-connector"></div>
+
+        <div class="reasoning-step" id="ha-step-2" style="display:none;opacity:0">
+          <div class="reasoning-step-hdr">
+            <span class="reasoning-agent">SENTIMENT SCORER</span>
+            <span class="reasoning-verdict" id="ha-step-2-verdict" style="opacity:0;transform:scale(0)"></span>
+          </div>
+          <div class="reasoning-step-title">Sentiment Score Calculation</div>
+          <div class="reasoning-narrative" id="ha-step-2-narrative"></div>
+          <div class="reasoning-data" id="ha-step-2-data" style="opacity:0"></div>
+        </div>
+        <div class="reasoning-connector"></div>
+
+        <div class="reasoning-step" id="ha-step-3" style="display:none;opacity:0">
+          <div class="reasoning-step-hdr">
+            <span class="reasoning-agent">ALLOCATION ENGINE</span>
+            <span class="reasoning-verdict" id="ha-step-3-verdict" style="opacity:0;transform:scale(0)"></span>
+          </div>
+          <div class="reasoning-step-title">Allocation Recommendation</div>
+          <div class="reasoning-narrative" id="ha-step-3-narrative"></div>
+          <div class="reasoning-data" id="ha-step-3-data" style="opacity:0"></div>
+        </div>
+        <div class="reasoning-connector"></div>
+
+        <div class="reasoning-step" id="ha-step-4" style="display:none;opacity:0">
+          <div class="reasoning-step-hdr">
+            <span class="reasoning-agent">VOLATILITY ASSESSOR</span>
+            <span class="reasoning-verdict" id="ha-step-4-verdict" style="opacity:0;transform:scale(0)"></span>
+          </div>
+          <div class="reasoning-step-title">Volatility &amp; Premium Assessment</div>
+          <div class="reasoning-narrative" id="ha-step-4-narrative"></div>
+          <div class="reasoning-data" id="ha-step-4-data" style="opacity:0"></div>
+        </div>
+        </div><!-- /ha-steps-grid -->
+
+        <div class="ha-steps-grid ha-steps-grid--row2">
+        <div class="reasoning-step" id="ha-step-5" style="display:none;opacity:0">
+          <div class="reasoning-step-hdr">
+            <span class="reasoning-agent">GOAL ANALYST</span>
+            <span class="reasoning-verdict" id="ha-step-5-verdict" style="opacity:0;transform:scale(0)"></span>
+          </div>
+          <div class="reasoning-step-title">Goal-Relative Return Analysis</div>
+          <div class="reasoning-narrative" id="ha-step-5-narrative"></div>
+          <div class="reasoning-data" id="ha-step-5-data" style="opacity:0"></div>
+        </div>
+        <div class="reasoning-connector"></div>
+
+        <div class="reasoning-step" id="ha-step-6" style="display:none;opacity:0">
+          <div class="reasoning-step-hdr">
+            <span class="reasoning-agent">HEDGE ADVISOR</span>
+            <span class="reasoning-verdict" id="ha-step-6-verdict" style="opacity:0;transform:scale(0)"></span>
+          </div>
+          <div class="reasoning-step-title">Hedge Recommendation</div>
+          <div class="reasoning-narrative" id="ha-step-6-narrative"></div>
+          <div class="reasoning-data" id="ha-step-6-data" style="opacity:0"></div>
+        </div>
+        </div><!-- /ha-steps-grid row2 -->
+
+        <div class="ha-final-section">
+          <div class="reasoning-final-verdict" id="ha-final-verdict"></div>
+          <div class="ha-confidence" id="ha-confidence"></div>
+        </div>
+      </div>
+      <div id="hw-rec-detail" class="kpi" style="margin:16px 0;"></div>
       <div id="hw-rec-selection-table" class="kpi" style="margin-bottom:16px;"></div>
       <div style="display:flex;justify-content:space-between;">
         <button id="hw-rec-back-btn" class="hw-nav-btn hw-secondary" onclick="hwGoToStep('exposure')">&lt; Back: Exposure</button>
@@ -1425,123 +1516,6 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     <div class="es-section-block">
       <div class="es-section-title">Triggered Alerts — Historical</div>
       <div class="triggered-row" id="triggered-grid"></div>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════
-       HEDGE ADVISOR — Agent Reasoning (Feature 31 Phase 2)
-  ════════════════════════════════════════════════ -->
-  <div class="section" id="page-hedge-advisor">
-    <div class="page-hdr">
-      <div>
-        <div class="page-title">Hedge Advisor</div>
-        <div class="page-sub">7-agent reasoning chain — regime, technicals, sentiment, allocation, volatility, goal, hedge (indicative)</div>
-      </div>
-      <div class="ha-controls">
-        <select id="ha-instrument-select" class="ha-select" onchange="haAnalyse()"></select>
-        <button id="ha-analyse-btn" class="ha-btn" onclick="haAnalyse()">Analyse</button>
-        <button id="ha-skip-btn" class="ha-btn ha-btn--skip" onclick="haSkipToVerdict()" style="display:none">Skip to Verdict</button>
-      </div>
-    </div>
-
-    <div id="ha-loading" class="ha-loading" style="display:none">
-      <span class="ha-spinner"></span> Running reasoning chain...
-    </div>
-    <div id="ha-error" class="load-err" style="display:none"></div>
-
-    <div id="ha-results" style="display:none">
-      <div class="ha-timestamp" id="ha-timestamp"></div>
-
-      <div class="ha-steps-grid">
-      <div class="reasoning-step" id="ha-step-0" style="display:none;opacity:0">
-        <div class="reasoning-step-hdr">
-          <span class="reasoning-agent">REGIME ANALYST</span>
-          <span class="reasoning-verdict" id="ha-step-0-verdict" style="opacity:0;transform:scale(0)"></span>
-        </div>
-        <div class="reasoning-step-title">Market Regime Analysis</div>
-        <div class="reasoning-narrative" id="ha-step-0-narrative"></div>
-        <div class="reasoning-data" id="ha-step-0-data" style="opacity:0"></div>
-      </div>
-      <div class="reasoning-connector"></div>
-
-      <div class="reasoning-step" id="ha-step-1" style="display:none;opacity:0">
-        <div class="reasoning-step-hdr">
-          <span class="reasoning-agent">TECHNICAL ANALYST</span>
-          <span class="reasoning-verdict" id="ha-step-1-verdict" style="opacity:0;transform:scale(0)"></span>
-        </div>
-        <div class="reasoning-step-title">Technical Indicator Reading</div>
-        <div class="reasoning-narrative" id="ha-step-1-narrative"></div>
-        <div class="reasoning-data" id="ha-step-1-data" style="opacity:0"></div>
-      </div>
-      <div class="reasoning-connector"></div>
-
-      <div class="reasoning-step" id="ha-step-2" style="display:none;opacity:0">
-        <div class="reasoning-step-hdr">
-          <span class="reasoning-agent">SENTIMENT SCORER</span>
-          <span class="reasoning-verdict" id="ha-step-2-verdict" style="opacity:0;transform:scale(0)"></span>
-        </div>
-        <div class="reasoning-step-title">Sentiment Score Calculation</div>
-        <div class="reasoning-narrative" id="ha-step-2-narrative"></div>
-        <div class="reasoning-data" id="ha-step-2-data" style="opacity:0"></div>
-      </div>
-      <div class="reasoning-connector"></div>
-
-      <div class="reasoning-step" id="ha-step-3" style="display:none;opacity:0">
-        <div class="reasoning-step-hdr">
-          <span class="reasoning-agent">ALLOCATION ENGINE</span>
-          <span class="reasoning-verdict" id="ha-step-3-verdict" style="opacity:0;transform:scale(0)"></span>
-        </div>
-        <div class="reasoning-step-title">Allocation Recommendation</div>
-        <div class="reasoning-narrative" id="ha-step-3-narrative"></div>
-        <div class="reasoning-data" id="ha-step-3-data" style="opacity:0"></div>
-      </div>
-      <div class="reasoning-connector"></div>
-
-      <div class="reasoning-step" id="ha-step-4" style="display:none;opacity:0">
-        <div class="reasoning-step-hdr">
-          <span class="reasoning-agent">VOLATILITY ASSESSOR</span>
-          <span class="reasoning-verdict" id="ha-step-4-verdict" style="opacity:0;transform:scale(0)"></span>
-        </div>
-        <div class="reasoning-step-title">Volatility &amp; Premium Assessment</div>
-        <div class="reasoning-narrative" id="ha-step-4-narrative"></div>
-        <div class="reasoning-data" id="ha-step-4-data" style="opacity:0"></div>
-      </div>
-      </div><!-- /ha-steps-grid -->
-
-      <div class="ha-steps-grid ha-steps-grid--row2">
-      <div class="reasoning-step" id="ha-step-5" style="display:none;opacity:0">
-        <div class="reasoning-step-hdr">
-          <span class="reasoning-agent">GOAL ANALYST</span>
-          <span class="reasoning-verdict" id="ha-step-5-verdict" style="opacity:0;transform:scale(0)"></span>
-        </div>
-        <div class="reasoning-step-title">Goal-Relative Return Analysis</div>
-        <div class="reasoning-narrative" id="ha-step-5-narrative"></div>
-        <div class="reasoning-data" id="ha-step-5-data" style="opacity:0"></div>
-      </div>
-      <div class="reasoning-connector"></div>
-
-      <div class="reasoning-step" id="ha-step-6" style="display:none;opacity:0">
-        <div class="reasoning-step-hdr">
-          <span class="reasoning-agent">HEDGE ADVISOR</span>
-          <span class="reasoning-verdict" id="ha-step-6-verdict" style="opacity:0;transform:scale(0)"></span>
-        </div>
-        <div class="reasoning-step-title">Hedge Recommendation</div>
-        <div class="reasoning-narrative" id="ha-step-6-narrative"></div>
-        <div class="reasoning-data" id="ha-step-6-data" style="opacity:0"></div>
-      </div>
-      </div><!-- /ha-steps-grid row2 -->
-
-      <div class="ha-chart-section">
-        <div class="chart-wrap">
-          <div class="chart-title">Payoff Comparison (indicative)</div>
-          <canvas id="ha-payoff-chart" height="200"></canvas>
-        </div>
-      </div>
-
-      <div class="ha-final-section">
-        <div class="reasoning-final-verdict" id="ha-final-verdict"></div>
-        <div class="ha-confidence" id="ha-confidence"></div>
-      </div>
     </div>
   </div>
 

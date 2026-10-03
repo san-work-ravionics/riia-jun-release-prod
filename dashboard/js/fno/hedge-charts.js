@@ -66,7 +66,9 @@ export function buildMonthlyChanges(daily) {
 }
 
 // Monthly candlesticks. opts: { fmt (price formatter), bands: [{label, value, color,
-// dash}] horizontal reference lines (e.g. monthly −1σ/−2σ/−3σ price levels), prev }.
+// dash}] horizontal reference lines (e.g. the monthly −1σ price level), beginAtZero
+// (default true = original Chart.js bar behaviour; the Exposure step passes false so the
+// candles fill the plot instead of being squashed at the top), prev }.
 // Returns the new Chart (or null when no canvas / not enough data).
 export function renderMonthlyCandles(canvasId, daily, opts = {}) {
   const fmt = opts.fmt || (v => Number(v).toFixed(2));
@@ -142,14 +144,14 @@ export function renderMonthlyCandles(canvasId, daily, opts = {}) {
       },
       scales: {
         x: { grid: { color: _gridClr }, ticks: { font: { family: _cm, size: 10 } } },
-        y: { grid: { color: _gridClr }, ticks: { font: { family: _cm, size: 10 }, callback: v => fmt(v) } },
+        y: { beginAtZero: opts.beginAtZero !== false, grid: { color: _gridClr }, ticks: { font: { family: _cm, size: 10 }, callback: v => fmt(v) } },
       },
     },
   });
 }
 
 // Monthly MoM % change bars with ±1σ (empirical) and mean lines. opts: { titleId,
-// title, prev }. Returns the new Chart (or null).
+// title, prev, singleSigma } — singleSigma draws only the −1σ dotted line. Returns the new Chart (or null).
 export function renderMonthlyChange(canvasId, daily, opts = {}) {
   if (opts.prev) opts.prev.destroy();
   const ctx = _canvas(canvasId);
@@ -163,6 +165,11 @@ export function renderMonthlyChange(canvasId, daily, opts = {}) {
   const upper1 = mean + stdDev;
   const lower1 = mean - stdDev;
   const barColors = changes.map(v => (Math.abs(v) > stdDev) ? 'rgba(155,28,28,0.65)' : 'rgba(0,86,184,0.55)');
+  const lineDs = [
+    { label: `+1σ (${upper1.toFixed(1)}%)`, data: Array(labels.length).fill(upper1), type: 'line', borderColor: _cDanger, borderWidth: 1.5, borderDash: [6, 4], pointRadius: 0, fill: false, order: 1 },
+    { label: `−1σ (${lower1.toFixed(1)}%)`, data: Array(labels.length).fill(lower1), type: 'line', borderColor: _cDanger, borderWidth: 1.5, borderDash: [6, 4], pointRadius: 0, fill: false, order: 1 },
+    { label: `Mean (${mean.toFixed(1)}%)`, data: Array(labels.length).fill(mean), type: 'line', borderColor: _cT3, borderWidth: 1, borderDash: [3, 3], pointRadius: 0, fill: false, order: 1 },
+  ];
 
   return new Chart(ctx, {
     type: 'bar',
@@ -170,9 +177,7 @@ export function renderMonthlyChange(canvasId, daily, opts = {}) {
       labels: labels.map(_monthLabel),
       datasets: [
         { label: 'Monthly Chg %', data: changes, backgroundColor: barColors, borderRadius: 3, order: 2 },
-        { label: `+1σ (${upper1.toFixed(1)}%)`, data: Array(labels.length).fill(upper1), type: 'line', borderColor: _cDanger, borderWidth: 1.5, borderDash: [6, 4], pointRadius: 0, fill: false, order: 1 },
-        { label: `−1σ (${lower1.toFixed(1)}%)`, data: Array(labels.length).fill(lower1), type: 'line', borderColor: _cDanger, borderWidth: 1.5, borderDash: [6, 4], pointRadius: 0, fill: false, order: 1 },
-        { label: `Mean (${mean.toFixed(1)}%)`, data: Array(labels.length).fill(mean), type: 'line', borderColor: _cT3, borderWidth: 1, borderDash: [3, 3], pointRadius: 0, fill: false, order: 1 },
+        ...(opts.singleSigma ? [lineDs[1]] : lineDs),
       ],
     },
     options: {

@@ -1,51 +1,56 @@
 // ── Hedge Advisor — Agent Reasoning Cascade ───────────────────────────────────
-import { api } from './api.js';
-import { mkChart, C } from '../shared/charts.js';
-import { state } from './state.js';
 
 let _twToken = 0;
 
 // ── Public API ────────────────────────────────────────────────────────────────
+// F39: rendered inside the Hedge Workflow Recommendation step (hedge-workflow-
+// recommendation.js owns the fetch and the instrument; this module only renders the
+// original agent-reasoning screen). The old standalone page / dropdown / fetch were
+// removed; the cascade, typewriter, per-step cards and Skip behaviour are unchanged.
+// The old "Payoff Comparison" chart is omitted: the hedge-reasoning API has no
+// payoff_curves field, so it never rendered.
 
-/**
- * Entry point — called by section loader when user navigates to hedge-advisor page.
- * Populates instrument dropdown, then auto-runs analysis.
- */
-export async function loadHedgeAdvisor() {
-  _populateDropdown();
-  await haAnalyse();
-}
+/** Show/hide the loading spinner. */
+export function haShowLoading(show) { _showLoading(show); }
 
-/**
- * Run hedge reasoning analysis for the selected instrument.
- * Fetches API, then renders cascading typewriter steps.
- */
-export async function haAnalyse() {
-  // Cancel any in-flight typewriter cascade
+/** Clear the screen (no instrument / no holdings). */
+export function haClear() {
   _twToken += 1;
-
-  const select = document.getElementById('ha-instrument-select');
-  const instrument = select ? select.value : 'ASML';
-
-  _showLoading(true);
+  _showLoading(false);
   _hideError();
   _hideResults();
   _showSkip(false);
+}
 
-  try {
-    const data = await api(`/api/v1/experience/fno/hedge-reasoning?instrument=${encodeURIComponent(instrument)}`);
-    if (!data || !data.steps || data.steps.length === 0) {
-      _showError('No reasoning data returned for this instrument.');
-      _showLoading(false);
-      return;
-    }
-    _showLoading(false);
-    _showResults(true);
+/** Show an error message (hides results). */
+export function haShowError(msg) {
+  _showLoading(false);
+  _hideResults();
+  _showSkip(false);
+  _showError(msg);
+}
+
+/**
+ * Render the reasoning screen for `data`. instant=true (cached data on step re-entry)
+ * skips the typewriter and renders every step at once.
+ */
+export function haShowReasoning(data, instant = false) {
+  _twToken += 1; // cancel any in-flight typewriter cascade
+  _hideError();
+  _showLoading(false);
+  if (!data || !data.steps || data.steps.length === 0) {
+    haShowError('No reasoning data returned for this instrument.');
+    return;
+  }
+  _showResults(true);
+  const resultsEl = document.getElementById('ha-results');
+  if (resultsEl) resultsEl._haData = data;
+  if (instant) {
+    _showSkip(false);
+    _renderAllInstant(data);
+  } else {
     _showSkip(true);
     _renderCascade(data);
-  } catch (e) {
-    _showLoading(false);
-    _showError(e.message || 'Failed to fetch hedge reasoning.');
   }
 }
 
@@ -58,21 +63,6 @@ export function haSkipToVerdict() {
   if (!resultsEl) return;
   if (!resultsEl._haData) return;
   _renderAllInstant(resultsEl._haData);
-}
-
-// ── Internal: Dropdown ────────────────────────────────────────────────────────
-
-function _populateDropdown() {
-  const select = document.getElementById('ha-instrument-select');
-  if (!select) return;
-
-  const instruments = (state.portfolioGeoInstruments && state.portfolioGeoInstruments.length > 0)
-    ? state.portfolioGeoInstruments.map(i => i.id || i.name || i)
-    : ['ASML', 'NIFTY', 'BANKNIFTY', 'NVIDIA'];
-
-  select.innerHTML = instruments.map(inst =>
-    `<option value="${inst}"${inst === 'ASML' ? ' selected' : ''}>${inst}</option>`
-  ).join('');
 }
 
 // ── Internal: UI State ────────────────────────────────────────────────────────
@@ -130,7 +120,6 @@ function _renderCascade(data) {
 function _cascadeStep(data, idx) {
   const myToken = _twToken;
   if (idx >= data.steps.length) {
-    _renderPayoffChart(data);
     _renderFinalVerdict(data);
     return;
   }
@@ -219,7 +208,6 @@ function _renderAllInstant(data) {
     }
   }
 
-  _renderPayoffChart(data);
   _renderFinalVerdict(data);
 }
 
@@ -338,103 +326,6 @@ function _fmtEur(n) {
   if (n == null) return '--';
   const abs = Math.abs(n).toLocaleString('en-EU', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   return n >= 0 ? `+€${abs}` : `−€${abs}`;
-}
-
-// ── Internal: Payoff Chart ────────────────────────────────────────────────────
-
-let _payoffChart;
-
-function _renderPayoffChart(data) {
-  const curves = data.payoff_curves;
-  if (!curves || !curves.price_range) return;
-
-  const allZero = curves.unhedged && curves.unhedged.every(v => v === 0);
-  if (allZero) {
-    const canvas = document.getElementById('ha-payoff-chart');
-    if (canvas && canvas.parentNode) {
-      canvas.parentNode.innerHTML = '<div class="reasoning-no-chart">No hedge needed — position is flat.</div>';
-    }
-    return;
-  }
-
-  const annotation = (data.spot_price && window.ChartAnnotation) ? {
-    annotation: {
-      annotations: {
-        spotLine: {
-          type: 'line',
-          xMin: data.spot_price,
-          xMax: data.spot_price,
-          borderColor: C.t3,
-          borderWidth: 1,
-          borderDash: [4, 4],
-          label: {
-            display: true,
-            content: `Spot: ${data.spot_price}`,
-            position: 'start',
-            font: { family: C.mono, size: 10 },
-            color: C.t3,
-          }
-        }
-      }
-    }
-  } : {};
-
-  const config = {
-    type: 'line',
-    data: {
-      labels: curves.price_range,
-      datasets: [
-        {
-          label: 'Unhedged',
-          data: curves.unhedged,
-          borderColor: C.t3,
-          borderWidth: 1.5,
-          borderDash: [4, 4],
-          pointRadius: 0,
-          fill: false,
-        },
-        {
-          label: 'Call Sell (Covered Call)',
-          data: curves.call_sell,
-          borderColor: C.build,
-          borderWidth: 2,
-          pointRadius: 0,
-          fill: false,
-        },
-        {
-          label: 'Put Buy (Protective Put)',
-          data: curves.put_buy,
-          borderColor: C.run,
-          borderWidth: 2,
-          pointRadius: 0,
-          fill: false,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'bottom', labels: { font: { family: C.mono, size: 10 } } },
-        ...annotation,
-      },
-      scales: {
-        x: {
-          title: { display: true, text: 'Price', font: { family: C.mono, size: 10 } },
-          ticks: { font: { family: C.mono, size: 9 }, maxTicksLimit: 8 },
-          grid: { display: false },
-        },
-        y: {
-          title: { display: true, text: 'P&L', font: { family: C.mono, size: 10 } },
-          ticks: { font: { family: C.mono, size: 9 } },
-          grid: { color: 'rgba(0,0,0,.04)' },
-        },
-      },
-      animation: { duration: 600 },
-    },
-  };
-
-  _payoffChart = mkChart('ha-payoff-chart', config);
 }
 
 // ── Internal: Final Verdict ───────────────────────────────────────────────────
