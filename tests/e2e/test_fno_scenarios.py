@@ -135,3 +135,52 @@ def test_fno_manoeuvre_pnl_history(base_url):
     """manoeuvre.js: GET /api/v1/portfolio/man-pnl-history — P&L history chart."""
     r = requests.get(f"{base_url}/api/v1/portfolio/man-pnl-history", timeout=TIMEOUT)
     assert r.status_code == 200, f"portfolio/man-pnl-history missing — Manoeuvre P&L chart will be empty: {r.status_code}"
+
+
+# ---------------------------------------------------------------------------
+# UC-F39  Unified Hedge Workflow (Phase 3) — exposure -> recommendation ->
+#         what-if -> save, then reload restores step + history.
+#         Pure HTTP: exercises the exact endpoints the 4 step modules call.
+# ---------------------------------------------------------------------------
+
+def test_fno_hedge_workflow_flow(base_url, auth_token):
+    headers = {"Authorization": f"Bearer {auth_token}"}
+
+    # Recommendation: Hedge Advisor cascade (no auth, deterministic)
+    r = requests.get(
+        f"{base_url}/api/v1/experience/fno/hedge-reasoning",
+        params={"instrument": "NIFTY", "n_shares": 10},
+        timeout=TIMEOUT,
+    )
+    if r.status_code != 200:
+        pytest.skip(f"hedge-reasoning needs instrument data not present here: {r.status_code}")
+    adv = r.json()
+    for key in ("instrument", "steps", "recommendation", "confidence", "spot_price", "data_source"):
+        assert key in adv, f"hedge-reasoning missing '{key}'"
+    assert adv["recommendation"] in ("call_sell", "put_buy", "no_hedge")
+
+    # What-if: kite-live always answers 200 (fallback in-payload when middleware is down)
+    r = requests.get(
+        f"{base_url}/api/v1/experience/fno/kite-live",
+        params={"instrument_id": "NIFTY"},
+        headers=headers,
+        timeout=TIMEOUT,
+    )
+    assert r.status_code == 200, f"kite-live must never fail: {r.status_code} {r.text}"
+    assert r.json()["source"] in ("kite", "fallback")
+
+    # Save: PUT then GET restores last_step + history row (needs a portfolio key)
+    body = {"hedged_ids": ["NIFTY"], "coverage": 60, "scenario_tab": "collar", "last_step": "save"}
+    r = requests.put(f"{base_url}/api/v1/experience/fno/hedge-plan", json=body, headers=headers, timeout=TIMEOUT)
+    if r.status_code == 404:
+        pytest.skip("dev user has no saved portfolio key — hedge-plan save not exercisable")
+    assert r.status_code == 200, f"hedge-plan PUT failed: {r.status_code} {r.text}"
+    r = requests.get(f"{base_url}/api/v1/experience/fno/hedge-plan", headers=headers, timeout=TIMEOUT)
+    assert r.status_code == 200
+    plan = r.json()
+    assert plan["last_step"] == "save" and plan["coverage"] == 60
+    assert plan["hedged_ids"] == ["NIFTY"] and plan["scenario_tab"] == "collar"
+
+    # Save step secondary table: global Manoeuvre hedge-action log
+    r = requests.get(f"{base_url}/api/v1/portfolio/hedge-history", timeout=TIMEOUT)
+    assert r.status_code == 200 and isinstance(r.json(), list)

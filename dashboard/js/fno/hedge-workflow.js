@@ -1,25 +1,31 @@
-// ── Unified FnO Hedge Workflow — shell + Exposure step (F39 Phase 2) ─────────
+// ── Unified FnO Hedge Workflow — shell + Exposure step (F39 Phase 2/3) ───────
 //
 // Shell: 4-step stepper (#hw-stepper → #hw-step-exposure/recommendation/whatif/save).
-// Only the Exposure step is fully built this phase; Recommendation/What-if/Save are
-// empty stub panels reachable via hwGoToStep() — their content is Phase 3 scope
-// (hedge-workflow-recommendation.js / -whatif.js / -save.js, not yet written).
+// Exposure is built here; Recommendation / What-if / Save live in
+// hedge-workflow-recommendation.js / -whatif.js / -save.js (Phase 3) and are loaded
+// on step entry by hwGoToStep().
 //
 // Exposure reuses 3 existing read-only sources (same "parallel fetch, partial
 // fallback" pattern as my-portfolio.js) — user-portfolio, portfolio-analytics,
-// geography-overview — plus hedge-plan (for last_step restore) and the new
-// kite-live endpoint for a best-effort live quote/lot-size overlay (addendum).
+// geography-overview — plus the kite-live endpoint for a best-effort live
+// quote/lot-size overlay. The saved hedge plan (hedge-plan GET) is read once per
+// section entry by loadHedgeWorkflow() for last_step / coverage / hedged ids.
 // All calls run via Promise.allSettled; a failed/slow source degrades only its
-// own piece of the UI (inline "—"/badge) — it never blanks the whole step
-// (Edge Case 3).
+// own piece of the UI (inline "—"/badge) — it never blanks the whole step.
 //
 // No-flash rule (binding, not left to judgment): liveData is never cleared
 // before a new kite-live fetch resolves — the previous value stays rendered
-// until the new one replaces it in place (Edge Case 9).
+// until the new one replaces it in place.
+//
+// Refresh strategy: on step entry, no polling. hwRefreshStep() re-runs the current
+// step on demand.
 
 import { apiFetch } from './api.js';
 import { setEl, badge } from '../shared/utils.js';
 import { state } from './state.js';
+import { loadRecommendationStep } from './hedge-workflow-recommendation.js';
+import { loadWhatIfStep } from './hedge-workflow-whatif.js';
+import { loadSaveStep, hwScheduleSave, authHeaders as _authHeaders } from './hedge-workflow-save.js';
 
 const STEPS = ['exposure', 'recommendation', 'whatif', 'save'];
 const STEP_LABELS = {
@@ -31,11 +37,6 @@ const STEP_LABELS = {
 
 function _fmt(v, d = 2) {
   return v == null || v === '' ? '—' : parseFloat(v).toFixed(d);
-}
-
-function _authHeaders() {
-  const token = sessionStorage.getItem('auth_token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 // ── Persistent shell (#hw-stepper) ───────────────────────────────────────────
@@ -58,18 +59,52 @@ function _showStepPanel(step) {
   });
 }
 
-// ── window.hwGoToStep(step) ──────────────────────────────────────────────────
-export function hwGoToStep(step) {
+// ── Exposure data guard ─────────────────────────────────────────────────────
+// Steps 2-4 depend on holdings/instruments loaded by the Exposure loader, so any
+// step entry (including a restore straight to whatif/save) awaits this first.
+export async function ensureExposure() {
+  if (state.hedgeWorkflow.exposureLoadedAt == null) await _loadExposure();
+}
+
+// First visit with no saved plan: every holding starts hedged. With a saved plan
+// the stored hedged_ids are respected, even if empty.
+function _applyHedgedDefault() {
+  const hw = state.hedgeWorkflow;
+  if (!hw.savedPlan && !hw.hedgedDefaulted && hw.portfolioHoldings.length) {
+    hw.hedgedIds = hw.portfolioHoldings.map((h) => h.instrument_id);
+    hw.hedgedDefaulted = true;
+  }
+}
+
+let _navToken = 0;
+
+// ── window.hwGoToStep(step, persist = true) ─────────────────────────────────
+// persist=false is used by the restore path so reloading never rewrites last_step.
+export async function hwGoToStep(step, persist = true) {
   const target = STEPS.includes(step) ? step : 'exposure';
-  state.hedgeWorkflow.step = target;
-  state.hedgeWorkflow.reached.add(target);
+  const hw = state.hedgeWorkflow;
+  hw.step = target;
+  hw.reached.add(target);
   _renderStepper();
   _showStepPanel(target);
-  if (target === 'exposure') {
-    _loadExposure();
+  const token = ++_navToken;
+  try {
+    if (target === 'exposure') await _loadExposure();
+    else await ensureExposure();
+    if (token !== _navToken) return; // user navigated elsewhere meanwhile
+    _applyHedgedDefault();
+    if (persist && (hw.dirty || hw.savedPlan)) hwScheduleSave();
+    if (target === 'recommendation') await loadRecommendationStep();
+    else if (target === 'whatif') await loadWhatIfStep();
+    else if (target === 'save') await loadSaveStep();
+  } catch (e) {
+    console.warn('[hedge-workflow] step load failed', target, e);
   }
-  // Recommendation/What-if/Save panels are empty stubs in Phase 2 — nothing to
-  // load for them yet; Phase 3 modules will register their own step-entry hooks.
+}
+
+// ── window.hwRefreshStep() — manual refresh of the current step ─────────────
+export function hwRefreshStep() {
+  return hwGoToStep(state.hedgeWorkflow.step, false);
 }
 
 // ── window.hwSelectInstrument(id) ────────────────────────────────────────────
@@ -79,7 +114,11 @@ export function hwGoToStep(step) {
 export function hwSelectInstrument(id) {
   state.hedgeWorkflow.instrumentId = id;
   _renderInstrumentSelect();
-  _fetchLiveData(id);
+  const step = state.hedgeWorkflow.step;
+  // What-if fetches kite-live itself (with the chosen hedge's strike); avoid a duplicate.
+  if (step !== 'whatif') _fetchLiveData(id);
+  if (step === 'recommendation') loadRecommendationStep();
+  else if (step === 'whatif') loadWhatIfStep();
 }
 
 // ── Exposure step — hedge quality banner (#hw-exp-hqs-banner) ───────────────
@@ -205,6 +244,7 @@ async function _fetchLiveData(instrumentId) {
       quote: data.quote,
       margin: data.margin,
       fetchedAt: data.fetched_at,
+      instrumentId,
     };
   }
   _renderLiveBadge();
@@ -214,24 +254,23 @@ async function _fetchLiveData(instrumentId) {
 async function _loadExposure() {
   const headers = _authHeaders();
 
-  const [portfolioRes, analyticsRes, geoRes, hedgeRes] = await Promise.allSettled([
+  const [portfolioRes, analyticsRes, geoRes] = await Promise.allSettled([
     apiFetch('/api/v1/experience/user-portfolio', { headers }),
     apiFetch('/api/v1/experience/fno/portfolio-analytics?mode=real', { headers }),
     apiFetch('/api/v1/experience/rita/geography-overview', {}),
-    apiFetch('/api/v1/experience/fno/hedge-plan', { headers }),
   ]);
 
   const portfolio = portfolioRes.status === 'fulfilled' ? portfolioRes.value : null;
   const analytics = analyticsRes.status === 'fulfilled' ? analyticsRes.value : null;
   const geo = geoRes.status === 'fulfilled' ? geoRes.value : null;
-  const hedgePlan = hedgeRes.status === 'fulfilled' ? hedgeRes.value : null;
 
-  // instMap: instrument_id -> live close price (for equity market-value calc).
+  // instMap: instrument_id -> full geography instrument + region (close price for the
+  // equity market-value calc here; risk/return/region for the Phase 3 steps).
   const instMap = {};
   if (geo?.regions) {
     for (const reg of geo.regions) {
       for (const inst of reg.instruments ?? []) {
-        instMap[inst.id] = { close: inst.close };
+        instMap[inst.id] = { ...inst, region: reg.region };
       }
     }
   }
@@ -276,6 +315,9 @@ async function _loadExposure() {
     };
   });
 
+  state.hedgeWorkflow.portfolioHoldings = equityHoldings;
+  state.hedgeWorkflow.instruments = instMap;
+  state.hedgeWorkflow.totalValueEur = totalValueEur;
   state.hedgeWorkflow.holdings = [...equityRows, ...optionRows];
   state.hedgeWorkflow.positions = optionPositions;
   state.hedgeWorkflow.cashEur = equityHoldings.reduce((s, h) => s + (h.cash_eur || 0), 0) || null;
@@ -305,12 +347,7 @@ async function _loadExposure() {
     positions: analytics?.hedge_quality?.positions || [],
   };
 
-  if (hedgePlan) {
-    state.hedgeWorkflow.coverage = hedgePlan.coverage ?? 50;
-    state.hedgeWorkflow.scenarioTab = hedgePlan.scenario_tab ?? null;
-    state.hedgeWorkflow.hedgedIds = hedgePlan.hedged_ids ?? [];
-    state.hedgeWorkflow.duration = hedgePlan.duration ?? '1y';
-  }
+  state.hedgeWorkflow.exposureLoadedAt = Date.now();
 
   _renderExposureFromState();
 
@@ -319,19 +356,29 @@ async function _loadExposure() {
   }
 }
 
-// ── window.loadHedgeWorkflow — section-loader entry point ──────────────────
-export async function loadHedgeWorkflow() {
+// ── window.loadHedgeWorkflow(stepOverride) — section-loader entry point ────
+// stepOverride (alias deep-links from nav.js / main.js) wins over the saved
+// last_step. The step is entered exactly once, after the hedge plan has resolved,
+// so an alias can never be overridden by a late-arriving plan (Phase 2 race).
+export async function loadHedgeWorkflow(stepOverride) {
+  const hw = state.hedgeWorkflow;
+  let step = 'exposure';
   try {
-    const headers = _authHeaders();
-    // Edge Case 2: no saved plan yet (404) -> apiFetch returns null -> default
-    // silently to lastStep="exposure" (and coverage/duration/hedgedIds defaults
-    // already set in state.js's initial state.hedgeWorkflow shape).
-    const hedgePlan = await apiFetch('/api/v1/experience/fno/hedge-plan', { headers });
-    const lastStep =
-      hedgePlan?.last_step && STEPS.includes(hedgePlan.last_step) ? hedgePlan.last_step : 'exposure';
-    hwGoToStep(lastStep);
+    // hedge-plan GET returns null with HTTP 200 when no plan exists (or null on 404
+    // via apiFetch) — both mean "no saved plan": default silently.
+    const plan = await apiFetch('/api/v1/experience/fno/hedge-plan', { headers: _authHeaders() });
+    if (plan && !hw.dirty) {
+      hw.savedPlan = plan;
+      hw.coverage = plan.coverage ?? 50;
+      hw.scenarioTab = plan.scenario_tab || 'pp';
+      hw.hedgedIds = plan.hedged_ids ?? [];
+      hw.duration = '1y';
+      hw.hedgedDefaulted = true;
+    }
+    if (STEPS.includes(stepOverride)) step = stepOverride;
+    else if (plan?.last_step && STEPS.includes(plan.last_step)) step = plan.last_step;
   } catch (e) {
     console.warn('[hedge-workflow] load failed', e);
-    hwGoToStep('exposure');
   }
+  await hwGoToStep(step, false);
 }

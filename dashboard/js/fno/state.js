@@ -56,10 +56,24 @@ export const state = {
     selections: {},
     coverage: 50,
     duration: '1y',
-    scenarioTab: null,
-    payoff: null,
-    marginImpact: null,
+    scenarioTab: 'pp',            // DB column NOT NULL — never null
+    payoff: null,                 // {moves, hedged, unhedged, aggregates} (What-if)
+    marginImpact: null,           // {amount, currency, source:'kite'|'estimated', instrumentId, strategy}
     hedgedIds: [],
+    // ── Phase 3 additions ────────────────────────────────────────────────────
+    portfolioHoldings: [],        // user-portfolio holdings (instrument_id, allocation_pct, shares, cash_eur)
+    instruments: {},              // id -> geography-overview instrument + region
+    totalValueEur: null,
+    apiHedge: null,               // GET portfolio-hedge response
+    advisor: { key: null, data: null, error: null },  // key = `${instrumentId}|${nShares}`
+    eqScenarios: {},              // `${id}|${nShares}` -> equity-hedge-scenarios response
+    savedPlan: null,              // last hedge-plan row (GET / PUT response)
+    saveStatus: 'idle',           // 'idle' | 'saving' | 'saved' | 'error'
+    savedAt: null,
+    history: { plan: null, actions: [] },
+    dirty: false,                 // user changed coverage/toggle/tab since last PUT
+    hedgedDefaulted: false,       // first-visit "all holdings hedged" default applied
+    exposureLoadedAt: null,
     step: 'exposure',
     reached: new Set(['exposure']),
     // Addendum (F39 Phase 2 — Zerodha/fno-margin-fetch): best-effort live

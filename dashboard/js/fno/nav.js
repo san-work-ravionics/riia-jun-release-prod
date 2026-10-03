@@ -17,9 +17,8 @@ import { loadEquityHedge } from './equity_hedge.js';
 // unified hedge-workflow shell instead of their own standalone pages, per the
 // core design's Migration Plan ("old nav/section keys stay registered ... but
 // point to a thin alias loader that calls show('hedge-workflow') and
-// deep-links to the matching step via hwGoToStep()"). Mapped Phase 2 step per
-// closest semantic match (Recommendation/What-if/Save are empty stubs until
-// Phase 3 ships their content — see task-brief-20261003-1114 Engineer log):
+// deep-links to the matching step via loadHedgeWorkflow(stepOverride)"). Mapped
+// step per closest semantic match (all four steps are built as of Phase 3):
 //   hedge           -> exposure        (Hedge Radar: current hedge state)
 //   hedge-advisor   -> recommendation  (Advisor: recommend a strategy)
 //   equity-hedge    -> recommendation  (equity strategy pick/sizing)
@@ -43,8 +42,9 @@ export function initNav() {
       if (aliasStep) {
         const hwSection = document.getElementById('page-hedge-workflow');
         if (hwSection) hwSection.classList.add('active');
-        if (_sectionLoaders['hedge-workflow']) { _sectionLoaders['hedge-workflow'](); }
-        if (typeof window.hwGoToStep === 'function') { window.hwGoToStep(aliasStep); }
+        // Single call: the loader enters aliasStep itself (stepOverride wins over the
+        // saved last_step). A separate hwGoToStep() afterwards raced the async load.
+        if (_sectionLoaders['hedge-workflow']) { _sectionLoaders['hedge-workflow'](aliasStep); }
         return;
       }
 

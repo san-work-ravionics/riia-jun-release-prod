@@ -11,6 +11,9 @@ from typing import List
 from pydantic import BaseModel, field_validator
 
 
+_STEPS = ("exposure", "recommendation", "whatif", "save")
+
+
 class HedgePlanCreate(BaseModel):
     """Request body for PUT /api/v1/experience/fno/hedge-plan."""
 
@@ -19,6 +22,14 @@ class HedgePlanCreate(BaseModel):
     scenario_tab: str
     duration: str | None = None  # accepted but always overwritten with "1y"
     last_step: str | None = None  # "exposure" | "recommendation" | "whatif" | "save"
+
+    @field_validator("last_step")
+    @classmethod
+    def last_step_known(cls, v: str | None) -> str | None:
+        """Unknown step names fall back to "exposure" (never rejected — autosave must not 422)."""
+        if v is None:
+            return None
+        return v if v in _STEPS else "exposure"
 
     @field_validator("coverage")
     @classmethod

@@ -5,15 +5,10 @@
 
 import { api, apiFetch } from './api.js';
 import { isLocalDev, ensureDevToken } from '../shared/dev-auth.js';
+import { estRisk as _estRisk, buildRows, aggregates, hedgedPL, PAYOFF_MOVES, SCENARIO_MOVES } from './hedge-calc.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const _DURATION_MONTHS = { '1m': 1, '3m': 3, '1y': 12 };
-
-const _FNO_ELIGIBLE = new Set([
-  'RELIANCE','TATAMOTOR','TCS','INFY','HDFCBANK','WIPRO','BAJFINANCE',
-  'TATASTEEL','SBIN','ICICIBANK','KOTAKBANK','AXISBANK','SUNPHARMA','HCLTECH','LT',
-  'ONGC','NTPC','POWERGRID','BPCL',
-]);
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const _state = {
@@ -61,15 +56,6 @@ function _currentQuarterLabel() {
   const q = Math.ceil((now.getMonth() + 1) / 3);
   const y = now.getFullYear().toString().slice(-2);
   return `Q${q}'${y}`;
-}
-
-function _estRisk(daily_return_pct) {
-  const abs = Math.abs(daily_return_pct || 0);
-  if (abs < 0.3) return 1;
-  if (abs < 0.7) return 2;
-  if (abs < 1.2) return 3;
-  if (abs < 2.0) return 4;
-  return 5;
 }
 
 // ── Risk lookup (API → instruments cache → estimate) ──────────────────────────
@@ -272,90 +258,13 @@ function _renderDiscover() {
 }
 
 // ── Build rows for widgets (checked instruments only) ─────────────────────────
-function _hedgeType(id, region, alloc_pct) {
-  if (_FNO_ELIGIBLE.has(id)) return alloc_pct >= 20 ? 'put_spread' : 'protective_put';
-  if (region === 'US' || region === 'EU') return 'ndx_proxy';
-  return 'nifty_proxy';
-}
-
-function _hedgeLabel(type) {
-  return {
-    protective_put: 'Protective put',
-    put_spread:     'Put spread',
-    ndx_proxy:      'NDX put proxy',
-    nifty_proxy:    'NIFTY put proxy',
-  }[type] || type;
-}
-
-function _isProxy(type) { return type === 'ndx_proxy' || type === 'nifty_proxy'; }
-
-function _rowParams(type, risk, coverage) {
-  const c = coverage / 100;
-  const strikePct = -(12 - c * 10);
-  let strikeLabel;
-  if (type === 'put_spread') {
-    const lo = Math.round(strikePct);
-    const hi = Math.round(strikePct - 6);
-    strikeLabel = `${lo}/${hi}%`;
-  } else {
-    strikeLabel = `${Math.round(strikePct)}% OTM`;
-  }
-  const baseVol    = risk * 0.065;
-  const costPct    = _isProxy(type)
-    ? baseVol * 0.28 * (0.4 + c * 0.6)
-    : baseVol * 0.40 * (0.4 + c * 0.6);
-  const protectedPct = Math.round((30 + c * 50) * (_isProxy(type) ? 0.85 : 1));
-  return { strikePct, strikeLabel, costPct, protectedPct };
-}
-
+// Calculations live in hedge-calc.js (shared with the unified hedge workflow).
 function _buildRows() {
-  const apiMap = {};
-  if (_state.apiHedge && Array.isArray(_state.apiHedge.holdings)) {
-    for (const h of _state.apiHedge.holdings) apiMap[h.instrument_id] = h;
-  }
-
-  return _state.holdings
-    .filter(h => _state.hedgeChecked.has(h.instrument_id))
-    .map(h => {
-      const inst   = _state.instruments[h.instrument_id] || {};
-      const region = inst.region || 'Other';
-      const api    = apiMap[h.instrument_id];
-
-      if (api) {
-        return {
-          id:           h.instrument_id,
-          weight:       h.allocation_pct,
-          ret:          api.return_1y_pct ?? inst.daily_return_pct,
-          risk:         api.risk_score ?? _estRisk(inst.daily_return_pct),
-          region,
-          type:         api.hedge_type,
-          label:        _hedgeLabel(api.hedge_type),
-          proxy:        _isProxy(api.hedge_type),
-          strikePct:    api.strike_pct,
-          strikeLabel:  api.strike_label,
-          costPct:      api.cost_pct,
-          protectedPct: api.protected_pct,
-        };
-      }
-
-      const risk   = _estRisk(inst.daily_return_pct);
-      const ret    = inst.return_1y_pct ?? inst.daily_return_pct;
-      const type   = _hedgeType(h.instrument_id, region, h.allocation_pct);
-      const params = _rowParams(type, risk, _state.coverage);
-      return {
-        id: h.instrument_id, weight: h.allocation_pct, ret, risk, region,
-        type, label: _hedgeLabel(type), proxy: _isProxy(type), ...params,
-      };
-    });
+  return buildRows(_state.holdings, _state.instruments, _state.apiHedge, _state.hedgeChecked, _state.coverage);
 }
 
 function _aggregates(rows) {
-  if (!rows.length) return { totalCost: 0, avgStrike: 0, maxDdHedged: 0, maxDdUnhedged: -22 };
-  const totalCost     = rows.reduce((s, r) => s + r.costPct * (r.weight / 100), 0);
-  const avgStrike     = rows.reduce((s, r) => s + r.strikePct * (r.weight / 100), 0);
-  const maxDdHedged   = Math.max(avgStrike - totalCost, -25);
-  const maxDdUnhedged = _state.apiHedge?.aggregate?.max_dd_unhedged_pct ?? -22;
-  return { totalCost, avgStrike, maxDdHedged, maxDdUnhedged };
+  return aggregates(rows, _state.apiHedge);
 }
 
 // ── Coverage band ──────────────────────────────────────────────────────────────
@@ -395,22 +304,9 @@ function _renderPayoffChart() {
   if (!rows.length) return;
 
   const { totalCost, avgStrike } = _aggregates(rows);
-  const moves = [];
-  for (let m = -25; m <= 15; m++) moves.push(m);
+  const moves = PAYOFF_MOVES;
 
-  function _hedgedPL(m, tab) {
-    if (tab === 'pp') return Math.max(m, avgStrike) - totalCost;
-    if (tab === 'ps') {
-      const lo = avgStrike;
-      const hi = avgStrike - 5;
-      if (m > lo) return m - totalCost * 0.65;
-      if (m > hi) return lo - totalCost * 0.65;
-      return m + (lo - hi) - totalCost * 0.65;
-    }
-    return Math.max(Math.min(m, 5), avgStrike) - totalCost;
-  }
-
-  const hedgedData = moves.map(m => parseFloat(_hedgedPL(m, _scenarioTab).toFixed(2)));
+  const hedgedData = moves.map(m => parseFloat(hedgedPL(m, _scenarioTab, avgStrike, totalCost).toFixed(2)));
 
   requestAnimationFrame(() => {
     _payoffChart = new Chart(canvas, {
@@ -451,19 +347,7 @@ function _renderScenarioTable() {
   }
 
   const { totalCost, avgStrike } = _aggregates(rows);
-  const MOVES = [-20, -10, 0, 10];
-
-  function _hedgedPL(m, tab) {
-    if (tab === 'pp') return Math.max(m, avgStrike) - totalCost;
-    if (tab === 'ps') {
-      const lo = avgStrike;
-      const hi = avgStrike - 5;
-      if (m > lo) return m - totalCost * 0.65;
-      if (m > hi) return lo - totalCost * 0.65;
-      return m + (lo - hi) - totalCost * 0.65;
-    }
-    return Math.max(Math.min(m, 5), avgStrike) - totalCost;
-  }
+  const MOVES = SCENARIO_MOVES;
 
   function _fmtPctLegacy(v) {
     const color = v > 0 ? '#2563eb' : v < -0.5 ? '#dc2626' : '#64748b';
@@ -472,7 +356,7 @@ function _renderScenarioTable() {
 
   if (tbody) {
     tbody.innerHTML = MOVES.map(m => {
-      const hedged = _hedgedPL(m, _scenarioTab);
+      const hedged = hedgedPL(m, _scenarioTab, avgStrike, totalCost);
       const mLabel = m === 0 ? 'Flat' : (m > 0 ? '+' : '') + m + '%';
       return `<tr style="border-bottom:1px solid rgba(0,0,0,.06)">
         <td style="padding:8px 12px;font-size:13px;color:#64748b">${mLabel}</td>

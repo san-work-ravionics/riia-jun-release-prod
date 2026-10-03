@@ -3,6 +3,7 @@ import { state } from './state.js';
 import { apiBase } from './api.js';
 import { renderGreeksCards, renderGreeksTable } from './greeks.js';
 import { renderStressScenarios } from './stress.js';
+import { computeNShares, coveredCallMargin } from './hedge-calc.js';
 
 const RITA_API_KEY = '';
 
@@ -29,20 +30,13 @@ function _rollingDateRange() {
   return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
 }
 
-// Whole-number shares from portfolio builder, or fall back to floor(alloc / price)
+// Whole-number shares from portfolio builder, or fall back to floor(alloc / price).
+// Calculation lives in hedge-calc.js; this wrapper only gathers the page state.
 function _computeNShares(instrument) {
   const geoInsts = state.portfolioGeoInstruments || [];
   const inst     = geoInsts.find(i => i.id === instrument);
-  // Prefer pre-computed integer shares stored by the portfolio builder
-  if (inst?.shares != null && inst.shares > 0) return inst.shares;
-  // Fall back: derive from allocation % + total value + market price
-  const total    = parseFloat(state.portfolioMeta?.total_value_eur || 0);
-  const allocPct = parseFloat(inst?.allocation_pct || 0);
-  if (!total || !allocPct) return 10;
-  const allocEur = total * allocPct / 100;
-  const price    = parseFloat(state.marketData[instrument]?.close || inst?.close || 0);
-  if (!price) return 10;
-  return Math.floor(allocEur / price) || 1;
+  const price    = state.marketData[instrument]?.close || inst?.close;
+  return computeNShares(inst, { close: price }, state.portfolioMeta?.total_value_eur);
 }
 
 function _fmtRange(start, end) {
@@ -121,8 +115,7 @@ export function injectAsmlToState() {
   };
 
   // Covered call requires margin; long put is just premium paid
-  const ccMarginSpan = mb.max_value_eur * 0.12;
-  const ccMarginExp  = mb.max_value_eur * 0.08;
+  const { span: ccMarginSpan, exposure: ccMarginExp } = coveredCallMargin(mb);
   state.marginData.by_position = [
     ...state.marginData.by_position,
     { und: instrument, full: mb.strike_label, exp: expLabel, type: 'CE', side: 'Short', qty: nShares,
