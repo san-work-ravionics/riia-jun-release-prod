@@ -489,6 +489,14 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
 .reasoning-final-verdict--put-buy{background:var(--p04-bg);color:var(--p04);border:1px solid var(--p04-bd);}
 .reasoning-final-verdict--no-hedge{background:var(--surface2);color:var(--t3);border:1px solid var(--border);}
 .ha-confidence{font-family:var(--fm);font-size:11px;color:var(--t3);}
+/* Unified Hedge Workflow stepper (F39 Phase 3) */
+.hw-step{border-radius:6px;white-space:nowrap;transition:background .15s,color .15s;}
+.hw-step--active{background:var(--p03);color:#fff;}
+.hw-step--reached{background:transparent;color:var(--text);border:1px solid var(--p03);}
+.hw-step--pending{background:transparent;color:var(--t3);opacity:.6;border:1px dashed rgba(0,0,0,.2);}
+.hw-nav-btn{padding:6px 16px;border:none;border-radius:6px;background:var(--p03);color:#fff;font-family:var(--fm);font-size:12px;font-weight:600;cursor:pointer;}
+.hw-nav-btn:disabled{opacity:.4;cursor:not-allowed;}
+.hw-nav-btn.hw-secondary{background:transparent;color:var(--p03);border:1px solid var(--p03);}
 </style>
 <link rel="stylesheet" href="css/responsive.css">
 </head>
@@ -1234,8 +1242,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
   <div class="section" id="page-portfolio-hedge"></div>
 
   <!-- ═══════════════════════════════════════════════
-       UNIFIED HEDGE WORKFLOW (Feature 39 Phase 2 — shell + Exposure step)
-       Other 3 step panels are empty stub containers — content is Phase 3 scope.
+       UNIFIED HEDGE WORKFLOW (Feature 39 Phase 2/3 — shell + 4 step panels)
   ════════════════════════════════════════════════ -->
   <div class="section" id="page-hedge-workflow">
     <div id="hw-stepper" style="display:flex;align-items:center;gap:4px;margin-bottom:16px;"></div>
@@ -1258,9 +1265,87 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       </div>
     </div>
 
-    <div id="hw-step-recommendation" style="display:none;"></div>
-    <div id="hw-step-whatif" style="display:none;"></div>
-    <div id="hw-step-save" style="display:none;"></div>
+    <!-- Step 2 — Recommendation (F39 Phase 3) -->
+    <div id="hw-step-recommendation" style="display:none;">
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;align-items:flex-start;">
+        <div id="hw-rec-instrument-select" class="kpi" style="min-width:200px;"></div>
+        <div id="hw-rec-status" style="flex:1;min-width:240px;padding-top:8px;"></div>
+      </div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
+        <div id="hw-rec-verdict-card" class="kpi" style="min-width:260px;"></div>
+        <div id="hw-rec-detail" class="kpi" style="flex:1;min-width:280px;"></div>
+      </div>
+      <div id="hw-rec-cascade" style="margin-bottom:16px;"></div>
+      <div id="hw-rec-selection-table" class="kpi" style="margin-bottom:16px;"></div>
+      <div style="display:flex;justify-content:space-between;">
+        <button id="hw-rec-back-btn" class="hw-nav-btn hw-secondary" onclick="hwGoToStep('exposure')">&lt; Back: Exposure</button>
+        <button id="hw-rec-next-btn" class="hw-nav-btn" onclick="hwGoToStep('whatif')">Next: What-if &gt;</button>
+      </div>
+    </div>
+
+    <!-- Step 3 — What-if (F39 Phase 3) -->
+    <div id="hw-step-whatif" style="display:none;">
+      <div id="hw-wi-empty" class="kpi" style="display:none;margin-bottom:16px;"></div>
+      <div id="hw-wi-content">
+        <div id="hw-wi-status" class="kpi-sub" style="margin-bottom:8px;"></div>
+        <div id="hw-wi-coverage-slider" class="kpi" style="margin-bottom:12px;">
+          <div class="kpi-label">Coverage (duration fixed at 1y)</div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span class="kpi-sub">0%</span>
+            <input type="range" id="hw-wi-coverage-input" min="0" max="100" step="5" value="50" style="flex:1;max-width:420px;" oninput="hwSetCoverage(this.value)">
+            <span class="kpi-sub">100%</span>
+            <strong id="hw-wi-coverage-label" style="font-family:var(--fm);">50%</strong>
+          </div>
+        </div>
+        <div id="hw-wi-scenario-tabs" style="margin-bottom:12px;"></div>
+        <div id="hw-wi-aggregates" style="margin-bottom:12px;"></div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
+          <div class="kpi" style="flex:1;min-width:300px;">
+            <div class="chart-title">Portfolio payoff (hedged vs unhedged)</div>
+            <div class="chart-wrap"><canvas id="hw-wi-payoff-chart"></canvas></div>
+          </div>
+          <div class="kpi" style="flex:1;min-width:300px;">
+            <div class="chart-title">Equity-leg payoff at expiry</div>
+            <div class="chart-wrap"><canvas id="hw-wi-equity-payoff-chart"></canvas></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
+          <div class="kpi" style="flex:1;min-width:300px;">
+            <div class="kpi-label">Scenarios <span class="kpi-sub">cost: <span id="hw-wi-cost-display">—</span></span></div>
+            <div id="hw-wi-scenario-table"></div>
+          </div>
+          <div class="kpi" style="flex:1;min-width:300px;">
+            <div class="kpi-label">Stress</div>
+            <div id="hw-wi-stress-table"></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
+          <div id="hw-wi-equity-leg" class="kpi" style="flex:2;min-width:300px;"></div>
+          <div class="kpi" style="flex:1;min-width:220px;">
+            <div id="hw-wi-margin-impact"></div>
+            <span id="hw-wi-live-badge"></span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;">
+        <button id="hw-wi-back-btn" class="hw-nav-btn hw-secondary" onclick="hwGoToStep('recommendation')">&lt; Back: Recommendation</button>
+        <button id="hw-wi-next-btn" class="hw-nav-btn" onclick="hwGoToStep('save')">Next: Save &gt;</button>
+      </div>
+    </div>
+
+    <!-- Step 4 — Save + history (F39 Phase 3) -->
+    <div id="hw-step-save" style="display:none;">
+      <div id="hw-save-summary" class="kpi" style="margin-bottom:16px;"></div>
+      <div class="kpi" style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <button id="hw-save-btn" class="hw-nav-btn" onclick="hwSave()">Save Hedge Plan</button>
+        <span id="hw-save-status" class="kpi-sub"></span>
+      </div>
+      <div id="hw-save-history-table" class="kpi" style="margin-bottom:16px;"></div>
+      <div id="hw-save-actions-table" class="kpi" style="margin-bottom:16px;"></div>
+      <div style="display:flex;justify-content:space-between;">
+        <button id="hw-save-back-btn" class="hw-nav-btn hw-secondary" onclick="hwGoToStep('whatif')">&lt; Back: What-if</button>
+      </div>
+    </div>
   </div>
 
   <!-- ═══════════════════════════════════════════════

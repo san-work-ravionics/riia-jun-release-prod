@@ -284,3 +284,77 @@ class TestGetHedgePlan404DetailMessage:
             f"Expected 200 null when no plan exists, got {resp.status_code}: {resp.text}"
         )
         assert resp.json() is None
+
+
+# ---------------------------------------------------------------------------
+# F39 Phase 3 — Save step: last_step round trip, validation, single commit
+# ---------------------------------------------------------------------------
+
+class TestPutHedgePlanLastStep:
+    """The Save step PUTs last_step='save'; autosave PUTs the current step."""
+
+    @pytest.fixture(autouse=True)
+    def _auth(self, client):
+        _override_auth()
+        yield
+        _clear_auth()
+
+    def _put(self, client, db_session, body, persisted):
+        with (
+            patch(_PATCH_KEY_REPO) as mock_key_cls,
+            patch(_PATCH_HEDGE_REPO) as mock_hedge_cls,
+            patch.object(db_session, "commit", wraps=db_session.commit) as commit_spy,
+        ):
+            mock_key_cls.return_value.find_by_user_id.return_value = _make_key()
+            mock_hedge_cls.return_value.find_by_key_id.return_value = persisted
+            resp = client.put("/api/v1/experience/fno/hedge-plan", json=body)
+            upserted = mock_hedge_cls.return_value.upsert.call_args
+        return resp, commit_spy, upserted
+
+    def test_put_last_step_save_round_trip_single_commit(self, client, db_session):
+        persisted = _make_plan(hedged_ids=["ASML"], coverage=70, scenario_tab="collar")
+        persisted.last_step = "save"
+        resp, commit_spy, upserted = self._put(
+            client,
+            db_session,
+            {"hedged_ids": ["ASML"], "coverage": 70, "scenario_tab": "collar", "last_step": "save"},
+            persisted,
+        )
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["last_step"] == "save"
+        assert upserted.args[0].last_step == "save"
+        assert commit_spy.call_count == 1  # ADR-001: exactly one commit
+
+    def test_put_unknown_last_step_falls_back_to_exposure(self, client, db_session):
+        persisted = _make_plan()
+        resp, _, upserted = self._put(
+            client,
+            db_session,
+            {"hedged_ids": [], "coverage": 50, "scenario_tab": "pp", "last_step": "bogus"},
+            persisted,
+        )
+        assert resp.status_code == 200, resp.text
+        assert upserted.args[0].last_step == "exposure"
+
+    def test_put_without_last_step_defaults_to_exposure(self, client, db_session):
+        persisted = _make_plan()
+        resp, _, upserted = self._put(
+            client,
+            db_session,
+            {"hedged_ids": ["TCS"], "coverage": 50, "scenario_tab": "ps"},
+            persisted,
+        )
+        assert resp.status_code == 200, resp.text
+        assert upserted.args[0].last_step == "exposure"
+
+    def test_get_returns_saved_last_step(self, client):
+        persisted = _make_plan()
+        persisted.last_step = "whatif"
+        with (
+            patch(_PATCH_KEY_REPO) as mock_key_cls,
+            patch(_PATCH_HEDGE_REPO) as mock_hedge_cls,
+        ):
+            mock_key_cls.return_value.find_by_user_id.return_value = _make_key()
+            mock_hedge_cls.return_value.find_by_key_id.return_value = persisted
+            resp = client.get("/api/v1/experience/fno/hedge-plan")
+        assert resp.json()["last_step"] == "whatif"

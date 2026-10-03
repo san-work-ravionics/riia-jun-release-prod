@@ -59,11 +59,13 @@ def get_kite_live(
         )
 
     quote: Optional[KiteLiveQuote] = None
-    if any(k in raw for k in ("ltp", "bid", "ask")):
+    if any(raw.get(k) is not None for k in ("ltp", "bid", "ask")):
         quote = KiteLiveQuote(ltp=raw.get("ltp"), bid=raw.get("bid"), ask=raw.get("ask"))
 
     margin: Optional[KiteLiveMargin] = None
-    if any(k in raw for k in ("required", "span", "exposure")):
+    # fno-margin-fetch has no per-order margin endpoint, so the client returns none;
+    # kept so a future middleware margin leg needs no route change.
+    if any(raw.get(k) is not None for k in ("required", "span", "exposure")):
         margin = KiteLiveMargin(
             required=raw.get("required"),
             span=raw.get("span"),

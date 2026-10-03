@@ -90,7 +90,10 @@ import { loadPortfolioHedge, phSetCoverage, phSetDuration, phToggleHedge, phPick
 import { loadHedgeAdvisor, haAnalyse, haSkipToVerdict } from './hedge-reasoning.js';
 import { loadStudy } from './study.js';
 import { loadExperiment, fetchExpData, switchExpTab } from './experiment.js';
-import { loadHedgeWorkflow, hwGoToStep, hwSelectInstrument } from './hedge-workflow.js';
+import { loadHedgeWorkflow, hwGoToStep, hwSelectInstrument, hwRefreshStep } from './hedge-workflow.js';
+import { hwToggleHedged, hwSelectStrategy, hwRerunAdvisor } from './hedge-workflow-recommendation.js';
+import { hwSetCoverage, hwSetScenarioTab } from './hedge-workflow-whatif.js';
+import { hwSave } from './hedge-workflow-save.js';
 
 window.setLanguage        = setLanguage;
 window.loadEquityHedge      = loadEquityHedge;
@@ -112,11 +115,19 @@ window.loadHedgeAdvisor   = loadHedgeAdvisor;
 window.haAnalyse          = haAnalyse;
 window.haSkipToVerdict    = haSkipToVerdict;
 
-// ── Unified Hedge Workflow (F39 Phase 2) ───────────────────────────────────
+// ── Unified Hedge Workflow (F39 Phase 2/3) ───────────────────────────────────
 _sectionLoaders['hedge-workflow'] = loadHedgeWorkflow;
 window.loadHedgeWorkflow   = loadHedgeWorkflow;
 window.hwGoToStep          = hwGoToStep;
 window.hwSelectInstrument  = hwSelectInstrument;
+window.hwRefreshStep       = hwRefreshStep;
+// Phase 3 step modules
+window.hwToggleHedged      = hwToggleHedged;
+window.hwSelectStrategy    = hwSelectStrategy;
+window.hwRerunAdvisor      = hwRerunAdvisor;
+window.hwSetCoverage       = hwSetCoverage;
+window.hwSetScenarioTab    = hwSetScenarioTab;
+window.hwSave              = hwSave;
 
 // Redirect aliases — old nav keys stay registered in _sectionLoaders but now
 // deep-link into the unified workflow (Migration Plan; see nav.js comment for
@@ -124,9 +135,10 @@ window.hwSelectInstrument  = hwSelectInstrument;
 // _sectionLoaders entry (nav.js special-cased them directly) — now registered
 // here too so any direct `_sectionLoaders['hedge']()`-style call also redirects.
 function _hwAlias(step) {
+  // loadHedgeWorkflow(step) enters the step itself once the saved plan has resolved;
+  // no separate hwGoToStep() call (it raced the async load and was overridden by last_step).
   return function () {
-    loadHedgeWorkflow();
-    if (typeof window.hwGoToStep === 'function') window.hwGoToStep(step);
+    return loadHedgeWorkflow(step);
   };
 }
 _sectionLoaders['hedge'] = _hwAlias('exposure');
@@ -155,9 +167,8 @@ window.fnoMpGoHedge = function () {
   const section = document.getElementById('page-hedge-workflow');
   if (section) section.classList.add('active');
   if (typeof _sectionLoaders['hedge-workflow'] === 'function') {
-    _sectionLoaders['hedge-workflow']();
+    _sectionLoaders['hedge-workflow']('exposure');
   }
-  if (typeof window.hwGoToStep === 'function') { window.hwGoToStep('exposure'); }
 };
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
