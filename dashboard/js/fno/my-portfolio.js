@@ -1,3 +1,6 @@
+// API timestamps are UTC but naive (no Z); append Z so the browser converts to local time
+function _utcIso(s) { return typeof s === 'string' && !/(Z|[+-]\d\d:?\d\d)$/.test(s) ? s + 'Z' : s; }
+
 // ── FnO My Portfolio — Phase 3 Overview redesign ──────────────────────────────
 // 3-source parallel fetch: portfolio + geography-overview + hedge-plan
 // KPI strip · allocation doughnut · hedge status card · 6-column holdings table
@@ -133,7 +136,7 @@ function _renderHedgeCard(hedgePlan, holdings) {
     const hedgedCount  = (holdings || []).filter(h => hedgedIds.has(h.instrument_id)).length;
     const strategy     = strategyLabel[hedgePlan.scenario_tab] || hedgePlan.scenario_tab || '—';
     const coverage     = hedgePlan.coverage != null ? hedgePlan.coverage + '%' : '—';
-    const updatedAt    = hedgePlan.updated_at ? new Date(hedgePlan.updated_at).toLocaleDateString() : '—';
+    const updatedAt    = hedgePlan.updated_at ? new Date(_utcIso(hedgePlan.updated_at)).toLocaleDateString() : '—';
 
     html = `
       <div style="font-size:12px;color:var(--t2);margin-bottom:8px;font-family:var(--fm)">
@@ -218,7 +221,7 @@ export async function loadFnoMyPortfolio() {
   // Populate meta strip
   setEl('fno-mp-name',    portfolio.name      || '—');
   setEl('fno-mp-updated', portfolio.updated_at
-    ? new Date(portfolio.updated_at).toLocaleString()
+    ? new Date(_utcIso(portfolio.updated_at)).toLocaleString()
     : '—');
 
   const holdings = portfolio.holdings || [];
