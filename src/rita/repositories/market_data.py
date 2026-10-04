@@ -1,5 +1,7 @@
 """Repository for the market_data_cache table (OHLCV price data)."""
 
+from datetime import date
+
 from sqlalchemy.orm import Session
 
 from rita.models.market_data import MarketDataCacheModel
@@ -30,3 +32,21 @@ class MarketDataCacheRepository(SqlRepository[MarketDataCache, MarketDataCacheMo
             .all()
         )
         return [r[0] for r in reversed(rows)]
+
+    def find_closes(self, underlying: str, start: date, end: date) -> list[tuple[date, float]]:
+        """(date, close) pairs for an underlying with start <= date <= end, oldest-first.
+
+        Read-only; rows with a null close are skipped.
+        """
+        rows = (
+            self._db.query(MarketDataCacheModel.date, MarketDataCacheModel.close)
+            .filter(
+                MarketDataCacheModel.underlying == underlying.upper(),
+                MarketDataCacheModel.date >= start,
+                MarketDataCacheModel.date <= end,
+                MarketDataCacheModel.close.isnot(None),
+            )
+            .order_by(MarketDataCacheModel.date.asc())
+            .all()
+        )
+        return [(r[0], float(r[1])) for r in rows]

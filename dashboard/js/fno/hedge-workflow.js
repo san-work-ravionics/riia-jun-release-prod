@@ -31,7 +31,8 @@ import { setEl } from '../shared/utils.js';
 import { state } from './state.js';
 import { renderInstrumentTiles } from './hedge-instrument-tiles.js';
 import { computeNShares, monthlySigma, sigmaLevels, portfolioVolPct, buildVolMap } from './hedge-calc.js';
-import { renderMonthlyCandles, renderMonthlyChange, BAND_COLORS } from './hedge-charts.js';
+import { renderMonthlyChange } from './hedge-charts.js';
+import { loadPositionValue, renderPositionValue } from './hedge-position-value.js';
 import { loadRecommendationStep } from './hedge-workflow-recommendation.js';
 import { loadWhatIfStep } from './hedge-workflow-whatif.js';
 import { loadSaveStep, hwScheduleSave, authHeaders as _authHeaders } from './hedge-workflow-save.js';
@@ -114,6 +115,7 @@ export async function hwGoToStep(step, persist = true) {
 
 // ── window.hwRefreshStep() — manual refresh of the current step ─────────────
 export function hwRefreshStep() {
+  state.hedgeWorkflow.positionValue = {}; // refetch position value on manual refresh
   return hwGoToStep(state.hedgeWorkflow.step, false);
 }
 
@@ -317,26 +319,12 @@ async function _fetchHistory(id) {
   return null;
 }
 
-function _drawCharts(id, hist) {
-  const sym = _sym(id) || (_CCY_SYMBOL[hist.currency] || '');
-  const last = hist.daily[hist.daily.length - 1].price;
-  // Anchor on the SAME series the candles are drawn from: last candle close (daily series),
-  // never on the geography/position price (different unit/currency/date).
-  const lv = sigmaLevels(last, _volFor(id)) || [];
-  const d1 = lv[0];
-  const bands = d1 ? [
-    { label: `+1σ monthly (+${d1.sigmaPct.toFixed(1)}%)`, value: d1.up, color: BAND_COLORS.up, dash: [3, 3] },
-    { label: `−1σ monthly (${d1.downPct.toFixed(1)}%)`, value: d1.down, color: BAND_COLORS.down, dash: [3, 3] },
-  ] : [];
-  _candleChart = renderMonthlyCandles('hw-exp-candle-chart', hist.daily, {
-    fmt: (v) => sym + Number(v).toLocaleString('en-US', { maximumFractionDigits: 2 }), bands, beginAtZero: false, prev: _candleChart,
-  });
+// MoM price-change chart (stays on PRICE); the candle card is the F40 position-value chart.
+function _drawChangeChart(id, hist) {
   _changeChart = renderMonthlyChange('hw-exp-change-chart', hist.daily, {
     prev: _changeChart, sigmaOnly: true, titleId: 'hw-exp-change-title', title: `Monthly Price Change — ${id}`,
   });
-  _renderChallengeSummary(); // last-price tile needs the candle series
-  setEl('hw-exp-candle-title', `${_esc(id)} latest price vs monthly 1σ`);
-  setEl('hw-exp-candle-msg', hist.holding ? '' : `No equity holding for ${_esc(id)} — showing the instrument price (option exposure only).`);
+  _renderChallengeSummary(); // last-price tile needs the price series
 }
 
 async function _renderChallengeCharts() {
@@ -344,18 +332,26 @@ async function _renderChallengeCharts() {
   const id = hw.instrumentId;
   const token = ++_histToken;
   if (!id) return;
-  const cached = hw.priceHistory[id];
-  if (cached) { _drawCharts(id, cached); return; }
-  setEl('hw-exp-candle-msg', `Loading ${_esc(id)} price history…`);
-  const hist = await _fetchHistory(id);
+  const vol = _volFor(id);
+  const pvCached = hw.positionValue?.[`${id}|${vol != null && vol > 0 ? Number(vol).toFixed(4) : ''}`];
+  if (!pvCached) {
+    _candleChart = renderPositionValue(id, { instrument_id: id, status: 'loading', message: `Loading ${id} position value…` }, _candleChart);
+  }
+  const [pvRes, histRes] = await Promise.allSettled([loadPositionValue(id, vol), _fetchHistory(id)]);
   if (token !== _histToken || hw.instrumentId !== id) return; // user moved on
+  if (pvRes.status === 'fulfilled') {
+    _candleChart = renderPositionValue(id, pvRes.value, _candleChart);
+  } else {
+    console.warn('[hedge-workflow] position value failed', id, pvRes.reason);
+    _candleChart = renderPositionValue(id, { instrument_id: id, status: 'error', message: `Position value unavailable for ${id}.` }, _candleChart);
+  }
+  const hist = histRes.status === 'fulfilled' ? histRes.value : null;
   if (!hist) {
-    _candleChart = renderMonthlyCandles('hw-exp-candle-chart', [], { prev: _candleChart });
     _changeChart = renderMonthlyChange('hw-exp-change-chart', [], { prev: _changeChart });
-    setEl('hw-exp-candle-msg', `Price history unavailable for ${_esc(id)}.`);
+    _renderChallengeSummary();
     return;
   }
-  _drawCharts(id, hist);
+  _drawChangeChart(id, hist);
 }
 
 // ── Exposure step — loss commentary (typewriter, RITA agent-commentary style) ──
@@ -449,6 +445,7 @@ async function _fetchLiveData(instrumentId) {
 // ── Main Exposure loader ─────────────────────────────────────────────────────
 async function _loadExposure() {
   const headers = _authHeaders();
+  state.hedgeWorkflow.positionValue = {}; // full reload: drop cached position-value items
 
   const [portfolioRes, analyticsRes, geoRes] = await Promise.allSettled([
     apiFetch('/api/v1/experience/user-portfolio', { headers }),
