@@ -83,10 +83,15 @@ class HedgePlanCreate(BaseModel):
     @field_validator("selections", mode="before")
     @classmethod
     def selections_clean(cls, v: Any) -> dict[str, str] | None:
-        """Drop entries whose value is not a known strategy; never reject."""
+        """Drop entries whose value is not a known strategy; never reject.
+
+        Returns None (preserve stored) when nothing valid remains, so an empty or
+        invalid-only autosave cannot wipe saved selections (F40-QA-1).
+        """
         if not isinstance(v, dict):
             return None
-        return {str(k): s for k, s in v.items() if s in _STRATEGIES}
+        cleaned = {str(k): s for k, s in v.items() if s in _STRATEGIES}
+        return cleaned or None
 
     @field_validator("coverage")
     @classmethod

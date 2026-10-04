@@ -117,8 +117,8 @@ class TestSaveSemantics:
         r = client.put(URL, json=_body(coverage=10))  # omitted -> preserved
         assert r.json()["selections"] == {"ASML": "put_buy", "TCS": "call_sell"}
         assert client.get(URL).json()["selections"] == {"ASML": "put_buy", "TCS": "call_sell"}
-        r = client.put(URL, json=_body(selections={}))  # explicit empty clears
-        assert r.json()["selections"] == {}
+        r = client.put(URL, json=_body(selections={}))  # empty -> preserved (F40-QA-1)
+        assert r.json()["selections"] == {"ASML": "put_buy", "TCS": "call_sell"}
 
     def test_duration_always_1y_and_single_commit(self, client, db_session):
         _seed_key(db_session); _as("u1")

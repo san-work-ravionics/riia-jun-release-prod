@@ -25,17 +25,12 @@ _ = _cleanup  # autouse fixture re-exported so dependency override is popped aft
 class TestSelectionsPreserveAdvisory2:
     """Code Review advisory #2: only a valid non-empty dict replaces stored selections."""
 
-    @pytest.mark.xfail(strict=True, reason="DEFECT F40-QA-1: invalid-only selections -> {} wipes stored selections "
-                       "(schemas/user_hedge_plan.py selections_clean returns {} not None)")
     def test_invalid_only_selections_preserve(self, client, db_session):
         _seed_key(db_session); _as("u1")
         client.put(URL, json=_body(selections={"ASML": "put_buy"}))
         r = client.put(URL, json=_body(selections={"ASML": "bogus", "TCS": 1}))
         assert r.json()["selections"] == {"ASML": "put_buy"}
 
-    @pytest.mark.xfail(strict=True, reason="DEFECT F40-QA-1b: selections={} wipes stored selections "
-                       "(workflow autosave with empty hw.selections). NB engineer test "
-                       "test_selections_round_trip_preserve_and_drop_invalid pins '{} clears'")
     def test_empty_selections_preserve(self, client, db_session):
         _seed_key(db_session); _as("u1")
         client.put(URL, json=_body(selections={"ASML": "put_buy"}))
