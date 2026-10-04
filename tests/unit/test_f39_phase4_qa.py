@@ -44,7 +44,7 @@ _DELETED_SYMBOLS = [
     "injectAsmlToState", "loadEquityHedge", "renderEquityHedge",
     "hedgeHistoryLoaded", "hedgeHistory", "hedgeTimelineChart",
 ]
-_RELOCATED_IDS = ["greeks-all-grid", "greeks-tbody", "greeks-footer", "greeks-table-sub",
+_RELOCATED_IDS = ["greeks-all-grid",
                   "stress-row", "stress-card-sub", "payoff-charts-grid", "payoff-nifty-wrap",
                   "payoff-bnkn-wrap", "payoff-chart", "payoff-chart-bnkn"]
 _ALIASES = {"hedge": "exposure", "hedge-advisor": "recommendation",
@@ -196,7 +196,7 @@ def _run_harness(tmp_path: Path, absent: list[str], body: str) -> dict:
 
 _CHAIN = r"""
 const steps = {};
-for (const [n, f] of [['greeksCards', greeks.renderGreeksCards], ['greeksTable', greeks.renderGreeksTable],
+for (const [n, f] of [['greeksCards', greeks.renderGreeksCards],
     ['riskSections', greeks.updateRiskSections], ['stress', stress.renderStressScenarios],
     ['stdDev', stress.renderStdDevTable]]) {
   try { f(); steps[n] = 'ok'; } catch (e) { steps[n] = 'THROW ' + e.message; }

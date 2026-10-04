@@ -41,7 +41,7 @@ def _node(jsroot: Path, body: str) -> dict:
     src = f"""
 import {{ state }} from {json.dumps(s_uri)};
 const els = {{}};
-for (const id of ['greeks-all-grid','greeks-tbody','greeks-footer','greeks-table-sub','risk-stddev-card','stress-row','stress-card-sub'])
+for (const id of ['greeks-all-grid','risk-stddev-card','stress-row','stress-card-sub'])
   els[id] = {{ innerHTML: '', textContent: '', style: {{}} }};
 const events = [];
 globalThis.document = {{ getElementById: id => els[id] ?? null, dispatchEvent: e => {{ events.push(e.type); return true; }} }};
@@ -64,9 +64,8 @@ def _render(jsroot: Path, greeks, sel=None, und="ALL", exp="ALL") -> dict:
 state.greeksData = {json.dumps(greeks)};
 state.riskSelectedInstrument = {json.dumps(sel)};
 state.currentUnd = {json.dumps(und)}; state.currentExpiry = {json.dumps(exp)};
-g.renderGreeksCards(); g.renderGreeksTable();
-out.cards = els['greeks-all-grid'].innerHTML; out.rows = els['greeks-tbody'].innerHTML;
-out.foot = els['greeks-footer'].innerHTML; out.sub = els['greeks-table-sub'].textContent;
+g.renderGreeksCards();
+out.cards = els['greeks-all-grid'].innerHTML;
 """)
 
 
@@ -106,15 +105,15 @@ rows.find(r => r.dataset.inst === 'Portfolio').fire(); out.afterPort = state.ris
 @needs_node
 def test_zero_greeks_not_rendered_as_signed_coloured(jsroot):
     r = _render(jsroot, [_g(delta=0, gamma=0, theta=0, vega=0)])
-    blob = r["cards"] + r["rows"]
+    blob = r["cards"]
     assert "+₹0" not in blob and "−₹0" not in blob
-    assert 'rk-g-val pos">' not in r["cards"] and 'rk-g-val neg">' not in r["cards"]
+    assert 'class="num pos">' not in r["cards"] and 'class="num neg">' not in r["cards"]
 
 
 @needs_node
 def test_near_zero_negative_not_rendered_as_minus_zero(jsroot):
     r = _render(jsroot, [_g(delta=-0.001, theta=-0.4, vega=-0.2)])
-    blob = r["cards"] + r["rows"]
+    blob = r["cards"]
     assert "−₹0" not in blob and "−0.00" not in blob
 
 
@@ -126,40 +125,32 @@ def test_nan_infinity_strings_never_leak(jsroot):
     r = _node(jsroot, """
 state.greeksData = [{und:'NIFTY', full:'X', exp:'W', type:'PE', side:'BUY', delta:NaN, gamma:Infinity, theta:'abc', vega:undefined, ann_vol_pct:NaN}];
 state.riskSelectedInstrument = null; state.currentUnd='ALL'; state.currentExpiry='ALL';
-g.renderGreeksCards(); g.renderGreeksTable();
-out.blob = els['greeks-all-grid'].innerHTML + els['greeks-tbody'].innerHTML + els['greeks-footer'].innerHTML;
+g.renderGreeksCards();
+out.blob = els['greeks-all-grid'].innerHTML;
 """)
     for bad in ("NaN", "undefined", "Infinity", "null"):
         assert bad not in r["blob"]
-    assert "—" in r["blob"]
+    assert 'class="num neu"' in r["blob"]  # non-finite inputs sum to a neutral zero (Net Greeks has no per-row dash)
 
 
 @needs_node
 def test_empty_selected_missing_and_non_array_data(jsroot):
     r = _render(jsroot, [])
-    assert "No Greeks data" in r["cards"] and "No positions" in r["rows"] and "NaN" not in r["foot"]
+    assert "No Greeks data" in r["cards"]
     r = _render(jsroot, [_g()], sel="GHOST")
-    assert "No Greeks data" in r["cards"] and "No positions" in r["rows"]
+    assert "No Greeks data" in r["cards"]
     r2 = _node(jsroot, """
 state.greeksData = null; state.riskSelectedInstrument = null; state.currentUnd='ALL'; state.currentExpiry='ALL';
-g.renderGreeksCards(); g.renderGreeksTable(); out.rows = els['greeks-tbody'].innerHTML;
+g.renderGreeksCards(); out.cards = els['greeks-all-grid'].innerHTML;
 """)
-    assert "No positions" in r2["rows"]
-
-
-@needs_node
-def test_all_zero_greeks_keeps_hedge_plan_note(jsroot):
-    r = _render(jsroot, [_g(delta=0, gamma=0, theta=0, vega=0), _g(und="BANKNIFTY", delta=0, gamma=0, theta=0, vega=0)])
-    assert "add a hedge plan" in r["sub"]
-    r = _render(jsroot, [_g(delta=0, gamma=0, theta=0, vega=5)])
-    assert "add a hedge plan" not in r["sub"]
+    assert "No Greeks data" in r2["cards"]
 
 
 @needs_node
 @pytest.mark.parametrize("name", ["<img src=x onerror=1>", "A" * 300, 'q"uote\'s & <b>'])
 def test_hostile_and_long_names_escaped_everywhere(jsroot, name):
     r = _render(jsroot, [_g(full=name, und=name, exp=name, type=name, side=name)])
-    blob = r["cards"] + r["rows"]
+    blob = r["cards"]
     assert "<img" not in blob and "<b>" not in blob
     # every tag in the output is one of the known F41 elements
     tags = set(re.findall(r"<([a-zA-Z0-9]+)", blob))
@@ -170,7 +161,7 @@ def test_hostile_and_long_names_escaped_everywhere(jsroot, name):
 @needs_node
 def test_very_wide_numbers_no_exponent_or_overflow_tokens(jsroot):
     r = _render(jsroot, [_g(theta=-1e15, vega=1e15, delta=123456789.123, gamma=-99999.99999)])
-    blob = r["cards"] + r["rows"] + r["foot"]
+    blob = r["cards"]
     assert "e+" not in blob and "NaN" not in blob and "undefined" not in blob
     assert "₹1,00,00,00,00,00,00,000" in blob  # 1e15, en-IN grouping, full digits
 
@@ -178,15 +169,17 @@ def test_very_wide_numbers_no_exponent_or_overflow_tokens(jsroot):
 @needs_node
 def test_filters_underlying_and_expiry_still_applied(jsroot):
     data = [_g(), _g(und="BANKNIFTY", full="BN", exp="MONTHLY")]
-    assert _render(jsroot, data, und="BANKNIFTY")["rows"].count('class="rk-row"') == 1
-    assert _render(jsroot, data, exp="WEEKLY")["rows"].count('class="rk-row"') == 1
+    # Net Greeks ignores currentUnd/currentExpiry (only the std-dev selection filters it)
+    assert _render(jsroot, data)["cards"].count('class="rk-ug-row"') == 2
     assert _render(jsroot, data, sel="NIFTY")["cards"].count('class="rk-ug-row"') == 1
+    assert _render(jsroot, data, sel="BANKNIFTY")["cards"].count('class="rk-ug-row"') == 1
+    assert "No Greeks data" in _render(jsroot, data, sel="GHOST")["cards"]
 
 
 @needs_node
 def test_no_rho_rendered(jsroot):
     r = _render(jsroot, [_g(rho=5)])
-    assert "ρ" not in r["cards"] + r["rows"] and "Rho" not in r["cards"] + r["rows"]
+    assert "ρ" not in r["cards"] and "Rho" not in r["cards"]
 
 
 # ── (d) CSS reasoning ─────────────────────────────────────────────────────────────
@@ -200,7 +193,7 @@ def _css_rules(css: str):
             out.append(([s.strip() for s in m.group(1).split(",")], m.group(2), media))
     # split media blocks
     pos = 0
-    for m in re.finditer(r"@media\s*(\([^)]*\))\s*\{", css):
+    for m in re.finditer(r"@media\s*([^{]*?)\s*\{", css):
         if m.start() < pos:
             continue
         depth, j = 1, m.end()
@@ -222,14 +215,41 @@ def test_every_selector_scoped_including_inside_media():
     assert any(m for _, _, m in rules)
 
 
-@pytest.mark.parametrize("bp", ["max-width:900px", "max-width:768px", "max-width:480px", "min-width:1100px"])
+@pytest.mark.parametrize("bp", ["max-width:900px", "max-width:768px", "max-width:480px", "min-width:1280px"])
 def test_media_breakpoints_present(bp):
     assert any(m and bp in m.replace(" ", "") for _, _, m in _css_rules(_f41_css()))
 
 
-def test_1100_breakpoint_exists_for_two_column_row():
+def test_1280_breakpoint_three_columns_and_explicit_midrange_single_column():
     rules = _css_rules(_f41_css())
-    assert any(m and "1100" in m and any(".rk-two" in s for s in sels) for sels, _, m in rules)
+    three = [b for sels, b, m in rules if m and "min-width:1280px" in m.replace(" ", "") and "#page-risk .rk-three" in sels]
+    assert three and "repeat(3,minmax(0,1fr))" in three[0].replace(" ", "")
+    mid = [b for sels, b, m in rules if m and "769" in m and "1279" in m and "#page-risk .rk-three" in sels]
+    assert mid and "repeat(3" not in mid[0]
+    base = [b for sels, b, m in rules if not m and "#page-risk .rk-three" in sels]
+    assert base and "display:grid" in base[0].replace(" ", "")
+    assert not any(".rk-two" in s or ".rk-grid" in s for sels, _, _ in rules for s in sels)
+
+
+def _table_cell_rules():
+    out = []
+    for sels, body, media in _css_rules(_f41_css()):
+        if any(re.search(r"\b(td|th)\b|\.rk-tbl|\.rk-g|\.num\b|\.rk-ug", s) for s in sels):
+            out.append((sels, body))
+    return out
+
+
+def test_no_font_size_override_on_net_greeks_or_stress_table_cells():
+    # F41 font bug: value cells must render at the table's normal size, never an oversized clamp()
+    for sels, body in _table_cell_rules():
+        if any(".rk-tbl" in s or ".rk-net-tbl" in s or ".rk-stress-tbl" in s for s in sels):
+            assert "font-size" not in body, (sels, body)
+    assert "clamp(" not in _f41_css()
+    for src in (_GREEKS, _STRESS):
+        # no td in the Net Greeks / Stress markup carries an inline font-size or the card-era class
+        for td in re.findall(r"<td[^>]*>", src.split("rk-sd-tbl")[0]):
+            assert "font-size" not in td and "rk-g-val" not in td, td
+    assert "rk-g-val" not in _GREEKS and "rk-g-val" not in _f41_css()
 
 
 def test_payoff_grid_override_important_at_768():
@@ -238,20 +258,20 @@ def test_payoff_grid_override_important_at_768():
     assert hit and "grid-template-columns" in hit[0] and "!important" in hit[0]
 
 
-def test_no_nowrap_on_instrument_rows_only_short_chips():
-    rules = _css_rules(_f41_css())
-    for sels, body, _ in rules:
-        if "nowrap" in body.replace(" ", ""):
-            assert sels == ["#page-risk .rk-chip"], sels
-    row_rules = [b for sels, b, _ in rules if any(s.startswith(("#page-risk .rk-row", "#page-risk .rk-inst-list")) for s in sels)]
-    assert row_rules and not any("nowrap" in b for b in row_rules)
-    # JS markup has no inline nowrap either
+def test_no_nowrap_anywhere_in_risk_css_or_markup():
+    for sels, body, _ in _css_rules(_f41_css()):
+        assert "nowrap" not in body.replace(" ", "") or "white-space:normal" in body.replace(" ", ""), sels
     assert "nowrap" not in _GREEKS
+
+
+def test_dead_per_instrument_css_removed():
+    css = _f41_css()
+    for cls in ("rk-inst-list", "rk-row", "rk-chip", "rk-chips", "tbl-footer"):
+        assert cls not in css, cls
 
 
 def test_no_horizontal_scroll_guards():
     css = _f41_css().replace(" ", "")
-    assert "#page-risk.rk-inst-list{max-height:360px;overflow-y:auto;overflow-x:hidden;}" in css
     assert "#page-risk#risk-stddev-card.tbl-wrap{overflow-x:hidden;}" in css
     assert "overflow-x:scroll" not in css and "overflow-x:auto" not in css
 
@@ -274,22 +294,14 @@ def _js_g_reads(src: str) -> set[str]:
 def test_contract_numeric_fields_exist_in_greek_item_schema():
     fields = _schema_fields("GreekItemSchema")
     reads = _js_g_reads(_GREEKS) | _js_g_reads(_STRESS)
-    assert {"delta", "gamma", "theta", "vega", "und", "exp", "hedge_type", "ann_vol_pct", "allocation_pct"} <= reads
+    assert {"delta", "gamma", "theta", "vega", "und", "exp", "ann_vol_pct", "allocation_pct"} <= reads
     missing = {r for r in reads if r not in fields} - {"full", "type", "side"}
     assert not missing, missing
 
 
-@pytest.mark.xfail(strict=True, reason="F41-QA-2 pre-existing contract gap: greeks.js reads g.full/g.type/g.side but GreekItemSchema has no such fields (JS falls back to und+hedge_type / '—')")
-def test_contract_display_fields_exist_in_greek_item_schema():
-    fields = _schema_fields("GreekItemSchema")
-    reads = _js_g_reads(_GREEKS) | _js_g_reads(_STRESS)
-    assert {"full", "type", "side"} <= reads
-    assert {"full", "type", "side"} <= fields
-
-
 def test_contract_missing_display_fields_have_js_fallbacks():
-    assert "g.full ?? (g.und && g.hedge_type" in _GREEKS
-    assert "g.type ?? '—'" in _GREEKS and "g.side ?? '—'" in _GREEKS
+    # per-instrument rows (which read g.full/type/side) were removed; Net Greeks only sums numeric fields
+    assert "g.full" not in _GREEKS and "g.side" not in _GREEKS
 
 
 def test_contract_response_wires_greeks_list():

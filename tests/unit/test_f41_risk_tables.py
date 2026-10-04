@@ -14,7 +14,7 @@ def test_net_greeks_is_a_table_with_four_greek_columns():
     assert 'class="rk-tbl rk-net-tbl"' in _GREEKS
     for sym in ("Δ", "Γ", "Θ", "V"):
         assert f"th('{sym}'" in _GREEKS
-    assert "rk-ug-row" in _GREEKS and "rk-gk" not in _GREEKS.split("export function renderGreeksTable")[0]
+    assert "rk-ug-row" in _GREEKS and "rk-gk" not in _GREEKS
 
 
 def test_stress_is_a_table_move_level_pnl():

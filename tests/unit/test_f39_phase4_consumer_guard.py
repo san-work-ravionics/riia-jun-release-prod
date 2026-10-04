@@ -209,7 +209,7 @@ def _section(html: str, section_id: str) -> str:
 
 # ── Tier B (F39 Phase 4): retired modules gone, D2 blocks relocated to #page-risk ────
 
-_RELOCATED_IDS = ["greeks-all-grid", "greeks-tbody", "greeks-footer", "greeks-table-sub",
+_RELOCATED_IDS = ["greeks-all-grid",
                   "stress-row", "stress-card-sub", "payoff-charts-grid", "payoff-nifty-wrap",
                   "payoff-bnkn-wrap", "payoff-chart", "payoff-chart-bnkn"]
 

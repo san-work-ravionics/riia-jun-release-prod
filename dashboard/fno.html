@@ -227,10 +227,13 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
 
 /* ═══ F41 Risk page — self-contained block, every selector scoped under #page-risk ═══
    Do not edit the global greek-card, scenario and three-col rules or responsive.css. Merge-safe with F40. */
-#page-risk .card,#page-risk .card-body,#page-risk .two-col>*,#page-risk .rk-two>*,#page-risk .rk-grid>*{min-width:0;}
-#page-risk .rk-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;margin:18px 0 16px;}
-#page-risk .rk-two{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;}
-@media(min-width:1100px){#page-risk .rk-two{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}}
+#page-risk .card,#page-risk .card-body,#page-risk .two-col>*,#page-risk .rk-three>*{min-width:0;}
+/* Three panels in one row: Net Greeks | Stress | Payoff. 1 column below 1280px (3 narrow columns beside the 202px sidebar are too tight). */
+#page-risk .rk-three{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;margin:18px 0 16px;}
+@media(min-width:769px) and (max-width:1279px){#page-risk .rk-three{grid-template-columns:minmax(0,1fr);}}
+@media(min-width:1280px){#page-risk .rk-three{grid-template-columns:repeat(3,minmax(0,1fr));}}
+#page-risk .rk-three .card-body{padding:10px;}
+#page-risk .rk-three .rk-tbl th,#page-risk .rk-three .rk-tbl td{padding:6px 6px;}
 /* Net Greeks: one group card per underlying */
 #page-risk #greeks-all-grid{display:block;}
 #page-risk .rk-tbl-wrap{min-width:0;}
@@ -243,30 +246,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
 #page-risk .rk-tbl td.neu{color:var(--t4);}
 #page-risk .rk-ug-name{font-weight:500;}
 #page-risk .rk-stress-row.flat td{background:var(--surface2);}
-#page-risk .rk-ug{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:12px 14px;box-shadow:var(--sh);min-width:0;}
-#page-risk .rk-ug-hdr{font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;overflow-wrap:anywhere;}
-#page-risk .rk-gk{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;}
-#page-risk .rk-g{min-width:0;}
-#page-risk .rk-g-name{font-family:var(--fm);font-size:10px;color:var(--t4);text-transform:uppercase;letter-spacing:.06em;}
-#page-risk .rk-g-val{font-family:var(--fm);font-size:clamp(14px,2.2vw,18px);font-weight:500;overflow-wrap:anywhere;}
-#page-risk .rk-g-val.pos{color:var(--pos);}
-#page-risk .rk-g-val.neg{color:var(--neg);}
-#page-risk .rk-g-val.neu{color:var(--t4);}
-#page-risk .rk-g-hint{font-size:11px;color:var(--t3);line-height:1.35;overflow-wrap:anywhere;}
 #page-risk .rk-empty{padding:16px;color:var(--t4);font-size:13px;}
-/* Per-instrument compact rows */
-#page-risk .rk-inst-list{max-height:360px;overflow-y:auto;overflow-x:hidden;}
-#page-risk .rk-row{padding:10px 14px;border-bottom:1px solid var(--border);min-width:0;}
-#page-risk .rk-row:last-child{border-bottom:0;}
-#page-risk .rk-row-top{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:6px;min-width:0;}
-#page-risk .rk-row-name{font-size:12px;font-weight:600;min-width:0;overflow-wrap:anywhere;flex:1 1 140px;}
-#page-risk .rk-chips{display:flex;flex-wrap:wrap;gap:6px 12px;font-family:var(--fm);font-size:11px;}
-#page-risk .rk-chip{white-space:nowrap;}
-#page-risk .rk-chip i{font-style:normal;color:var(--t4);margin-right:3px;}
-#page-risk .rk-chip.pos{color:var(--pos);}
-#page-risk .rk-chip.neg{color:var(--neg);}
-#page-risk .rk-chip.neu{color:var(--t3);}
-#page-risk .tbl-footer{flex-wrap:wrap;}
 /* Stress cards */
 #page-risk .scenario-row{grid-template-columns:repeat(auto-fit,minmax(88px,1fr));}
 #page-risk .scenario-card{min-width:0;}
@@ -283,15 +263,15 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
 }
 /* Payoff grid (beats inline style) */
 #page-risk #payoff-charts-grid>*{min-width:0;}
+/* Payoff is the narrow third panel of .rk-three: stack NIFTY/BANKNIFTY inside it (greeks.js sets an inline 1fr 1fr) */
+#page-risk .rk-three #payoff-charts-grid{grid-template-columns:minmax(0,1fr) !important;}
 @media(max-width:768px){
   #page-risk #payoff-charts-grid{grid-template-columns:minmax(0,1fr) !important;}
   #page-risk .two-col{grid-template-columns:minmax(0,1fr);}
 }
 @media(max-width:480px){
-  #page-risk .rk-gk{grid-template-columns:repeat(2,minmax(0,1fr));}
   #page-risk .scenario-row{grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:8px;}
   #page-risk .scenario-pnl{font-size:14px;}
-  #page-risk .rk-row{padding:8px 10px;}
 }
 /* ═══ end F41 Risk page ═══ */
 
@@ -872,8 +852,8 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
 
     <!-- F39 Phase 4 (D2): Greeks / stress / expiry-payoff blocks relocated from the retired Equity Hedge page.
          Ids unchanged — painted by greeks.js / stress.js / payoff.js from _renderAll() and setUnderlying()/setExpiry(). -->
-    <!-- Net Greeks + Stress Scenarios + Per-Instrument Greeks -->
-    <div class="rk-grid">
+    <!-- Net Greeks | Stress Scenarios | Payoff at Expiry — three panels in one row (>=1280px) -->
+    <div class="rk-three">
       <div class="card">
         <div class="card-hdr">
           <span class="card-title">Net Greeks</span>
@@ -883,44 +863,30 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
           <div id="greeks-all-grid"></div>
         </div>
       </div>
-      <div class="rk-two">
-        <div class="card">
-          <div class="card-hdr">
-            <span class="card-title">Stress Scenarios</span>
-            <span class="card-sub" id="stress-card-sub">Estimated P&amp;L for market moves</span>
-          </div>
-          <div class="card-body">
-            <div class="rk-tbl-wrap" id="stress-row"></div>
-          </div>
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-title">Stress Scenarios</span>
+          <span class="card-sub" id="stress-card-sub">Estimated P&amp;L for market moves</span>
         </div>
-        <div class="card">
-          <div class="card-hdr">
-            <span class="card-title">Per-Instrument Greeks</span>
-            <span class="card-sub" id="greeks-table-sub">All positions</span>
-          </div>
-          <div class="card-body" style="padding:0">
-            <div id="greeks-tbody" class="rk-inst-list"></div>
-            <div class="tbl-footer" id="greeks-footer"></div>
-          </div>
+        <div class="card-body">
+          <div class="rk-tbl-wrap" id="stress-row"></div>
         </div>
       </div>
-    </div>
-
-    <!-- FnO Payoff charts (NIFTY / BANKNIFTY) — full width at bottom -->
-    <div class="card">
-      <div class="card-hdr">
-        <span class="card-title">Payoff at Expiry</span>
-        <span class="card-sub">FnO position sensitivity across underlying price range</span>
-      </div>
-      <div class="card-body">
-        <div id="payoff-charts-grid" style="display:grid;gap:18px;margin-top:4px;">
-          <div id="payoff-nifty-wrap">
-            <div style="font-family:var(--fm);font-size:10px;font-weight:500;color:var(--p02);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">NIFTY Payoff at Expiry</div>
-            <div class="chart-wrap tall"><canvas id="payoff-chart"></canvas></div>
-          </div>
-          <div id="payoff-bnkn-wrap">
-            <div style="font-family:var(--fm);font-size:10px;font-weight:500;color:var(--p04);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">BANKNIFTY Payoff at Expiry</div>
-            <div class="chart-wrap tall"><canvas id="payoff-chart-bnkn"></canvas></div>
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-title">Payoff at Expiry</span>
+          <span class="card-sub">FnO position sensitivity across underlying price range</span>
+        </div>
+        <div class="card-body">
+          <div id="payoff-charts-grid" style="display:grid;gap:18px;margin-top:4px;">
+            <div id="payoff-nifty-wrap">
+              <div style="font-family:var(--fm);font-size:10px;font-weight:500;color:var(--p02);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">NIFTY Payoff at Expiry</div>
+              <div class="chart-wrap tall"><canvas id="payoff-chart"></canvas></div>
+            </div>
+            <div id="payoff-bnkn-wrap">
+              <div style="font-family:var(--fm);font-size:10px;font-weight:500;color:var(--p04);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">BANKNIFTY Payoff at Expiry</div>
+              <div class="chart-wrap tall"><canvas id="payoff-chart-bnkn"></canvas></div>
+            </div>
           </div>
         </div>
       </div>

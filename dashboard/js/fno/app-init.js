@@ -3,7 +3,7 @@
 import { apiBase, RITA_API_KEY } from './api.js';
 import { state } from './state.js';
 import { buildExpiryPills } from './nav.js';
-import { renderGreeksCards, renderGreeksTable, updateRiskSections } from './greeks.js';
+import { renderGreeksCards, updateRiskSections } from './greeks.js';
 import { renderStressScenarios } from './stress.js';
 import { renderPayoffChart } from './payoff.js';
 import { saveToday, syncPriceHistory, renderScenarios } from './rr.js';
@@ -33,7 +33,6 @@ function _normScenarioLevels(raw) {
 // Re-render risk sections when the stddev table row click changes the instrument filter
 document.addEventListener('risk-filter-change', () => {
   renderGreeksCards();
-  renderGreeksTable();
   renderStressScenarios();
   highlightRiskChart();
 });
@@ -127,7 +126,6 @@ export async function initApp(mode = 'mock') {
 function _renderAll() {
   updateRiskSections();
   renderGreeksCards();
-  renderGreeksTable();
   renderStressScenarios();
   renderScenarios();
   renderPayoffChart();

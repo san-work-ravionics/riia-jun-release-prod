@@ -423,7 +423,7 @@ class TestPortfolioAnalyticsResponsePhase3:
         "stress",           # stress.js — renderAnalyticsStress
         "hedge_quality",    # positions.js / workflow Exposure (formerly hedge.js renderPortfolioHedgeRadar)
         "net_greeks",       # greeks.js — renderGreeksCards
-        "greeks",           # greeks.js — renderGreeksTable (uses g.und + g.hedge_type)
+        "greeks",           # greeks.js — Net Greeks cards/stress consumers (g.und + g.hedge_type)
     }
 
     def test_portfolio_analytics_response_has_all_phase3_state_fields(self):

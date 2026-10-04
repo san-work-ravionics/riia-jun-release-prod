@@ -18,7 +18,7 @@ _HTML = (_ROOT / "dashboard" / "fno.html").read_text(encoding="utf-8")
 _GREEKS = (_JS / "fno" / "greeks.js").read_text(encoding="utf-8")
 _STRESS = (_JS / "fno" / "stress.js").read_text(encoding="utf-8")
 
-_IDS = ["greeks-all-grid", "greeks-tbody", "greeks-footer", "greeks-table-sub", "stress-row",
+_IDS = ["greeks-all-grid", "stress-row",
         "stress-card-sub", "payoff-charts-grid", "payoff-nifty-wrap", "payoff-bnkn-wrap",
         "payoff-chart", "payoff-chart-bnkn", "risk-stddev-card", "risk-inst-chart", "risk-port-chart"]
 
@@ -43,13 +43,52 @@ def test_dom_id_exactly_once_inside_page_risk(i):
     assert f'id="{i}"' in _risk_block()
 
 
-def test_three_col_replaced_and_greeks_is_div_list():
+def test_three_col_replaced_by_single_three_panel_row():
     blk = _risk_block()
     assert "three-col" not in blk
-    assert 'class="rk-grid"' in blk and 'class="rk-two"' in blk
-    assert '<div id="greeks-tbody" class="rk-inst-list">' in blk
-    assert "<tbody" not in blk.split('id="greeks-tbody"')[1].split("greeks-footer")[0]
+    assert blk.count('class="rk-three"') == 1 and "rk-two" not in blk and "rk-grid" not in blk
     assert 'id="greeks-all-grid" style' not in blk  # inline grid removed
+
+
+_REMOVED_IDS = ["greeks-tbody", "greeks-footer", "greeks-table-sub"]
+
+
+def test_per_instrument_card_and_ids_are_gone():
+    assert "Per-Instrument Greeks" not in _HTML
+    for i in _REMOVED_IDS:
+        assert i not in _HTML, i
+    for cls in ("rk-inst-list", "rk-row", "rk-chip"):
+        assert cls not in _HTML, cls
+
+
+def _rk_three_row() -> str:
+    blk = _risk_block()
+    start = blk.index('<div class="rk-three">')
+    depth = 0
+    for m in re.finditer(r"<div\b|</div>", blk[start:]):
+        depth += 1 if m.group(0) != "</div>" else -1
+        if depth == 0:
+            return blk[start:start + m.end()]
+    raise AssertionError("unbalanced rk-three")
+
+
+def test_net_greeks_stress_payoff_are_three_sibling_cards_in_one_row():
+    row = _rk_three_row()
+    cards = re.findall(r'\n {6}<div class="card">', row)  # direct children only (6-space indent)
+    assert len(cards) == 3
+    order = [row.index(x) for x in ("Net Greeks", "Stress Scenarios", "Payoff at Expiry")]
+    assert order == sorted(order)
+    for i in ("greeks-all-grid", "stress-row", "stress-card-sub", "payoff-charts-grid", "payoff-nifty-wrap",
+              "payoff-bnkn-wrap", "payoff-chart", "payoff-chart-bnkn"):
+        assert f'id="{i}"' in row, i
+    blk = _risk_block()
+    assert blk.index("risk-stddev-card") < blk.index("greeks-all-grid")
+
+
+def test_payoff_grid_stacks_inside_two_up_row_scoped_override():
+    css = _f41_css().replace(" ", "")
+    assert "#page-risk.rk-three#payoff-charts-grid{grid-template-columns:minmax(0,1fr)!important;}" in css
+    assert "#page-risk#payoff-charts-grid>*{min-width:0;}" in css
 
 
 def test_stddev_card_precedes_greeks_grid():
@@ -75,7 +114,7 @@ def test_f41_css_block_is_scoped_and_global_rules_untouched():
 
 def test_f41_css_covers_breakpoints_and_no_inner_scroll():
     css = _f41_css()
-    for token in ("min-width:1100px", "max-width:900px", "max-width:768px", "max-width:480px",
+    for token in ("min-width:1280px", "max-width:900px", "max-width:768px", "max-width:480px",
                   "table-layout:fixed", "rk-sd-x", "overflow-x:hidden", "!important"):
         assert token in css, token
     assert "min-width:0" in css  # grid children can shrink
@@ -84,7 +123,8 @@ def test_f41_css_covers_breakpoints_and_no_inner_scroll():
 # ── JS structure ──────────────────────────────────────────────────────────────────
 
 def test_greeks_js_structure():
-    assert "export function renderGreeksCards" in _GREEKS and "export function renderGreeksTable" in _GREEKS
+    assert "export function renderGreeksCards" in _GREEKS
+    assert "renderGreeksTable" not in _GREEKS
     assert "gridTemplateColumns = `repeat(" not in _GREEKS
     for k in ("hint_delta", "hint_gamma", "hint_theta", "hint_vega"):
         assert f"greeks.{k}" in _GREEKS
@@ -127,7 +167,7 @@ def _run(jsroot: Path, greeks, **state) -> dict:
     src = f"""
 import {{ state }} from {json.dumps(s_uri)};
 const els = {{}};
-for (const id of ['greeks-all-grid','greeks-tbody','greeks-footer','greeks-table-sub'])
+for (const id of ['greeks-all-grid'])
   els[id] = {{ innerHTML: '', textContent: '', style: {{}} }};
 globalThis.document = {{ getElementById: id => els[id] ?? null }};
 const g = await import({json.dumps(g_uri)});
@@ -135,9 +175,8 @@ state.greeksData = {json.dumps(greeks)};
 state.riskSelectedInstrument = {json.dumps(state.get("sel"))};
 state.currentUnd = {json.dumps(state.get("und", "ALL"))};
 state.currentExpiry = {json.dumps(state.get("exp", "ALL"))};
-g.renderGreeksCards(); g.renderGreeksTable();
-console.log(JSON.stringify({{cards: els['greeks-all-grid'].innerHTML, rows: els['greeks-tbody'].innerHTML,
-  foot: els['greeks-footer'].innerHTML, sub: els['greeks-table-sub'].textContent}}));
+g.renderGreeksCards();
+console.log(JSON.stringify({{cards: els['greeks-all-grid'].innerHTML}}));
 """
     script = jsroot / "run41.mjs"
     script.write_text(src, encoding="utf-8")
@@ -158,56 +197,56 @@ def test_normal_data_renders_groups_gamma_and_hints(jsroot):
     r = _run(jsroot, [_g(), _g(und="BANKNIFTY", full="BANKNIFTY CALL", delta=0.3)])
     assert r["cards"].count('class="rk-ug-row"') == 2 and "<table" in r["cards"]  # Net Greeks is a table (one row per underlying)
     assert "Γ" in r["cards"] and "P&amp;L per 1pt move" in r["cards"]  # hints live in the header title attr
-    assert r["rows"].count('class="rk-row"') == 2 and "Γ" in r["rows"] and "+0.0020" in r["rows"]
-    assert "14.3%" in r["rows"] or "14.2%" in r["rows"]
+    assert "+0.0020" in r["cards"]
     for bad in ("NaN", "undefined", "null"):
-        assert bad not in r["cards"] + r["rows"] + r["foot"]
+        assert bad not in r["cards"]
 
 
 @needs_node
 def test_null_and_missing_greeks_show_dash_neutral_no_nan(jsroot):
     r = _run(jsroot, [_g(delta=None, gamma=None, theta=None, vega=None, ann_vol_pct=None),
                       {"und": "NIFTY"}, _g(delta="abc", gamma=float("nan") if False else None)])
-    blob = r["cards"] + r["rows"] + r["foot"]
+    blob = r["cards"]
     for bad in ("NaN", "undefined", "null"):
         assert bad not in blob
-    assert "—" in r["rows"] and "rk-chip neu" in r["rows"]
+    assert 'class="num neu"' in blob  # missing values sum to a neutral zero
 
 
 @needs_node
 def test_sign_classes(jsroot):
     r = _run(jsroot, [_g(delta=-0.5, theta=-100, vega=50)])
-    assert 'rk-g-val neg">−0.50' in r["cards"]
-    assert 'rk-g-val pos">+₹50' in r["cards"]
-    assert 'rk-chip neg"><i>Θ/day</i>−₹100' in r["rows"]
-
-
-@needs_node
-def test_footer_totals(jsroot):
-    r = _run(jsroot, [_g(delta=0.5, theta=-100, vega=10), _g(delta=0.25, theta=40, vega=None, theta_x=1)])
-    assert "+0.75" in r["foot"] and "−₹60" in r["foot"] and "+₹10" in r["foot"]
+    assert 'class="num neg">−0.50' in r["cards"]
+    assert 'class="num pos">+₹50' in r["cards"]
+    assert 'class="num neg">−₹100' in r["cards"]
 
 
 @needs_node
 def test_empty_data_and_unknown_selection(jsroot):
     r = _run(jsroot, [])
-    assert "No Greeks data" in r["cards"] and "No positions" in r["rows"]
-    assert "NaN" not in r["foot"]
+    assert "No Greeks data" in r["cards"]
     r2 = _run(jsroot, [_g()], sel="GHOST")
-    assert "No Greeks data" in r2["cards"] and "No positions" in r2["rows"]
+    assert "No Greeks data" in r2["cards"]
 
 
 @needs_node
 def test_long_names_escaped_with_title(jsroot):
     name = 'X' * 120 + '<img src=x onerror=1>"'
-    r = _run(jsroot, [_g(full=name)])
-    assert "<img" not in r["rows"] and "&lt;img" in r["rows"]
-    assert 'title="' + "X" * 120 in r["rows"] and "&quot;" in r["rows"]
+    r = _run(jsroot, [_g(und=name)])
+    assert "<img" not in r["cards"] and "&lt;img" in r["cards"]
+    assert 'title="' + "X" * 120 in r["cards"] and "&quot;" in r["cards"]
 
 
 @needs_node
-def test_wide_numbers_and_all_zero_note(jsroot):
+def test_wide_numbers_render_in_indian_grouping(jsroot):
     r = _run(jsroot, [_g(theta=-123456789, vega=987654321)])
     assert "−₹12,34,56,789" in r["cards"] and "+₹98,76,54,321" in r["cards"]
-    z = _run(jsroot, [_g(delta=0, gamma=0, theta=0, vega=0)])
-    assert "add a hedge plan" in z["sub"]
+
+
+def test_render_greeks_table_removed_and_no_remaining_imports():
+    assert not re.search(r"export\s+(async\s+)?function\s+renderGreeksTable", _GREEKS)
+    offenders = [str(p.relative_to(_ROOT)) for p in _JS.rglob("*.js") if "renderGreeksTable" in p.read_text(encoding="utf-8")]
+    assert not offenders, offenders
+    assert "renderGreeksTable" not in _HTML
+    for name in ("nav.js", "app-init.js"):
+        src = (_JS / "fno" / name).read_text(encoding="utf-8")
+        assert "renderGreeksCards, updateRiskSections } from './greeks.js'" in src
