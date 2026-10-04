@@ -102,12 +102,13 @@ export function renderStdDevTable() {
     return sym + v.toLocaleString('en-US', opts);
   };
 
-  const tdNeg = (html, extra = '') =>
-    `<td style="padding:6px 10px;font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--neg);${extra}">${html}</td>`;
-  const tdPos = (html, extra = '') =>
-    `<td style="padding:6px 10px;font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--pos);${extra}">${html}</td>`;
+  // F41: padding comes from the scoped .rk-sd-tbl CSS; ±3σ cells carry .rk-sd-x (hidden <=900px)
+  const tdNeg = (html, cls = '') =>
+    `<td class="${cls}" style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--neg);">${html}</td>`;
+  const tdPos = (html, cls = '') =>
+    `<td class="${cls}" style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--pos);">${html}</td>`;
   const tdCtr = (html) =>
-    `<td style="padding:6px 10px;font-size:12px;font-family:'IBM Plex Mono',monospace;border-left:1px solid var(--border);border-right:1px solid var(--border);">${html}</td>`;
+    `<td style="font-size:12px;font-family:'IBM Plex Mono',monospace;border-left:1px solid var(--border);border-right:1px solid var(--border);">${html}</td>`;
 
   const renderRow = (inst, isPortfolio) => {
     const isSelected = sel === inst.id || (!sel && isPortfolio);
@@ -116,15 +117,15 @@ export function renderStdDevTable() {
       ? 'background:color-mix(in srgb,var(--p02) 12%,transparent);outline:1px solid color-mix(in srgb,var(--p02) 30%,transparent);'
       : '';
     return `<tr style="cursor:pointer;${selStyle}" data-inst="${inst.id}" class="stddev-row">
-      <td style="padding:6px 10px;font-size:12px;font-weight:${isPortfolio ? '700' : '600'};${isPortfolio ? 'color:var(--p02)' : ''}">${inst.full}</td>
-      <td style="padding:6px 10px;font-size:11px;color:var(--t3);font-family:'IBM Plex Mono',monospace">${(inst.vol * 100).toFixed(1)}%</td>
-      ${tdNeg(fmtPrice(inst.price * (1 - m3), inst.sym, isPortfolio))}
+      <td style="font-size:12px;font-weight:${isPortfolio ? '700' : '600'};${isPortfolio ? 'color:var(--p02)' : ''}">${inst.full}</td>
+      <td style="font-size:11px;color:var(--t3);font-family:'IBM Plex Mono',monospace">${(inst.vol * 100).toFixed(1)}%</td>
+      ${tdNeg(fmtPrice(inst.price * (1 - m3), inst.sym, isPortfolio), 'rk-sd-x')}
       ${tdNeg(fmtPrice(inst.price * (1 - m2), inst.sym, isPortfolio))}
       ${tdNeg(fmtPrice(inst.price * (1 - m1), inst.sym, isPortfolio))}
       ${tdCtr(fmtPrice(inst.price, inst.sym, isPortfolio))}
       ${tdPos(fmtPrice(inst.price * (1 + m1), inst.sym, isPortfolio))}
       ${tdPos(fmtPrice(inst.price * (1 + m2), inst.sym, isPortfolio))}
-      ${tdPos(fmtPrice(inst.price * (1 + m3), inst.sym, isPortfolio))}
+      ${tdPos(fmtPrice(inst.price * (1 + m3), inst.sym, isPortfolio), 'rk-sd-x')}
     </tr>`;
   };
 
@@ -140,21 +141,20 @@ export function renderStdDevTable() {
     </div>
     <div class="card-body" style="padding:0">
       <div class="tbl-wrap">
-        <table>
+        <table class="rk-sd-tbl">
           <thead><tr>
             <th>Instrument</th><th>Ann Vol</th>
-            <th style="color:var(--neg)">−3σ</th>
+            <th class="rk-sd-x" style="color:var(--neg)">−3σ</th>
             <th style="color:var(--neg)">−2σ</th>
             <th style="color:var(--neg)">−1σ</th>
             <th style="border-left:1px solid var(--border);border-right:1px solid var(--border)">Current</th>
             <th style="color:var(--pos)">+1σ</th>
             <th style="color:var(--pos)">+2σ</th>
-            <th style="color:var(--pos)">+3σ</th>
+            <th class="rk-sd-x" style="color:var(--pos)">+3σ</th>
           </tr></thead>
           <tbody>${allRows}</tbody>
           <tfoot><tr>
-            <td colspan="2" style="padding:5px 10px;font-size:10px;color:var(--t4);font-family:'IBM Plex Mono',monospace">1σ 68.3% · 2σ 95.5% · 3σ 99.7% probability price stays within range</td>
-            <td colspan="7"></td>
+            <td colspan="9" style="font-size:10px;color:var(--t4);font-family:'IBM Plex Mono',monospace">1σ 68.3% · 2σ 95.5% · 3σ 99.7% probability price stays within range</td>
           </tr></tfoot>
         </table>
       </div>

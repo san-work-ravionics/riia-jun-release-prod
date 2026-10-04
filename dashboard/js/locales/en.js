@@ -291,6 +291,11 @@ export default {
   // Greeks
   'greeks.per_100pt': 'Per 100pt move: ~',
   'greeks.gamma': 'Gamma',
+  'greeks.delta': 'Delta',
+  'greeks.hint_delta': 'P&L per 1pt move',
+  'greeks.hint_gamma': 'Delta change per 1pt',
+  'greeks.hint_theta': 'Time decay per day',
+  'greeks.hint_vega': 'Per 1% IV move',
   'greeks.short_options': 'Short options',
   'greeks.long_options': 'Long options',
   'greeks.negative_gamma': 'negative',
