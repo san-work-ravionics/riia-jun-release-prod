@@ -276,6 +276,11 @@ export default {
   // Greeks
   'greeks.per_100pt': 'Per 100pt-beweging: ~',
   'greeks.gamma': 'Gamma',
+  'greeks.delta': 'Delta',
+  'greeks.hint_delta': 'W&V per 1pt-beweging',
+  'greeks.hint_gamma': 'Deltaverandering per 1pt',
+  'greeks.hint_theta': 'Tijdverval per dag',
+  'greeks.hint_vega': 'Per 1% IV-beweging',
   'greeks.short_options': 'Korte opties',
   'greeks.long_options': 'Lange opties',
   'greeks.negative_gamma': 'negatieve',
