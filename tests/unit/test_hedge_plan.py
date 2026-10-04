@@ -41,6 +41,9 @@ import pytest
 
 _PATCH_KEY_REPO   = "rita.api.experience.fno_hedge_plan.UserPortfolioKeyRepo"
 _PATCH_HEDGE_REPO = "rita.api.experience.fno_hedge_plan.UserHedgePlanRepo"
+# F40: PUT logic lives in HedgePlanService — patch the repos where the service imports them
+_PATCH_SVC_KEY_REPO = "rita.services.hedge_plan_service.UserPortfolioKeyRepo"
+_PATCH_SVC_HEDGE_REPO = "rita.services.hedge_plan_service.UserHedgePlanRepo"
 
 
 # ---------------------------------------------------------------------------
@@ -78,6 +81,7 @@ def _make_plan(
     plan.scenario_tab = scenario_tab
     plan.duration = duration
     plan.last_step = "exposure"
+    plan.selections = None
     plan.updated_at = updated_at or _NOW
     return plan
 
@@ -212,8 +216,8 @@ class TestPutHedgePlan:
             duration="1y",
         )
         with (
-            patch(_PATCH_KEY_REPO) as mock_key_cls,
-            patch(_PATCH_HEDGE_REPO) as mock_hedge_cls,
+            patch(_PATCH_SVC_KEY_REPO) as mock_key_cls,
+            patch(_PATCH_SVC_HEDGE_REPO) as mock_hedge_cls,
         ):
             mock_key_cls.return_value.find_by_user_id.return_value = _make_key()
             mock_hedge_cls.return_value.upsert.return_value = None
@@ -246,8 +250,8 @@ class TestPutHedgePlan:
             duration="1y",
         )
         with (
-            patch(_PATCH_KEY_REPO) as mock_key_cls,
-            patch(_PATCH_HEDGE_REPO) as mock_hedge_cls,
+            patch(_PATCH_SVC_KEY_REPO) as mock_key_cls,
+            patch(_PATCH_SVC_HEDGE_REPO) as mock_hedge_cls,
         ):
             mock_key_cls.return_value.find_by_user_id.return_value = _make_key(
                 key_id="key-abc123"
@@ -279,8 +283,8 @@ class TestPutHedgePlan:
         """PUT /hedge-plan: client sends duration='3m' — response always returns duration='1y'."""
         persisted = _make_plan(duration="1y")
         with (
-            patch(_PATCH_KEY_REPO) as mock_key_cls,
-            patch(_PATCH_HEDGE_REPO) as mock_hedge_cls,
+            patch(_PATCH_SVC_KEY_REPO) as mock_key_cls,
+            patch(_PATCH_SVC_HEDGE_REPO) as mock_hedge_cls,
         ):
             mock_key_cls.return_value.find_by_user_id.return_value = _make_key()
             mock_hedge_cls.return_value.upsert.return_value = None
@@ -310,8 +314,8 @@ class TestPutHedgePlan:
     def test_put_hedge_plan_coverage_101_raises_422(self, client):
         """PUT /hedge-plan with coverage=101 must return 422 (value out of range)."""
         with (
-            patch(_PATCH_KEY_REPO) as mock_key_cls,
-            patch(_PATCH_HEDGE_REPO) as mock_hedge_cls,
+            patch(_PATCH_SVC_KEY_REPO) as mock_key_cls,
+            patch(_PATCH_SVC_HEDGE_REPO) as mock_hedge_cls,
         ):
             mock_key_cls.return_value.find_by_user_id.return_value = _make_key()
             mock_hedge_cls.return_value.upsert.return_value = None
@@ -337,8 +341,8 @@ class TestPutHedgePlan:
     def test_put_hedge_plan_coverage_negative_raises_422(self, client):
         """PUT /hedge-plan with coverage=-1 must return 422 (value out of range)."""
         with (
-            patch(_PATCH_KEY_REPO) as mock_key_cls,
-            patch(_PATCH_HEDGE_REPO) as mock_hedge_cls,
+            patch(_PATCH_SVC_KEY_REPO) as mock_key_cls,
+            patch(_PATCH_SVC_HEDGE_REPO) as mock_hedge_cls,
         ):
             mock_key_cls.return_value.find_by_user_id.return_value = _make_key()
             mock_hedge_cls.return_value.upsert.return_value = None

@@ -14,6 +14,8 @@ from datetime import date, timedelta
 import requests
 import pytest
 
+from tests.e2e.conftest import ISO_LAST_CLOSE, ISO_SHARES
+
 TIMEOUT = 15
 
 
@@ -96,11 +98,11 @@ def test_fno_risk_reward_price_history(base_url):
 
 
 # ---------------------------------------------------------------------------
-# UC-F06  Hedge Radar (retired page; endpoint still feeds the workflow Save step)
+# UC-F06  Hedge Radar (retired page; endpoint kept, no workflow consumer since F40)
 # ---------------------------------------------------------------------------
 
 def test_fno_hedge_history(base_url):
-    """Workflow Save step: GET /api/v1/portfolio/hedge-history — hedge action log (flat list)."""
+    """GET /api/v1/portfolio/hedge-history — Manoeuvre hedge action log (flat list; no longer shown on the Save step)."""
     r = requests.get(f"{base_url}/api/v1/portfolio/hedge-history", timeout=TIMEOUT)
     assert r.status_code == 200, f"portfolio/hedge-history missing — Hedge Radar will be empty: {r.status_code}"
 
@@ -110,7 +112,7 @@ def test_fno_hedge_history(base_url):
 # ---------------------------------------------------------------------------
 
 def test_fno_hedge_history_list(base_url):
-    """Workflow Save step (history table): GET /api/v1/portfolio/hedge-history — flat list shape."""
+    """GET /api/v1/portfolio/hedge-history — flat list shape (no longer shown on the Save step)."""
     r = requests.get(f"{base_url}/api/v1/portfolio/hedge-history", timeout=TIMEOUT)
     assert r.status_code == 200, f"portfolio/hedge-history missing: {r.status_code}"
     assert isinstance(r.json(), list)
@@ -204,25 +206,64 @@ def test_fno_hedge_workflow_whatif_leg(base_url, auth_token):
     assert r.json()["source"] in ("kite", "fallback")
 
 
-def test_fno_hedge_workflow_save_leg(base_url, auth_token):
-    """Save leg: PUT then GET restores last_step; plus the hedge-history action log.
+def test_fno_hedge_workflow_save_leg(iso_base_url, iso_headers):
+    """Save leg (F40, STRICT — no skip): runs on the isolated, seeded temp DB (iso_* fixtures).
 
-    Needs a portfolio key. The dev user has none (PUT -> 404), so this leg is a DISCLOSED
-    SKIP, not a pass: the Save leg is NOT verified by e2e (F39 Phase 4 decision D5 pending:
-    seed a portfolio vs keep the skip). Unit coverage: test_f39_phase3_qa_js.py.
+    PUT explicit save -> GET restores last_step "save" + per-instrument selections; an
+    Overview-style PUT (no last_step) preserves "save"; every PUT appends one history row
+    (no dedupe); the history row carries the server-side market block.
+    Isolation is enforced by the isolated_server startup guard (conftest.py).
     """
-    headers = _auth(auth_token)
-    body = {"hedged_ids": ["NIFTY"], "coverage": 60, "scenario_tab": "collar", "last_step": "save"}
-    r = requests.put(f"{base_url}/api/v1/experience/fno/hedge-plan", json=body, headers=headers, timeout=TIMEOUT)
-    if r.status_code == 404:
-        pytest.skip("dev user has no portfolio key — Save leg NOT verified")
-    assert r.status_code == 200, f"hedge-plan PUT failed: {r.status_code} {r.text}"
-    r = requests.get(f"{base_url}/api/v1/experience/fno/hedge-plan", headers=headers, timeout=TIMEOUT)
-    assert r.status_code == 200
-    plan = r.json()
-    assert plan["last_step"] == "save" and plan["coverage"] == 60
-    assert plan["hedged_ids"] == ["NIFTY"] and plan["scenario_tab"] == "collar"
+    url = f"{iso_base_url}/api/v1/experience/fno/hedge-plan"
+    r = requests.get(f"{url}/history", headers=iso_headers, timeout=TIMEOUT)
+    assert r.status_code == 200 and r.json()["count"] == 0, "isolated DB must start with no history"
 
-    # Save step secondary table: global Manoeuvre hedge-action log
-    r = requests.get(f"{base_url}/api/v1/portfolio/hedge-history", timeout=TIMEOUT)
-    assert r.status_code == 200 and isinstance(r.json(), list)
+    sel = {"ASML": "put_buy", "RELIANCE": "call_sell"}
+    body = {"hedged_ids": ["ASML", "RELIANCE"], "coverage": 60, "scenario_tab": "collar",
+            "last_step": "save", "trigger": "explicit", "source": "workflow", "selections": sel,
+            "context": {"instruments": [{"instrument_id": "ASML", "strike_pct": 95.0, "premium_pct": 0.4,
+                                         "cost_source": "kite_csv", "hedge_type": "put"}],
+                        "margin": {"amount": 1000, "currency": "INR"}}}
+    r = requests.put(url, json=body, headers=iso_headers, timeout=TIMEOUT)
+    assert r.status_code == 200, f"hedge-plan PUT failed: {r.status_code} {r.text}"
+
+    plan = requests.get(url, headers=iso_headers, timeout=TIMEOUT).json()
+    assert plan["last_step"] == "save" and plan["coverage"] == 60
+    assert plan["hedged_ids"] == ["ASML", "RELIANCE"] and plan["scenario_tab"] == "collar"
+    assert plan["selections"] == sel
+
+    # Overview-style autosave: no last_step -> server preserves "save"; selections preserved when omitted
+    r = requests.put(url, json={"hedged_ids": ["ASML"], "coverage": 70, "scenario_tab": "collar",
+                                "trigger": "autosave", "source": "overview"},
+                     headers=iso_headers, timeout=TIMEOUT)
+    assert r.status_code == 200
+    plan = requests.get(url, headers=iso_headers, timeout=TIMEOUT).json()
+    assert plan["last_step"] == "save" and plan["coverage"] == 70 and plan["selections"] == sel
+
+    # Identical second autosave still appends (no dedupe)
+    requests.put(url, json={"hedged_ids": ["ASML"], "coverage": 70, "scenario_tab": "collar",
+                            "trigger": "autosave", "source": "overview"}, headers=iso_headers, timeout=TIMEOUT)
+
+    hist = requests.get(f"{url}/history", headers=iso_headers, timeout=TIMEOUT).json()
+    assert hist["count"] == 3
+    assert [i["trigger"] for i in hist["items"]] == ["autosave", "autosave", "explicit"]  # newest first
+    first = hist["items"][-1]
+    by_id = {i["instrument_id"]: i for i in first["instruments"]}
+    assert by_id["ASML"]["strategy"] == "put_buy" and by_id["ASML"]["currency"] == "EUR"
+    assert by_id["ASML"]["shares"] == ISO_SHARES["ASML"]
+    assert by_id["ASML"]["spot"] == ISO_LAST_CLOSE["ASML"]
+    assert by_id["ASML"]["position_value"] == ISO_SHARES["ASML"] * ISO_LAST_CLOSE["ASML"]
+    assert by_id["ASML"]["strike_pct"] == 95.0 and by_id["ASML"]["cost_source"] == "kite_csv"
+    assert by_id["RELIANCE"]["currency"] == "INR" and by_id["RELIANCE"]["strategy"] == "call_sell"
+    assert first["margin"] == {"amount": 1000, "currency": "INR"}
+    assert first["portfolio"]["n_holdings"] == 2
+
+
+def test_fno_hedge_history_export_role_gated_csv(iso_base_url, iso_headers):
+    """System export: ops-role dev user gets CSV with the exact header; unauthenticated is rejected."""
+    r = requests.get(f"{iso_base_url}/api/v1/system/hedge-plan-history?format=csv", headers=iso_headers, timeout=TIMEOUT)
+    assert r.status_code == 200 and r.headers["content-type"].startswith("text/csv")
+    header = r.text.splitlines()[0].split(",")
+    assert header[0] == "history_id" and header[-1] == "protected_pct" and len(header) == 32
+    assert len(r.text.splitlines()) >= 4  # header + >=3 saved rows (2 instruments on the first save)
+    assert requests.get(f"{iso_base_url}/api/v1/system/hedge-plan-history", timeout=TIMEOUT).status_code in (401, 403)

@@ -206,7 +206,7 @@ async function _loadAdvisor(force) {
   }
   // The advisor's verdict seeds the strategy for the active instrument once per
   // fetch; it never overrides a later user choice.
-  if (data.recommendation === 'put_buy' || data.recommendation === 'call_sell') {
+  if ((data.recommendation === 'put_buy' || data.recommendation === 'call_sell') && !hw.selectionLocked.has(id)) {
     hw.selections[id] = data.recommendation;
   }
   hw.advisor = { key, data, error: null };
@@ -251,7 +251,10 @@ export function hwToggleHedged(id) {
 
 export function hwSelectStrategy(id, strategy) {
   if (!STRATEGY_LABELS[strategy]) return;
-  _hw().selections[id] = strategy;
+  const hw = _hw();
+  hw.selections[id] = strategy;
+  hw.selectionLocked.add(id);
+  hwMarkDirty();
   _renderSelectionTable();
 }
 

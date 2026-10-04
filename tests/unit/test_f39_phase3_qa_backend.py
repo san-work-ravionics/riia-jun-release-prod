@@ -16,6 +16,9 @@ _HTTP = "rita.services.kite_middleware_client.httpx.request"
 _ROUTE_CLIENT = "rita.api.experience.fno_kite_live.fetch_kite_quote"
 _KEY_REPO = "rita.api.experience.fno_hedge_plan.UserPortfolioKeyRepo"
 _PLAN_REPO = "rita.api.experience.fno_hedge_plan.UserHedgePlanRepo"
+# F40: PUT logic lives in HedgePlanService
+_SVC_KEY_REPO = "rita.services.hedge_plan_service.UserPortfolioKeyRepo"
+_SVC_PLAN_REPO = "rita.services.hedge_plan_service.UserHedgePlanRepo"
 
 
 @pytest.fixture(autouse=True)
@@ -224,6 +227,7 @@ def _plan(last_step="exposure"):
     p = MagicMock()
     p.key_id, p.hedged_ids, p.coverage = "k", ["RELIANCE"], 40
     p.scenario_tab, p.duration, p.last_step, p.updated_at = "pp", "1y", last_step, _NOW
+    p.selections = None
     return p
 
 
@@ -231,8 +235,8 @@ def _plan(last_step="exposure"):
 class TestHedgePlanLastStep:
     def _put(self, client, db_session, body):
         with (
-            patch(_KEY_REPO) as key_cls,
-            patch(_PLAN_REPO) as plan_cls,
+            patch(_SVC_KEY_REPO) as key_cls,
+            patch(_SVC_PLAN_REPO) as plan_cls,
             patch.object(db_session, "commit", wraps=db_session.commit) as commit,
         ):
             key_cls.return_value.find_by_user_id.return_value = MagicMock(key_id="k")
@@ -249,16 +253,16 @@ class TestHedgePlanLastStep:
         assert saved.args[0].last_step == step and commit.call_count == 1
 
     @pytest.mark.parametrize("bad", ["", "SAVE", "Save ", "history", "0"])
-    def test_unknown_or_miscased_step_coerced_to_exposure_not_422(self, client, db_session, bad) -> None:
+    def test_unknown_or_miscased_step_treated_as_omitted_not_422(self, client, db_session, bad) -> None:
         resp, _, saved = self._put(
             client, db_session, {"hedged_ids": [], "coverage": 0, "scenario_tab": "pp", "last_step": bad})
         assert resp.status_code == 200
-        assert saved.args[0].last_step == "exposure"
+        assert saved.args[0].last_step is None  # F40: unknown = preserve stored value
 
-    def test_null_last_step_defaults_exposure(self, client, db_session) -> None:
+    def test_null_last_step_preserves(self, client, db_session) -> None:
         resp, _, saved = self._put(
             client, db_session, {"hedged_ids": [], "coverage": 0, "scenario_tab": "pp", "last_step": None})
-        assert resp.status_code == 200 and saved.args[0].last_step == "exposure"
+        assert resp.status_code == 200 and saved.args[0].last_step is None
 
     def test_non_string_last_step_is_422(self, client, db_session) -> None:
         resp, _, _ = self._put(
@@ -271,7 +275,7 @@ class TestHedgePlanLastStep:
         assert resp.status_code == 422
 
     def test_put_no_portfolio_key_404_no_commit(self, client, db_session) -> None:
-        with patch(_KEY_REPO) as key_cls, patch.object(db_session, "commit", wraps=db_session.commit) as c:
+        with patch(_SVC_KEY_REPO) as key_cls, patch.object(db_session, "commit", wraps=db_session.commit) as c:
             key_cls.return_value.find_by_user_id.return_value = None
             resp = client.put("/api/v1/experience/fno/hedge-plan",
                               json={"hedged_ids": [], "coverage": 5, "scenario_tab": "pp", "last_step": "save"})

@@ -277,8 +277,9 @@ def test_autosave_on_save_step_never_writes_save(jsroot):
     r = _flow(jsroot, r"""
 await wf.hwGoToStep('save', false);
 save.hwMarkDirty(); await sleep(500);
-console.log(JSON.stringify(server.writes));""")
-    assert r == ["whatif"]
+console.log(JSON.stringify({ n: server.writes.length, last: server.writes[0] ?? null }));""")
+    # F40: no whatif remap — an autosave fired on the Save step omits last_step (server preserves)
+    assert r == {"n": 1, "last": None}
 
 
 def test_save_failure_sets_error_and_keeps_saved_plan_unchanged(jsroot):

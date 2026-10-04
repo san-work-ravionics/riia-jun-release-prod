@@ -4,8 +4,8 @@ Covers (Architect edge cases 1, 5, 9): hwGoToStep order/reached/persist, stale-t
 rapid step navigation, hwSelectInstrument per step (no /instrument/select, no
 setUnderlying), hwToggleHedged / hwSelectStrategy / hwSetCoverage / hwSetScenarioTab
 dirty+autosave behaviour, ensureExposure on restore, the autosave condition
-``dirty || savedPlan`` (pinned as CURRENT behaviour), loadHedgeWorkflow with no portfolio,
-redirect aliases, and the Overview autosave omitting ``last_step`` (finding 7, pinned).
+dirty-only autosave on navigation (F40), loadHedgeWorkflow with no portfolio,
+redirect aliases, and the Overview autosave omitting ``last_step`` (preserved server-side, F40).
 
 Uses the real dashboard/js tree with stubbed browser globals and a routed fetch.
 Skipped when node is absent.
@@ -125,8 +125,8 @@ console.log(JSON.stringify({ a, step: hw.step, reached: [...hw.reached], puts: p
     assert r["stepper"] is True
 
 
-def test_autosave_condition_is_dirty_or_savedplan_pinned_current_behaviour(jsroot):
-    """Pins CURRENT behaviour: persist=true writes only if (dirty || savedPlan)."""
+def test_autosave_on_navigation_only_when_dirty(jsroot):
+    """F40: navigation alone never PUTs; only an unsaved user change (dirty) autosaves."""
     r = _flow(jsroot, r"""
 await wf.hwGoToStep('recommendation', true); await sleep(520);
 const clean = puts.length;                               // neither dirty nor savedPlan
@@ -140,8 +140,8 @@ await wf.hwGoToStep('exposure', false); await sleep(520);
 console.log(JSON.stringify({ clean, dirtyWrites, withPlan, final: puts.length }));""")
     assert r["clean"] == 0
     assert r["dirtyWrites"] == ["whatif"]
-    assert r["withPlan"] == ["whatif", "recommendation"]
-    assert r["final"] == 2             # persist=false (restore/refresh) never writes
+    assert r["withPlan"] == ["whatif"]   # savedPlan alone no longer triggers a PUT
+    assert r["final"] == 1             # persist=false (restore/refresh) never writes
 
 
 def test_gotostep_stale_token_on_rapid_navigation_only_latest_step_loads(jsroot):
@@ -205,15 +205,17 @@ console.log(JSON.stringify({ before, after: hw.hedgedIds, dirty, dirtyAfter: hw.
     assert r["put"]["hedged_ids"] == r["after"]
 
 
-def test_select_strategy_does_not_mark_dirty_pinned_current_behaviour(jsroot):
-    """Pins CURRENT behaviour: strategy selection is session-only (not part of the plan body)."""
+def test_select_strategy_marks_dirty_and_autosaves_selections(jsroot):
+    """F40: strategy selection is persisted — marks dirty, one debounced PUT carrying selections."""
     r = _flow(jsroot, r"""
 await wf.hwGoToStep('recommendation', false);
 rec.hwSelectStrategy('RELIANCE', 'call_sell');
 rec.hwSelectStrategy('RELIANCE', 'not_a_strategy');   // ignored
 await sleep(520);
-console.log(JSON.stringify({ sel: hw.selections.RELIANCE, dirty: hw.dirty, puts: puts.length }));""")
-    assert r == {"sel": "call_sell", "dirty": False, "puts": 0}
+console.log(JSON.stringify({ sel: hw.selections.RELIANCE, puts: puts.length, body: puts[0] }));""")
+    assert r["sel"] == "call_sell" and r["puts"] == 1
+    assert r["body"]["selections"]["RELIANCE"] == "call_sell"
+    assert r["body"]["trigger"] == "autosave" and r["body"]["source"] == "workflow"
 
 
 def test_set_scenario_tab_dirty_autosave_and_unknown_tab_ignored(jsroot):
@@ -309,7 +311,7 @@ console.log(JSON.stringify({{ step: hw.step, puts: puts.length }}));""")
 # ── Overview autosave resets last_step (finding 7) ──────────────────────────────────
 
 def test_overview_autosave_put_omits_last_step(jsroot):
-    """Pins CURRENT behaviour (finding 7 / D4): portfolio-hedge.js saveHedgePlan sends no last_step."""
+    """F40 (D4): portfolio-hedge.js saveHedgePlan sends no last_step; server preserves it."""
     r = _flow(jsroot, r"""
 const ph = await import(base + 'fno/portfolio-hedge.js');
 try { ph.phSetScenarioTab('collar'); } catch (e) { /* DOM render is stubbed out */ }
@@ -320,7 +322,9 @@ console.log(JSON.stringify({ n: puts.length, keys: puts[0] ? Object.keys(puts[0]
     assert r["body"]["scenario_tab"] == "collar"
 
 
-def test_backend_coerces_missing_last_step_to_exposure():
-    """Pins CURRENT behaviour: PUT without last_step is stored as 'exposure' (finding 7)."""
-    src = (_ROOT / "src" / "rita" / "api" / "experience" / "fno_hedge_plan.py").read_text(encoding="utf-8")
-    assert 'last_step=body.last_step or "exposure"' in src
+def test_backend_preserves_missing_last_step():
+    """F40: PUT without last_step preserves the stored value (first insert -> 'exposure')."""
+    svc = (_ROOT / "src" / "rita" / "services" / "hedge_plan_service.py").read_text(encoding="utf-8")
+    repo = (_ROOT / "src" / "rita" / "repositories" / "user_hedge_plan.py").read_text(encoding="utf-8")
+    assert "last_step=body.last_step" in svc and 'or "exposure"' not in svc
+    assert "if plan.last_step is not None:" in repo

@@ -48,6 +48,9 @@ import pytest
 
 _PATCH_KEY_REPO   = "rita.api.experience.fno_hedge_plan.UserPortfolioKeyRepo"
 _PATCH_HEDGE_REPO = "rita.api.experience.fno_hedge_plan.UserHedgePlanRepo"
+# F40: PUT logic lives in HedgePlanService — patch the repos where the service imports them
+_PATCH_SVC_KEY_REPO = "rita.services.hedge_plan_service.UserPortfolioKeyRepo"
+_PATCH_SVC_HEDGE_REPO = "rita.services.hedge_plan_service.UserHedgePlanRepo"
 
 
 # ---------------------------------------------------------------------------
@@ -85,6 +88,7 @@ def _make_plan(
     plan.scenario_tab = scenario_tab
     plan.duration    = duration
     plan.last_step   = "exposure"
+    plan.selections  = None
     plan.updated_at  = updated_at or _NOW
     return plan
 
@@ -221,8 +225,8 @@ class TestPutHedgePlanAcceptsEmptyHedgedIds:
             duration="1y",
         )
         with (
-            patch(_PATCH_KEY_REPO) as mock_key_cls,
-            patch(_PATCH_HEDGE_REPO) as mock_hedge_cls,
+            patch(_PATCH_SVC_KEY_REPO) as mock_key_cls,
+            patch(_PATCH_SVC_HEDGE_REPO) as mock_hedge_cls,
         ):
             mock_key_cls.return_value.find_by_user_id.return_value = _make_key()
             mock_hedge_cls.return_value.upsert.return_value = None
@@ -301,8 +305,8 @@ class TestPutHedgePlanLastStep:
 
     def _put(self, client, db_session, body, persisted):
         with (
-            patch(_PATCH_KEY_REPO) as mock_key_cls,
-            patch(_PATCH_HEDGE_REPO) as mock_hedge_cls,
+            patch(_PATCH_SVC_KEY_REPO) as mock_key_cls,
+            patch(_PATCH_SVC_HEDGE_REPO) as mock_hedge_cls,
             patch.object(db_session, "commit", wraps=db_session.commit) as commit_spy,
         ):
             mock_key_cls.return_value.find_by_user_id.return_value = _make_key()
@@ -325,7 +329,7 @@ class TestPutHedgePlanLastStep:
         assert upserted.args[0].last_step == "save"
         assert commit_spy.call_count == 1  # ADR-001: exactly one commit
 
-    def test_put_unknown_last_step_falls_back_to_exposure(self, client, db_session):
+    def test_put_unknown_last_step_is_treated_as_omitted_preserve(self, client, db_session):
         persisted = _make_plan()
         resp, _, upserted = self._put(
             client,
@@ -334,9 +338,9 @@ class TestPutHedgePlanLastStep:
             persisted,
         )
         assert resp.status_code == 200, resp.text
-        assert upserted.args[0].last_step == "exposure"
+        assert upserted.args[0].last_step is None  # F40: unknown = preserve stored value
 
-    def test_put_without_last_step_defaults_to_exposure(self, client, db_session):
+    def test_put_without_last_step_preserves_stored_value(self, client, db_session):
         persisted = _make_plan()
         resp, _, upserted = self._put(
             client,
@@ -345,7 +349,7 @@ class TestPutHedgePlanLastStep:
             persisted,
         )
         assert resp.status_code == 200, resp.text
-        assert upserted.args[0].last_step == "exposure"
+        assert upserted.args[0].last_step is None  # F40: omitted = preserve (repo keeps stored value)
 
     def test_get_returns_saved_last_step(self, client):
         persisted = _make_plan()
