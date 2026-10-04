@@ -23,7 +23,7 @@ from rita.repositories.market_data import MarketDataCacheRepository
 from rita.repositories.user_portfolio import UserPortfolioRepo
 from rita.repositories.user_portfolio_key import UserPortfolioKeyRepo
 from rita.schemas.user_portfolio import HoldingItem
-from rita.services.kite_middleware_client import fetch_put_premium
+from rita.services.kite_middleware_client import fetch_put_premium, put_premium_from_csv
 
 router = APIRouter(prefix="/api/v1/experience/fno", tags=["experience:portfolio-hedge"])
 
@@ -51,7 +51,7 @@ class HedgeHolding(BaseModel):
     strike_pct: float         # negative = OTM put distance (e.g. -7.5 → 7.5% OTM)
     strike_label: str
     cost_pct: float           # put-buy MONTHLY premium as % of position (Zerodha quote when cost_source='kite', else 1m Black-Scholes estimate)
-    cost_source: str = "estimated"   # 'kite' (real option quotes via fno-margin-fetch) | 'estimated'
+    cost_source: str = "estimated"   # 'kite' (live quotes) | 'kite_csv' (deployed Zerodha snapshot) | 'estimated'
     cost_detail: str | None = None   # e.g. 'Zerodha RELIANCE26OCT2400PE @ 31.5 (expiry 2026-10-27)'
     protected_pct: int
     ann_vol_pct: float        # annualised realised volatility %
@@ -281,16 +281,19 @@ def get_portfolio_hedge(
             coverage, vol, hedge_type, alloc, cost_t_months
         )
 
-        # Real hedge cost for India F&O names / indices from Zerodha option quotes; the
-        # model estimate stays when the middleware is down or the contract is unavailable.
+        # Real hedge cost for India F&O names / indices: live Zerodha option quotes, else the
+        # deployed snapshot CSV; the model estimate stays when neither is available.
         cost_source, cost_detail = "estimated", None
         if eligible or inst_id in {"NIFTY", "BANKNIFTY"}:
-            kite = fetch_put_premium(
-                inst_id, strike_pct,
-                spread_width_pct=6.0 if hedge_type == "put_spread" else None,
-            )
+            spread = 6.0 if hedge_type == "put_spread" else None
+            kite = fetch_put_premium(inst_id, strike_pct, spread_width_pct=spread)
             if kite is not None:
                 cost_pct, cost_source, cost_detail = kite["cost_pct"], "kite", kite["detail"]
+            else:
+                # Prod has no Kite: use the snapshot CSV fetched locally and deployed as data.
+                snap = put_premium_from_csv(inst_id, strike_pct, spread_width_pct=spread)
+                if snap is not None:
+                    cost_pct, cost_source, cost_detail = snap["cost_pct"], "kite_csv", snap["detail"]
 
         # Quarterly risk from full history
         all_recs = sorted(by_inst.get(inst_id, []), key=lambda r: r.date)

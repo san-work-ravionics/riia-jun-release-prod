@@ -19,8 +19,10 @@ the BSM estimate. Nothing is fabricated. No Kite credentials live in this codeba
 """
 from __future__ import annotations
 
+import csv
 import time
 from datetime import date
+from pathlib import Path
 from typing import Any, Optional
 
 import httpx
@@ -61,10 +63,10 @@ def _reset_cache() -> None:
     _pe_fail_until = 0.0
 
 
-def _request(method: str, url: str, **kwargs: Any) -> Optional[dict[str, Any]]:
+def _request(method: str, url: str, timeout: float = _TIMEOUT_SECONDS, **kwargs: Any) -> Optional[dict[str, Any]]:
     """Single failure path: returns the parsed body, or None on ANY failure."""
     try:
-        resp = httpx.request(method, url, timeout=_TIMEOUT_SECONDS, **kwargs)
+        resp = httpx.request(method, url, timeout=timeout, **kwargs)
     except httpx.RequestError as exc:  # connect error, timeout, etc.
         log.info("kite_middleware.request_failed", url=url, error=str(exc))
         return None
@@ -161,7 +163,7 @@ def fetch_kite_quote(
 
 # ── Real put premium (hedge cost) ──────────────────────────────────────────────
 
-def _pe_contracts(base_url: str) -> Optional[dict[str, list[dict[str, Any]]]]:
+def _pe_contracts(base_url: str, timeout: float = _TIMEOUT_SECONDS) -> Optional[dict[str, list[dict[str, Any]]]]:
     """PE contracts from the NFO instrument master grouped by underlying; None on failure.
 
     Cached for an hour; a failed fetch is remembered for a minute so a down middleware
@@ -173,7 +175,7 @@ def _pe_contracts(base_url: str) -> Optional[dict[str, list[dict[str, Any]]]]:
         return _pe_cache[1]
     if now < _pe_fail_until:
         return None
-    body = _request("GET", f"{base_url}/api/instruments",
+    body = _request("GET", f"{base_url}/api/instruments", timeout=timeout,
                     params={"exchange": "NFO", "limit": _INSTRUMENTS_LIMIT})
     if body is None:
         _pe_fail_until = now + _PE_FAIL_BACKOFF_SECONDS
@@ -283,4 +285,141 @@ def fetch_put_premium(
                 "detail": f"{detail} (expiry {expiry.isoformat()})", "spot": spot}
     except Exception as exc:  # defensive: the contract is "never raise"
         log.warning("kite_middleware.put_premium_unexpected", instrument_id=instrument_id, error=str(exc))
+        return None
+
+
+# ── CSV snapshot: put chain fetched locally (where Kite is reachable), deployed as data ──
+
+PUT_CSV_FIELDS = ["as_of", "instrument", "spot", "expiry", "strike", "tradingsymbol", "bid", "ask", "ltp"]
+PUT_CSV_RELPATH = Path("kite") / "put_premiums.csv"   # under settings.data.input_dir (rsynced to EC2)
+_CSV_MAX_AGE_DAYS = 10
+_CHAIN_STRIKE_BAND = (0.80, 1.00)   # strikes between 80% and 100% of spot
+_CHAIN_MAX_STRIKES = 30
+
+
+def fetch_put_chain(instrument_id: str, today: Optional[date] = None) -> Optional[list[dict[str, Any]]]:
+    """Live put ladder (nearest ~monthly expiry, strikes 80-100% of spot) as CSV-ready rows.
+
+    Used by scripts/fetch_kite_put_premiums.py on a machine where fno-margin-fetch is running.
+    None when anything is unavailable. Never raises.
+    """
+    try:
+        base_url = get_settings().integrations.fno_margin_fetch_base_url.rstrip("/")
+        pes = _pe_contracts(base_url)
+        contracts = (pes or {}).get(_NFO_NAME_ALIAS.get(instrument_id, instrument_id))
+        if not contracts:
+            return None
+        today = today or date.today()
+        expiry = _pick_expiry(contracts, today)
+        if expiry is None:
+            return None
+        name = _NFO_NAME_ALIAS.get(instrument_id, instrument_id)
+        spot_key = f"NSE:{_INDEX_QUOTE_SYMBOL.get(instrument_id, name)}"
+        spot_body = _request("POST", f"{base_url}/api/quotes", json={"instruments": [spot_key]})
+        sq = ((spot_body or {}).get("data") or {}).get(spot_key)
+        spot = sq.get("last_price") if isinstance(sq, dict) else None
+        if not isinstance(spot, (int, float)) or spot <= 0:
+            return None
+        lo, hi = _CHAIN_STRIKE_BAND
+        legs = sorted(
+            (c for c in contracts if c["expiry"] == expiry and c.get("symbol") and lo * spot <= c["strike"] <= hi * spot),
+            key=lambda c: -c["strike"],
+        )[:_CHAIN_MAX_STRIKES]
+        if not legs:
+            return None
+        keys = [f"NFO:{c['symbol']}" for c in legs]
+        body = _request("POST", f"{base_url}/api/quotes", json={"instruments": keys})
+        data = (body or {}).get("data") or {}
+        rows = []
+        for c, k in zip(legs, keys):
+            q = data.get(k)
+            ask, bid, ltp = _px(q, "sell"), _px(q, "buy"), (q or {}).get("last_price") if isinstance(q, dict) else None
+            if ask is None:
+                continue
+            rows.append({
+                "as_of": today.isoformat(), "instrument": instrument_id, "spot": float(spot),
+                "expiry": expiry.isoformat(), "strike": c["strike"], "tradingsymbol": c["symbol"],
+                "bid": bid if bid is not None else "", "ask": ask, "ltp": ltp if ltp is not None else "",
+            })
+        return rows or None
+    except Exception as exc:  # defensive: never raise
+        log.warning("kite_middleware.put_chain_unexpected", instrument_id=instrument_id, error=str(exc))
+        return None
+
+
+def warm_pe_cache(timeout: float = 90.0) -> bool:
+    """Pre-load the NFO option master with a long timeout (the 34k-contract list is far slower
+    than the 1.8 s quote timeout). For the snapshot script; True when the cache is populated."""
+    base_url = get_settings().integrations.fno_margin_fetch_base_url.rstrip("/")
+    return _pe_contracts(base_url, timeout=timeout) is not None
+
+
+def write_put_csv(path: Path, rows: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=PUT_CSV_FIELDS)
+        w.writeheader()
+        w.writerows(rows)
+
+
+def put_premium_from_csv(
+    instrument_id: str,
+    strike_pct: float,
+    spread_width_pct: Optional[float] = None,
+    path: Optional[Path] = None,
+    today: Optional[date] = None,
+) -> Optional[dict[str, Any]]:
+    """Same pricing as fetch_put_premium, from the deployed CSV snapshot (prod has no Kite).
+
+    Uses the snapshot's own spot, so the % is self-consistent. None when the file/instrument
+    is missing, the snapshot is older than _CSV_MAX_AGE_DAYS, or its expiry has passed.
+    """
+    try:
+        if path is None:
+            path = Path(get_settings().data.input_dir) / PUT_CSV_RELPATH
+        if not path.exists():
+            return None
+        today = today or date.today()
+        legs: list[dict[str, Any]] = []
+        with path.open(newline="") as fh:
+            for r in csv.DictReader(fh):
+                if r.get("instrument") != instrument_id:
+                    continue
+                try:
+                    legs.append({
+                        "as_of": date.fromisoformat(r["as_of"]), "expiry": date.fromisoformat(r["expiry"]),
+                        "spot": float(r["spot"]), "strike": float(r["strike"]), "symbol": r["tradingsymbol"],
+                        "bid": float(r["bid"]) if r.get("bid") not in (None, "") else None,
+                        "ask": float(r["ask"]) if r.get("ask") not in (None, "") else None,
+                        "ltp": float(r["ltp"]) if r.get("ltp") not in (None, "") else None,
+                    })
+                except (KeyError, ValueError):
+                    continue
+        if not legs:
+            return None
+        as_of, expiry, spot = legs[0]["as_of"], legs[0]["expiry"], legs[0]["spot"]
+        if (today - as_of).days > _CSV_MAX_AGE_DAYS or expiry <= today:
+            return None
+
+        def nearest(target: float) -> dict[str, Any]:
+            return min(legs, key=lambda c: abs(c["strike"] - target))
+
+        buy = nearest(spot * (1.0 + strike_pct / 100.0))
+        buy_px = buy["ask"] if buy["ask"] else buy["ltp"]
+        if not buy_px:
+            return None
+        # Market closed at fetch time => bid/ask are just the last price; say so rather than imply a live ask.
+        basis = "last traded" if buy["bid"] == buy["ask"] == buy["ltp"] else "ask"
+        net, detail = buy_px, f"Zerodha snapshot {as_of.isoformat()} ({basis}): {buy['symbol']} @ {buy_px:g}"
+        if spread_width_pct:
+            sell = nearest(spot * (1.0 + (strike_pct - spread_width_pct) / 100.0))
+            sell_px = sell["bid"] if sell["bid"] else sell["ltp"]
+            if not sell_px or sell["strike"] >= buy["strike"]:
+                return None
+            net -= sell_px
+            detail += f" − {sell['symbol']} @ {sell_px:g}"
+        return {"cost_pct": round(net / spot * 100.0, 3), "expiry": expiry.isoformat(),
+                "detail": f"{detail} (expiry {expiry.isoformat()})", "spot": spot, "as_of": as_of.isoformat()}
+    except Exception as exc:  # defensive: callers keep their model estimate
+        log.warning("kite_middleware.put_csv_unexpected", instrument_id=instrument_id, error=str(exc))
         return None

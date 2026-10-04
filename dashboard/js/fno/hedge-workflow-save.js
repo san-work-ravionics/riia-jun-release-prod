@@ -291,9 +291,9 @@ function _renderImpact() {
     `<td style="text-align:right;white-space:nowrap;border-left:1px solid var(--border)" class="${sc.unhedgedPct < 0 ? 'neg' : ''}">${one(sc.unhedgedPct, sc.unhedgedEur)}</td>
      <td style="text-align:right;white-space:nowrap">${one(sc.hedgedPct, sc.hedgedEur)}</td>`).join('');
   _impactRows = { PORTFOLIO: { name: 'Portfolio', scenarios: imp.scenarios } };
-  const nKite = rows.filter((r) => r.costSource === 'kite').length;
+  const nKite = rows.filter((r) => r.costSource === 'kite' || r.costSource === 'kite_csv').length;
   imp.costTag = nKite === rows.length ? 'Zerodha' : nKite ? 'mixed' : 'est.';
-  imp.costTip = `${nKite} of ${rows.length} hedged instruments priced from live Zerodha option quotes; the rest use a model estimate`;
+  imp.costTip = `${nKite} of ${rows.length} hedged instruments priced from Zerodha option quotes (live or the deployed snapshot); the rest use a model estimate`;
   const rowHtml = (key, name, strategy, expo, iv, bold) => `<tr data-key="${key}" onclick="hwSaveSelectRow(this.dataset.key)" title="Click to chart this row"
       style="border-top:1px solid var(--border);cursor:pointer;${bold ? 'font-weight:600;' : ''}${key === _impactSel ? 'background:var(--surface2);' : ''}">
       <td>${name}</td><td>${strategy}</td><td style="text-align:right;white-space:nowrap">${expo}</td>
@@ -304,8 +304,9 @@ function _renderImpact() {
     const posEur = hw.totalValueEur != null && h ? (h.allocation_pct / 100) * hw.totalValueEur : null;
     const iv = hedgeImpact([{ ...r, weight: 100 }], hw.apiHedge, hw.scenarioTab || 'pp', vm[r.id], posEur);
     if (iv) {
-      iv.costTag = r.costSource === 'kite' ? 'Zerodha' : 'est.';
-      iv.costTip = r.costSource === 'kite' ? r.costDetail : 'Model estimate (1-month Black-Scholes) — no live Zerodha quote';
+      const isKite = r.costSource === 'kite' || r.costSource === 'kite_csv';
+      iv.costTag = isKite ? 'Zerodha' : 'est.';
+      iv.costTip = isKite ? r.costDetail : 'Model estimate (1-month Black-Scholes) — no Zerodha quote or snapshot';
       _impactRows[r.id] = { name: r.id, scenarios: iv.scenarios };
     }
     return iv ? rowHtml(r.id, r.id, STRATEGY_LABELS[hw.selections[r.id]] || '—', _eur(posEur), iv, false) : '';

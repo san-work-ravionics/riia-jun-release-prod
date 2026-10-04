@@ -207,3 +207,49 @@ def test_put_premium_none_for_unknown_underlying_or_missing_quote() -> None:
     kmc._reset_cache()
     with patch(_PATCH_TARGET, side_effect=no_opt_quote):
         assert fetch_put_premium("RELIANCE", -4.0, today=_TODAY) is None
+
+
+# ── CSV snapshot flow: fetch_put_chain -> write_put_csv -> put_premium_from_csv ─
+
+from rita.services.kite_middleware_client import (  # noqa: E402
+    fetch_put_chain,
+    put_premium_from_csv,
+    write_put_csv,
+)
+
+
+def _chain_master() -> dict:
+    return {"success": True, "instruments": [
+        _pe("RELIANCE", "2026-10-27", 2400), _pe("RELIANCE", "2026-10-27", 2300),
+        _pe("RELIANCE", "2026-10-27", 1000),  # outside the 80-100% band: dropped
+    ]}
+
+
+def _chain_router(url, **kw):
+    if url.endswith("/api/instruments"):
+        return _resp(200, _chain_master())
+    return _resp(200, _quotes(kw["json"]))
+
+
+def test_chain_to_csv_to_premium_round_trip(tmp_path) -> None:
+    with patch(_PATCH_TARGET, side_effect=lambda m, u, **kw: _chain_router(u, **kw)):
+        rows = fetch_put_chain("RELIANCE", today=_TODAY)
+    assert rows and {r["strike"] for r in rows} == {2400, 2300} and rows[0]["spot"] == 2500.0
+    f = tmp_path / "kite" / "put_premiums.csv"
+    write_put_csv(f, rows)
+    one = put_premium_from_csv("RELIANCE", -4.0, path=f, today=_TODAY)
+    assert one and one["cost_pct"] == pytest.approx(31.0 / 2500.0 * 100, abs=1e-3) and one["as_of"] == "2026-10-04"
+    assert "snapshot 2026-10-04" in one["detail"]
+    spread = put_premium_from_csv("RELIANCE", -4.0, spread_width_pct=4.0, path=f, today=_TODAY)
+    assert spread and spread["cost_pct"] == pytest.approx((31.0 - 11.0) / 2500.0 * 100, abs=1e-3)
+
+
+def test_csv_premium_none_when_stale_expired_missing_or_unknown(tmp_path) -> None:
+    f = tmp_path / "put_premiums.csv"
+    assert put_premium_from_csv("RELIANCE", -4.0, path=f, today=_TODAY) is None  # no file
+    with patch(_PATCH_TARGET, side_effect=lambda m, u, **kw: _chain_router(u, **kw)):
+        write_put_csv(f, fetch_put_chain("RELIANCE", today=_TODAY))
+    assert put_premium_from_csv("INFY", -4.0, path=f, today=_TODAY) is None       # unknown instrument
+    assert put_premium_from_csv("RELIANCE", -4.0, path=f, today=date(2026, 10, 20)) is None  # 16d old
+    assert put_premium_from_csv("RELIANCE", -4.0, path=f, today=date(2026, 10, 28)) is None  # expired
+
