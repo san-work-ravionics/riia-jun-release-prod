@@ -28,6 +28,7 @@ let _payoffChart = null;
 
 // ── Hedge-plan persistence state ──────────────────────────────────────────────
 let _savePlanTimer = null;
+let _savedSelections = {};   // strategy choices restored from the saved plan (F40) — win over seeded defaults
 const _SAVE_DEBOUNCE_MS = 400;
 
 // ── DOM helpers ───────────────────────────────────────────────────────────────
@@ -400,15 +401,20 @@ async function loadHedgePlan() {
     _state.coverage     = plan.coverage;
     _state.hedgeChecked = new Set(plan.hedged_ids);
     _scenarioTab        = plan.scenario_tab;
+    _savedSelections    = plan.selections && typeof plan.selections === 'object' ? plan.selections : {};
   }
 }
 
 async function saveHedgePlan() {
   try {
+    // No last_step: an Overview autosave must never change the workflow's saved step.
     await api('/api/v1/experience/fno/hedge-plan', 'PUT', {
       hedged_ids:   [..._state.hedgeChecked],
       coverage:     _state.coverage,
       scenario_tab: _scenarioTab,
+      selections:   { ..._state.selections },
+      trigger:      'autosave',
+      source:       'overview',
     });
   } catch (e) {
     console.warn('[PH] saveHedgePlan: failed to persist plan', e);
@@ -488,6 +494,7 @@ export async function loadPortfolioHedge() {
     _state.coverage     = 50;
     _state.apiHedge     = null;
     _state.selections   = {};
+    _savedSelections    = {};
     _state.hedgeChecked = new Set();
 
     await loadHedgePlan();
@@ -501,6 +508,7 @@ export async function loadPortfolioHedge() {
       }
       // If no saved plan was found (hedgeChecked still empty after loadHedgePlan),
       // default to all instruments checked so first-time users see a fully populated view.
+      Object.assign(_state.selections, _savedSelections);
       if (_state.hedgeChecked.size === 0) {
         for (const h of hedgeData.holdings) {
           _state.hedgeChecked.add(h.instrument_id);
@@ -550,6 +558,7 @@ export function phToggleHedge(id) {
 
 export function phPickStrategy(id, strategy) {
   _state.selections[id] = strategy;
+  _debouncedSave();
 }
 
 export function phSetCoverage(val) {

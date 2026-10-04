@@ -13,6 +13,8 @@ duration     Always "1y" — stored for completeness; updated via PUT only
 last_step    The unified hedge-workflow step the user last reached — one of
              "exposure" | "recommendation" | "whatif" | "save" (F39 Phase 2).
              Nullable; defaults to "exposure".
+selections   JSON {instrument_id: "put_buy"|"call_sell"} — per-instrument strategy (F40).
+             Nullable; null = legacy row / never chosen.
 updated_at   Auto-updated timestamp
 """
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, String
@@ -30,4 +32,5 @@ class UserHedgePlanModel(Base):
     scenario_tab = Column(String, nullable=False, default="pp")
     duration = Column(String, nullable=False, default="1y")
     last_step = Column(String, nullable=True, default="exposure")
+    selections = Column(JSON, nullable=True)
     updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())

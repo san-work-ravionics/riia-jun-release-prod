@@ -53,7 +53,8 @@ export const state = {
     netGreeks: {},
     hedgeQuality: { positions: [] },
     recommendation: null,
-    selections: {},
+    selections: {},               // {instrument_id: 'put_buy'|'call_sell'} — persisted with the plan (F40)
+    selectionLocked: new Set(),   // ids whose strategy was user-chosen or restored from the saved plan (advisor must not overwrite)
     coverage: 50,
     duration: '1y',
     scenarioTab: 'pp',            // DB column NOT NULL — never null
@@ -70,7 +71,7 @@ export const state = {
     savedPlan: null,              // last hedge-plan row (GET / PUT response)
     saveStatus: 'idle',           // 'idle' | 'saving' | 'saved' | 'error'
     savedAt: null,
-    history: { plan: null, actions: [] },
+    history: { plan: null },
     dirty: false,                 // user changed coverage/toggle/tab since last PUT
     hedgedDefaulted: false,       // first-visit "all holdings hedged" default applied
     exposureLoadedAt: null,

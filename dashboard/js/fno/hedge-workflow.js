@@ -102,7 +102,8 @@ export async function hwGoToStep(step, persist = true) {
     else await ensureExposure();
     if (token !== _navToken) return; // user navigated elsewhere meanwhile
     _applyHedgedDefault();
-    if (persist && (hw.dirty || hw.savedPlan)) hwScheduleSave();
+    // F40: navigation alone never PUTs — only an unsaved user change (hw.dirty) autosaves.
+    if (persist && hw.dirty) hwScheduleSave();
     if (target === 'recommendation') await loadRecommendationStep();
     else if (target === 'whatif') await loadWhatIfStep();
     else if (target === 'save') await loadSaveStep();
@@ -533,6 +534,10 @@ export async function loadHedgeWorkflow(stepOverride) {
       hw.coverage = plan.coverage ?? 50;
       hw.scenarioTab = plan.scenario_tab || 'pp';
       hw.hedgedIds = plan.hedged_ids ?? [];
+      if (plan.selections && typeof plan.selections === 'object') {
+        hw.selections = { ...plan.selections };
+        hw.selectionLocked = new Set(Object.keys(plan.selections));
+      }
       hw.duration = '1y';
       hw.hedgedDefaulted = true;
     }

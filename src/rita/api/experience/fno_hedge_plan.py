@@ -1,27 +1,34 @@
-"""Experience Layer — FnO Hedge Plan persistence endpoints (F29 Phase 1).
+"""Experience Layer — FnO Hedge Plan persistence endpoints (F29 Phase 1, F40 Phase 2).
 
-ADR-001 Tier 3 (Experience Layer).
-GET  /api/v1/experience/fno/hedge-plan  — returns the saved hedge plan for the user
-PUT  /api/v1/experience/fno/hedge-plan  — upserts the hedge plan and returns the persisted row
+GET  /api/v1/experience/fno/hedge-plan          — saved plan (read-only, no commit)
+GET  /api/v1/experience/fno/hedge-plan/history  — own archived saves, newest first (read-only)
+PUT  /api/v1/experience/fno/hedge-plan          — save; thin route over HedgePlanService
 
-Both endpoints require JWT auth.  duration is always stored as "1y" (business rule).
-Phase 2 consumer: portfolio-hedge.js — GET on load, PUT on user change (debounced).
+The PUT is a workflow-semantics write served under the Experience prefix — a recorded
+ADR-001 exception (docs/ADR-004-hedge-plan-write-under-experience-prefix.md).  The
+service owns the transaction (plan upsert + history append + one commit).
+All endpoints require JWT auth.  duration is always stored as "1y" (business rule).
+Consumers: hedge-workflow*.js and portfolio-hedge.js.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from rita.auth import get_current_user
 from rita.database import get_db
 from rita.models.user import UserModel
-from rita.models.user_hedge_plan import UserHedgePlanModel
 from rita.repositories.user_hedge_plan import UserHedgePlanRepo
 from rita.repositories.user_portfolio_key import UserPortfolioKeyRepo
-from rita.schemas.user_hedge_plan import HedgePlanCreate, HedgePlanOut
+from rita.schemas.user_hedge_plan import (
+    HedgePlanCreate,
+    HedgePlanHistoryList,
+    HedgePlanHistoryOut,
+    HedgePlanOut,
+)
+from rita.services.hedge_plan_service import HedgePlanService, PortfolioKeyNotFound
 
 router = APIRouter(prefix="/api/v1/experience/fno", tags=["experience:fno-hedge-plan"])
 
@@ -48,37 +55,33 @@ def get_hedge_plan(
     return HedgePlanOut.model_validate(plan)
 
 
+@router.get("/hedge-plan/history", response_model=HedgePlanHistoryList)
+def get_hedge_plan_history(
+    limit: int = Query(50, ge=1, le=200),
+    trigger: Optional[str] = Query(None),
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> HedgePlanHistoryList:
+    """Own archived saves, newest first.  Empty list when the user has no portfolio key.
+
+    Read-only, no db.commit().  No dashboard consumer yet (analysis / e2e assertion).
+    """
+    rows = HedgePlanService(db).history_for_user(current_user, limit=limit, trigger=trigger)
+    items = [HedgePlanHistoryOut.model_validate(r) for r in rows]
+    return HedgePlanHistoryList(items=items, count=len(items), limit=limit)
+
+
 @router.put("/hedge-plan", response_model=HedgePlanOut)
 def put_hedge_plan(
     body: HedgePlanCreate,
     current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> HedgePlanOut:
-    """Upsert the hedge plan for the authenticated user.
-
-    duration from the request body is accepted but always overwritten with "1y"
-    (business rule: F29 Phase 0 removed variable duration support).
-    Exactly one db.commit() per ADR-001 Experience-tier write rule.
-    """
-    key = UserPortfolioKeyRepo(db).find_by_user_id(current_user.id)
-    if key is None:
+    """Save the hedge plan (merge, enrich, append history, single commit — in the service)."""
+    try:
+        return HedgePlanService(db).save(current_user, body)
+    except PortfolioKeyNotFound:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No portfolio key found",
         )
-
-    repo = UserHedgePlanRepo(db)
-    plan = UserHedgePlanModel(
-        key_id=key.key_id,
-        hedged_ids=body.hedged_ids,
-        coverage=body.coverage,
-        scenario_tab=body.scenario_tab,
-        duration="1y",  # business rule: always 1-year horizon
-        last_step=body.last_step or "exposure",
-        updated_at=datetime.now(timezone.utc),
-    )
-    repo.upsert(plan)
-    db.commit()  # exactly one commit — ADR-001 §Experience tier write rule
-
-    updated = repo.find_by_key_id(key.key_id)
-    return HedgePlanOut.model_validate(updated)

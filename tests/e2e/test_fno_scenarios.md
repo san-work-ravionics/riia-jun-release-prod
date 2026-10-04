@@ -37,3 +37,14 @@
 | UC-F08 | Manoeuvre | FAIL | `/api/v1/portfolio/man-groups`, `man-snapshot`, `man-pnl-history` not implemented |
 
 **Predicted: ~4 pass, ~7 fail**
+
+---
+
+## F40 — Hedge save leg (isolated DB, strict)
+
+| Test | Fixture | Verifies |
+|---|---|---|
+| `test_fno_hedge_workflow_save_leg` | `iso_base_url`, `iso_headers` (port 8766, temp seeded SQLite) | Explicit PUT -> GET restores `last_step:"save"` + `selections`; Overview-style PUT (no `last_step`) preserves `"save"`; every PUT appends a history row (no dedupe); history row has server market block (currency, shares, spot, position_value) and client context |
+| `test_fno_hedge_history_export_role_gated_csv` | same | `GET /api/v1/system/hedge-plan-history?format=csv` returns the 32-column CSV for the ops-role dev user |
+
+The `isolated_server` fixture (conftest.py) sets `DATABASE_URL` to a temp file, runs `alembic upgrade head` on it, seeds a user/key/portfolio (ASML EUR + RELIANCE INR) and deterministic closes, and **aborts the session** if the server does not see the seeded rows or `rita_output/rita.db` mtime changes. No skip. Set `F40_E2E_SERVER_LOG=<path>` to keep the isolated server's log.

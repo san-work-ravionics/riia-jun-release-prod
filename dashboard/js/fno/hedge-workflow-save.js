@@ -1,12 +1,12 @@
 // ── Hedge Workflow — Save step + autosave (F39 Phase 3) ──────────────────────
 // Save step: summary of the chosen hedge, explicit Save (PUT hedge-plan with
-// last_step:'save'), and history (the current saved plan as one row + the global
-// Manoeuvre hedge-action log). Also owns the shared 400ms debounced autosave used
-// by the Recommendation / What-if modules.
+// last_step:'save', trigger:'explicit'), and the latest saved plan with the strategy per
+// instrument. Also owns the shared 400ms debounced autosave used by the Recommendation /
+// What-if modules.
 //
-// History is "latest save only" (user decision D1, Option A): UserHedgePlanModel is
-// one row per user, so there is no per-save history and the per-instrument strategy
-// choice (state.hedgeWorkflow.selections) is not persisted across reloads.
+// The UI shows the latest save only (F40, user decision Q1 Option A). Every PUT is also
+// appended server-side to the user_hedge_plan_history dataset (no JS consumer). The
+// per-instrument strategy (state.hedgeWorkflow.selections) is persisted with the plan.
 
 import { api, apiFetch } from './api.js';
 import { setEl } from '../shared/utils.js';
@@ -29,18 +29,51 @@ export function authHeaders() {
 
 function _hw() { return state.hedgeWorkflow; }
 
-function _planBody(lastStep) {
+// Advisory per-instrument strike/cost context for the server-side history row. Market
+// fields (spot, currency, value) are computed server-side and never sent from here.
+function _context(ids) {
+  const hw = _hw();
+  let rows = [];
+  try {
+    rows = buildRows(hw.portfolioHoldings, hw.instruments, hw.apiHedge, new Set(ids), hw.coverage);
+  } catch (e) {
+    console.warn('[hedge-workflow] context build failed', e);
+  }
+  const m = hw.marginImpact;
+  return {
+    instruments: rows.map((r) => ({
+      instrument_id: r.id,
+      strike_pct: r.strikePct ?? null,
+      strike_label: r.strikeLabel ?? null,
+      premium_pct: r.costPct ?? null,
+      cost_source: r.costSource ?? null,
+      hedge_type: r.type ?? null,
+      risk_score: r.risk ?? null,
+      protected_pct: r.protectedPct ?? null,
+    })),
+    margin: m ? { amount: m.amount, currency: m.currency, source: m.source, instrument_id: m.instrumentId, strategy: m.strategy } : null,
+  };
+}
+
+// lastStep: a step name, or null/undefined to omit the key (server preserves the stored value).
+// trigger: 'explicit' (Save button) | 'autosave'. Every PUT appends a history row server-side.
+function _planBody(lastStep, trigger = 'autosave') {
   const hw = _hw();
   const known = new Set((hw.portfolioHoldings || []).map((h) => h.instrument_id));
   // Stale ids (no longer in the portfolio) are dropped; before exposure data has
   // loaded (known empty) the in-memory ids are sent as-is.
   const ids = known.size ? hw.hedgedIds.filter((id) => known.has(id)) : [...hw.hedgedIds];
-  return {
+  const body = {
     hedged_ids: ids,
     coverage: hw.coverage,
     scenario_tab: hw.scenarioTab || 'pp',
-    last_step: lastStep,
+    selections: { ...(hw.selections || {}) },
+    trigger,
+    source: 'workflow',
+    context: _context(ids),
   };
+  if (lastStep) body.last_step = lastStep;
+  return body;
 }
 
 // User changed coverage / hedged set / tab: flag dirty and queue the autosave.
@@ -67,10 +100,10 @@ function _autosave() {
 
 async function _doAutosave(hw) {
   try {
-    // Entering the Save step must not itself count as "Saved": only an explicit
-    // hwSave() writes last_step:'save'.
-    const step = hw.step === 'save' ? 'whatif' : hw.step;
-    const res = await api('/api/v1/experience/fno/hedge-plan', 'PUT', _planBody(step));
+    // Only an explicit hwSave() writes last_step:'save'. An autosave fired while the Save
+    // step is showing omits last_step (server preserves it) instead of remapping it.
+    const step = hw.step === 'save' ? null : hw.step;
+    const res = await api('/api/v1/experience/fno/hedge-plan', 'PUT', _planBody(step, 'autosave'));
     if (res) hw.savedPlan = res;
     hw.dirty = false;
   } catch (e) {
@@ -89,7 +122,7 @@ export async function hwSave() {
   // final DB row (and savedPlan/UI) always carries last_step 'save'.
   if (_inflight) await _inflight.catch(() => {});
   try {
-    const res = await api('/api/v1/experience/fno/hedge-plan', 'PUT', _planBody('save'));
+    const res = await api('/api/v1/experience/fno/hedge-plan', 'PUT', _planBody('save', 'explicit'));
     if (!res) throw new Error('Not signed in or no response');
     hw.savedPlan = res;
     hw.history = { ...hw.history, plan: res };
@@ -140,8 +173,7 @@ function _renderSummary() {
     'hw-save-summary',
     `<div class="kpi-sub">${heldN} instrument${heldN !== 1 ? 's' : ''} held · ${hedgedN ? `${hedgedN} hedged` : 'none hedged'}</div>
      <div class="kpi-sub">Coverage: <strong>${hw.coverage}%</strong> &middot; Duration: <strong>1y</strong> &middot; Payoff view: <strong>${TAB_LABELS[hw.scenarioTab] || '—'}</strong></div>
-     <div class="kpi-sub">Margin impact: ${marginTxt}</div>
-     <div class="kpi-sub" style="opacity:.7">Strategy choice per instrument is not stored with the plan; instruments, coverage and payoff view are.</div>`
+     <div class="kpi-sub">Margin impact: ${marginTxt}</div>`
   );
 }
 
@@ -163,49 +195,33 @@ function _renderHistoryTable() {
   const plan = _hw().history.plan;
   if (!plan) {
     setEl('hw-save-history-table', `<div class="kpi-sub">No saved hedge plan yet.</div>`);
+    setEl('hw-save-history-note', '');
     return;
   }
   const ids = plan.hedged_ids || [];
+  const sel = plan.selections || {};
+  const instRows = ids.length
+    ? ids.map((id) => `<tr style="border-top:1px solid var(--border);"><td>${_esc(id)}</td><td>${STRATEGY_LABELS[sel[id]] || '—'}</td></tr>`).join('')
+    : `<tr><td colspan="2" style="opacity:.7;">No instruments hedged.</td></tr>`;
   setEl(
     'hw-save-history-table',
     `<table style="width:100%;font-family:var(--fm);font-size:12px;border-collapse:collapse;">
        <thead><tr style="text-align:left;opacity:.7;">
-         <th>Updated</th><th>Instruments</th><th>Payoff view</th><th>Coverage</th><th>Status</th>
+         <th>Updated</th><th>Payoff view</th><th>Coverage</th><th>Status</th>
        </tr></thead>
        <tbody><tr>
          <td>${_fmtDate(plan.updated_at)}</td>
-         <td>${ids.length ? ids.join(', ') : '—'}</td>
          <td>${TAB_LABELS[plan.scenario_tab] || plan.scenario_tab || '—'}</td>
          <td>${plan.coverage != null ? plan.coverage + '%' : '—'}</td>
          <td>${plan.last_step === 'save' ? 'Saved' : 'In progress'}</td>
        </tr></tbody>
      </table>
-     <div class="kpi-sub" style="opacity:.7;margin-top:4px;">Latest saved plan only.</div>`
-  );
-}
-
-function _renderActionsTable() {
-  const actions = _hw().history.actions || [];
-  if (!actions.length) {
-    setEl('hw-save-actions-table', `<div class="kpi-sub">No hedge actions recorded.</div>`);
-    return;
-  }
-  const body = actions
-    .map(
-      (a) => `<tr><td>${a.date ?? '—'}</td><td>${a.action ?? '—'}</td><td>${a.lot_key ?? '—'}</td>
-        <td>${a.from_group ?? '—'}</td><td>${a.to_group ?? '—'}</td><td>${a.nifty_spot ?? '—'}</td></tr>`
-    )
-    .join('');
-  setEl(
-    'hw-save-actions-table',
-    `<div class="kpi-sub" style="margin-bottom:4px;">Hedge actions (Manoeuvre log) — global, not per user</div>
-     <table style="width:100%;font-family:var(--fm);font-size:12px;border-collapse:collapse;">
-       <thead><tr style="text-align:left;opacity:.7;">
-         <th>Date</th><th>Action</th><th>Lot</th><th>From</th><th>To</th><th>NIFTY spot</th>
-       </tr></thead>
-       <tbody>${body}</tbody>
+     <table style="width:60%;margin-top:8px;font-family:var(--fm);font-size:12px;border-collapse:collapse;">
+       <thead><tr style="text-align:left;opacity:.7;"><th>Instrument</th><th>Strategy</th></tr></thead>
+       <tbody>${instRows}</tbody>
      </table>`
   );
+  setEl('hw-save-history-note', 'Latest save shown. Every save is also archived for hedge-performance analysis.');
 }
 
 // ── How this hedge helps (before Save) ───────────────────────────────────────
@@ -339,7 +355,7 @@ function _renderImpact() {
   _drawImpactChart();
 }
 
-// ── Step entry: re-fetch hedge-plan + hedge-history ─────────────────────────
+// ── Step entry: re-fetch the saved hedge plan ───────────────────────────────
 export async function loadSaveStep() {
   const hw = _hw();
   const token = ++_saveToken;
@@ -347,7 +363,6 @@ export async function loadSaveStep() {
   _renderImpact();
   _renderSaveStatus();
   _renderHistoryTable();
-  _renderActionsTable();
   try {
     // Restored straight to Save: portfolio-hedge may not be loaded; best-effort fetch so
     // the impact view uses the same server rows as the What-if step.
@@ -357,23 +372,14 @@ export async function loadSaveStep() {
       const ph = await apiFetch(u, { headers: authHeaders() });
       if (ph && token === _saveToken) { hw.apiHedge = ph; _renderImpact(); }
     }
-    const [planRes, actionsRes] = await Promise.allSettled([
-      apiFetch('/api/v1/experience/fno/hedge-plan', { headers: authHeaders() }),
-      apiFetch('/api/v1/portfolio/hedge-history'),
-    ]);
+    const plan = await apiFetch('/api/v1/experience/fno/hedge-plan', { headers: authHeaders() });
     if (token !== _saveToken) return; // stale — user moved on
-    const plan = planRes.status === 'fulfilled' ? planRes.value : null;
-    const actions = actionsRes.status === 'fulfilled' ? actionsRes.value : null;
     // A pending/failed autosave must not be clobbered by an older server copy.
     if (plan && !hw.dirty) hw.savedPlan = plan;
-    hw.history = {
-      plan: plan || hw.savedPlan || hw.history.plan,
-      actions: Array.isArray(actions) ? actions : hw.history.actions,
-    };
+    hw.history = { plan: plan || hw.savedPlan || hw.history.plan };
   } catch (e) {
     console.warn('[hedge-workflow] save step load failed', e);
   }
   if (token !== _saveToken) return;
   _renderHistoryTable();
-  _renderActionsTable();
 }
