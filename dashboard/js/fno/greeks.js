@@ -35,23 +35,30 @@ export function renderGreeksCards() {
     grid.innerHTML = `<div class="rk-empty">No Greeks data — select a portfolio instrument above or check API response</div>`;
     return;
   }
-  grid.innerHTML = unds.map(und => {
+  const th = (sym, nameKey, hintKey) =>
+    `<th class="num" title="${_esc(t(hintKey))}">${sym} ${_esc(t(nameKey))}</th>`;
+  const rows = unds.map(und => {
     const filt  = data.filter(g => g.und === und);
     const delta = _sum(filt, 'delta');
     const gamma = _sum(filt, 'gamma');
     const theta = _sum(filt, 'theta');
     const vega  = _sum(filt, 'vega');
     const clr = und === 'NIFTY' ? 'var(--p02)' : und === 'BANKNIFTY' ? 'var(--p04)' : 'var(--t3)';
-    return `<div class="rk-ug">
-      <div class="rk-ug-hdr" style="color:${clr}" title="${_esc(und)}">${_esc(und)}</div>
-      <div class="rk-gk">
-        ${_gCell('Δ', 'greeks.delta', 'greeks.hint_delta', _cls(delta, 2), _fmtDelta(delta))}
-        ${_gCell('Γ', 'greeks.gamma', 'greeks.hint_gamma', _cls(gamma, 4), _fmtGamma(gamma))}
-        ${_gCell('Θ', 'greeks.theta_day', 'greeks.hint_theta', _cls(theta), _fmtRs(theta))}
-        ${_gCell('V', 'greeks.vega', 'greeks.hint_vega', _cls(vega), _fmtRs(vega))}
-      </div>
-    </div>`;
+    return `<tr class="rk-ug-row">
+      <td class="rk-ug-name" style="color:${clr}" title="${_esc(und)}">${_esc(und)}</td>
+      <td class="num rk-g-val ${_cls(delta, 2)}">${_fmtDelta(delta)}</td>
+      <td class="num rk-g-val ${_cls(gamma, 4)}">${_fmtGamma(gamma)}</td>
+      <td class="num rk-g-val ${_cls(theta)}">${_fmtRs(theta)}</td>
+      <td class="num rk-g-val ${_cls(vega)}">${_fmtRs(vega)}</td>
+    </tr>`;
   }).join('');
+  grid.innerHTML = `<table class="rk-tbl rk-net-tbl"><thead><tr>
+      <th>Underlying</th>
+      ${th('Δ', 'greeks.delta', 'greeks.hint_delta')}
+      ${th('Γ', 'greeks.gamma', 'greeks.hint_gamma')}
+      ${th('Θ', 'greeks.theta_day', 'greeks.hint_theta')}
+      ${th('V', 'greeks.vega', 'greeks.hint_vega')}
+    </tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 export function renderGreeksTable() {

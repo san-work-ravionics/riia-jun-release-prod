@@ -40,15 +40,20 @@ export function renderStressScenarios() {
     subEl.textContent = `${t('greeks.stress_sub')}${refInst}${spotStr}${sel ? '' : ' · all instruments'}`;
   }
   const rowEl = document.getElementById('stress-row');
-  if (rowEl) rowEl.innerHTML = scenarios.map(s => {
-    const isFlat = s.move_pct === 0;
-    const instLbl = s.nifty_level ? `${s.ref_label} ~${s.nifty_level.toLocaleString('en-IN')}` : '—';
-    return `<div class="scenario-card${isFlat ? ' flat' : ''}">
-      <div class="scenario-move">${isFlat ? t('stress.flat') : s.move_label}</div>
-      <div class="scenario-nifty">${instLbl}</div>
-      <div class="scenario-pnl ${pnlClass(s.pnl)}">${fmtPnl(s.pnl)}</div>
-    </div>`;
-  }).join('');
+  if (rowEl) {
+    const body = scenarios.map(s => {
+      const isFlat = s.move_pct === 0;
+      const instLbl = s.nifty_level ? `${s.ref_label} ~${s.nifty_level.toLocaleString('en-IN')}` : '—';
+      return `<tr class="rk-stress-row${isFlat ? ' flat' : ''}">
+        <td class="rk-stress-move">${isFlat ? t('stress.flat') : s.move_label}</td>
+        <td class="num rk-stress-lvl">${instLbl}</td>
+        <td class="num rk-stress-pnl ${pnlClass(s.pnl)}">${fmtPnl(s.pnl)}</td>
+      </tr>`;
+    }).join('');
+    rowEl.innerHTML = `<table class="rk-tbl rk-stress-tbl"><thead><tr>
+        <th>Market move</th><th class="num">Reference level</th><th class="num">P&amp;L</th>
+      </tr></thead><tbody>${body}</tbody></table>`;
+  }
   renderStdDevTable();
 }
 

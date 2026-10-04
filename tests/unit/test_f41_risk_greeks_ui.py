@@ -156,8 +156,8 @@ def _g(**kw):
 @needs_node
 def test_normal_data_renders_groups_gamma_and_hints(jsroot):
     r = _run(jsroot, [_g(), _g(und="BANKNIFTY", full="BANKNIFTY CALL", delta=0.3)])
-    assert r["cards"].count('class="rk-ug"') == 2
-    assert "Γ" in r["cards"] and "rk-g-hint" in r["cards"] and "P&amp;L per 1pt move" in r["cards"]
+    assert r["cards"].count('class="rk-ug-row"') == 2 and "<table" in r["cards"]  # Net Greeks is a table (one row per underlying)
+    assert "Γ" in r["cards"] and "P&amp;L per 1pt move" in r["cards"]  # hints live in the header title attr
     assert r["rows"].count('class="rk-row"') == 2 and "Γ" in r["rows"] and "+0.0020" in r["rows"]
     assert "14.3%" in r["rows"] or "14.2%" in r["rows"]
     for bad in ("NaN", "undefined", "null"):

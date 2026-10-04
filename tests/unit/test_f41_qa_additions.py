@@ -163,7 +163,7 @@ def test_hostile_and_long_names_escaped_everywhere(jsroot, name):
     assert "<img" not in blob and "<b>" not in blob
     # every tag in the output is one of the known F41 elements
     tags = set(re.findall(r"<([a-zA-Z0-9]+)", blob))
-    assert tags <= {"div", "span", "i"}, tags
+    assert tags <= {"div", "span", "i", "table", "thead", "tbody", "tr", "th", "td"}, tags
     assert f'title="{"A" * 300}"' in blob if name == "A" * 300 else 'title="' in blob
 
 
@@ -180,7 +180,7 @@ def test_filters_underlying_and_expiry_still_applied(jsroot):
     data = [_g(), _g(und="BANKNIFTY", full="BN", exp="MONTHLY")]
     assert _render(jsroot, data, und="BANKNIFTY")["rows"].count('class="rk-row"') == 1
     assert _render(jsroot, data, exp="WEEKLY")["rows"].count('class="rk-row"') == 1
-    assert _render(jsroot, data, sel="NIFTY")["cards"].count('class="rk-ug"') == 1
+    assert _render(jsroot, data, sel="NIFTY")["cards"].count('class="rk-ug-row"') == 1
 
 
 @needs_node
