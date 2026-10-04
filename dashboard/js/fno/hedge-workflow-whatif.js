@@ -197,8 +197,8 @@ function _renderAggregatesAndTables() {
 
   setEl(
     'hw-wi-aggregates',
-    `<div class="kpi" style="display:inline-block;margin-right:16px;"><div class="kpi-label">Max drawdown (hedged)</div><div class="kpi-value">${agg.maxDdHedged.toFixed(0)}%</div><div class="kpi-sub">vs ${agg.maxDdUnhedged.toFixed(0)}% unhedged</div></div>
-     <div class="kpi" style="display:inline-block;"><div class="kpi-label">Monthly cost</div><div class="kpi-value">${totalCost.toFixed(2)}%</div><div class="kpi-sub">premium drag</div></div>`
+    `<div class="kpi"><div class="kpi-label">Max drawdown (hedged)</div><div class="kpi-value">${agg.maxDdHedged.toFixed(0)}%</div><div class="kpi-sub">vs ${agg.maxDdUnhedged.toFixed(0)}% unhedged</div></div>
+     <div class="kpi"><div class="kpi-label">Monthly cost</div><div class="kpi-value">${totalCost.toFixed(2)}%</div><div class="kpi-sub">premium drag</div></div>`
   );
 
   const scen = SCENARIO_MOVES.map((m) => {

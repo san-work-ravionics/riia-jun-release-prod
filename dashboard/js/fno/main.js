@@ -89,10 +89,10 @@ import { loadPortfolioHedge, phSetCoverage, phSetDuration, phToggleHedge, phPick
 import { haSkipToVerdict } from './hedge-reasoning.js';
 import { loadStudy } from './study.js';
 import { loadExperiment, fetchExpData, switchExpTab } from './experiment.js';
-import { loadHedgeWorkflow, hwGoToStep, hwSelectInstrument, hwRefreshStep } from './hedge-workflow.js';
+import { loadHedgeWorkflow, hwGoToStep, hwSelectInstrument, hwSelectPortfolio, hwRefreshStep } from './hedge-workflow.js';
 import { hwToggleHedged, hwSelectStrategy, hwRerunAdvisor } from './hedge-workflow-recommendation.js';
 import { hwSetCoverage, hwSetScenarioTab } from './hedge-workflow-whatif.js';
-import { hwSave } from './hedge-workflow-save.js';
+import { hwSave, hwSaveSelectRow } from './hedge-workflow-save.js';
 
 window.setLanguage        = setLanguage;
 _sectionLoaders['equity-scenarios'] = loadEquityScenarios;
@@ -116,6 +116,7 @@ _sectionLoaders['hedge-workflow'] = loadHedgeWorkflow;
 window.loadHedgeWorkflow   = loadHedgeWorkflow;
 window.hwGoToStep          = hwGoToStep;
 window.hwSelectInstrument  = hwSelectInstrument;
+window.hwSelectPortfolio   = hwSelectPortfolio;
 window.hwRefreshStep       = hwRefreshStep;
 // Phase 3 step modules
 window.hwToggleHedged      = hwToggleHedged;
@@ -124,6 +125,7 @@ window.hwRerunAdvisor      = hwRerunAdvisor;
 window.hwSetCoverage       = hwSetCoverage;
 window.hwSetScenarioTab    = hwSetScenarioTab;
 window.hwSave              = hwSave;
+window.hwSaveSelectRow     = hwSaveSelectRow;
 
 // Redirect aliases — old nav keys stay registered in _sectionLoaders but now
 // deep-link into the unified workflow (Migration Plan; see nav.js comment for

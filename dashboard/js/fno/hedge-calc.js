@@ -88,6 +88,8 @@ export function buildRows(portfolioHoldings, instruments, apiHedge, checkedSet, 
           strikePct:    api.strike_pct,
           strikeLabel:  api.strike_label,
           costPct:      api.cost_pct,
+          costSource:   api.cost_source,
+          costDetail:   api.cost_detail,
           protectedPct: api.protected_pct,
         };
       }

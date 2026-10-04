@@ -131,3 +131,79 @@ def test_lot_size_is_cached_between_calls() -> None:
         fetch_kite_quote("NIFTY")
     urls = [c.args[1] for c in mock_req.call_args_list]
     assert sum(u.endswith("/api/instruments") for u in urls) == 1
+
+
+# ── fetch_put_premium: real hedge cost from Kite option quotes ─────────────────
+
+from datetime import date  # noqa: E402
+
+from rita.services.kite_middleware_client import fetch_put_premium  # noqa: E402
+
+_TODAY = date(2026, 10, 4)
+
+
+def _pe(name: str, expiry: str, strike: float) -> dict:
+    sym = f"{name}{expiry.replace('-', '')}{int(strike)}PE"
+    return {"name": name, "instrument_type": "PE", "expiry": expiry, "strike": strike, "tradingsymbol": sym}
+
+
+def _master() -> dict:
+    return {"success": True, "instruments": [
+        _pe("RELIANCE", "2026-10-27", 2400), _pe("RELIANCE", "2026-10-27", 2300),
+        _pe("RELIANCE", "2026-10-13", 2400),  # too near: ignored (< 20 days)
+        _pe("RELIANCE", "2026-11-24", 2400),
+        {"name": "RELIANCE", "instrument_type": "CE", "expiry": "2026-10-27", "strike": 2400, "tradingsymbol": "X"},
+    ]}
+
+
+def _quotes(req_json: dict) -> dict:
+    data = {}
+    for k in req_json["instruments"]:
+        if k == "NSE:RELIANCE":
+            data[k] = {"last_price": 2500.0}
+        elif k.endswith("2400PE"):
+            data[k] = {"last_price": 30.0, "depth": {"buy": [{"price": 29.0}], "sell": [{"price": 31.0}]}}
+        elif k.endswith("2300PE"):
+            data[k] = {"last_price": 12.0, "depth": {"buy": [{"price": 11.0}], "sell": [{"price": 13.0}]}}
+    return {"success": True, "data": data}
+
+
+def _put_router(url, **kw):
+    if url.endswith("/api/instruments"):
+        return _resp(200, _master())
+    return _resp(200, _quotes(kw["json"]))
+
+
+def test_put_premium_uses_ask_nearest_strike_and_monthly_expiry() -> None:
+    with patch(_PATCH_TARGET, side_effect=lambda m, u, **kw: _put_router(u, **kw)) as req:
+        out = fetch_put_premium("RELIANCE", -4.0, today=_TODAY)  # 2500*0.96 = 2400
+    assert out is not None
+    assert out["cost_pct"] == pytest.approx(31.0 / 2500.0 * 100, abs=1e-3)  # best ask / spot
+    assert out["expiry"] == "2026-10-27" and "RELIANCE20261027" in out["detail"]
+    assert req.called
+
+
+def test_put_spread_premium_is_buy_ask_minus_sell_bid() -> None:
+    with patch(_PATCH_TARGET, side_effect=lambda m, u, **kw: _put_router(u, **kw)):
+        out = fetch_put_premium("RELIANCE", -4.0, spread_width_pct=4.0, today=_TODAY)  # 2400 / 2300
+    assert out is not None
+    assert out["cost_pct"] == pytest.approx((31.0 - 11.0) / 2500.0 * 100, abs=1e-3)
+
+
+def test_put_premium_none_when_middleware_down_and_backs_off() -> None:
+    with patch(_PATCH_TARGET, side_effect=httpx.ConnectError("refused")) as req:
+        assert fetch_put_premium("RELIANCE", -4.0, today=_TODAY) is None
+        assert fetch_put_premium("INFY", -4.0, today=_TODAY) is None
+    assert req.call_count == 1  # second call short-circuits on the failure back-off
+
+
+def test_put_premium_none_for_unknown_underlying_or_missing_quote() -> None:
+    with patch(_PATCH_TARGET, side_effect=lambda m, u, **kw: _put_router(u, **kw)):
+        assert fetch_put_premium("NOSUCH", -4.0, today=_TODAY) is None
+    def no_opt_quote(m, u, **kw):
+        if u.endswith("/api/instruments"):
+            return _resp(200, _master())
+        return _resp(200, {"success": True, "data": {k: {"last_price": 2500.0} for k in kw["json"]["instruments"] if k.startswith("NSE:")}})
+    kmc._reset_cache()
+    with patch(_PATCH_TARGET, side_effect=no_opt_quote):
+        assert fetch_put_premium("RELIANCE", -4.0, today=_TODAY) is None

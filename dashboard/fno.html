@@ -945,15 +945,22 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     <div id="hw-stepper" style="display:flex;align-items:center;gap:4px;margin-bottom:16px;"></div>
 
     <div id="hw-step-exposure">
-      <div id="hw-exp-hqs-banner" class="kpi" style="margin-bottom:16px;"></div>
+      <div style="display:flex;gap:12px;flex-wrap:nowrap;align-items:stretch;margin-bottom:16px;overflow-x:auto;">
+        <div id="hw-exp-hqs-banner" class="kpi" style="flex:0 0 auto;"></div>
+        <div id="hw-exp-port-sigma" style="display:flex;gap:12px;flex-wrap:nowrap;"></div>
+        <div id="hw-exp-greeks-kpis" style="display:flex;gap:12px;flex-wrap:nowrap;"></div>
+      </div>
 
       <div id="hw-exp-instrument-select" style="margin-bottom:6px;"></div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
         <div class="kpi" style="flex:1;min-width:280px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-          <div id="hw-exp-greeks-kpis" style="display:flex;gap:16px;flex-wrap:wrap;"></div>
           <div id="hw-exp-sigma-kpis" style="display:flex;gap:16px;flex-wrap:wrap;"></div>
           <div id="hw-exp-latest-view" style="display:flex;gap:16px;flex-wrap:wrap;"></div>
-          <span id="hw-exp-live-badge"></span>
+          <!-- Loss commentary — typewriter narrative (RITA agent-commentary style), same row as the monthly tiles -->
+          <div id="hw-exp-commentary-box" style="flex:1;min-width:260px;display:none;padding-left:12px;border-left:1px solid var(--border)">
+            <div id="hw-exp-commentary-title" style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px"></div>
+            <div id="hw-exp-commentary-text" style="font-size:13px;color:var(--t1);line-height:1.6"></div>
+          </div>
         </div>
       </div>
 
@@ -1094,17 +1101,25 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       <div id="hw-wi-empty" class="kpi" style="display:none;margin-bottom:16px;"></div>
       <div id="hw-wi-content">
         <div id="hw-wi-status" class="kpi-sub" style="margin-bottom:8px;"></div>
-        <div id="hw-wi-coverage-slider" class="kpi" style="margin-bottom:12px;">
-          <div class="kpi-label">Coverage (duration fixed at 1y)</div>
-          <div style="display:flex;align-items:center;gap:12px;">
-            <span class="kpi-sub">0%</span>
-            <input type="range" id="hw-wi-coverage-input" min="0" max="100" step="5" value="50" style="flex:1;max-width:420px;" oninput="hwSetCoverage(this.value)">
-            <span class="kpi-sub">100%</span>
-            <strong id="hw-wi-coverage-label" style="font-family:var(--fm);">50%</strong>
+        <!-- Single top row: coverage · max drawdown · monthly cost · equity leg · margin impact -->
+        <div style="display:flex;gap:12px;flex-wrap:nowrap;align-items:stretch;overflow-x:auto;margin-bottom:12px;">
+          <div id="hw-wi-coverage-slider" class="kpi" style="flex:0 0 auto;">
+            <div class="kpi-label">Coverage (duration fixed at 1y)</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="kpi-sub">0%</span>
+              <input type="range" id="hw-wi-coverage-input" min="0" max="100" step="5" value="50" style="width:140px;" oninput="hwSetCoverage(this.value)">
+              <span class="kpi-sub">100%</span>
+              <strong id="hw-wi-coverage-label" style="font-family:var(--fm);">50%</strong>
+            </div>
+          </div>
+          <div id="hw-wi-aggregates" style="display:flex;gap:12px;flex-wrap:nowrap;"></div>
+          <div id="hw-wi-equity-leg" class="kpi" style="flex:1 1 280px;min-width:240px;"></div>
+          <div class="kpi" style="flex:0 0 auto;">
+            <div id="hw-wi-margin-impact"></div>
+            <span id="hw-wi-live-badge"></span>
           </div>
         </div>
         <div id="hw-wi-scenario-tabs" style="margin-bottom:12px;"></div>
-        <div id="hw-wi-aggregates" style="margin-bottom:12px;"></div>
         <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
           <div class="kpi" style="flex:1;min-width:300px;">
             <div class="chart-title">Portfolio payoff (hedged vs unhedged)</div>
@@ -1125,13 +1140,6 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
             <div id="hw-wi-stress-table"></div>
           </div>
         </div>
-        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
-          <div id="hw-wi-equity-leg" class="kpi" style="flex:2;min-width:300px;"></div>
-          <div class="kpi" style="flex:1;min-width:220px;">
-            <div id="hw-wi-margin-impact"></div>
-            <span id="hw-wi-live-badge"></span>
-          </div>
-        </div>
       </div>
       <div style="display:flex;justify-content:space-between;">
         <button id="hw-wi-back-btn" class="hw-nav-btn hw-secondary" onclick="hwGoToStep('recommendation')">&lt; Back: Recommendation</button>
@@ -1141,12 +1149,16 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
 
     <!-- Step 4 — Save + history (F39 Phase 3) -->
     <div id="hw-step-save" style="display:none;">
-      <div id="hw-save-summary" class="kpi" style="margin-bottom:16px;"></div>
+      <!-- Single top row: holdings/summary · max drawdown · premium cost -->
+      <div style="display:flex;gap:12px;flex-wrap:nowrap;align-items:stretch;overflow-x:auto;margin-bottom:16px;">
+        <div id="hw-save-summary" class="kpi" style="flex:1 1 auto;"></div>
+        <div id="hw-save-impact-kpis" style="display:flex;gap:12px;flex-wrap:nowrap;"></div>
+      </div>
       <!-- How this hedge is helping: before/after at monthly -1σ/-2σ/-3σ -->
       <div class="kpi" style="margin-bottom:16px;">
         <div class="chart-title">How this hedge helps (monthly -1σ / -2σ / -3σ move)</div>
-        <div id="hw-save-impact-kpis" style="margin:8px 0;"></div>
         <div id="hw-save-impact-table"></div>
+        <div id="hw-save-impact-chart-title" class="kpi-label" style="margin-top:8px;"></div>
         <div class="chart-wrap" style="margin-top:8px;"><canvas id="hw-save-impact-chart"></canvas></div>
         <div id="hw-save-impact-note" class="kpi-sub" style="opacity:.7;margin-top:4px;"></div>
       </div>

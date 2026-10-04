@@ -196,6 +196,7 @@ console.log(JSON.stringify({
   inst: hw.instrumentId,
   tiles: document.getElementById('hw-exp-sigma-kpis').innerHTML,
   summary: document.getElementById('hw-exp-latest-view').innerHTML,
+  portSigma: document.getElementById('hw-exp-port-sigma').innerHTML,
   oldSummary: 'hw-exp-challenge-summary' in els,
   yBegin: candle?.cfg.options.scales.y.beginAtZero,
   candleColors: candle?.cfg.data.datasets.slice(1).map(d => d.borderColor),
@@ -212,11 +213,12 @@ console.log(JSON.stringify({
     s = 30 / 100 / math.sqrt(12)
     assert f"{-s * 100:.1f}%" in r["tiles"] and f"{-s * 300:.1f}%" in r["tiles"]
     # panels, not prose: .kpi tiles with label/value/sub; last price from the candle series
-    assert r["summary"].count('class="kpi"') >= 4 and "Latest Price View" in r["summary"]
+    assert r["summary"].count('class="kpi"') >= 1 and "Latest Price View" in r["summary"]
     assert "kpi-sub" in r["summary"] and "<strong" not in r["summary"]
     assert "₹2,328.00" in r["summary"] or "2,328.00" in r["summary"]
-    assert "Portfolio monthly −1σ" in r["summary"] and "Portfolio monthly −3σ" in r["summary"]
-    assert f"−€{100000 * s:,.0f}".replace("−€", "−€") in r["summary"]
+    # portfolio-level σ tiles live in the top panel beside the Hedge Quality Score
+    assert "Portfolio monthly −1σ" in r["portSigma"] and "Portfolio monthly −3σ" in r["portSigma"]
+    assert f"−€{100000 * s:,.0f}" in r["portSigma"]
     assert "Your current challenge" not in r["summary"] and r["oldSummary"] is False
     # ONE σ (±1σ dotted pair, no 2σ/3σ), anchored on the candle series' last close
     assert r["labels"][0] == "Body" and len(r["labels"]) == 3
@@ -265,7 +267,9 @@ console.log(JSON.stringify({ step: hw.step, imp, kpis: document.getElementById('
   labels: ch?.cfg.data.labels, summary: document.getElementById('hw-save-summary').innerHTML.length > 0 }));""")
     assert r["step"] == "save" and r["summary"] is True
     assert r["labels"] == ["Flat", "−1σ", "−2σ", "−3σ"]
-    assert "Unhedged P&amp;L" in r["imp"] and "Protected" in r["imp"]
+    # merged portfolio + per-instrument table: one row each, Unhedged/Hedged per monthly move
+    assert "Unhedged" in r["imp"] and "Hedged" in r["imp"] and "Premium / mo" in r["imp"]
+    assert ">Portfolio<" in r["imp"] and "Monthly −1σ" in r["imp"] and "What a typical bad month" in r["imp"]
     assert "Max drawdown" in r["kpis"] and "Premium cost" in r["kpis"]
 
 

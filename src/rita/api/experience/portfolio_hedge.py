@@ -23,6 +23,7 @@ from rita.repositories.market_data import MarketDataCacheRepository
 from rita.repositories.user_portfolio import UserPortfolioRepo
 from rita.repositories.user_portfolio_key import UserPortfolioKeyRepo
 from rita.schemas.user_portfolio import HoldingItem
+from rita.services.kite_middleware_client import fetch_put_premium
 
 router = APIRouter(prefix="/api/v1/experience/fno", tags=["experience:portfolio-hedge"])
 
@@ -49,10 +50,12 @@ class HedgeHolding(BaseModel):
     eligible: bool
     strike_pct: float         # negative = OTM put distance (e.g. -7.5 → 7.5% OTM)
     strike_label: str
-    cost_pct: float           # put-buy monthly premium as % of position
+    cost_pct: float           # put-buy MONTHLY premium as % of position (Zerodha quote when cost_source='kite', else 1m Black-Scholes estimate)
+    cost_source: str = "estimated"   # 'kite' (real option quotes via fno-margin-fetch) | 'estimated'
+    cost_detail: str | None = None   # e.g. 'Zerodha RELIANCE26OCT2400PE @ 31.5 (expiry 2026-10-27)'
     protected_pct: int
     ann_vol_pct: float        # annualised realised volatility %
-    call_sell_cost_pct: float # BS call premium at symmetric OTM level
+    call_sell_cost_pct: float # monthly BS call premium at symmetric OTM level
     duration: str             # '1m' | '3m' | '1y'
     # EUR-denominated fields (None when portfolio has no total_value_eur stored)
     position_eur: float | None = None        # allocation_pct/100 * total_value_eur
@@ -215,7 +218,8 @@ def get_portfolio_hedge(
     Allocation wizard tabs can show Put Buy vs Sell Call comparison with σ-anchored
     scenarios. Read-only — no db.commit().
     """
-    t_months = 12.0
+    t_months = 12.0          # full-duration figures (put_cost_eur, var_95_eur)
+    cost_t_months = 1.0      # cost_pct / call_sell_cost_pct are MONTHLY premiums (matches Zerodha monthly quotes)
 
     key = UserPortfolioKeyRepo(db).find_by_user_id(current_user.id)
     if key is None:
@@ -274,8 +278,19 @@ def get_portfolio_hedge(
 
         vol, return_1y, rs = _vol_and_return(inst_id)
         strike_pct, strike_label, cost_pct, protected_pct, call_sell_cost_pct = _coverage_params(
-            coverage, vol, hedge_type, alloc, t_months
+            coverage, vol, hedge_type, alloc, cost_t_months
         )
+
+        # Real hedge cost for India F&O names / indices from Zerodha option quotes; the
+        # model estimate stays when the middleware is down or the contract is unavailable.
+        cost_source, cost_detail = "estimated", None
+        if eligible or inst_id in {"NIFTY", "BANKNIFTY"}:
+            kite = fetch_put_premium(
+                inst_id, strike_pct,
+                spread_width_pct=6.0 if hedge_type == "put_spread" else None,
+            )
+            if kite is not None:
+                cost_pct, cost_source, cost_detail = kite["cost_pct"], "kite", kite["detail"]
 
         # Quarterly risk from full history
         all_recs = sorted(by_inst.get(inst_id, []), key=lambda r: r.date)
@@ -305,6 +320,8 @@ def get_portfolio_hedge(
             strike_pct=round(strike_pct, 2),
             strike_label=strike_label,
             cost_pct=cost_pct,
+            cost_source=cost_source,
+            cost_detail=cost_detail,
             protected_pct=protected_pct,
             ann_vol_pct=round(vol, 2),
             call_sell_cost_pct=call_sell_cost_pct,

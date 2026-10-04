@@ -42,6 +42,7 @@ export const state = {
   // the Phase 3 modules — declared here now so the shape is stable across phases.
   hedgeWorkflow: {
     instrumentId: null,
+    exposureScope: 'PORTFOLIO',   // Exposure-step Greeks scope: 'PORTFOLIO' or an instrument id
     knownInstruments: [],
     shares: null,
     cashEur: null,

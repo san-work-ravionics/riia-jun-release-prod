@@ -39,7 +39,7 @@ function _delta(inst) {
 const INST_NAMES = { 'Dow Jones Industrial Average': 'Dow Jones', 'Nasdaq Composite': 'Nasdaq' };
 
 /** Pure: build the tile-panel HTML for known ids, grouped by region. */
-export function buildInstrumentTilesHtml(known, instruments, activeId) {
+export function buildInstrumentTilesHtml(known, instruments, activeId, portfolio = null) {
   const map = instruments || {};
   const groups = {};
   for (const id of known || []) {
@@ -66,16 +66,34 @@ export function buildInstrumentTilesHtml(known, instruments, activeId) {
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px;padding:4px 0">${tiles}</div>
       </div>`;
     }).join('');
+  // Optional Portfolio tile (Exposure step): selects the portfolio-level Greeks scope.
+  const portCard = portfolio ? `<div class="card">
+        <div class="card-hdr"><span class="card-title">Portfolio</span></div>
+        <div style="display:grid;grid-template-columns:96px;gap:6px;padding:4px 0">
+          <div class="kpi geo-kpi${portfolio.active ? ' geo-kpi-active' : ''}" style="padding:5px 6px" onclick="hwSelectPortfolio()">
+            <div class="kpi-label" style="font-size:10px;font-weight:600;line-height:1.3;min-height:2.6em">All positions</div>
+            <div class="kpi-value" style="font-size:13px">${_esc(portfolio.value)}</div>
+            <div class="kpi-delta neu" style="font-size:10px">Net Greeks</div>
+          </div>
+        </div>
+      </div>` : '';
   // Same wrapper RITA uses (#geo-panels is a .card-row): regions sit side by side.
-  return `<div class="card-row" style="margin-bottom:0">${cards}</div>`;
+  // With the Portfolio card, size it to its content and let region cards share the rest.
+  const nRegions = order.filter((r) => groups[r]?.length).length;
+  const cols = portfolio ? ` style="margin-bottom:0;grid-template-columns:max-content repeat(${Math.max(nRegions, 1)},1fr)"` : ' style="margin-bottom:0"';
+  return `<div class="card-row"${cols}>${portCard}${cards}</div>`;
 }
 
 /** Render the tile panel into the element with id `elId`. */
-export function renderInstrumentTiles(elId, hw) {
+export function renderInstrumentTiles(elId, hw, withPortfolio = false) {
   const known = hw.knownInstruments || [];
   if (!known.length) {
     setEl(elId, `<div class="kpi-sub">—</div>`);
     return;
   }
-  setEl(elId, buildInstrumentTilesHtml(known, hw.instruments, hw.instrumentId));
+  if (!withPortfolio) { setEl(elId, buildInstrumentTilesHtml(known, hw.instruments, hw.instrumentId)); return; }
+  const scope = hw.exposureScope || 'PORTFOLIO';
+  const tv = hw.totalValueEur;
+  const portfolio = { active: scope === 'PORTFOLIO', value: tv != null ? '€' + Number(tv).toLocaleString('en-US', { maximumFractionDigits: 0 }) : '—' };
+  setEl(elId, buildInstrumentTilesHtml(known, hw.instruments, scope === 'PORTFOLIO' ? null : scope, portfolio));
 }

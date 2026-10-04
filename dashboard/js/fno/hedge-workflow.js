@@ -27,7 +27,7 @@
 // step on demand.
 
 import { api, apiFetch } from './api.js';
-import { setEl, badge } from '../shared/utils.js';
+import { setEl } from '../shared/utils.js';
 import { state } from './state.js';
 import { renderInstrumentTiles } from './hedge-instrument-tiles.js';
 import { computeNShares, monthlySigma, sigmaLevels, portfolioVolPct, buildVolMap } from './hedge-calc.js';
@@ -116,13 +116,23 @@ export function hwRefreshStep() {
   return hwGoToStep(state.hedgeWorkflow.step, false);
 }
 
+// ── window.hwSelectPortfolio() — Exposure-step Greeks scope = whole portfolio ──
+// Scope only: instrumentId (charts, recommendation, what-if) is left untouched.
+export function hwSelectPortfolio() {
+  state.hedgeWorkflow.exposureScope = 'PORTFOLIO';
+  _renderInstrumentSelect();
+  _renderGreeksKpis();
+}
+
 // ── window.hwSelectInstrument(id) ────────────────────────────────────────────
 // Explicit user pick from knownInstruments[] — never a side-effecting call to
 // /api/v1/instrument/select (Edge Case 4; also removes the inherited
 // setUnderlying() bug's call site for this step, per the core design).
 export function hwSelectInstrument(id) {
   state.hedgeWorkflow.instrumentId = id;
+  state.hedgeWorkflow.exposureScope = id;
   _renderInstrumentSelect();
+  _renderGreeksKpis();
   const step = state.hedgeWorkflow.step;
   // What-if fetches kite-live itself (with the chosen hedge's strike); avoid a duplicate.
   if (step !== 'whatif') _fetchLiveData(id);
@@ -156,28 +166,31 @@ function _renderHqsBanner() {
 
 // ── Exposure step — instrument tiles (#hw-exp-instrument-select) ───────────
 function _renderInstrumentSelect() {
-  renderInstrumentTiles('hw-exp-instrument-select', state.hedgeWorkflow);
+  renderInstrumentTiles('hw-exp-instrument-select', state.hedgeWorkflow, true);
   // Keep the other step's panel in sync (both are rendered from the same state).
   renderInstrumentTiles('hw-rec-instrument-select', state.hedgeWorkflow);
 }
 
 // ── Exposure step — net Greeks KPIs (#hw-exp-greeks-kpis) ──────────────────
+// Scope 'PORTFOLIO' → net portfolio Greeks; otherwise the selected instrument's own
+// per-holding Greeks (greeks[] item; theta = net_theta_eur_day, matching the net sum).
 function _renderGreeksKpis() {
-  const g = state.hedgeWorkflow.netGreeks || {};
+  const hw = state.hedgeWorkflow;
+  const scope = hw.exposureScope || 'PORTFOLIO';
+  let g = hw.netGreeks || {};
+  let label = 'Portfolio';
+  if (scope !== 'PORTFOLIO') {
+    const it = (hw.greeks || []).find((x) => String(x.und).toUpperCase() === String(scope).toUpperCase());
+    label = scope;
+    g = it ? { delta: it.delta, gamma: it.gamma, theta: it.net_theta_eur_day, vega: it.vega } : {};
+  }
   setEl(
     'hw-exp-greeks-kpis',
-    `<div class="kpi"><div class="kpi-label">Delta</div><div class="kpi-value">${_fmt(g.delta)}</div></div>
+    `<div class="kpi"><div class="kpi-label">Delta · ${_esc(label)}</div><div class="kpi-value">${_fmt(g.delta)}</div></div>
      <div class="kpi"><div class="kpi-label">Gamma</div><div class="kpi-value">${_fmt(g.gamma)}</div></div>
      <div class="kpi"><div class="kpi-label">Theta</div><div class="kpi-value">${_fmt(g.theta)}</div></div>
      <div class="kpi"><div class="kpi-label">Vega</div><div class="kpi-value">${_fmt(g.vega)}</div></div>`
   );
-}
-
-// ── Exposure step — live-data source badge (#hw-exp-live-badge) ────────────
-// Addendum. Reads liveData.source via the existing badge() helper (shared/utils.js).
-function _renderLiveBadge() {
-  const live = state.hedgeWorkflow.liveData;
-  setEl('hw-exp-live-badge', badge(live.available ? 'Live' : 'Estimated'));
 }
 
 // ── Exposure step — current challenge (monthly σ tiles, summary, charts) ───
@@ -257,13 +270,12 @@ function _renderChallengeSummary() {
   const last = hist ? hist.daily[hist.daily.length - 1].price : _price(id);
   const sym = _sym(id) || (hist ? (_CCY_SYMBOL[hist.currency] || '') : '');
   tiles.push(_tile('Latest Price View', last != null ? sym + _fmtNum(last) : '—', `${_esc(id)} last close`));
+  // Portfolio-level σ tiles sit in the top row beside the Hedge Quality Score.
   const sP = monthlySigma(_portfolioVolPct());
   const tv = hw.totalValueEur;
-  if (sP != null) {
-    for (const k of [1, 2, 3]) {
-      tiles.push(_tile(`Portfolio monthly −${k}σ`, tv != null ? '−' + _eur(tv * sP * k) : `−${(sP * k * 100).toFixed(1)}%`, tv != null ? `−${(sP * k * 100).toFixed(1)}% of ${_eur(tv)}` : 'of portfolio', 'neg'));
-    }
-  }
+  setEl('hw-exp-port-sigma', sP == null ? '' : [1, 2, 3].map((k) =>
+    _tile(`Portfolio monthly −${k}σ`, tv != null ? '−' + _eur(tv * sP * k) : `−${(sP * k * 100).toFixed(1)}%`, tv != null ? `−${(sP * k * 100).toFixed(1)}% of ${_eur(tv)}` : 'of portfolio', 'neg')
+  ).join(''));
   const a = (hw.apiHedge?.holdings || []).find((h) => h.instrument_id === id);
   if (a && a.quarterly_var_pct != null) {
     tiles.push(_tile('Quarterly VaR', `${Number(a.quarterly_var_pct).toFixed(1)}%`, a.quarterly_var_eur != null ? _eur(a.quarterly_var_eur) : '—', 'neg'));
@@ -345,9 +357,61 @@ async function _renderChallengeCharts() {
   _drawCharts(id, hist);
 }
 
+// ── Exposure step — loss commentary (typewriter, RITA agent-commentary style) ──
+// Plain-language downside for the selected instrument and the whole portfolio, from the
+// same monthly σ numbers as the tiles. Re-typed only when the text changes.
+let _twToken = 0;
+let _commentaryText = null;
+
+function _typewrite(text, speed = 10) {
+  const box = document.getElementById('hw-exp-commentary-box');
+  const titleEl = document.getElementById('hw-exp-commentary-title');
+  const textEl = document.getElementById('hw-exp-commentary-text');
+  if (!box || !titleEl || !textEl) return;
+  if (!text) { _twToken += 1; _commentaryText = null; box.style.display = 'none'; return; }
+  if (text === _commentaryText) return;
+  _commentaryText = text;
+  box.style.display = '';
+  titleEl.textContent = 'Agent Commentary';
+  textEl.textContent = '';
+  const my = ++_twToken;
+  let i = 0;
+  (function step() {
+    if (_twToken !== my) return; // cancelled by a newer call
+    if (i < text.length) { textEl.textContent += text[i]; i += 1; setTimeout(step, speed); }
+  })();
+}
+
+function _renderCommentary() {
+  const hw = state.hedgeWorkflow;
+  const id = hw.instrumentId;
+  const tv = hw.totalValueEur;
+  const parts = [];
+  const lv = id ? sigmaLevels(_price(id), _volFor(id)) : null;
+  if (lv) {
+    const g = (hw.greeks || []).find((x) => String(x.und).toUpperCase() === String(id).toUpperCase());
+    const posEur = g && tv != null ? (g.allocation_pct / 100) * tv : null;
+    let t = `${id}: in a typical bad month (−1σ) it can fall about ${Math.abs(lv[0].downPct).toFixed(1)}%, and in a severe one (−2σ) about ${Math.abs(lv[1].downPct).toFixed(1)}%`;
+    if (posEur != null) t += `, which on your ${_eur(posEur)} position is roughly ${_eur(posEur * Math.abs(lv[0].downPct) / 100)} to ${_eur(posEur * Math.abs(lv[1].downPct) / 100)} of loss`;
+    parts.push(t + '.');
+  }
+  const sP = monthlySigma(_portfolioVolPct());
+  if (sP != null) {
+    let t = `Portfolio: a −1σ month costs about ${(sP * 100).toFixed(1)}%`;
+    if (tv != null) t += ` (${_eur(tv * sP)})`;
+    t += `, −2σ about ${(sP * 200).toFixed(1)}%`;
+    if (tv != null) t += ` (${_eur(tv * sP * 2)})`;
+    t += ', and −3σ about ' + (sP * 300).toFixed(1) + '%';
+    if (tv != null) t += ` (${_eur(tv * sP * 3)})`;
+    parts.push(t + ' before any hedge.');
+  }
+  _typewrite(parts.join(' '));
+}
+
 function _renderChallenge() {
   _renderSigmaKpis();
   _renderChallengeSummary();
+  _renderCommentary();
   return _renderChallengeCharts();
 }
 
@@ -355,7 +419,6 @@ function _renderExposureFromState() {
   _renderHqsBanner();
   _renderInstrumentSelect();
   _renderGreeksKpis();
-  _renderLiveBadge();
   _renderChallenge();
 }
 
@@ -380,7 +443,6 @@ async function _fetchLiveData(instrumentId) {
       instrumentId,
     };
   }
-  _renderLiveBadge();
 }
 
 // ── Main Exposure loader ─────────────────────────────────────────────────────
