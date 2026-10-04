@@ -234,15 +234,14 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
 /* Net Greeks: one group card per underlying */
 #page-risk #greeks-all-grid{display:block;}
 #page-risk .rk-tbl-wrap{min-width:0;}
-#page-risk .rk-tbl{width:100%;border-collapse:collapse;font-size:12px;table-layout:auto;}
-#page-risk .rk-tbl th{font-family:var(--fm);font-size:10px;font-weight:600;color:var(--t4);text-transform:uppercase;letter-spacing:.06em;padding:7px 8px;text-align:left;border-bottom:1.5px solid var(--border);}
-#page-risk .rk-tbl td{padding:8px;border-bottom:1px solid var(--border);overflow-wrap:anywhere;}
-#page-risk .rk-tbl th.num,#page-risk .rk-tbl td.num{text-align:right;font-family:var(--fm);}
-#page-risk .rk-tbl tbody tr:last-child td{border-bottom:none;}
-#page-risk .rk-tbl .pos{color:var(--pos);}
-#page-risk .rk-tbl .neg{color:var(--neg);}
-#page-risk .rk-tbl .neu{color:var(--t4);}
-#page-risk .rk-ug-name{font-family:var(--fm);font-weight:600;letter-spacing:.04em;}
+#page-risk .rk-tbl{width:100%;}
+#page-risk .rk-tbl thead th{position:static;white-space:normal;}
+#page-risk .rk-tbl td{white-space:normal;overflow-wrap:anywhere;}
+#page-risk .rk-tbl th.num,#page-risk .rk-tbl td.num{text-align:right;}
+#page-risk .rk-tbl td.num{font-family:var(--fm);}
+#page-risk .rk-tbl td.pos,#page-risk .rk-tbl td.neg,#page-risk .rk-tbl td.neu{font-weight:500;}
+#page-risk .rk-tbl td.neu{color:var(--t4);}
+#page-risk .rk-ug-name{font-weight:500;}
 #page-risk .rk-stress-row.flat td{background:var(--surface2);}
 #page-risk .rk-ug{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:12px 14px;box-shadow:var(--sh);min-width:0;}
 #page-risk .rk-ug-hdr{font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;overflow-wrap:anywhere;}
