@@ -9,12 +9,14 @@ const _esc = v => String(v ?? '').replace(/[&<>"']/g, c => (
 const _num = v => (typeof v === 'number' ? v : parseFloat(v));
 const _has = v => v != null && v !== '' && Number.isFinite(_num(v));
 const _sum = (arr, k) => arr.reduce((s, g) => s + (_has(g[k]) ? _num(g[k]) : 0), 0);
-const _cls = v => (!_has(v) ? 'neu' : _num(v) < 0 ? 'neg' : 'pos');
+// A value that rounds to zero at its display precision is neutral: no sign, no colour (F41-QA-1)
+const _rz = (v, d) => _has(v) && Number(_num(v).toFixed(d)) === 0;
+const _cls = (v, d = 0) => (!_has(v) || _rz(v, d) ? 'neu' : _num(v) < 0 ? 'neg' : 'pos');
 const _sign = n => (n < 0 ? '−' : '+');
 const _inr = n => Math.abs(Math.round(n)).toLocaleString('en-IN');
-const _fmtDelta = v => (!_has(v) ? '—' : `${_num(v) < 0 ? '−' : '+'}${Math.abs(_num(v)).toFixed(2)}`);
-const _fmtGamma = v => (!_has(v) ? '—' : `${_num(v) < 0 ? '−' : '+'}${Math.abs(_num(v)).toFixed(4)}`);
-const _fmtRs = v => (!_has(v) ? '—' : `${_sign(_num(v))}₹${_inr(_num(v))}`);
+const _fmtDelta = v => (!_has(v) ? '—' : _rz(v, 2) ? '0.00' : `${_num(v) < 0 ? '−' : '+'}${Math.abs(_num(v)).toFixed(2)}`);
+const _fmtGamma = v => (!_has(v) ? '—' : _rz(v, 4) ? '0.0000' : `${_num(v) < 0 ? '−' : '+'}${Math.abs(_num(v)).toFixed(4)}`);
+const _fmtRs = v => (!_has(v) ? '—' : _rz(v, 0) ? '₹0' : `${_sign(_num(v))}₹${_inr(_num(v))}`);
 
 function _gCell(sym, nameKey, hintKey, cls, valStr) {
   return `<div class="rk-g"><div class="rk-g-name">${sym} ${_esc(t(nameKey))}</div>` +
@@ -43,8 +45,8 @@ export function renderGreeksCards() {
     return `<div class="rk-ug">
       <div class="rk-ug-hdr" style="color:${clr}" title="${_esc(und)}">${_esc(und)}</div>
       <div class="rk-gk">
-        ${_gCell('Δ', 'greeks.delta', 'greeks.hint_delta', _cls(delta), _fmtDelta(delta))}
-        ${_gCell('Γ', 'greeks.gamma', 'greeks.hint_gamma', _cls(gamma), _fmtGamma(gamma))}
+        ${_gCell('Δ', 'greeks.delta', 'greeks.hint_delta', _cls(delta, 2), _fmtDelta(delta))}
+        ${_gCell('Γ', 'greeks.gamma', 'greeks.hint_gamma', _cls(gamma, 4), _fmtGamma(gamma))}
         ${_gCell('Θ', 'greeks.theta_day', 'greeks.hint_theta', _cls(theta), _fmtRs(theta))}
         ${_gCell('V', 'greeks.vega', 'greeks.hint_vega', _cls(vega), _fmtRs(vega))}
       </div>
@@ -81,8 +83,8 @@ export function renderGreeksTable() {
           <span class="side-badge ${_esc((g.side ?? '').toLowerCase())}">${_esc(g.side ?? '—')}</span>
         </div>
         <div class="rk-chips">
-          ${chip('Δ', _cls(g.delta), _fmtDelta(g.delta))}
-          ${chip('Γ', _cls(g.gamma), _fmtGamma(g.gamma))}
+          ${chip('Δ', _cls(g.delta, 2), _fmtDelta(g.delta))}
+          ${chip('Γ', _cls(g.gamma, 4), _fmtGamma(g.gamma))}
           ${chip('Θ/day', _cls(g.theta), _fmtRs(g.theta))}
           ${chip('Vega', _cls(g.vega), _fmtRs(g.vega))}
           ${chip('IV', 'neu', ivVal)}

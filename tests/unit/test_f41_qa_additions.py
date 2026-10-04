@@ -104,7 +104,6 @@ rows.find(r => r.dataset.inst === 'Portfolio').fire(); out.afterPort = state.ris
 # ── (b) zero / near-zero rendering ────────────────────────────────────────────────
 
 @needs_node
-@pytest.mark.xfail(strict=True, reason="F41-QA-1 cosmetic: zero shown with sign colour")
 def test_zero_greeks_not_rendered_as_signed_coloured(jsroot):
     r = _render(jsroot, [_g(delta=0, gamma=0, theta=0, vega=0)])
     blob = r["cards"] + r["rows"]
@@ -113,7 +112,6 @@ def test_zero_greeks_not_rendered_as_signed_coloured(jsroot):
 
 
 @needs_node
-@pytest.mark.xfail(strict=True, reason="F41-QA-1 cosmetic: zero shown with sign colour")
 def test_near_zero_negative_not_rendered_as_minus_zero(jsroot):
     r = _render(jsroot, [_g(delta=-0.001, theta=-0.4, vega=-0.2)])
     blob = r["cards"] + r["rows"]
