@@ -152,5 +152,13 @@
   "duration_minutes": null,
   "branch": "feature/f39-phase4-cleanup-fno",
   "merge_status": "merged",
-  "merge_commit": "3fe2663"
+  "merge_commit": "3fe2663",
+  "human_score": {
+    "accuracy": 4,
+    "relevance": 4,
+    "csat": 4,
+    "planning_ok": true,
+    "time_saved_hours": 8,
+    "notes": "Session-level score for 2026-10-03 (F39 Phases 2-4 + UI rounds shipped v1.2.26-1.2.29, Agent Builds 500 fix, F40 created); recorded on the last /enhance run of the day."
+  }
 }

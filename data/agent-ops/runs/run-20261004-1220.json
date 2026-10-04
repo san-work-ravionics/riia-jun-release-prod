@@ -1,0 +1,43 @@
+{
+  "run_id": "20261004-1220",
+  "app": "fno",
+  "request": "F39 hedge-workflow refinements (v1.2.30) + monthly hedge cost + Zerodha put-premium snapshot CSV (v1.2.31) + Confluence F39 publishes",
+  "skill_file": "n/a",
+  "agents": [
+    {
+      "role": "engineer",
+      "status": "pass",
+      "steps_required": 6,
+      "steps_completed": 6,
+      "adherence_score": 1.0,
+      "token_estimate": 120000,
+      "grounding_checks": {
+        "branch_created": false,
+        "code_changed": true,
+        "spec_updated": true,
+        "ruff_passed": true,
+        "contract_matches_architect": true
+      },
+      "failure_modes": [
+        "Confluence update scripts not idempotent (HTML-comment marker stripped on save) -> duplicate v1.2.30 section appended once, removed same session, scripts fixed",
+        "Kite callback access token discarded (masked print, per-request service) -> one extra request_token round trip",
+        "prod push blocked by auto-mode classifier until user named the commit"
+      ],
+      "notes": "Exposure/What-if/Save layout refinements, Portfolio-scope Greeks, typewriter loss commentary, merged Save table + row-click chart; cost_pct now 1-month with cost_source; Zerodha put premium live->snapshot CSV->estimate; fetch script + 8 new tests; ruff clean (caught unused import pre-push). Commits 93f860c (v1.2.30), a26b896 (v1.2.31) deployed green; docs 83126fb, 4153f7d, 27658e7."
+    }
+  ],
+  "overall_status": "pass",
+  "total_tokens_estimated": 120000,
+  "duration_minutes": 300,
+  "branch": "master",
+  "merge_status": "merged",
+  "merge_commit": "a26b896",
+  "human_score": {
+    "accuracy": 4,
+    "relevance": 4,
+    "csat": 4,
+    "planning_ok": true,
+    "time_saved_hours": 5,
+    "notes": ""
+  }
+}

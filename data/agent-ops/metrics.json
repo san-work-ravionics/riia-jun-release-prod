@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-10-03T19:28:13",
-  "total_runs": 18,
+  "generated_at": "2026-10-04T12:20:37",
+  "total_runs": 19,
   "status_counts": {
     "pass_with_warnings": 9,
-    "pass": 9
+    "pass": 10
   },
   "app_counts": {
     "rl": 2,
     "rita": 5,
     "ops": 1,
-    "fno": 10
+    "fno": 11
   },
-  "total_estimated_tokens": 3818800,
+  "total_estimated_tokens": 3938800,
   "total_actual_tokens": 5513380,
-  "total_duration_minutes": 949,
-  "avg_duration_minutes": 52.7,
+  "total_duration_minutes": 1249,
+  "avg_duration_minutes": 65.7,
   "per_agent": {
     "pm": {
       "runs": 13,
@@ -43,15 +43,17 @@
       }
     },
     "engineer": {
-      "runs": 17,
-      "avg_adherence": 0.979,
-      "total_estimated_tokens": 883000,
+      "runs": 18,
+      "avg_adherence": 0.981,
+      "total_estimated_tokens": 1003000,
       "total_actual_tokens": 848516,
-      "token_overrun_ratio": 0.96,
+      "token_overrun_ratio": 0.85,
       "top_failure_modes": {
         "FC-LINT: unused import shipped, caught by CI ruff gate": 1,
         "FC-COV: new 538-line module shipped without coverage omit entry": 1,
-        "No worktree isolation \u2014 committed directly to master (retrospective audit)": 1
+        "No worktree isolation \u2014 committed directly to master (retrospective audit)": 1,
+        "Confluence update scripts not idempotent (HTML-comment marker stripped on save) -> duplicate v1.2.30 section appended once, removed same session, scripts fixed": 1,
+        "Kite callback access token discarded (masked print, per-request service) -> one extra request_token round trip": 1
       }
     },
     "code_reviewer": {
