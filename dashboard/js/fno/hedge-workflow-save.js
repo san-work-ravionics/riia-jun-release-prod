@@ -141,7 +141,8 @@ export async function hwSave() {
 // ── Rendering ────────────────────────────────────────────────────────────────
 function _fmtDate(iso) {
   if (!iso) return '—';
-  const d = new Date(iso);
+  // API timestamps are UTC but naive (no Z); without it the browser would read them as local time
+  const d = new Date(typeof iso === 'string' && !/(Z|[+-]\d\d:?\d\d)$/.test(iso) ? iso + 'Z' : iso);
   return Number.isNaN(d.getTime()) ? String(iso) : d.toLocaleString();
 }
 
