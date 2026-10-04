@@ -267,3 +267,56 @@ def test_fno_hedge_history_export_role_gated_csv(iso_base_url, iso_headers):
     assert header[0] == "history_id" and header[-1] == "protected_pct" and len(header) == 32
     assert len(r.text.splitlines()) >= 4  # header + >=3 saved rows (2 instruments on the first save)
     assert requests.get(f"{iso_base_url}/api/v1/system/hedge-plan-history", timeout=TIMEOUT).status_code in (401, 403)
+
+
+def test_fno_position_value_leg(iso_base_url, iso_headers):
+    """Position-value leg (F40 Phase 3, STRICT — no skip) on the isolated seeded DB.
+
+    ASML (EUR, 10 sh, last close 700 -> 7000) and RELIANCE (INR, 7 sh x 2500 -> 17500) each return
+    >=12 monthly candles in their own currency (no FX) with ±1σ bands; NIFTY (option-only, not held)
+    -> no_holding with the explicit message; the ann_vol_pct override takes precedence.
+    """
+    url = f"{iso_base_url}/api/v1/experience/fno/position-value"
+
+    r = requests.get(url, params={"instrument": "ASML"}, headers=iso_headers, timeout=TIMEOUT)
+    assert r.status_code == 200, f"position-value failed: {r.status_code} {r.text}"
+    body = r.json()
+    assert len(body["items"]) == 1
+    asml = body["items"][0]
+    assert asml["status"] == "ok" and asml["currency"] == "EUR" and asml["currency_symbol"] == "€"
+    assert asml["shares"] == ISO_SHARES["ASML"]
+    assert asml["last_close"] == ISO_LAST_CLOSE["ASML"]
+    assert asml["last_value"] == ISO_SHARES["ASML"] * ISO_LAST_CLOSE["ASML"] == 7000.0
+    assert len(asml["candles"]) >= 12
+    assert asml["daily"][-1]["value"] == 7000.0 and body["as_of"] == asml["daily"][-1]["date"]
+    assert asml["candles"][-1]["close"] == 7000.0
+    assert asml["vol_source"] == "computed" and asml["ann_vol_pct"] > 0
+    b = asml["bands"]
+    assert b["anchor_value"] == 7000.0
+    assert b["plus_1sigma_value"] > 7000.0 > b["minus_1sigma_value"]
+    assert b["plus_1sigma_pct"] == pytest.approx(asml["monthly_sigma_pct"], abs=1e-3)
+
+    # override takes precedence: golden 24% -> ±6.9282% of 7000
+    o = requests.get(url, params={"instrument": "asml", "ann_vol_pct": 24}, headers=iso_headers, timeout=TIMEOUT).json()["items"][0]
+    assert o["vol_source"] == "override" and o["ann_vol_pct"] == 24.0
+    assert o["bands"]["plus_1sigma_value"] == pytest.approx(7000 * (1 + 0.069282), abs=0.05)
+    assert o["bands"]["minus_1sigma_value"] == pytest.approx(7000 * (1 - 0.069282), abs=0.05)
+
+    # all holdings: one item per holding, own currency each (no cross-currency sum)
+    allr = requests.get(url, headers=iso_headers, timeout=TIMEOUT).json()
+    by_id = {i["instrument_id"]: i for i in allr["items"]}
+    assert list(by_id) == ["ASML", "RELIANCE"]
+    rel = by_id["RELIANCE"]
+    assert rel["status"] == "ok" and rel["currency"] == "INR" and rel["currency_symbol"] == "₹"
+    assert rel["shares"] == ISO_SHARES["RELIANCE"] and rel["last_value"] == 7 * 2500.0
+    assert len(rel["candles"]) >= 12
+
+    # option-only / not held: explicit message, no chart data, never 404
+    r = requests.get(url, params={"instrument": "NIFTY"}, headers=iso_headers, timeout=TIMEOUT)
+    assert r.status_code == 200
+    nifty = r.json()["items"][0]
+    assert nifty["status"] == "no_holding" and nifty["candles"] == [] and nifty["bands"] is None
+    assert nifty["message"] == "No equity holding for NIFTY (option exposure only). Position value needs shares held."
+
+    # read-only: GET only; no write verbs on the path
+    assert requests.post(url, headers=iso_headers, json={}, timeout=TIMEOUT).status_code == 405

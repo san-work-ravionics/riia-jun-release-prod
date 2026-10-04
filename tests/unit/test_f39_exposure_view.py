@@ -173,6 +173,14 @@ globalThis.fetch = async (url, o = {}) => {
   if (url.includes('/portfolio-analytics')) return jr({ positions: [{ und: 'NIFTY', exp: 'EQUITY', type: 'CE', qty: 1, ltp: 24000, avg: 24000, currency: 'INR', ann_vol_pct: 18 }],
     greeks: [{ und: 'RELIANCE', allocation_pct: 60, ann_vol_pct: 30, gamma: 0 }], net_greeks: {}, hedge_quality: { positions: [] } });
   if (url.includes('/equity-hedge-scenarios')) return jr({ portfolio: { currency: 'INR', n_shares: 10, daily }, hedge_scenarios: {} });
+  if (url.includes('/experience/fno/position-value')) {  // F40 Phase 3: candle card = position value (shares x price)
+    const q = new URL('http://x' + url).searchParams, id = q.get('instrument'), vol = parseFloat(q.get('ann_vol_pct'));
+    if (id !== 'RELIANCE') return jr({ as_of: null, items: [{ instrument_id: id, status: 'no_holding', message: `No equity holding for ${id} (option exposure only). Position value needs shares held.`, candles: [], daily: [], bands: null }] });
+    const last = daily.at(-1).price * 10, s = vol / 100 / Math.sqrt(12);
+    return jr({ as_of: '2026-06-28', items: [{ instrument_id: id, status: 'ok', message: '', currency: 'INR', currency_symbol: '₹', shares: 10, last_value: last,
+      bands: { anchor_value: last, anchor_date: '2026-06-28', plus_1sigma_value: last * (1 + s), minus_1sigma_value: last * (1 - s), plus_1sigma_pct: s * 100, minus_1sigma_pct: -s * 100 },
+      daily: daily.map(d => ({ date: d.date, value: d.price * 10 })) }] });
+  }
   if (url.includes('/portfolio-hedge')) return jr(null, 404);
   if (url.includes('/kite-live')) return jr({ available: false, source: 'fallback', lot_size: null, quote: null, margin: null });
   if (url.includes('/hedge-history')) return jr([]);
@@ -208,6 +216,7 @@ console.log(JSON.stringify({
   bandVals: candle?.cfg.data.datasets.slice(1).map(d => d.data[0]),
   changeBars: change?.cfg.data.datasets[0].data.length,
   post: log.filter(l => l.includes('equity-hedge-scenarios')),
+  pv: log.filter(l => l.includes('/position-value')),
 }));""")
     assert r["inst"] == "RELIANCE" and r["holdingsTouched"] is False
     s = 30 / 100 / math.sqrt(12)
@@ -222,8 +231,8 @@ console.log(JSON.stringify({
     assert "Your current challenge" not in r["summary"] and r["oldSummary"] is False
     # ONE σ (±1σ dotted pair, no 2σ/3σ), anchored on the candle series' last close
     assert r["labels"][0] == "Body" and len(r["labels"]) == 3
-    last = 2000 + 6 * 50 + 28
-    assert r["lastClose"] == last
+    last = (2000 + 6 * 50 + 28) * 10  # F40 Phase 3: candle card is position value (10 shares x price)
+    assert r["lastClose"] * 10 == last
     assert r["bandVals"] == pytest.approx([last * (1 + s), last * (1 - s)], rel=1e-12)
     # +1σ blue, −1σ red (distinct), on both charts
     for cols in (r["candleColors"], r["changeColors"]):
@@ -231,7 +240,8 @@ console.log(JSON.stringify({
     assert r["yBegin"] is False  # candles must not be squashed against a zero baseline
     assert len(r["changeLabels"]) == 3 and r["changeLabels"][1].startswith("+1σ") and r["changeLabels"][2].startswith("−1σ")
     assert r["changeBars"] == 5
-    assert len(r["post"]) == 1 and '"n_shares":10' in r["post"][0]
+    assert len(r["post"]) == 1 and '"n_shares":10' in r["post"][0]  # MoM chart still price-based
+    assert len(r["pv"]) == 1 and "instrument=RELIANCE" in r["pv"][0] and "ann_vol_pct=30" in r["pv"][0]
 
 
 def test_exposure_option_only_instrument_uses_n_shares_1_and_notes_no_holding(jsroot):
@@ -249,12 +259,12 @@ console.log(JSON.stringify({ msg: document.getElementById('hw-exp-candle-msg').i
 def test_exposure_history_failure_degrades_with_message(jsroot):
     r = _node(jsroot, _PRELUDE + r"""
 const orig = globalThis.fetch;
-globalThis.fetch = async (u, o = {}) => u.includes('/equity-hedge-scenarios') ? jr({ detail: 'x' }, 422) : orig(u, o);
+globalThis.fetch = async (u, o = {}) => (u.includes('/equity-hedge-scenarios') || u.includes('/position-value')) ? jr({ detail: 'x' }, 422) : orig(u, o);
 await wf.loadHedgeWorkflow();
 await new Promise(r => setTimeout(r, 50));
 console.log(JSON.stringify({ msg: document.getElementById('hw-exp-candle-msg').innerHTML,
   tiles: document.getElementById('hw-exp-sigma-kpis').innerHTML.length > 0 }));""")
-    assert "Price history unavailable" in r["msg"] and r["tiles"] is True
+    assert "Position value unavailable for RELIANCE" in r["msg"] and r["tiles"] is True
 
 
 def test_save_step_shows_impact_table_chart_and_keeps_save_button(jsroot):

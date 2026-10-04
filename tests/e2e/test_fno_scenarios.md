@@ -48,3 +48,11 @@
 | `test_fno_hedge_history_export_role_gated_csv` | same | `GET /api/v1/system/hedge-plan-history?format=csv` returns the 32-column CSV for the ops-role dev user |
 
 The `isolated_server` fixture (conftest.py) sets `DATABASE_URL` to a temp file, runs `alembic upgrade head` on it, seeds a user/key/portfolio (ASML EUR + RELIANCE INR) and deterministic closes, and **aborts the session** if the server does not see the seeded rows or `rita_output/rita.db` mtime changes. No skip. Set `F40_E2E_SERVER_LOG=<path>` to keep the isolated server's log.
+
+---
+
+## F40 Phase 3 — Position value leg (isolated DB, strict)
+
+| Test | Fixture | Verifies |
+|---|---|---|
+| `test_fno_position_value_leg` | `iso_base_url`, `iso_headers` (port 8766, temp seeded SQLite) | `GET /api/v1/experience/fno/position-value`: ASML (EUR, 10 sh x 700 = 7000) and RELIANCE (INR, 7 x 2500 = 17500) return >=12 monthly candles in their own currency with ±1σ bands (no FX); `ann_vol_pct` override takes precedence (24% -> ±6.9282%); NIFTY (not held) -> `no_holding` + explicit message, never 404; POST -> 405 (read-only) |

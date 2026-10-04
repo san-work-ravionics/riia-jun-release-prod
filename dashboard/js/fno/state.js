@@ -49,6 +49,7 @@ export const state = {
     holdings: [],                 // legacy (exposure holdings table removed); unused
     greeks: [],                   // analytics greeks list (und, allocation_pct, ann_vol_pct)
     priceHistory: {},             // id -> {daily, currency, holding} (equity-hedge-scenarios)
+    positionValue: {},            // "id|vol" -> position-value item (F40 Phase 3)
     positions: [],
     netGreeks: {},
     hedgeQuality: { positions: [] },
