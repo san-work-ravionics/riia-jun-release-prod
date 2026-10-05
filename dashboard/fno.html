@@ -1545,6 +1545,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       <button id="ta-refresh-btn" onclick="taRefresh()" style="padding:6px 16px;border:none;border-radius:6px;background:var(--p02);color:#fff;font-family:var(--fm);font-size:12px;font-weight:600;cursor:pointer">Refresh</button>
     </div>
 
+    <details id="ta-live-details" style="margin-bottom:16px"><summary style="cursor:pointer;font-size:13px;font-weight:700;padding:8px 0">Live Kite feed — today's orders, trades &amp; positions <span id="ta-live-state" class="kpi-sub" style="font-weight:400;margin-left:8px"></span></summary>
     <div class="kpi-row c4"><div class="kpi"><div class="kpi-label">Orders</div><div class="kpi-value" id="ta-kpi-orders">—</div></div><div class="kpi"><div class="kpi-label">Trades</div><div class="kpi-value" id="ta-kpi-trades">—</div></div><div class="kpi"><div class="kpi-label">Lots traded</div><div class="kpi-value" id="ta-kpi-lots">—</div></div><div class="kpi"><div class="kpi-label">Open positions</div><div class="kpi-value" id="ta-kpi-open-pos">—</div></div><div class="kpi"><div class="kpi-label">Round trips</div><div class="kpi-value" id="ta-kpi-roundtrips">—</div></div><div class="kpi"><div class="kpi-label">Net P&amp;L</div><div class="kpi-value" id="ta-kpi-net-pnl">—</div></div><div class="kpi"><div class="kpi-label">Realised</div><div class="kpi-value" id="ta-kpi-realised">—</div></div><div class="kpi"><div class="kpi-label">Unrealised</div><div class="kpi-value" id="ta-kpi-unrealised">—</div></div></div>
 
     <div class="kpi" style="margin-bottom:16px"><div class="kpi-label">By expiry</div>
@@ -1562,6 +1563,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
 
     <div class="kpi-sub" id="ta-snapshot-info" style="margin-bottom:6px"></div>
     <div class="kpi-sub" id="ta-excluded-note" style="margin-bottom:16px"></div>
+    </details>
 
     <!-- ── Console import (F42 Phase 2) — personal data, per user ─────────── -->
     <div class="kpi" style="margin-bottom:16px"><div class="kpi-label">Import Zerodha Console files</div>

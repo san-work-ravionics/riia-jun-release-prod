@@ -68,12 +68,24 @@ function _renderKpis(k) {
     });
 }
 
+let _liveAvailable = null;
+
 function _render(data) {
+  // Live Kite feed lives in a collapsible block: closed (with the reason in its title) when Kite is
+  // not connected, opened automatically when data arrives, so the analysis below stays on screen.
   const banner = document.getElementById('ta-status-banner');
   if (banner) {
-    banner.style.display = data.available ? (data.message ? '' : 'none') : '';
-    banner.textContent = data.available ? (data.message || '') : _reasonText(data.reason, data.message);
+    banner.style.display = data.available && data.message ? '' : 'none';
+    banner.textContent = data.available ? (data.message || '') : '';
   }
+  const live = document.getElementById('ta-live-details');
+  const state = document.getElementById('ta-live-state');
+  if (state) {
+    state.textContent = data.available ? '' : `— not connected: ${_reasonText(data.reason, data.message)}`;
+    state.style.color = data.available ? '' : '#dc2626';
+  }
+  if (live && _liveAvailable !== !!data.available) live.open = !!data.available;
+  _liveAvailable = !!data.available;
   setEl('ta-history-note', _esc(data.history_note || ''));
   setEl('ta-asof', data.as_of_date ? `As of ${_esc(data.as_of_date)} · Kite live, current day only` : '—');
   _fillMonths((data.filter || {}).expiry_months);
