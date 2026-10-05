@@ -161,12 +161,19 @@ def suggestions(ctx: Ctx, overtrading: dict[str, Any], build: dict[str, Any],
     # 3 — margin headroom floor
     t3 = "What-if: no new short entries when cash is low"
     cs = margin["cash_series"]
+    vals = [c["cash"] for c in cs] if cs else []
+    floor = pct_nearest(vals, 100 - p) if vals else None
     if not enough or not margin["ledger"]["available"] or not cs:
         rules.append(insufficient("margin_headroom_floor", t3,
                                   "too few closed trades" if not enough else "needs ledger cash history"))
+    elif floor is not None and floor <= 0:
+        # Ledger cash at/below zero for most of the period: margin is most likely funded by collateral
+        # (e.g. pledged holdings) that the ledger does not show, so a cash floor is not meaningful.
+        rules.append(insufficient(
+            "margin_headroom_floor", t3,
+            "ledger balance is at or below zero for most of the period (margin is probably funded by "
+            "collateral the ledger does not show), so a cash floor is not meaningful"))
     else:
-        vals = [c["cash"] for c in cs]
-        floor = pct_nearest(vals, 100 - p)
         dates = [c["date"] for c in cs]
         import bisect
         f3: dict[int, float] = {}

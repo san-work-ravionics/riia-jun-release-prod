@@ -882,7 +882,7 @@ def margin_trap(ctx: Ctx, ledger: list[LedgerRow], ledger_before: Optional[Ledge
     out["cash"].update({
         "start": _r(cash_vals[0]), "end": _r(cash_vals[-1]), "min": _r(mn),
         "min_date": sdays[cash_vals.index(mn)].isoformat(),
-        "days_below_threshold": sum(1 for c in cash_vals if 0 <= c < thr),
+        "days_below_threshold": sum(1 for c in cash_vals if c < thr),
         "days_negative": sum(1 for c in cash_vals if c < 0)})
     # streaks over ledger days
     flow: dict[date, float] = defaultdict(float)
