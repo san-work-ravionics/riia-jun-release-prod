@@ -90,6 +90,7 @@ import { haSkipToVerdict } from './hedge-reasoning.js';
 import { loadStudy } from './study.js';
 import { loadExperiment, fetchExpData, switchExpTab } from './experiment.js';
 import { loadTradeAnalysis, taSetUnderlying, taSetExpiryMonth, taSetIncludeClosed, taRefresh } from './trade-analysis.js';
+import { taImpFilesChosen, taImpUpload, taImpSetFilter, taImpPage, taImpRefresh, taImpDelete } from './trade-import.js';
 import { loadHedgeWorkflow, hwGoToStep, hwSelectInstrument, hwSelectPortfolio, hwRefreshStep } from './hedge-workflow.js';
 import { hwToggleHedged, hwSelectStrategy, hwRerunAdvisor } from './hedge-workflow-recommendation.js';
 import { hwSetCoverage, hwSetScenarioTab } from './hedge-workflow-whatif.js';
@@ -161,6 +162,13 @@ window.taSetUnderlying = taSetUnderlying;
 window.taSetExpiryMonth = taSetExpiryMonth;
 window.taSetIncludeClosed = taSetIncludeClosed;
 window.taRefresh = taRefresh;
+// F42 Phase 2 — Console import panel (loadImportPanel runs from loadTradeAnalysis)
+window.taImpFilesChosen = taImpFilesChosen;
+window.taImpUpload = taImpUpload;
+window.taImpSetFilter = taImpSetFilter;
+window.taImpPage = taImpPage;
+window.taImpRefresh = taImpRefresh;
+window.taImpDelete = taImpDelete;
 
 // My Portfolio CTA — navigates to the Hedge Workflow (Exposure step) from Overview.
 // Was "navItem = ...[data-section=...]" (stale selector — nav markup uses

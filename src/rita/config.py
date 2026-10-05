@@ -16,6 +16,7 @@ Required env vars in staging/production:
 from __future__ import annotations
 
 import os
+from datetime import date
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -154,6 +155,21 @@ class TradeAnalysisSettings(BaseSettings):
 
     underlyings: list[str] = ["NIFTY", "BANKNIFTY"]
     expiry_months: list[int] = [9, 10, 11]
+    # Month filter is month-number only; expiry_year pins the year it applies to.
+    expiry_year: int = 2026
+    # Read-side analysis window start (import itself always keeps everything in the files).
+    date_from: date = date(2026, 7, 1)
+    # F42 Phase 2 Console import limits (enforced server-side, exposed to the UI via import-status).
+    import_max_file_bytes: int = 10 * 1024 * 1024
+    import_max_files: int = 10
+    import_max_total_bytes: int = 25 * 1024 * 1024
+    import_allowed_extensions: list[str] = [".csv", ".xlsx"]
+    import_max_rows: int = 200000
+    # XLSX zip-bomb guards (checked before openpyxl opens the workbook).
+    import_max_uncompressed_bytes: int = 100 * 1024 * 1024
+    import_max_zip_ratio: int = 100
+    # Optional underlying-name normalisation, e.g. {"NIFTY BANK": "BANKNIFTY"}.
+    symbol_aliases: dict[str, str] = {}
 
 
 class SecuritySettings(BaseSettings):

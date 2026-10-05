@@ -25,3 +25,18 @@ instruments:
     lot_size: 75        # changed from 50 in 2024
   banknifty:
     lot_size: 30
+
+# F42 FnO Trade Analysis — scope + Console import limits (keys must match TradeAnalysisSettings).
+trade_analysis:
+  underlyings: ["NIFTY", "BANKNIFTY"]
+  expiry_months: [9, 10, 11]
+  expiry_year: 2026            # month filter applies to this year only
+  date_from: 2026-07-01        # read/analysis window start; import keeps everything
+  import_max_file_bytes: 10485760
+  import_max_files: 10
+  import_max_total_bytes: 26214400
+  import_allowed_extensions: [".csv", ".xlsx"]
+  import_max_rows: 200000
+  import_max_uncompressed_bytes: 104857600
+  import_max_zip_ratio: 100
+  symbol_aliases: {}
