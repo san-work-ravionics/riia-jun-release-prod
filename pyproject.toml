@@ -33,6 +33,8 @@ dependencies = [
     "mcp>=1.0,<2",
     "jugaad-data==0.33.1",
     "ortools>=9.9",
+    "openpyxl>=3.1",            # F42 P2 Console P&L XLSX import
+    "python-multipart>=0.0.9",  # F42 P2 multipart upload (FastAPI UploadFile)
 ]
 
 [project.optional-dependencies]

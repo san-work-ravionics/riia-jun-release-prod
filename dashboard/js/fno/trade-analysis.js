@@ -7,6 +7,7 @@
 import { api } from './api.js';
 import { setEl } from '../shared/utils.js';
 import { fmtPnl, pnlClass } from './utils.js';
+import { loadImportPanel } from './trade-import.js';
 
 const _PATH = '/api/v1/experience/fno/trade-analysis/live';
 const _MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -121,6 +122,7 @@ function _renderFailure(text) {
 
 export async function loadTradeAnalysis() {
   _PLACEHOLDERS.forEach(p => setEl(`ta-panel-${p}`, 'Coming in Phase 3'));
+  loadImportPanel();  // F42 P2 — independent of the live Kite feed; never throws
   try {
     const qs = new URLSearchParams({ underlying: _und, include_closed: String(_includeClosed) });
     if (_month) qs.set('expiry_month', _month);
