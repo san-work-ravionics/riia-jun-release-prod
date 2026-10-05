@@ -133,3 +133,20 @@ def test_by_expiry_and_snapshot():
     assert b.label == "NIFTY 24 Nov 2026"
     assert (r.snapshot.available, r.snapshot.days_captured, r.snapshot.total_trades) == (True, 2, 9)
     assert _build().snapshot.available is False
+
+
+def test_failed_legs_give_null_kpis():
+    down = ClientResult(None, "upstream_error")
+    t = [_t(1, "NIFTY25NOV24000CE", "BUY", 65)]
+    r = _build(positions=down, trades=t)
+    k = r.kpis
+    assert (k.net_pnl, k.realised_pnl, k.unrealised_pnl, k.open_positions) == (None,) * 4
+    assert k.trades_count == 1 and k.orders_total == 0
+    r = _build(trades=down)
+    k = r.kpis
+    assert (k.trades_count, k.buy_qty, k.sell_qty, k.lots_traded, k.round_trips_today) == (None,) * 5
+    assert k.net_pnl == 0
+    r = _build(orders=down, trades=t)
+    k = r.kpis
+    assert (k.orders_total, k.orders_complete, k.orders_rejected, k.orders_cancelled, k.orders_open) == (None,) * 5
+    assert k.trades_count == 1

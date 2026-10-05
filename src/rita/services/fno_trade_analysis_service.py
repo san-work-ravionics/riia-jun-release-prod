@@ -201,16 +201,19 @@ def build_live_payload(
     round_trips = sum(min(e["BUY"], e["SELL"]) // e["lot"] for e in per_sym.values() if e["lot"])
 
     statuses = [(o.status or "").upper() for o in order_rows]
+    fo, ft, fp = "orders" in failed, "trades" in failed, "positions" in failed
+    n = lambda bad, v: None if bad else v  # noqa: E731
     kpis = TradeKpis(
-        orders_total=len(order_rows),
-        orders_complete=statuses.count("COMPLETE"),
-        orders_rejected=statuses.count("REJECTED"),
-        orders_cancelled=statuses.count("CANCELLED"),
-        orders_open=sum(1 for s in statuses if s not in _TERMINAL_STATUSES),
-        trades_count=len(trade_rows), buy_qty=buy, sell_qty=sell, lots_traded=lots_traded,
-        open_positions=sum(1 for p in all_positions if p.side != "FLAT"),
-        net_pnl=_sum(all_positions, "pnl"), realised_pnl=_sum(all_positions, "realised"),
-        unrealised_pnl=_sum(all_positions, "unrealised"), round_trips_today=int(round_trips),
+        orders_total=n(fo, len(order_rows)),
+        orders_complete=n(fo, statuses.count("COMPLETE")),
+        orders_rejected=n(fo, statuses.count("REJECTED")),
+        orders_cancelled=n(fo, statuses.count("CANCELLED")),
+        orders_open=n(fo, sum(1 for s_ in statuses if s_ not in _TERMINAL_STATUSES)),
+        trades_count=n(ft, len(trade_rows)), buy_qty=n(ft, buy), sell_qty=n(ft, sell),
+        lots_traded=n(ft, lots_traded),
+        open_positions=n(fp, sum(1 for p in all_positions if p.side != "FLAT")),
+        net_pnl=n(fp, _sum(all_positions, "pnl")), realised_pnl=n(fp, _sum(all_positions, "realised")),
+        unrealised_pnl=n(fp, _sum(all_positions, "unrealised")), round_trips_today=n(ft, int(round_trips)),
     )
 
     # ── by expiry ──

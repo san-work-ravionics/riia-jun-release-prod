@@ -15,6 +15,11 @@ Semantics (kept simple on purpose):
                     other_underlying (outside the selected underlying), out_of_window (expiry
                     month not in the configured window), unresolved (not in the instrument master).
 All nullable numerics render as "—" in the UI; nothing is guessed.
+A KPI is None when the leg it derives from failed (orders_* <- orders; trades_count, buy_qty,
+sell_qty, lots_traded, round_trips_today <- trades; open_positions, *_pnl <- positions).
+excluded.unresolved also holds FINNIFTY/other-index and equity options, because the master
+only contains the configured underlyings' CE/PE contracts.
+include_closed only filters the positions list, not KPIs or by_expiry.
 """
 from __future__ import annotations
 
@@ -30,20 +35,20 @@ class TradeFilter(BaseModel):
 
 
 class TradeKpis(BaseModel):
-    orders_total: int = 0
-    orders_complete: int = 0
-    orders_rejected: int = 0
-    orders_cancelled: int = 0
-    orders_open: int = 0
-    trades_count: int = 0
-    buy_qty: int = 0
-    sell_qty: int = 0
+    orders_total: Optional[int] = None
+    orders_complete: Optional[int] = None
+    orders_rejected: Optional[int] = None
+    orders_cancelled: Optional[int] = None
+    orders_open: Optional[int] = None
+    trades_count: Optional[int] = None
+    buy_qty: Optional[int] = None
+    sell_qty: Optional[int] = None
     lots_traded: Optional[float] = None
-    open_positions: int = 0
+    open_positions: Optional[int] = None
     net_pnl: Optional[float] = None
     realised_pnl: Optional[float] = None
     unrealised_pnl: Optional[float] = None
-    round_trips_today: int = 0
+    round_trips_today: Optional[int] = None
 
 
 class OrderRow(BaseModel):
