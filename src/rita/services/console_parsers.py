@@ -216,6 +216,9 @@ def read_table(raw: bytes, file_name: str, max_rows: int, max_uncompressed: int 
         try:
             for ws in wb.worksheets:
                 rows: list[list[Any]] = []
+                # Console exports declare a wrong sheet <dimension>; read-only mode trusts it
+                # and would yield a single row, so ignore the declared size.
+                ws.reset_dimensions()
                 for r in ws.iter_rows(values_only=True):
                     total += 1
                     if total > max_rows:
