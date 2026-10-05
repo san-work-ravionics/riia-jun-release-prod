@@ -19,10 +19,10 @@ import os
 from datetime import date
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import yaml
-from pydantic import Field, SecretStr, model_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # ---------------------------------------------------------------------------
@@ -170,6 +170,70 @@ class TradeAnalysisSettings(BaseSettings):
     import_max_zip_ratio: int = 100
     # Optional underlying-name normalisation, e.g. {"NIFTY BANK": "BANKNIFTY"}.
     symbol_aliases: dict[str, str] = {}
+    # F42 Phase 3 analytics thresholds (all analysis numbers are reproducible from these).
+    analytics_recon_tolerance_inr: float = 1.0
+    expiry_settlement: Literal["spot_intrinsic", "off"] = "spot_intrinsic"
+    turn_threshold_pct: float = 1.0
+    adverse_spot_pct: float = 0.5
+    burst_window_minutes: int = 30
+    burst_min_fills: int = 3
+    reentry_window_minutes: int = 30
+    low_cash_threshold_inr: float = 50000.0
+    debit_streak_min_days: int = 3
+    loser_mark_max_stale_days: int = 5
+    stop_loss_multiples: list[float] = [1.0, 1.5, 2.0]
+    suggestion_percentile: int = 75
+    suggestion_min_closed_trades: int = 10
+    cooling_off_min_minutes: int = 15
+    cooling_off_max_minutes: int = 120
+    analytics_min_timestamp_coverage: float = 0.8
+    analytics_max_rows: int = 200
+    observation_high_churn_pct: float = 50.0
+
+    @field_validator("analytics_min_timestamp_coverage")
+    @classmethod
+    def _coverage_unit(cls, v: float) -> float:
+        if not 0.0 <= v <= 1.0:
+            raise ValueError("analytics_min_timestamp_coverage must be within [0, 1]")
+        return v
+
+    @field_validator("suggestion_percentile")
+    @classmethod
+    def _percentile_range(cls, v: int) -> int:
+        if not 1 <= v <= 99:
+            raise ValueError("suggestion_percentile must be within 1..99")
+        return v
+
+    @field_validator("stop_loss_multiples")
+    @classmethod
+    def _multiples_positive(cls, v: list[float]) -> list[float]:
+        if not v or any(m <= 0 for m in v):
+            raise ValueError("stop_loss_multiples must be a non-empty list of values > 0")
+        return v
+
+    @field_validator("burst_min_fills", "debit_streak_min_days", "analytics_max_rows",
+                     "suggestion_min_closed_trades")
+    @classmethod
+    def _count_min_one(cls, v: int) -> int:
+        if v < 1:
+            raise ValueError("count thresholds must be >= 1")
+        return v
+
+    @field_validator("analytics_recon_tolerance_inr", "turn_threshold_pct", "adverse_spot_pct",
+                     "burst_window_minutes", "reentry_window_minutes", "low_cash_threshold_inr",
+                     "loser_mark_max_stale_days", "cooling_off_min_minutes",
+                     "cooling_off_max_minutes", "observation_high_churn_pct")
+    @classmethod
+    def _threshold_non_negative(cls, v: float) -> float:
+        if v < 0:
+            raise ValueError("thresholds must be >= 0")
+        return v
+
+    @model_validator(mode="after")
+    def _cooling_order(self) -> "TradeAnalysisSettings":
+        if self.cooling_off_min_minutes > self.cooling_off_max_minutes:
+            raise ValueError("cooling_off_min_minutes must be <= cooling_off_max_minutes")
+        return self
 
 
 class SecuritySettings(BaseSettings):

@@ -8,21 +8,21 @@ import { api } from './api.js';
 import { setEl } from '../shared/utils.js';
 import { fmtPnl, pnlClass } from './utils.js';
 import { loadImportPanel } from './trade-import.js';
+import { loadAnalyticsPanels } from './trade-analytics.js';
 
 const _PATH = '/api/v1/experience/fno/trade-analysis/live';
 const _MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const _PLACEHOLDERS = ['overtrading', 'buildup', 'marketturn', 'margintrap', 'suggestions'];
 
 let _und = 'ALL';
 let _month = '';
 let _includeClosed = true;
 let _monthsFilled = false;
 
-const _esc = v => String(v == null ? '' : v)
+export const _esc = v => String(v == null ? '' : v)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-const _num = (v, d = 0) => v == null ? '—'
+export const _num = (v, d = 0) => v == null ? '—'
   : Number(v).toLocaleString('en-IN', { minimumFractionDigits: d, maximumFractionDigits: d });
-const _pnl = v => v == null ? '—' : fmtPnl(v);
+export const _pnl = v => v == null ? '—' : fmtPnl(v);
 const _time = v => v == null ? '—' : _esc(String(v).replace('T', ' ').slice(11, 19) || v);
 
 function _reasonText(reason, message) {
@@ -121,8 +121,8 @@ function _renderFailure(text) {
 }
 
 export async function loadTradeAnalysis() {
-  _PLACEHOLDERS.forEach(p => setEl(`ta-panel-${p}`, 'Coming in Phase 3'));
   loadImportPanel();  // F42 P2 — independent of the live Kite feed; never throws
+  loadAnalyticsPanels().catch(() => {});  // F42 P3 — six analytics panels, each fails on its own
   try {
     const qs = new URLSearchParams({ underlying: _und, include_closed: String(_includeClosed) });
     if (_month) qs.set('expiry_month', _month);
@@ -132,6 +132,11 @@ export async function loadTradeAnalysis() {
   } catch (e) {
     _renderFailure('Trade Analysis could not be loaded.');
   }
+}
+
+// Current page filters (read by the P3 analytics module so it reuses the same selectors).
+export function taGetFilters() {
+  return { underlying: _und, month: _month };
 }
 
 export function taSetUnderlying(und) {

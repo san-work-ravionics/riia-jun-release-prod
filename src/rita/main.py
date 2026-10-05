@@ -77,6 +77,7 @@ from rita.api.experience.portfolio_hedge import router as portfolio_hedge_router
 from rita.api.experience.fno_hedge_plan import router as fno_hedge_plan_router
 from rita.api.experience.fno_kite_live import router as fno_kite_live_router
 from rita.api.experience.fno_trade_analysis import router as fno_trade_analysis_router
+from rita.api.experience.fno_trade_analytics import router as fno_trade_analytics_router
 from rita.api.experience.fno_trade_import import router as fno_trade_import_router
 from rita.api.v1.workflow.fno_console_import import router as fno_console_import_router
 from rita.api.experience.fno_position_value import router as fno_position_value_router
@@ -408,6 +409,7 @@ app.include_router(fno_hedge_plan_router)
 app.include_router(fno_kite_live_router)
 app.include_router(fno_trade_analysis_router)
 app.include_router(fno_trade_import_router)
+app.include_router(fno_trade_analytics_router)
 app.include_router(fno_console_import_router)
 app.include_router(fno_position_value_router)
 app.include_router(fno_study_router)
