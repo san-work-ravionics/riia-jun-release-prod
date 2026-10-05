@@ -165,6 +165,9 @@ class TradeAnalysisSettings(BaseSettings):
     import_max_total_bytes: int = 25 * 1024 * 1024
     import_allowed_extensions: list[str] = [".csv", ".xlsx"]
     import_max_rows: int = 200000
+    # XLSX zip-bomb guards (checked before openpyxl opens the workbook).
+    import_max_uncompressed_bytes: int = 100 * 1024 * 1024
+    import_max_zip_ratio: int = 100
     # Optional underlying-name normalisation, e.g. {"NIFTY BANK": "BANKNIFTY"}.
     symbol_aliases: dict[str, str] = {}
 

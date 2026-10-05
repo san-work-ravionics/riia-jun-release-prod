@@ -131,9 +131,14 @@ class FnoImportService:
         try:
             self._validate(up)
             parsed = parse_file(up.data, name, self._cfg.import_max_rows,
-                                self._cfg.symbol_aliases)
+                                self._cfg.symbol_aliases, self._cfg.import_max_uncompressed_bytes,
+                                self._cfg.import_max_zip_ratio)
         except ParseFailure as e:
             return self._fail(user_id, name, sha, size, None, e.code, e.message)
+        except Exception as e:  # noqa: BLE001 — never a 500; counts/ids only in the log
+            log.error("fno_import_parse_failed", err=type(e).__name__, sha=sha[:8])
+            return self._fail(user_id, name, sha, size, None, "unreadable",
+                              "File could not be parsed")
 
         if parsed.rows_parsed > 0 and not parsed.records and parsed.rows_rejected >= parsed.rows_parsed:
             return self._fail(user_id, name, sha, size, parsed, "all_rows_rejected",
@@ -237,20 +242,35 @@ class FnoImportService:
         pf, pt = p.period_from, p.period_to
         old_syms = self._pnl.line_symbols(uid, pf, pt)
         old_charges = self._pnl.charge_keys(uid, pf, pt)
-        self._pnl.delete_period(uid, pf, pt)  # restated file replaces the whole period
-        self._db.flush()
         charges = [{**c, "entry_date": c["entry_date"] or NO_ENTRY_DATE} for c in p.charges]
-        self._pnl.insert_lines(uid, run_id, p.records)
+        replace = p.rows_rejected == 0 and bool(p.records)
+        if replace:
+            self._pnl.delete_period(uid, pf, pt)  # restated file replaces the whole period
+            self._db.flush()
+            lines = p.records
+            old_syms_kept: set[str] = set()
+            old_charges_kept: set[tuple] = set()
+        else:
+            # partial file or no symbol rows: never delete; only add what is missing
+            why = "had rejected rows" if p.rows_rejected else "had no symbol rows"
+            warnings.append(f"Existing P&L data for this period was kept: file {why}")
+            lines = [r for r in p.records if r["symbol"] not in old_syms]
+            charges = [c for c in charges
+                       if (c["section"], c["item"], c["entry_date"]) not in old_charges]
+            old_syms_kept, old_charges_kept = old_syms, old_charges
+        self._pnl.insert_lines(uid, run_id, lines)
         self._pnl.insert_charges(uid, run_id, charges)
-        new_syms = {r["symbol"] for r in p.records}
+        new_syms = {r["symbol"] for r in lines}
         new_ckeys = {(c["section"], c["item"], c["entry_date"]) for c in charges}
-        upd = len(new_syms & old_syms) + len(new_ckeys & old_charges)
-        ins = len(new_syms - old_syms) + len(new_ckeys - old_charges)
-        stale = len(old_syms - new_syms)
-        if old_syms or old_charges:
+        upd = len(new_syms & old_syms) + len(new_ckeys & old_charges) if replace else 0
+        ins = len(new_syms - old_syms_kept) + len(new_ckeys - old_charges_kept) \
+            if not replace else len(new_syms - old_syms) + len(new_ckeys - old_charges)
+        if replace and (old_syms or old_charges):
             warnings.append(
-                f"Replaced existing P&L data for this period ({stale} symbol(s) no longer present)")
-        return ins, upd, p.duplicates_in_file
+                f"Replaced existing P&L data for this period ({len(old_syms - new_syms)} "
+                "symbol(s) no longer present)")
+        skipped = p.duplicates_in_file + (len(p.records) - len(lines) if not replace else 0)
+        return ins, upd, skipped
 
 
 class FnoImportReadService:

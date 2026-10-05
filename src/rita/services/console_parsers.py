@@ -11,8 +11,9 @@ import hashlib
 import io
 import math
 import re
+import zipfile
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from typing import Any, Optional
 
@@ -22,6 +23,9 @@ TRADEBOOK, PNL, LEDGER = "tradebook", "pnl", "ledger"
 HEADER_SCAN_ROWS = 100
 MAX_ERRORS = 50
 _DATE_MIN = date(1990, 1, 1)
+_MAX_ADJUSTED = 14  # |value| < 1e15: fits Numeric(18,4); checked before any big arithmetic
+_MAX_NUM_CHARS = 64
+_IST = timezone(timedelta(minutes=330))
 _EXCEL_EPOCH = datetime(1899, 12, 31) - timedelta(days=1)  # Excel serial day 0
 
 _REQUIRED = {
@@ -93,11 +97,15 @@ def to_decimal(v: Any) -> Optional[Decimal]:
     if isinstance(v, (int, float, Decimal)):
         if isinstance(v, float) and (math.isnan(v) or math.isinf(v)):
             raise ValueError("nan")
+        if isinstance(v, int) and v.bit_length() > 80:
+            raise ValueError("out_of_range")
         d = Decimal(str(v))
     else:
         s = _CTRL.sub("", str(v)).strip()
         if s in ("", "-"):
             return None
+        if len(s) > _MAX_NUM_CHARS:
+            raise ValueError("out_of_range")
         neg = s.startswith("(") and s.endswith(")")
         s = re.sub(r"[,\s₹$€%]|Rs\.?|INR", "", s.strip("()"))
         try:
@@ -106,15 +114,15 @@ def to_decimal(v: Any) -> Optional[Decimal]:
             raise ValueError("number") from e
         if neg:
             d = -d
-    if not d.is_finite():
-        raise ValueError("nan")
+    if not d.is_finite() or d.adjusted() > _MAX_ADJUSTED:
+        raise ValueError("out_of_range")
     return d
 
 
 def to_datetime(v: Any) -> datetime:
     """datetime / date / Excel serial / formatted string -> naive datetime; ValueError if not."""
     if isinstance(v, datetime):
-        out = v.replace(tzinfo=None)
+        out = v.astimezone(_IST).replace(tzinfo=None) if v.tzinfo else v  # naive = IST
     elif isinstance(v, date):
         out = datetime(v.year, v.month, v.day)
     elif isinstance(v, (int, float)) and not isinstance(v, bool) and 1 <= v <= 80000:
@@ -175,11 +183,28 @@ def _decode(raw: bytes) -> str:
         return raw.decode("latin-1")
 
 
-def read_table(raw: bytes, file_name: str, max_rows: int) -> Sheets:
+def check_xlsx_zip(raw: bytes, max_uncompressed: int, max_ratio: int) -> None:
+    """Zip-bomb guard run BEFORE openpyxl: uncompressed-size and compression-ratio caps."""
+    try:
+        with zipfile.ZipFile(io.BytesIO(raw)) as zf:
+            infos = zf.infolist()
+    except zipfile.BadZipFile as e:
+        raise ParseFailure("unreadable", "Workbook could not be read") from e
+    total = sum(i.file_size for i in infos)
+    comp = sum(i.compress_size for i in infos) or 1
+    if total > max_uncompressed:
+        raise ParseFailure("xlsx_too_large", "Workbook expands beyond the allowed size")
+    if total / comp > max_ratio:
+        raise ParseFailure("xlsx_suspicious", "Workbook compression ratio is not plausible")
+
+
+def read_table(raw: bytes, file_name: str, max_rows: int, max_uncompressed: int = 200 * 1024 * 1024,
+               max_ratio: int = 200) -> Sheets:
     """csv/xlsx bytes -> {sheet_name: rows}.  CSV uses the single key 'csv'."""
     if not raw:
         raise ParseFailure("empty_file", "File is empty")
     if file_name.lower().endswith(".xlsx"):
+        check_xlsx_zip(raw, max_uncompressed, max_ratio)
         try:
             import openpyxl
 
@@ -205,8 +230,8 @@ def read_table(raw: bytes, file_name: str, max_rows: int) -> Sheets:
             wb.close()
         return sheets
     text = _decode(raw)
-    first = next((ln for ln in text.splitlines() if ln.strip()), "")
-    delim = max([",", ";", "\t"], key=lambda d: (first.count(d), d == ","))
+    head = [ln for ln in text.splitlines()[:200] if ln.strip()][:5]
+    delim = max([",", ";", "\t"], key=lambda d: (sum(ln.count(d) for ln in head), d == ","))
     rows = []
     try:
         for r in csv.reader(io.StringIO(text), delimiter=delim):
@@ -248,8 +273,9 @@ def detect_kind(sheets: Sheets) -> Optional[str]:
 
 
 def parse_file(raw: bytes, file_name: str, max_rows: int,
-               aliases: Optional[dict[str, str]] = None) -> ParsedFile:
-    sheets = read_table(raw, file_name, max_rows)
+               aliases: Optional[dict[str, str]] = None, max_uncompressed: int = 200 * 1024 * 1024,
+               max_ratio: int = 200) -> ParsedFile:
+    sheets = read_table(raw, file_name, max_rows, max_uncompressed, max_ratio)
     found = _locate(sheets)
     if len(found) > 1:
         raise ParseFailure("ambiguous_kind", "File matches more than one Console export kind")

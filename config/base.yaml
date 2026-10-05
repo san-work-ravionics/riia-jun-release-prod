@@ -37,4 +37,6 @@ trade_analysis:
   import_max_total_bytes: 26214400
   import_allowed_extensions: [".csv", ".xlsx"]
   import_max_rows: 200000
+  import_max_uncompressed_bytes: 104857600
+  import_max_zip_ratio: 100
   symbol_aliases: {}

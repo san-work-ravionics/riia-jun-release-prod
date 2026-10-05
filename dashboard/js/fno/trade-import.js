@@ -23,7 +23,8 @@ let _filtersReady = false;
 let _busy = false;
 
 const _esc = v => String(v == null ? '' : v)
-  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const _num = (v, d = 0) => v == null ? '—'
   : Number(v).toLocaleString('en-IN', { minimumFractionDigits: d, maximumFractionDigits: d });
 const _dash = v => (v == null || v === '') ? '—' : _esc(v);
@@ -86,6 +87,7 @@ function _renderStatus(s) {
     }
     const from = _el('ta-imp-from');
     if (from && !from.value) from.value = sc.date_from || '';
+    setEl('ta-imp-from-hint', sc.date_from ? `from ${_esc(sc.date_from)} (default; clear = default)` : '');
     _filtersReady = true;
   }
 }

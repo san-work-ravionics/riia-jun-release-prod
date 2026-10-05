@@ -35,8 +35,11 @@ class _EarlyLimitRoute(APIRoute):
             if request.method == "POST":
                 cfg = get_settings().trade_analysis
                 limit = cfg.import_max_total_bytes + 4096 * cfg.import_max_files
+                raw_len = request.headers.get("content-length")
+                if raw_len is None:  # chunked body cannot be bounded before spooling
+                    raise HTTPException(status_code=411, detail="Content-Length header required")
                 try:
-                    declared = int(request.headers.get("content-length", "0"))
+                    declared = int(raw_len)
                 except ValueError:
                     declared = 0
                 if declared > limit:

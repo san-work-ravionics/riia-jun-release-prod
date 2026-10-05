@@ -1586,7 +1586,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0">
         <select id="ta-imp-und" onchange="taImpSetFilter()" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-family:var(--fm);font-size:12px;background:var(--surface);color:var(--text)"><option value="ALL">All</option></select>
         <select id="ta-imp-month" onchange="taImpSetFilter()" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-family:var(--fm);font-size:12px;background:var(--surface);color:var(--text)"><option value="">All expiries</option></select>
-        <input type="date" id="ta-imp-from" onchange="taImpSetFilter()" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-family:var(--fm);font-size:12px;background:var(--surface);color:var(--text)">
+        <span id="ta-imp-from-hint" class="kpi-sub"></span><input type="date" id="ta-imp-from" onchange="taImpSetFilter()" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-family:var(--fm);font-size:12px;background:var(--surface);color:var(--text)">
         <select id="ta-imp-side" onchange="taImpSetFilter()" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-family:var(--fm);font-size:12px;background:var(--surface);color:var(--text)"><option value="">Buy + Sell</option><option value="buy">Buy</option><option value="sell">Sell</option></select>
         <label style="font-size:12px;color:var(--t3);font-family:var(--fm);display:flex;align-items:center;gap:5px"><input type="checkbox" id="ta-imp-fut" onchange="taImpSetFilter()"> Include futures</label>
       </div>
