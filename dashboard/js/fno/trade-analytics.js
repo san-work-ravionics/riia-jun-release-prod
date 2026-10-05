@@ -46,7 +46,7 @@ const _kpis = items => `<div class="kpi-row c4">${items.join('')}</div>`;
 const _th = c => `<th style="padding:6px 8px;text-align:left;font-weight:700;white-space:nowrap">${_esc(c)}</th>`;
 const _td = c => `<td style="padding:4px 8px;white-space:nowrap">${c}</td>`;
 const _tbl = (title, cols, rows, empty = 'No data') => `<div style="margin:10px 0 4px;font-weight:700;font-size:12px">${_esc(title)}</div>`
-  + `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>`
+  + `<div class="tbl-wrap" style="max-height:200px"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>`
   + `${cols.map(_th).join('')}</tr></thead><tbody>`
   + (rows.length ? rows.map(r => `<tr>${r.map(_td).join('')}</tr>`).join('')
     : `<tr><td colspan="${cols.length}" style="color:var(--t3);text-align:center">${_esc(empty)}</td></tr>`)
