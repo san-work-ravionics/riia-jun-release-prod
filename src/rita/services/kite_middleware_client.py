@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import csv
 import time
+from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 from typing import Any, Optional
@@ -61,27 +62,59 @@ def _reset_cache() -> None:
     _lot_cache.clear()
     _pe_cache = None
     _pe_fail_until = 0.0
+    global _nfo_cache, _nfo_fail
+    _nfo_cache = None
+    _nfo_fail = None
 
 
-def _request(method: str, url: str, timeout: float = _TIMEOUT_SECONDS, **kwargs: Any) -> Optional[dict[str, Any]]:
-    """Single failure path: returns the parsed body, or None on ANY failure."""
+REASON_UNREACHABLE = "middleware_unreachable"
+REASON_TOKEN_EXPIRED = "token_expired"
+REASON_UPSTREAM = "upstream_error"
+REASON_BAD_RESPONSE = "bad_response"
+
+
+@dataclass(frozen=True)
+class ClientResult:
+    """Outcome of a middleware call: parsed body on success, else a failure reason."""
+
+    body: Optional[dict[str, Any]]
+    reason: Optional[str] = None
+
+
+def _is_token_error(text: Any) -> bool:
+    t = str(text or "").lower()
+    return "token" in t or "access_token" in t
+
+
+def _request_ex(method: str, url: str, timeout: float = _TIMEOUT_SECONDS, **kwargs: Any) -> tuple[Optional[dict[str, Any]], Optional[str]]:
+    """Single failure path with a reason: (body, None) on success, (None, reason) on failure."""
     try:
         resp = httpx.request(method, url, timeout=timeout, **kwargs)
     except httpx.RequestError as exc:  # connect error, timeout, etc.
         log.info("kite_middleware.request_failed", url=url, error=str(exc))
-        return None
+        return None, REASON_UNREACHABLE
+    if resp.status_code == 401:
+        log.warning("kite_middleware.non_2xx", url=url, status_code=401)
+        return None, REASON_TOKEN_EXPIRED
     if not (200 <= resp.status_code < 300):
         log.warning("kite_middleware.non_2xx", url=url, status_code=resp.status_code)
-        return None
+        return None, REASON_UPSTREAM
     try:
         body = resp.json()
     except ValueError as exc:
         log.warning("kite_middleware.bad_json", url=url, error=str(exc))
-        return None
-    if not isinstance(body, dict) or body.get("success") is not True:
+        return None, REASON_BAD_RESPONSE
+    if not isinstance(body, dict):
+        return None, REASON_BAD_RESPONSE
+    if body.get("success") is not True:
         log.info("kite_middleware.success_false", url=url)
-        return None
-    return body
+        return None, REASON_TOKEN_EXPIRED if _is_token_error(body.get("error")) else REASON_UPSTREAM
+    return body, None
+
+
+def _request(method: str, url: str, timeout: float = _TIMEOUT_SECONDS, **kwargs: Any) -> Optional[dict[str, Any]]:
+    """Single failure path: returns the parsed body, or None on ANY failure."""
+    return _request_ex(method, url, timeout, **kwargs)[0]
 
 
 def _lot_size(base_url: str, instrument_id: str) -> Optional[int]:
@@ -423,3 +456,97 @@ def put_premium_from_csv(
     except Exception as exc:  # defensive: callers keep their model estimate
         log.warning("kite_middleware.put_csv_unexpected", instrument_id=instrument_id, error=str(exc))
         return None
+
+
+# ── F42 Trade Analysis: live orders / trades / positions + NFO option master ───
+
+_LIVE_TIMEOUT_SECONDS = 5.0
+_MASTER_TIMEOUT_SECONDS = 15.0  # the NFO master (~34k contracts) is slow
+_NFO_FAIL_BACKOFF_SECONDS = 60.0
+
+# option master keyed by tradingsymbol: {name, expiry: date, strike, instrument_type, lot_size}
+_nfo_cache: tuple[float, dict[str, dict[str, Any]]] | None = None
+# (retry_not_before_monotonic, reason) after a failed master fetch
+_nfo_fail: tuple[float, str] | None = None
+
+
+def _base_url() -> str:
+    return get_settings().integrations.fno_margin_fetch_base_url.rstrip("/")
+
+
+def _live(path: str, **kwargs: Any) -> ClientResult:
+    try:
+        body, reason = _request_ex("GET", f"{_base_url()}{path}", _LIVE_TIMEOUT_SECONDS, **kwargs)
+    except Exception as exc:  # defensive: never raise
+        log.warning("kite_middleware.live_unexpected", path=path, error=str(exc))
+        return ClientResult(None, REASON_UNREACHABLE)
+    return ClientResult(body, reason)
+
+
+def fetch_live_orders() -> ClientResult:
+    """Today's Kite orders via fno-margin-fetch (current trading day only)."""
+    return _live("/api/orders")
+
+
+def fetch_live_trades(snapshot: bool = True) -> ClientResult:
+    """Today's Kite trades. snapshot=True lets the middleware persist them (its own side effect)."""
+    return _live("/api/trades", params={"snapshot": "true" if snapshot else "false"})
+
+
+def fetch_live_positions() -> ClientResult:
+    """Today's Kite positions: body['data'] = {'net': [...], 'day': [...]}."""
+    return _live("/api/positions")
+
+
+def fetch_snapshot_status() -> ClientResult:
+    """Middleware daily-snapshot summary (no Kite call on the middleware side)."""
+    return _live("/api/snapshot/status")
+
+
+def fetch_instrument_master_nfo() -> ClientResult:
+    """NFO option master for the configured underlyings (CE+PE), keyed by tradingsymbol.
+
+    body = {tradingsymbol: {name, expiry(date), strike, instrument_type, lot_size}}.
+    Cached for an hour; a failed fetch is remembered for a minute (same reason returned).
+    """
+    global _nfo_cache, _nfo_fail
+    now = time.monotonic()
+    if _nfo_cache and _nfo_cache[0] > now:
+        return ClientResult(_nfo_cache[1])
+    if _nfo_fail and now < _nfo_fail[0]:
+        return ClientResult(None, _nfo_fail[1])
+    try:
+        body, reason = _request_ex(
+            "GET", f"{_base_url()}/api/instruments", _MASTER_TIMEOUT_SECONDS,
+            params={"exchange": "NFO", "limit": _INSTRUMENTS_LIMIT},
+        )
+    except Exception as exc:  # defensive
+        log.warning("kite_middleware.master_unexpected", error=str(exc))
+        body, reason = None, REASON_UNREACHABLE
+    if body is None:
+        _nfo_fail = (now + _NFO_FAIL_BACKOFF_SECONDS, reason or REASON_UPSTREAM)
+        return ClientResult(None, reason or REASON_UPSTREAM)
+    names = set(get_settings().trade_analysis.underlyings)
+    out: dict[str, dict[str, Any]] = {}
+    for inst in body.get("instruments") or []:
+        if not isinstance(inst, dict) or inst.get("name") not in names:
+            continue
+        if inst.get("instrument_type") not in ("CE", "PE"):
+            continue
+        try:
+            exp = date.fromisoformat(str(inst["expiry"])[:10])
+            strike = float(inst["strike"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        sym = inst.get("tradingsymbol")
+        if not sym:
+            continue
+        lot = inst.get("lot_size")
+        out[sym] = {
+            "name": inst["name"], "expiry": exp, "strike": strike,
+            "instrument_type": inst["instrument_type"],
+            "lot_size": lot if isinstance(lot, int) and not isinstance(lot, bool) and lot > 0 else None,
+        }
+    _nfo_cache = (now + _LOT_CACHE_TTL_SECONDS, out)
+    _nfo_fail = None
+    return ClientResult(out)
