@@ -40,3 +40,22 @@ trade_analysis:
   import_max_uncompressed_bytes: 104857600
   import_max_zip_ratio: 100
   symbol_aliases: {}
+  # F42 Phase 3 analytics thresholds
+  analytics_recon_tolerance_inr: 1.0
+  expiry_settlement: spot_intrinsic   # spot_intrinsic | off  (expiry-held lots closed at spot intrinsic = ESTIMATE)
+  turn_threshold_pct: 1.0
+  adverse_spot_pct: 0.5
+  burst_window_minutes: 30
+  burst_min_fills: 3
+  reentry_window_minutes: 30
+  low_cash_threshold_inr: 50000.0
+  debit_streak_min_days: 3
+  loser_mark_max_stale_days: 5
+  stop_loss_multiples: [1.0, 1.5, 2.0]
+  suggestion_percentile: 75
+  suggestion_min_closed_trades: 10
+  cooling_off_min_minutes: 15
+  cooling_off_max_minutes: 120
+  analytics_min_timestamp_coverage: 0.8
+  analytics_max_rows: 200
+  observation_high_churn_pct: 50.0

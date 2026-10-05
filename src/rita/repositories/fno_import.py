@@ -123,6 +123,31 @@ class FnoTradeRepo:
         conds = self._scope(user_id, underlyings, months, date_from, None, False, None, None)
         return self._db.scalar(select(func.count()).select_from(Trade).where(*conds)) or 0
 
+    # ── F42 Phase 3 analytics reads (read-only; user_id required) ────────────
+    def fills_for_analysis(self, user_id: str, underlyings: list[str], months: list[str],
+                           date_to: date) -> list[Trade]:
+        """CE/PE fills in scope up to date_to (NO date_from: FIFO needs the full history),
+        ordered by the FIFO key (date, execution time, order id, trade id)."""
+        q = select(Trade).where(
+            Trade.user_id == user_id, Trade.underlying.in_(underlyings),
+            Trade.instrument_type.in_(["CE", "PE"]), Trade.expiry_ym.in_(months),
+            Trade.trade_date <= date_to,
+        ).order_by(Trade.trade_date.asc(), Trade.order_execution_time.asc(),
+                   Trade.order_id.asc(), Trade.trade_id.asc())
+        return list(self._db.scalars(q))
+
+    def turnover(self, user_id: str, date_from: date, date_to: date) -> float:
+        """Sum of quantity x price over ALL the user's fills (any instrument) in the range."""
+        q = select(func.sum(Trade.quantity * Trade.price)).where(
+            Trade.user_id == user_id, Trade.trade_date >= date_from, Trade.trade_date <= date_to)
+        return float(self._db.scalar(q) or 0.0)
+
+    def unparsed_count(self, user_id: str, date_from: date) -> int:
+        q = select(func.count()).select_from(Trade).where(
+            Trade.user_id == user_id, Trade.parse_status == "unparsed",
+            Trade.trade_date >= date_from)
+        return int(self._db.scalar(q) or 0)
+
     def purge(self, user_id: str) -> int:
         return self._db.execute(delete(Trade).where(Trade.user_id == user_id)).rowcount or 0
 
@@ -158,6 +183,20 @@ class FnoPnlRepo:
             .order_by(Line.period_from, Line.period_to)
         return {"line_count": n, "periods": [(r[0], r[1]) for r in self._db.execute(q)]}
 
+    def lines_for_scope(self, user_id: str, underlyings: list[str], months: list[str]) -> list[Line]:
+        q = select(Line).where(
+            Line.user_id == user_id, Line.underlying.in_(underlyings),
+            Line.instrument_type.in_(["CE", "PE"]), Line.expiry_ym.in_(months),
+        ).order_by(Line.period_from.asc(), Line.period_to.asc(), Line.symbol.asc())
+        return list(self._db.scalars(q))
+
+    def charge_summary(self, user_id: str) -> list[Charge]:
+        """Summary + charges rows (all periods) for the charges estimate."""
+        q = select(Charge).where(
+            Charge.user_id == user_id, Charge.section.in_(["summary", "charges"]),
+        ).order_by(Charge.period_from.asc(), Charge.period_to.asc(), Charge.item.asc())
+        return list(self._db.scalars(q))
+
     def purge(self, user_id: str) -> tuple[int, int]:
         a = self._db.execute(delete(Line).where(Line.user_id == user_id)).rowcount or 0
         b = self._db.execute(delete(Charge).where(Charge.user_id == user_id)).rowcount or 0
@@ -182,6 +221,22 @@ class FnoLedgerRepo:
             .where(Ledger.user_id == user_id)
         n, first, last = self._db.execute(q).one()
         return {"count": n or 0, "first_date": first, "last_date": last}
+
+    def series(self, user_id: str, date_from: date, date_to: date) -> list[Ledger]:
+        """Ledger rows in range, in import order within a posting date."""
+        q = select(Ledger).where(
+            Ledger.user_id == user_id, Ledger.posting_date >= date_from,
+            Ledger.posting_date <= date_to,
+        ).order_by(Ledger.posting_date.asc(), Ledger.created_at.asc(), Ledger.occurrence.asc(),
+                   Ledger.id.asc())
+        return list(self._db.scalars(q))
+
+    def last_before(self, user_id: str, d: date) -> Optional[Ledger]:
+        """Latest ledger row strictly before ``d`` that carries a balance, or None."""
+        q = select(Ledger).where(
+            Ledger.user_id == user_id, Ledger.posting_date < d, Ledger.net_balance.isnot(None),
+        ).order_by(Ledger.posting_date.desc(), Ledger.created_at.desc(), Ledger.id.desc()).limit(1)
+        return self._db.scalars(q).first()
 
     def purge(self, user_id: str) -> int:
         return self._db.execute(delete(Ledger).where(Ledger.user_id == user_id)).rowcount or 0

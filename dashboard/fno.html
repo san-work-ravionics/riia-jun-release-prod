@@ -1598,7 +1598,66 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       </div>
     </div>
 
-    <div class="kpi-row c3"><div class="kpi"><div class="kpi-label">Overtrading</div><div class="kpi-sub" id="ta-panel-overtrading">Coming in Phase 3</div></div><div class="kpi"><div class="kpi-label">Position build-up</div><div class="kpi-sub" id="ta-panel-buildup">Coming in Phase 3</div></div><div class="kpi"><div class="kpi-label">Market-turn impact</div><div class="kpi-sub" id="ta-panel-marketturn">Coming in Phase 3</div></div><div class="kpi"><div class="kpi-label">Margin trap</div><div class="kpi-sub" id="ta-panel-margintrap">Coming in Phase 3</div></div><div class="kpi"><div class="kpi-label">Suggestions</div><div class="kpi-sub" id="ta-panel-suggestions">Coming in Phase 3</div></div></div>
+    <div class="kpi" style="margin-bottom:16px">
+      <div class="kpi-label">Analytics (from your imported Console data)</div>
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:6px 0">
+        <label style="font-size:12px;color:var(--t3);font-family:var(--fm);display:flex;align-items:center;gap:5px">From <input type="date" id="ta-an-from" onchange="taAnFromChanged(this.value)" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-family:var(--fm);font-size:12px;background:var(--surface);color:var(--text)"></label>
+        <label style="font-size:12px;color:var(--t3);font-family:var(--fm);display:flex;align-items:center;gap:5px"><input type="checkbox" id="ta-an-expiry-est" checked onchange="taAnToggleEstimate(this.checked)"> Include expiry estimate</label>
+        <button onclick="taAnRefresh()" style="padding:6px 16px;border:none;border-radius:6px;background:var(--p02);color:#fff;font-family:var(--fm);font-size:12px;font-weight:600;cursor:pointer">Refresh analytics</button>
+        <span id="ta-an-status" class="kpi-sub"></span>
+      </div>
+      <div class="kpi-sub">Underlying and expiry follow the filters above. Each number is tagged measured (from your rows) or estimated.</div>
+      <div id="ta-an-recon" class="kpi-sub" style="margin-top:6px">—</div>
+    </div>
+    <div class="kpi" id="ta-panel-overtrading" style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div class="kpi-label" style="margin-bottom:0">Overtrading</div>
+        <button onclick="taAnToggleInfo('overtrading')" title="Definition and assumptions" style="padding:3px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--t3);font-family:var(--fm);font-size:11px;cursor:pointer">Definition</button>
+      </div>
+      <div class="kpi-sub">How often and how quickly you traded, what it cost, and how closed trades turned out.</div>
+      <div id="ta-an-overtrading-def" style="display:none"></div>
+      <div class="chart-wrap" style="margin:8px 0"><canvas id="ta-cv-weekly"></canvas></div>
+      <div id="ta-an-overtrading-body" style="font-size:12px">—</div>
+    </div>
+    <div class="kpi" id="ta-panel-buildup" style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div class="kpi-label" style="margin-bottom:0">Position build-up</div>
+        <button onclick="taAnToggleInfo('buildup')" title="Definition and assumptions" style="padding:3px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--t3);font-family:var(--fm);font-size:11px;cursor:pointer">Definition</button>
+      </div>
+      <div class="kpi-sub">How positions were built, added to and reduced; averaging into losers.</div>
+      <div id="ta-an-buildup-def" style="display:none"></div>
+      <div class="chart-wrap" style="margin:8px 0"><canvas id="ta-cv-buildup"></canvas></div>
+      <div id="ta-an-buildup-body" style="font-size:12px">—</div>
+    </div>
+    <div class="kpi" id="ta-panel-marketturn" style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div class="kpi-label" style="margin-bottom:0">Market-turn impact</div>
+        <button onclick="taAnToggleInfo('marketturn')" title="Definition and assumptions" style="padding:3px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--t3);font-family:var(--fm);font-size:11px;cursor:pointer">Definition</button>
+      </div>
+      <div class="kpi-sub">Positioning and realised P&L on days the underlying moved sharply.</div>
+      <div id="ta-an-marketturn-def" style="display:none"></div>
+      <div class="chart-wrap" style="margin:8px 0"><canvas id="ta-cv-turn"></canvas></div>
+      <div id="ta-an-marketturn-body" style="font-size:12px">—</div>
+    </div>
+    <div class="kpi" id="ta-panel-margintrap" style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div class="kpi-label" style="margin-bottom:0">Margin trap</div>
+        <button onclick="taAnToggleInfo('margintrap')" title="Definition and assumptions" style="padding:3px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--t3);font-family:var(--fm);font-size:11px;cursor:pointer">Definition</button>
+      </div>
+      <div class="kpi-sub">Ledger cash, debit streaks and low-cash days with open losers (proxy); planned vs actual stops.</div>
+      <div id="ta-an-margintrap-def" style="display:none"></div>
+      <div class="chart-wrap" style="margin:8px 0"><canvas id="ta-cv-cash"></canvas></div>
+      <div id="ta-an-margintrap-body" style="font-size:12px">—</div>
+    </div>
+    <div class="kpi" id="ta-panel-suggestions" style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div class="kpi-label" style="margin-bottom:0">Suggestions</div>
+        <button onclick="taAnToggleInfo('suggestions')" title="Definition and assumptions" style="padding:3px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--t3);font-family:var(--fm);font-size:11px;cursor:pointer">Definition</button>
+      </div>
+      <div class="kpi-sub">Rule-based what-ifs computed from your own history. Observations from your own imported history, not investment advice or a forecast.</div>
+      <div id="ta-an-suggestions-def" style="display:none"></div>
+      <div id="ta-an-suggestions-body" style="font-size:12px">—</div>
+    </div>
   </div>
 
 </div><!-- /main -->
