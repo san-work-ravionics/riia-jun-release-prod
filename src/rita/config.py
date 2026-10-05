@@ -143,7 +143,17 @@ class IntegrationsSettings(BaseSettings):
 
     model_config = SettingsConfigDict(extra="forbid")
 
-    fno_margin_fetch_base_url: str = "http://localhost:8000"
+    # Middleware runs on :8001 (RITA itself is :8000). Env FNO_MARGIN_FETCH_BASE_URL overrides.
+    fno_margin_fetch_base_url: str = "http://localhost:8001"
+
+
+class TradeAnalysisSettings(BaseSettings):
+    """F42 FnO Trade Analysis scope: which underlyings / expiry months are analysed."""
+
+    model_config = SettingsConfigDict(extra="forbid")
+
+    underlyings: list[str] = ["NIFTY", "BANKNIFTY"]
+    expiry_months: list[int] = [9, 10, 11]
 
 
 class SecuritySettings(BaseSettings):
@@ -203,6 +213,7 @@ class Settings(BaseSettings):
     security: SecuritySettings = SecuritySettings()
     database: DatabaseSettings = DatabaseSettings()
     integrations: IntegrationsSettings = IntegrationsSettings()
+    trade_analysis: TradeAnalysisSettings = TradeAnalysisSettings()
 
     # The active environment name (informational — used during construction).
     env: str = "development"

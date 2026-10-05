@@ -89,6 +89,7 @@ import { loadPortfolioHedge, phSetCoverage, phSetDuration, phToggleHedge, phPick
 import { haSkipToVerdict } from './hedge-reasoning.js';
 import { loadStudy } from './study.js';
 import { loadExperiment, fetchExpData, switchExpTab } from './experiment.js';
+import { loadTradeAnalysis, taSetUnderlying, taSetExpiryMonth, taSetIncludeClosed, taRefresh } from './trade-analysis.js';
 import { loadHedgeWorkflow, hwGoToStep, hwSelectInstrument, hwSelectPortfolio, hwRefreshStep } from './hedge-workflow.js';
 import { hwToggleHedged, hwSelectStrategy, hwRerunAdvisor } from './hedge-workflow-recommendation.js';
 import { hwSetCoverage, hwSetScenarioTab } from './hedge-workflow-whatif.js';
@@ -152,6 +153,14 @@ _sectionLoaders['experiment'] = loadExperiment;
 window.loadExperiment = loadExperiment;
 window.fetchExpData = fetchExpData;
 window.switchExpTab = switchExpTab;
+
+// Trade Analysis — F42 live Kite orders/trades/positions
+_sectionLoaders['trade-analysis'] = loadTradeAnalysis;
+window.loadTradeAnalysis = loadTradeAnalysis;
+window.taSetUnderlying = taSetUnderlying;
+window.taSetExpiryMonth = taSetExpiryMonth;
+window.taSetIncludeClosed = taSetIncludeClosed;
+window.taRefresh = taRefresh;
 
 // My Portfolio CTA — navigates to the Hedge Workflow (Exposure step) from Overview.
 // Was "navItem = ...[data-section=...]" (stale selector — nav markup uses
