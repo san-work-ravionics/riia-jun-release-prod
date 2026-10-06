@@ -221,4 +221,13 @@ def test_rule_copy_titles_are_plain_and_complete():
     blk = re.search(r"const _RULE_COPY = \{(.*?)\n\};", JS, re.S).group(1)
     pairs = re.findall(r"^\s{2}([a-z_]+): \['((?:[^'\\]|\\.)*)', '((?:[^'\\]|\\.)*)'\]", blk, re.M)
     assert len(pairs) == 10 and all(t and w for _, t, w in pairs)
-    assert "const _copy = r => _RULE_COPY[r.id] || [r.title, r.threshold_basis];" in JS
+    assert "_RULE_COPY[r.id] || [r.title, r.threshold_basis]" in JS
+
+
+def test_followup_static_rules():
+    assert "_html" not in JS and "Lots from the Kite master" not in JS
+    assert "3+ days" not in HTML and "3 or more" not in JS and "1x, 1.5x or 2x" not in JS
+    body = _func("_renderChainLadder")
+    assert "lots_after" not in body.split("afterBody")[0] and "Position size (units)" in body
+    p3 = (ROOT / "tests/unit/test_f42_p3_static.py").read_text()
+    assert '"_html"' not in p3

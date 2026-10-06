@@ -155,8 +155,7 @@ def test_no_banned_patterns_and_parallel_independent_loading():
 _SAFE = ("_esc", "_num", "_pnl", "_pct", "_cls", "_dash", "_badge", "_kpi", "_kpis", "_tbl", "_pnlCell",
          "_list", "_note", "_unavail", "_quality", "_infoBlock", "_defs", "_ruleCard", "_th", "_td",
          # F42 P6 helpers: attribute escape, compact numeric formatters, widgets, builders over escaped parts
-         "_ea", "_f1", "_numShort", "_pnlShort", "_pctShort", "_ratioShort", "_ck", "_html", "_tip", "_pill",
-         "_unavailText", "_stopsTable", "_dlabel")
+         "_ea", "_numShort", "_pnlShort", "_pctShort", "_ratioShort")
 
 
 def _template_exprs(js: str) -> list[str]:

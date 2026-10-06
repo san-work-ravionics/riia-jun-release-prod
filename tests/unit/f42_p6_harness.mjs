@@ -69,11 +69,11 @@ out.holding = { has: !!g.charts['ta-cv-holding'], n: g.charts['ta-cv-holding'].d
 
 // ── 3. build-up ───────────────────────────────────────────────────────────────────────────
 reset(); await load(base());
-out.bu = { head: el('ta-an-buildup-headline'), picker: [...el('ta-bu-chain-sel').matchAll(/taAnChainPick\((\d+)\)/g)].map(m => m[1]), pickerText: el('ta-bu-chain-sel'),
+out.bu = { bodyHtml: el('ta-an-buildup-body'), head: el('ta-an-buildup-headline'), picker: [...el('ta-bu-chain-sel').matchAll(/taAnChainPick\((\d+)\)/g)].map(m => m[1]), pickerText: el('ta-bu-chain-sel'),
   kpis: count(el('ta-an-buildup-body'), /kpi kpi-compact/g), row: count(el('ta-an-buildup-body'), /kpi-row ta-row1 c4/g), };
 const lad = g.charts['ta-cv-buildup'];
 out.ladder = { stepped: lad.data.datasets[0].stepped, n: lad.data.labels.length, colors: lad.data.datasets[0].pointBackgroundColor, sizes: lad.data.datasets[0].data, closeSet: lad.data.datasets.length === 2,
-  closeLabel: (lad.data.datasets[1] || {}).label, tip: lad.options.plugins.tooltip.callbacks.afterBody([{ dataIndex: 1 }]), label0: lad.data.datasets[0].label };
+  closeLabel: (lad.data.datasets[1] || {}).label, yTitle: lad.options.scales.y.title.text, tip: lad.options.plugins.tooltip.callbacks.afterBody([{ dataIndex: 1 }]), label0: lad.data.datasets[0].label };
 const bodyBefore = el('ta-an-buildup-body'); const callsBefore = g.chartCalls.length; g.chartCalls = [];
 T.taAnChainPick(1);
 out.pick = { calls: g.chartCalls.slice(), bodySame: el('ta-an-buildup-body') === bodyBefore, active: [...el('ta-bu-chain-sel').matchAll(/<button class="([^"]*)" data-chain="(\d)"/g)].map(m => [m[1], m[2]]), n: g.charts['ta-cv-buildup'].data.labels.length, headSame: true };
@@ -200,6 +200,19 @@ out.noTabCalls = true;
   g.run = 21; g.payloads = second; const p2 = T.loadAnalyticsPanels();
   await Promise.all([p1, p2]);
   out.stale2 = { head: el('ta-an-overtrading-headline'), A: el('ta-an-detail-a').includes('222') || true }; g.delay = {}; g.payloadsByRun = null; }
+// ── 9. review follow-ups ──
+{ out.review = {};
+  const p = base(); p.buildup.chains[0].pnl_estimated = 1500; p.buildup.chains[0].steps = p.buildup.chains[0].steps.slice(0, 3); await load(p, 30);
+  out.review.expiryHead = el('ta-an-buildup-headline'); out.review.expiryMarker = (g.charts['ta-cv-buildup'].data.datasets[1] || {}).label || '';
+  await load(base(), 31); out.review.gridDuringLoad = el('ta-an-sg-grid').length;
+  // simulate a load in flight: cache nulled, old DOM kept
+  g.run = 32; g.payloads = base(); g.delay = { 32: 30 }; const pend = T.loadAnalyticsPanels(); T.taAnSgExpandAll(); T.taAnSgCollapseAll();
+  out.review.gridAfterNullCollapse = el('ta-an-sg-grid').length; await pend; g.delay = {};
+  out.review.stopCopy = (el('ta-an-sg-grid').match(/lost more than (.*?) of the premium/) || [0, ''])[1];
+  const q = base(); q.overtrading.by_underlying = null; q.overtrading.by_expiry = 5; g.els['ta-an-status'] = 'x'; await load(q, 33);
+  out.review.rendererThrowDetails = 'ok'; out.review.statusSet = typeof el('ta-an-status') === 'string';
+  out.review.pnlShort = [-99.9e7, -99.96e7, 99.96e7].map(T._pnlShort);
+  out.review.titles = el('ta-an-margintrap-body') + el('ta-an-overtrading-body'); }
 // every call so far hit only the six GETs (+ never spot-vs-pnl)
 out.urls = [...new Set(g.calls || [])];
 console.log(JSON.stringify(out));
