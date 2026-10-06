@@ -341,3 +341,34 @@ def test_margin_trap_cash_path(loaded):
     debits = sum(float(r["debit"] or 0) for r in led)
     assert abs(float(led[-1]["net_balance"]) - (credits - debits)) <= 0.01      # opening + credits - debits
     assert abs(c["end"] - float(led[-1]["net_balance"])) <= 0.01
+
+
+def test_sample_is_a_point_in_time_snapshot_when_today_moves_past_the_october_expiries(loaded):
+    """A2: production uses the wall clock.  With today after both Oct-2026 expiries every panel is
+    still available and every measured figure is unchanged; only the spot-freshness flags and the
+    two window-end open lots (no spot close for their expiry date) change."""
+    from datetime import date
+
+    from rita.services.fno_trade_analytics_service import AnalyticsParams, FnoTradeAnalyticsService
+
+    svc = FnoTradeAnalyticsService(loaded["db"], today=date(2026, 11, 5))
+    p = AnalyticsParams(include_expiry_estimate=False)          # date_to defaults to today
+    f, o, mt = svc.foundation(USER, p), svc.overtrading(USER, p), svc.market_turn(USER, p)
+    assert all(x.available for x in (f, o, mt, svc.margin_trap(USER, p), svc.suggestions(USER, p),
+                                     svc.spot_vs_pnl(USER, p)))
+    pinned = loaded["m"]
+    assert o.model_dump()["winloss"]["pnl"] == pinned["overtrading"]["winloss"]["pnl"]
+    assert o.model_dump()["winloss"]["n"] == 80
+    fd, md = f.model_dump(), mt.model_dump()
+    assert fd["reconciliation"]["totals"]["n_symbols_gap"] == 3
+    assert md["spot"]["stale"] is True and pinned["market-turn"]["spot"]["stale"] is False
+    late = [x for x in fd["open_lots"] if x["symbol"].endswith("OCT22500PE") or "OCT54000" in x["symbol"]]
+    assert late and all(x["expired"] and x["settlement_unpriced"] for x in late)
+
+
+def test_expiry_estimate_toggle_changes_the_headline_set(loaded):
+    """A5: estimate ON (the UI default) = N 83, 38W/45L, net about -43.4k; measured = N 80, -44.9k."""
+    d, m = loaded["d"]["overtrading"], loaded["m"]["overtrading"]
+    assert (d["winloss"]["n"], d["winloss"]["wins"], d["winloss"]["losses"]) == (83, 38, 45)
+    assert -44000 <= d["winloss"]["pnl"] - d["charges"]["est_window"] <= -42800
+    assert (m["winloss"]["n"], m["winloss"]["wins"], m["winloss"]["losses"]) == (80, 36, 44)

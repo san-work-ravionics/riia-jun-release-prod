@@ -284,7 +284,7 @@ CORE = [
 ]
 # scalps: (day, und, cp, side, t_open, pnl, nfills)
 SCALPS = [
-    (6, "NIFTY", "CE", 1, "09:16", -820.0, 3), (6, "BANKNIFTY", "CE", 1, "09:27", -990.0, 3),
+    (6, "NIFTY", "CE", 1, "09:20", -820.0, 3), (6, "BANKNIFTY", "CE", 1, "09:27", -990.0, 3),
     (6, "NIFTY", "PE", 1, "09:41", 1250.0, 3),
     (8, "NIFTY", "PE", 1, "09:24", -760.0, 2), (8, "NIFTY", "CE", -1, "09:48", -910.0, 2),
     (13, "NIFTY", "CE", 1, "10:05", -680.0, 2), (13, "BANKNIFTY", "PE", 1, "10:40", -1020.0, 2),
@@ -316,8 +316,8 @@ def build_story(mk: Market, lots: dict[str, int], rng: random.Random) -> Sim:
               e1, 0.07, [(13, "10:20", 9, 3, -15400.0)], "S1")
 
     # ---- S2: LONG PE averaging-down chain (10 lots) - drives the cash trough ----
-    s2_strike = sim.strike_for("NIFTY", "PE", 12, 6)
-    s2_exp = date(2026, 8, 4)
+    s2_strike = sim.strike_for("NIFTY", "PE", 12, 10)
+    s2_exp = date(2026, 8, 11)                             # weekly expiry AFTER the last exit (08-10)
     e2 = model_px("NIFTY", "PE", s2_strike, mk.spot("NIFTY", 12), (s2_exp - mk.d(12)).days)
     s2_lots = [2, 2, 2, 1, 1, 1, 1]
     s2_when = [(12, "09:55"), (14, "10:15"), (16, "10:20"), (17, "11:15"), (18, "10:40"), (19, "11:30"),

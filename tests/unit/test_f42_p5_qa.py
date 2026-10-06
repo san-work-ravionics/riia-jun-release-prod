@@ -423,16 +423,11 @@ def test_qa_tradebook_symbols_expiry_strikes_lots_and_times_are_sane():
         assert t.date() == td and (9, 15) <= (t.hour, t.minute) <= (15, 30)   # NSE session
 
 
-@pytest.mark.xfail(strict=True, reason="QA-D2 (Medium, data realism): 6 fills of NIFTY2680423750PE are dated "
-                                       "2026-08-06/07/10, AFTER its 2026-08-04 expiry (the long chain keeps trading an "
-                                       "expired contract); no trade may be dated after its expiry")
 def test_qa_no_fill_is_dated_after_its_contract_expiry():
     late = [(r["symbol"], r["trade_date"], r["expiry_date"]) for r in _tb() if r["trade_date"] > r["expiry_date"]]
     assert not late, late
 
 
-@pytest.mark.xfail(strict=True, reason="QA-D1 (Low, spec drift): design 6.4 says execution times lie within "
-                                       "09:20-15:25; 6 fills are at 09:16-09:19 (still inside the NSE session)")
 def test_qa_execution_times_inside_design_window_0920_1525():
     for r in _tb():
         t = datetime.fromisoformat(r["order_execution_time"])

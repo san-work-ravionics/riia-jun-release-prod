@@ -192,7 +192,7 @@ def test_server_text_is_escaped_before_innerhtml():
     assert "${w.from}" not in fn and "${w.to}" not in fn
     assert "note.textContent" in fn                                         # not innerHTML
     load = JS[JS.index("export async function taSampleLoad"):JS.index("export async function taSampleRemove")]
-    assert "_esc(refused)" in load and "out.message" in load
+    assert "_esc(_sampleNote)" in load and "out.message" in load
     assert "innerHTML = res" not in JS
 
 

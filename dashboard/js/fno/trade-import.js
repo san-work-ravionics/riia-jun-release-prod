@@ -26,6 +26,7 @@ let _filtersReady = false;
 let _busy = false;
 let _sampleLoaded = false;   // synthetic sample is loaded: real uploads are disabled (server answers 409)
 let _sampleCanLoad = false;
+let _sampleNote = '';        // last refusal text; kept in state so a late _renderSample cannot wipe it
 
 const _esc = v => String(v == null ? '' : v)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -72,7 +73,8 @@ function _renderSample(s) {
   _show('ta-imp-sample-card', !!(sm && sm.offer));
   const note = _el('ta-imp-sample-note');
   if (note && !_busy) {
-    note.textContent = sm && sm.offer && !sm.can_load ? 'Sample data is not available on this server.' : '';
+    note.textContent = _sampleNote
+      || (sm && sm.offer && !sm.can_load ? 'Sample data is not available on this server.' : '');
   }
   _show('ta-empty-cta', !(s && s.has_data));
   const file = _el('ta-imp-file');
@@ -174,7 +176,7 @@ export async function loadImportPanel() {
   try {
     _renderStatus(await api(_STATUS));
     await _loadTrades();
-    _banner('');
+    _banner(_sampleNote);   // a sample refusal stays visible even when the card is hidden (e.g. has_own_data)
   } catch (e) {
     _renderFailure();
     _banner(e.message || 'Imported data could not be loaded.');
@@ -273,19 +275,19 @@ export async function taImpDelete() {
 export async function taSampleLoad() {
   if (_busy) return;
   _setBusy(true);
+  _sampleNote = '';
   setEl('ta-imp-sample-note', 'Loading sample data…');
-  let refused = '';
   try {
     const out = await api(_SAMPLE, 'POST');
-    if (out && out.status === 'refused') refused = out.message || 'Sample data could not be loaded.';
-    _banner('');
+    if (out && out.status === 'refused') _sampleNote = out.message || 'Sample data could not be loaded.';
+    _banner(_sampleNote);
     _page = 1;
     await taRefresh();   // re-renders the import panel (banner, card) and every analytics panel
   } catch (e) {
     _banner(e.message || 'Sample data could not be loaded.');
   } finally {
     _setBusy(false);
-    setEl('ta-imp-sample-note', _esc(refused));
+    setEl('ta-imp-sample-note', _esc(_sampleNote));
   }
 }
 
@@ -295,6 +297,7 @@ export async function taSampleRemove() {
   try {
     await api(`${_UPLOAD}?confirm=true`, 'DELETE');
     _page = 1;
+    _sampleNote = '';
     setEl('ta-imp-result-body', '');
     await taRefresh();
     return true;
