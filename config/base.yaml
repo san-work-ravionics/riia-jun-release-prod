@@ -59,3 +59,10 @@ trade_analysis:
   analytics_min_timestamp_coverage: 0.8
   analytics_max_rows: 200
   observation_high_churn_pct: 50.0
+  holding_bucket_edges_minutes: [5, 30, 120]   # same-day holding buckets (minutes)
+  spot_stale_days: 5
+  spot_pad_days: 7
+  ledger_sign_tolerance_frac: 0.001
+  ledger_sign_min_tolerance_inr: 1.0
+  ledger_sign_match_cutoff: 0.6
+  stop_multiple_step: 0.25
