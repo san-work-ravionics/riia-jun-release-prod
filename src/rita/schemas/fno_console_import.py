@@ -124,6 +124,28 @@ class LastImports(BaseModel):
     ledger: Optional[ImportRunSummary] = None
 
 
+class SampleStatus(BaseModel):
+    """F42 P5: state of the bundled synthetic sample data for this user (additive block)."""
+    enabled: bool
+    loaded: bool
+    offer: bool
+    can_load: bool
+    unavailable_reason: Optional[str] = None
+    window: Optional[PeriodOut] = None
+    file_prefix: str
+
+
+class SampleLoadResponse(BaseModel):
+    """POST console-import/sample.  Business refusals are HTTP 200 with status 'refused'."""
+    status: Literal["loaded", "already_loaded", "refused"]
+    reason: Optional[Literal["has_own_data", "sample_files_missing", "sample_disabled",
+                             "sample_failed"]] = None
+    message: str
+    window: Optional[PeriodOut] = None
+    files: list[FileResult] = Field(default_factory=list)
+    totals: ImportTotals = Field(default_factory=ImportTotals)
+
+
 class ImportStatusResponse(BaseModel):
     has_data: bool
     scope: ImportScope
@@ -133,6 +155,7 @@ class ImportStatusResponse(BaseModel):
     ledger: LedgerCoverage
     last_imports: LastImports
     recent_runs: list[ImportRunSummary]
+    sample: Optional[SampleStatus] = None       # F42 P5, additive
 
 
 class ImportedTradesFilter(BaseModel):

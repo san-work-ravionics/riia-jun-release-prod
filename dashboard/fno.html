@@ -1547,6 +1547,12 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       <button id="ta-refresh-btn" onclick="taRefresh()" style="padding:6px 16px;border:none;border-radius:6px;background:var(--p02);color:#fff;font-family:var(--fm);font-size:12px;font-weight:600;cursor:pointer">Refresh</button>
     </div>
 
+    <!-- F42 P5: shown on EVERY tab while the synthetic sample is loaded -->
+    <div id="ta-sample-banner" role="status" style="display:none;font-size:13px;padding:10px 14px;border-radius:6px;background:rgba(217,119,6,.10);color:#b45309;margin-bottom:12px">
+      <span id="ta-sample-banner-text"></span>
+      <button id="ta-sample-remove-btn" onclick="taSampleRemove()" style="margin-left:10px;padding:5px 12px;border:1px solid #b45309;border-radius:6px;background:transparent;color:#b45309;font-family:var(--fm);font-size:12px;font-weight:600;cursor:pointer">Remove sample data</button>
+      <button id="ta-sample-own-btn" onclick="taSampleRemove().then(function (ok) { if (ok) taSwitchTab('import'); })" style="margin-left:6px;padding:5px 12px;border:none;border-radius:6px;background:var(--p02);color:#fff;font-family:var(--fm);font-size:12px;font-weight:600;cursor:pointer">Remove sample and import my own files</button>
+    </div>
     <div id="ta-tabs" role="tablist" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">
       <button class="ta-tab-btn" data-ta-tabbtn="behaviour" onclick="taSwitchTab('behaviour')">Behaviour</button>
       <button class="ta-tab-btn" data-ta-tabbtn="market" onclick="taSwitchTab('market')">Market &amp; P&amp;L</button>
@@ -1577,6 +1583,14 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     </div><!-- /live tab -->
 
     <div data-ta-tab="import" style="display:none">
+    <!-- ── F42 P5: bundled synthetic sample (only offered when you have no imported data) ── -->
+    <div class="kpi" id="ta-imp-sample-card" style="display:none;margin-bottom:16px"><div class="kpi-label">No Console files yet? See the page with sample data</div>
+      <div class="kpi-sub" style="margin-bottom:8px">Loads about 350 synthetic NIFTY/BANKNIFTY option fills (80 closed trades), a P&amp;L sheet and a ledger into YOUR account so every panel has something to show. A point-in-time snapshot (1 Jul to 18 Sep 2026): with "Include expiry estimate" on it shows 83 closed trades, 38 wins / 45 losses, net about -43.4k after charges; measured only it is 80 trades, 36 / 44, net about -44.9k. Clearly labelled; remove any time.</div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button id="ta-imp-sample-btn" onclick="taSampleLoad()" disabled style="padding:6px 16px;border:none;border-radius:6px;background:var(--p02);color:#fff;font-family:var(--fm);font-size:12px;font-weight:600;cursor:pointer">Load sample data</button>
+        <span id="ta-imp-sample-note" class="kpi-sub"></span>
+      </div>
+    </div>
     <!-- ── Console import (F42 Phase 2) — personal data, per user ─────────── -->
     <div class="kpi" style="margin-bottom:16px"><div class="kpi-label">Import Zerodha Console files</div>
       <div class="kpi-sub" style="margin-bottom:8px">Tradebook CSV, P&amp;L XLSX/CSV, Ledger CSV. Parsed in memory; never persisted to our storage as files. Stored per user; re-importing adds nothing twice.</div>
@@ -1613,6 +1627,12 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     </div>
 
     </div><!-- /import tab -->
+    <div data-ta-tab="behaviour market suggestions">
+      <div class="kpi" id="ta-empty-cta" style="display:none;margin-bottom:16px;font-size:13px">
+        No data yet. Go to the Import tab to upload your Console files or load sample data.
+        <button id="ta-empty-cta-btn" onclick="taSwitchTab('import')" style="margin-left:10px;padding:5px 12px;border:none;border-radius:6px;background:var(--p02);color:#fff;font-family:var(--fm);font-size:12px;font-weight:600;cursor:pointer">Go to Import</button>
+      </div>
+    </div>
     <div class="kpi" data-ta-tab="behaviour market suggestions" style="margin-bottom:16px">
       <div class="kpi-label">Analytics (from your imported Console data)</div>
       <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:6px 0">

@@ -37,7 +37,8 @@ log = structlog.get_logger(__name__)
 IST = ZoneInfo("Asia/Kolkata")
 
 _REASON_TEXT = {
-    "no_data": "No imported Console data yet. Import your Console files on the Import panel first.",
+    "no_data": ("No imported Console data yet. Import your Console files on the Import tab, "
+                "or load sample data there."),
     "no_trades_in_scope": "No option fills match the selected underlying, expiry and date filters.",
     "spot_unavailable": "No spot price history for the selected underlying; the spot-vs-P&L view is omitted.",
     "insufficient_sample": "Too few days in this sample for the statistic.",

@@ -23,11 +23,12 @@ from rita.models.fno_import import NO_ENTRY_DATE, FnoImportRunModel as Run
 from rita.repositories.fno_import import (
     FnoImportRunRepo, FnoLedgerRepo, FnoPnlRepo, FnoTradeRepo,
 )
+from rita.repositories.fno_sample_files import SAMPLE_TRADE_ID_PREFIX, FnoSampleFileRepo
 from rita.schemas.fno_console_import import (
     FileResult, FnoImportResponse, ImportedTradeRow, ImportedTradesFilter,
     ImportedTradesResponse, ImportLimits, ImportRunSummary, ImportScope, ImportStatusResponse,
     ImportTotals, LastImports, LedgerCoverage, PeriodOut, PnlCoverage, PnlPeriod, PurgeCounts,
-    PurgeResponse, RowErrorOut, TradesCoverage,
+    PurgeResponse, RowErrorOut, SampleStatus, TradesCoverage,
 )
 from rita.services.console_parsers import (
     LEDGER, PNL, TRADEBOOK, ParsedFile, ParseFailure, parse_file,
@@ -69,6 +70,18 @@ def _summary(r: Run) -> ImportRunSummary:
     )
 
 
+def is_sample_data(runs: FnoImportRunRepo, trades: FnoTradeRepo, prefix: str, user_id: str) -> bool:
+    """D2 rule: the user's data IS the bundled sample iff (1) there is at least one run that
+    produced data (ok/partial), (2) EVERY such run's file name starts with the reserved prefix
+    (failed runs are ignored), and (3) every stored fill has a sample trade id.  Real Console ids
+    are numeric and the upload route rejects reserved names, so a real import can never satisfy it."""
+    if runs.count_data_runs(user_id) == 0:
+        return False
+    if runs.count_data_runs_not_prefixed(user_id, prefix) > 0:
+        return False
+    return trades.count_non_prefixed(user_id, SAMPLE_TRADE_ID_PREFIX) == 0
+
+
 class FnoImportService:
     def __init__(self, db: Session) -> None:
         self._db = db
@@ -80,8 +93,11 @@ class FnoImportService:
 
     # ── public ─────────────────────────────────────────────────────────────────
 
-    def import_files(self, user_id: str, uploads: list[UploadInput]) -> FnoImportResponse:
-        results = [self._import_one(user_id, u) for u in uploads]
+    def import_files(self, user_id: str, uploads: list[UploadInput],
+                     allow_reserved: bool = False) -> FnoImportResponse:
+        """Import every upload; ``allow_reserved`` is for FnoSampleService only (the HTTP upload
+        route never sets it, so a client cannot create a ``SAMPLE_`` run)."""
+        results = [self._import_one(user_id, u, allow_reserved) for u in uploads]
         totals = ImportTotals(
             inserted=sum(r.inserted for r in results), updated=sum(r.updated for r in results),
             skipped_duplicates=sum(r.skipped_duplicates for r in results),
@@ -89,6 +105,10 @@ class FnoImportService:
             files_failed=sum(1 for r in results if r.status == "failed"),
         )
         return FnoImportResponse(files=results, totals=totals)
+
+    def is_sample_data(self, user_id: str) -> bool:
+        """True when the caller's imported data is the bundled synthetic sample (see is_sample_data)."""
+        return is_sample_data(self._runs, self._trades, self._cfg.sample_file_prefix, user_id)
 
     def purge(self, user_id: str, kind: Optional[str] = None) -> PurgeResponse:
         """Delete the caller's rows (children first, then run rows); one commit."""
@@ -106,7 +126,11 @@ class FnoImportService:
 
     # ── per file ───────────────────────────────────────────────────────────────
 
-    def _validate(self, up: UploadInput) -> None:
+    def _validate(self, up: UploadInput, allow_reserved: bool = False) -> None:
+        prefix = self._cfg.sample_file_prefix
+        if not allow_reserved and prefix and sanitize_file_name(up.name).upper().startswith(prefix.upper()):
+            raise ParseFailure("reserved_file_name",
+                               f"File names starting with {prefix} are reserved")
         ext = os.path.splitext(os.path.basename(up.name or "").lower())[1]
         if ext not in [e.lower() for e in self._cfg.import_allowed_extensions]:
             raise ParseFailure("unsupported_extension", "Only .csv and .xlsx files are supported")
@@ -124,12 +148,12 @@ class FnoImportService:
         if ext == ".csv" and (is_zip or b"\x00" in up.data[:8192]):
             raise ParseFailure("bad_file_type", "File content is not text CSV")
 
-    def _import_one(self, user_id: str, up: UploadInput) -> FileResult:
+    def _import_one(self, user_id: str, up: UploadInput, allow_reserved: bool = False) -> FileResult:
         name = sanitize_file_name(up.name)
         sha = hashlib.sha256(up.data).hexdigest()
         size = len(up.data)
         try:
-            self._validate(up)
+            self._validate(up, allow_reserved)
             parsed = parse_file(up.data, name, self._cfg.import_max_rows,
                                 self._cfg.symbol_aliases, self._cfg.import_max_uncompressed_bytes,
                                 self._cfg.import_max_zip_ratio)
@@ -276,12 +300,29 @@ class FnoImportService:
 class FnoImportReadService:
     """Read-only (Experience tier): coverage/status and the paged imported-trades list."""
 
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: Session, sample_files: Optional[FnoSampleFileRepo] = None) -> None:
         self._runs = FnoImportRunRepo(db)
         self._trades = FnoTradeRepo(db)
         self._pnl = FnoPnlRepo(db)
         self._ledger = FnoLedgerRepo(db)
         self._cfg = get_settings().trade_analysis
+        # file-backed repository, injected so this service performs no file I/O itself (ADR-002)
+        self._sample_files = sample_files or FnoSampleFileRepo.from_settings()
+
+    def _sample_status(self, user_id: str, has_data: bool) -> SampleStatus:
+        cfg = self._cfg
+        loaded = has_data and is_sample_data(self._runs, self._trades, cfg.sample_file_prefix, user_id)
+        offer = cfg.sample_enabled and not has_data
+        ready = self._sample_files.readiness().ok if offer else False
+        window = None
+        if loaded:
+            run = self._runs.last_by_kind(user_id, TRADEBOOK)
+            if run is not None:
+                window = PeriodOut(**{"from": _iso(run.period_from), "to": _iso(run.period_to)})
+        return SampleStatus(
+            enabled=cfg.sample_enabled, loaded=loaded, offer=offer, can_load=offer and ready,
+            unavailable_reason="sample_files_missing" if offer and not ready else None,
+            window=window, file_prefix=cfg.sample_file_prefix)
 
     def _months(self, only: Optional[int] = None) -> list[str]:
         ms = [only] if only else self._cfg.expiry_months
@@ -294,8 +335,9 @@ class FnoImportReadService:
         ld = self._ledger.coverage(user_id)
         in_scope = self._trades.count_in_scope(user_id, cfg.underlyings, self._months(), cfg.date_from)
         last = {k: self._runs.last_by_kind(user_id, k) for k in _KINDS}
+        has_data = bool(t["count"] or p["line_count"] or ld["count"])
         return ImportStatusResponse(
-            has_data=bool(t["count"] or p["line_count"] or ld["count"]),
+            has_data=has_data,
             scope=ImportScope(underlyings=cfg.underlyings, expiry_months=cfg.expiry_months,
                               expiry_year=cfg.expiry_year, date_from=cfg.date_from.isoformat()),
             limits=ImportLimits(
@@ -312,6 +354,7 @@ class FnoImportReadService:
                                   last_date=_iso(ld["last_date"])),
             last_imports=LastImports(**{k: (_summary(v) if v else None) for k, v in last.items()}),
             recent_runs=[_summary(r) for r in self._runs.recent(user_id, 20)],
+            sample=self._sample_status(user_id, has_data),
         )
 
     def trades(self, user_id: str, underlying: str, include_fut: bool,

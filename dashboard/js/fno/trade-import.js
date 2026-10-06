@@ -4,13 +4,16 @@
 // goes through _esc before innerHTML.
 //   POST   /api/v1/workflow/fno/console-import                 (multipart `files`)
 //   DELETE /api/v1/workflow/fno/console-import?confirm=true
+//   POST   /api/v1/workflow/fno/console-import/sample           (F42 P5: load the bundled SYNTHETIC sample)
 //   GET    /api/v1/experience/fno/trade-analysis/import-status
 //   GET    /api/v1/experience/fno/trade-analysis/imported-trades
 
 import { api, apiUpload } from './api.js';
 import { setEl } from '../shared/utils.js';
+import { taRefresh } from './trade-analysis.js';   // cycle is safe: only called from event handlers
 
 const _UPLOAD = '/api/v1/workflow/fno/console-import';
+const _SAMPLE = '/api/v1/workflow/fno/console-import/sample';
 const _STATUS = '/api/v1/experience/fno/trade-analysis/import-status';
 const _TRADES = '/api/v1/experience/fno/trade-analysis/imported-trades';
 const _MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -21,6 +24,9 @@ let _page = 1;
 let _totalPages = 1;
 let _filtersReady = false;
 let _busy = false;
+let _sampleLoaded = false;   // synthetic sample is loaded: real uploads are disabled (server answers 409)
+let _sampleCanLoad = false;
+let _sampleNote = '';        // last refusal text; kept in state so a late _renderSample cannot wipe it
 
 const _esc = v => String(v == null ? '' : v)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -43,7 +49,39 @@ function _banner(text) {
 function _setBusy(flag) {
   _busy = flag;
   const btn = _el('ta-imp-upload-btn');
-  if (btn) btn.disabled = flag || _files.length === 0;
+  if (btn) btn.disabled = flag || _files.length === 0 || _sampleLoaded;
+  const sb = _el('ta-imp-sample-btn');
+  if (sb) sb.disabled = flag || !_sampleCanLoad;
+}
+
+function _show(id, on) {
+  const el = _el(id);
+  if (el) el.style.display = on ? '' : 'none';
+}
+
+// F42 P5 — sample banner (all tabs), Import-tab card, empty-state CTA, upload-control gating.
+// Null-safe: an older payload without `sample` hides the banner and the card.
+function _renderSample(s) {
+  const sm = (s && s.sample) || null;
+  _sampleLoaded = !!(sm && sm.loaded);
+  _sampleCanLoad = !!(sm && sm.can_load);
+  const w = (sm && sm.window) || null;
+  _show('ta-sample-banner', _sampleLoaded);
+  setEl('ta-sample-banner-text', _sampleLoaded
+    ? `Sample data loaded — synthetic trades for demonstration, not your account.${w ? ` Window ${_dash(w.from)} → ${_dash(w.to)}.` : ''}`
+    : '');
+  _show('ta-imp-sample-card', !!(sm && sm.offer));
+  const note = _el('ta-imp-sample-note');
+  if (note && !_busy) {
+    note.textContent = _sampleNote
+      || (sm && sm.offer && !sm.can_load ? 'Sample data is not available on this server.' : '');
+  }
+  _show('ta-empty-cta', !(s && s.has_data));
+  const file = _el('ta-imp-file');
+  if (file) file.disabled = _sampleLoaded;
+  if (_sampleLoaded) setEl('ta-imp-chosen', 'Remove the sample data to import your own files.');
+  else if (!_files.length) setEl('ta-imp-chosen', 'No files chosen');
+  _setBusy(_busy);
 }
 
 function _range(a, b) { return (a || b) ? `${_dash(a)} → ${_dash(b)}` : '—'; }
@@ -54,6 +92,7 @@ function _runLine(label, r) {
 
 function _renderStatus(s) {
   _limits = s.limits || null;
+  _renderSample(s);
   const t = s.trades || {};
   const p = s.pnl || {};
   const l = s.ledger || {};
@@ -137,7 +176,7 @@ export async function loadImportPanel() {
   try {
     _renderStatus(await api(_STATUS));
     await _loadTrades();
-    _banner('');
+    _banner(_sampleNote);   // a sample refusal stays visible even when the card is hidden (e.g. has_own_data)
   } catch (e) {
     _renderFailure();
     _banner(e.message || 'Imported data could not be loaded.');
@@ -228,5 +267,42 @@ export async function taImpDelete() {
     await loadImportPanel();
   } catch (e) {
     _banner(e.message || 'Delete failed.');
+  }
+}
+
+// ── F42 P5 — sample data ───────────────────────────────────────────────────────
+
+export async function taSampleLoad() {
+  if (_busy) return;
+  _setBusy(true);
+  _sampleNote = '';
+  setEl('ta-imp-sample-note', 'Loading sample data…');
+  try {
+    const out = await api(_SAMPLE, 'POST');
+    if (out && out.status === 'refused') _sampleNote = out.message || 'Sample data could not be loaded.';
+    _banner(_sampleNote);
+    _page = 1;
+    await taRefresh();   // re-renders the import panel (banner, card) and every analytics panel
+  } catch (e) {
+    _banner(e.message || 'Sample data could not be loaded.');
+  } finally {
+    _setBusy(false);
+    setEl('ta-imp-sample-note', _esc(_sampleNote));
+  }
+}
+
+// Removes the sample through the existing delete endpoint; resolves true when it was removed.
+export async function taSampleRemove() {
+  if (!window.confirm('Remove the sample data?')) return false;
+  try {
+    await api(`${_UPLOAD}?confirm=true`, 'DELETE');
+    _page = 1;
+    _sampleNote = '';
+    setEl('ta-imp-result-body', '');
+    await taRefresh();
+    return true;
+  } catch (e) {
+    _banner(e.message || 'Sample data could not be removed.');
+    return false;
   }
 }

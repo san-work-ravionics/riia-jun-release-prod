@@ -80,6 +80,7 @@ from rita.api.experience.fno_trade_analysis import router as fno_trade_analysis_
 from rita.api.experience.fno_trade_analytics import router as fno_trade_analytics_router
 from rita.api.experience.fno_trade_import import router as fno_trade_import_router
 from rita.api.v1.workflow.fno_console_import import router as fno_console_import_router
+from rita.api.v1.workflow.fno_console_import import sample_router as fno_console_import_sample_router
 from rita.api.experience.fno_position_value import router as fno_position_value_router
 from rita.api.experience.fno_study import router as fno_study_router
 from rita.api.experience.portfolio_analytics import router as portfolio_analytics_router
@@ -269,6 +270,14 @@ async def lifespan(app: FastAPI):
     except Exception as _exc:
         log.warning("market_data.seed_failed", error=str(_exc))
 
+    # ── F42 P5: sample-data readiness (log only; the page works without the sample) ──
+    try:
+        from rita.repositories.fno_sample_files import FnoSampleFileRepo as _SampleFiles  # noqa: PLC0415
+        _sample = _SampleFiles.from_settings().readiness()
+        log.info("sample_files.ready", ready=_sample.ok, missing=_sample.missing)
+    except Exception as _exc:
+        log.warning("sample_files.check_failed", error=type(_exc).__name__)
+
 
     # ── Seed / sync paper positions (update-or-insert per instrument) ─────────
     try:
@@ -411,6 +420,7 @@ app.include_router(fno_trade_analysis_router)
 app.include_router(fno_trade_import_router)
 app.include_router(fno_trade_analytics_router)
 app.include_router(fno_console_import_router)
+app.include_router(fno_console_import_sample_router)
 app.include_router(fno_position_value_router)
 app.include_router(fno_study_router)
 app.include_router(portfolio_analytics_router)

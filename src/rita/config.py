@@ -209,6 +209,11 @@ class TradeAnalysisSettings(BaseSettings):
     spot_series_max_points: int = 400       # chart-array ceiling (stats use the full window)
     spot_obs_max: int = 6                   # max observations per underlying block
     spot_obs_concentration_pct: float = 60.0    # big-move-day share of total loss that is reported
+    # F42 P5 bundled synthetic sample data ("Load sample data").  The files are committed under
+    # data/input/<sample_dir>/ and shipped by the deploy rsync; nothing is generated at request time.
+    sample_enabled: bool = True             # operator kill switch (false hides the card and refuses the POST)
+    sample_dir: str = "sample/fno"          # relative to data.input_dir
+    sample_file_prefix: str = "SAMPLE_"     # reserved upload-name prefix (only the sample loader may use it)
 
     @field_validator("holding_bucket_edges_minutes")
     @classmethod
@@ -250,6 +255,21 @@ class TradeAnalysisSettings(BaseSettings):
     def _spot_z_positive(cls, v: float) -> float:
         if v <= 0:
             raise ValueError("spot_rel_ci_z must be > 0")
+        return v
+
+    @field_validator("sample_dir")
+    @classmethod
+    def _sample_dir_relative(cls, v: str) -> str:
+        parts = [p for p in v.replace("\\", "/").split("/") if p]
+        if not parts or v.startswith(("/", "\\")) or ".." in parts or ":" in v:
+            raise ValueError("sample_dir must be a non-empty relative path without '..'")
+        return v
+
+    @field_validator("sample_file_prefix")
+    @classmethod
+    def _sample_prefix_plain(cls, v: str) -> str:
+        if not v or len(v) > 32 or any(c in v for c in "/\\:") or v != v.strip():
+            raise ValueError("sample_file_prefix must be a short plain prefix (no path characters)")
         return v
 
     @field_validator("spot_series_max_points")
