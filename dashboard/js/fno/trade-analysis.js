@@ -133,6 +133,7 @@ function _renderFailure(text) {
 }
 
 export async function loadTradeAnalysis() {
+  taInitTabs();  // idempotent; restores the remembered tab
   loadImportPanel();  // F42 P2 — independent of the live Kite feed; never throws
   loadAnalyticsPanels().catch(() => {});  // F42 P3 — six analytics panels, each fails on its own
   try {
@@ -168,4 +169,27 @@ export function taSetIncludeClosed(flag) {
 
 export function taRefresh() {
   return loadTradeAnalysis();
+}
+
+// ── Page tabs: the page is long, so each group of cards is one tab (visibility only; data loads as before) ──
+const _TA_TABS = ['behaviour', 'market', 'suggestions', 'import', 'live'];
+const _TA_TAB_KEY = 'rita.fno.tradeAnalysis.tab';
+
+export function taSwitchTab(tab) {
+  const active = _TA_TABS.includes(tab) ? tab : _TA_TABS[0];
+  document.querySelectorAll('#page-trade-analysis [data-ta-tab]').forEach(el => {
+    el.style.display = el.dataset.taTab.split(' ').includes(active) ? '' : 'none';
+  });
+  document.querySelectorAll('#ta-tabs .ta-tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.taTabbtn === active);
+  });
+  try { localStorage.setItem(_TA_TAB_KEY, active); } catch (e) { /* storage unavailable: tab simply is not remembered */ }
+  // Charts drawn while their tab was hidden need a resize once visible.
+  window.dispatchEvent(new Event('resize'));
+}
+
+export function taInitTabs() {
+  let saved = null;
+  try { saved = localStorage.getItem(_TA_TAB_KEY); } catch (e) { /* ignore */ }
+  taSwitchTab(saved);
 }

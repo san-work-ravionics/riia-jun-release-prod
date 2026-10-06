@@ -89,7 +89,7 @@ import { loadPortfolioHedge, phSetCoverage, phSetDuration, phToggleHedge, phPick
 import { haSkipToVerdict } from './hedge-reasoning.js';
 import { loadStudy } from './study.js';
 import { loadExperiment, fetchExpData, switchExpTab } from './experiment.js';
-import { loadTradeAnalysis, taSetUnderlying, taSetExpiryMonth, taSetIncludeClosed, taRefresh } from './trade-analysis.js';
+import { loadTradeAnalysis, taSetUnderlying, taSetExpiryMonth, taSetIncludeClosed, taRefresh, taSwitchTab } from './trade-analysis.js';
 import { taAnRefresh, taAnFromChanged, taAnToggleEstimate, taAnToggleInfo, taAnSpotToggle } from './trade-analytics.js';
 import { taImpFilesChosen, taImpUpload, taImpSetFilter, taImpPage, taImpRefresh, taImpDelete } from './trade-import.js';
 import { loadHedgeWorkflow, hwGoToStep, hwSelectInstrument, hwSelectPortfolio, hwRefreshStep } from './hedge-workflow.js';
@@ -163,6 +163,7 @@ window.taSetUnderlying = taSetUnderlying;
 window.taSetExpiryMonth = taSetExpiryMonth;
 window.taSetIncludeClosed = taSetIncludeClosed;
 window.taRefresh = taRefresh;
+window.taSwitchTab = taSwitchTab;   // page tabs (Behaviour / Market & P&L / Suggestions / Import / Live)
 // F42 Phase 2 — Console import panel (loadImportPanel runs from loadTradeAnalysis)
 window.taImpFilesChosen = taImpFilesChosen;
 window.taImpUpload = taImpUpload;

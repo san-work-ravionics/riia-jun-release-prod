@@ -75,6 +75,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
 .mkt-price-item{display:flex;align-items:center;justify-content:space-between;padding:5px 16px;}
 .mkt-price-sym{font-family:var(--fm);font-size:10px;font-weight:500;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;}
 .mkt-price-val{font-family:var(--fm);font-size:11px;font-weight:500;color:var(--text);}
+.ta-tab-btn{padding:6px 16px;border:1px solid var(--border);border-radius:100px;background:var(--surface);color:var(--text);font-family:var(--fm);font-size:12px;font-weight:600;cursor:pointer;}
+.ta-tab-btn.active{background:var(--p02);border-color:var(--p02);color:#fff;}
 .mkt-price-item[data-und]{cursor:pointer;border-left:2px solid transparent;transition:background .1s,border-color .1s;}
 .mkt-price-item[data-und]:hover{background:var(--surface2);}
 .mkt-price-item[data-und].active{background:var(--p02-bg);border-left-color:var(--p02);}
@@ -1545,6 +1547,14 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       <button id="ta-refresh-btn" onclick="taRefresh()" style="padding:6px 16px;border:none;border-radius:6px;background:var(--p02);color:#fff;font-family:var(--fm);font-size:12px;font-weight:600;cursor:pointer">Refresh</button>
     </div>
 
+    <div id="ta-tabs" role="tablist" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">
+      <button class="ta-tab-btn" data-ta-tabbtn="behaviour" onclick="taSwitchTab('behaviour')">Behaviour</button>
+      <button class="ta-tab-btn" data-ta-tabbtn="market" onclick="taSwitchTab('market')">Market &amp; P&amp;L</button>
+      <button class="ta-tab-btn" data-ta-tabbtn="suggestions" onclick="taSwitchTab('suggestions')">Suggestions</button>
+      <button class="ta-tab-btn" data-ta-tabbtn="import" onclick="taSwitchTab('import')">Import</button>
+      <button class="ta-tab-btn" data-ta-tabbtn="live" onclick="taSwitchTab('live')">Live Kite</button>
+    </div>
+    <div data-ta-tab="live" style="display:none">
     <details id="ta-live-details" style="margin-bottom:16px"><summary style="cursor:pointer;font-size:13px;font-weight:700;padding:8px 0">Live Kite feed — today's orders, trades &amp; positions <span id="ta-live-state" class="kpi-sub" style="font-weight:400;margin-left:8px"></span></summary>
     <div class="kpi-row c4"><div class="kpi"><div class="kpi-label">Orders</div><div class="kpi-value" id="ta-kpi-orders">—</div></div><div class="kpi"><div class="kpi-label">Trades</div><div class="kpi-value" id="ta-kpi-trades">—</div></div><div class="kpi"><div class="kpi-label">Lots traded</div><div class="kpi-value" id="ta-kpi-lots">—</div></div><div class="kpi"><div class="kpi-label">Open positions</div><div class="kpi-value" id="ta-kpi-open-pos">—</div></div><div class="kpi"><div class="kpi-label">Round trips</div><div class="kpi-value" id="ta-kpi-roundtrips">—</div></div><div class="kpi"><div class="kpi-label">Net P&amp;L</div><div class="kpi-value" id="ta-kpi-net-pnl">—</div></div><div class="kpi"><div class="kpi-label">Realised</div><div class="kpi-value" id="ta-kpi-realised">—</div></div><div class="kpi"><div class="kpi-label">Unrealised</div><div class="kpi-value" id="ta-kpi-unrealised">—</div></div></div>
 
@@ -1564,7 +1574,9 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
     <div class="kpi-sub" id="ta-snapshot-info" style="margin-bottom:6px"></div>
     <div class="kpi-sub" id="ta-excluded-note" style="margin-bottom:16px"></div>
     </details>
+    </div><!-- /live tab -->
 
+    <div data-ta-tab="import" style="display:none">
     <!-- ── Console import (F42 Phase 2) — personal data, per user ─────────── -->
     <div class="kpi" style="margin-bottom:16px"><div class="kpi-label">Import Zerodha Console files</div>
       <div class="kpi-sub" style="margin-bottom:8px">Tradebook CSV, P&amp;L XLSX/CSV, Ledger CSV. Parsed in memory; never persisted to our storage as files. Stored per user; re-importing adds nothing twice.</div>
@@ -1600,7 +1612,8 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       </div>
     </div>
 
-    <div class="kpi" style="margin-bottom:16px">
+    </div><!-- /import tab -->
+    <div class="kpi" data-ta-tab="behaviour market suggestions" style="margin-bottom:16px">
       <div class="kpi-label">Analytics (from your imported Console data)</div>
       <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:6px 0">
         <label style="font-size:12px;color:var(--t3);font-family:var(--fm);display:flex;align-items:center;gap:5px">From <input type="date" id="ta-an-from" onchange="taAnFromChanged(this.value)" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-family:var(--fm);font-size:12px;background:var(--surface);color:var(--text)"></label>
@@ -1611,7 +1624,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       <div class="kpi-sub">Underlying and expiry follow the filters above. Each number is tagged measured (from your rows) or estimated.</div>
       <div id="ta-an-recon" class="kpi-sub" style="margin-top:6px">—</div>
     </div>
-    <div class="kpi" id="ta-panel-overtrading" style="margin-bottom:16px">
+    <div class="kpi" id="ta-panel-overtrading" data-ta-tab="behaviour" style="margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
         <div class="kpi-label" style="margin-bottom:0">Overtrading</div>
         <button onclick="taAnToggleInfo('overtrading')" title="Definition and assumptions" style="padding:3px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--t3);font-family:var(--fm);font-size:11px;cursor:pointer">Definition</button>
@@ -1621,7 +1634,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       <div class="chart-wrap" style="margin:8px 0"><canvas id="ta-cv-weekly"></canvas></div>
       <div id="ta-an-overtrading-body" style="font-size:12px">—</div>
     </div>
-    <div class="kpi" id="ta-panel-buildup" style="margin-bottom:16px">
+    <div class="kpi" id="ta-panel-buildup" data-ta-tab="behaviour" style="margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
         <div class="kpi-label" style="margin-bottom:0">Position build-up</div>
         <button onclick="taAnToggleInfo('buildup')" title="Definition and assumptions" style="padding:3px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--t3);font-family:var(--fm);font-size:11px;cursor:pointer">Definition</button>
@@ -1631,7 +1644,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       <div class="chart-wrap" style="margin:8px 0"><canvas id="ta-cv-buildup"></canvas></div>
       <div id="ta-an-buildup-body" style="font-size:12px">—</div>
     </div>
-    <div class="kpi" id="ta-panel-marketturn" style="margin-bottom:16px">
+    <div class="kpi" id="ta-panel-marketturn" data-ta-tab="market" style="margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
         <div class="kpi-label" style="margin-bottom:0">Market-turn impact</div>
         <button onclick="taAnToggleInfo('marketturn')" title="Definition and assumptions" style="padding:3px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--t3);font-family:var(--fm);font-size:11px;cursor:pointer">Definition</button>
@@ -1641,7 +1654,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       <div class="chart-wrap" style="margin:8px 0"><canvas id="ta-cv-turn"></canvas></div>
       <div id="ta-an-marketturn-body" style="font-size:12px">—</div>
     </div>
-    <details class="kpi" id="ta-panel-spotpnl" style="margin-bottom:16px" ontoggle="taAnSpotToggle(this.open)">
+    <details class="kpi" id="ta-panel-spotpnl" data-ta-tab="market" style="margin-bottom:16px" ontoggle="taAnSpotToggle(this.open)">
       <summary style="cursor:pointer;font-weight:700;font-size:13px">Spot vs P&amp;L: did my P&amp;L move with the market? <span style="font-weight:400;color:var(--t3)">(open to load)</span></summary>
       <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin:8px 0">
         <button onclick="taAnToggleInfo('spotpnl')" title="Definition and assumptions" style="padding:3px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--t3);font-family:var(--fm);font-size:11px;cursor:pointer">Definition</button>
@@ -1664,7 +1677,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       <details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px">Observations</summary><div id="ta-an-spotpnl-obs" style="font-size:12px"></div></details>
       <details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px">What-if rules</summary><div id="ta-an-spotpnl-rules" style="font-size:12px"></div></details>
     </details>
-    <div class="kpi" id="ta-panel-margintrap" style="margin-bottom:16px">
+    <div class="kpi" id="ta-panel-margintrap" data-ta-tab="behaviour" style="margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
         <div class="kpi-label" style="margin-bottom:0">Margin trap</div>
         <button onclick="taAnToggleInfo('margintrap')" title="Definition and assumptions" style="padding:3px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--t3);font-family:var(--fm);font-size:11px;cursor:pointer">Definition</button>
@@ -1674,7 +1687,7 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       <div class="chart-wrap" style="margin:8px 0"><canvas id="ta-cv-cash"></canvas></div>
       <div id="ta-an-margintrap-body" style="font-size:12px">—</div>
     </div>
-    <div class="kpi" id="ta-panel-suggestions" style="margin-bottom:16px">
+    <div class="kpi" id="ta-panel-suggestions" data-ta-tab="suggestions" style="margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
         <div class="kpi-label" style="margin-bottom:0">Suggestions</div>
         <button onclick="taAnToggleInfo('suggestions')" title="Definition and assumptions" style="padding:3px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--t3);font-family:var(--fm);font-size:11px;cursor:pointer">Definition</button>
