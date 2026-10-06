@@ -60,6 +60,34 @@ class FnoImportRunRepo:
             stmt = stmt.where(Run.kind == kind)
         return self._db.execute(stmt).rowcount or 0
 
+    # ── F42 P5 sample-data support (all bounded, all user-scoped) ──────────────
+    def ids(self, user_id: str, limit: int = 5000) -> set[str]:
+        """Ids of the user's runs (bounded snapshot used to scope a failed-load cleanup)."""
+        q = select(Run.id).where(Run.user_id == user_id).limit(limit)
+        return set(self._db.scalars(q))
+
+    def count_data_runs(self, user_id: str) -> int:
+        """Runs that produced data (status ok or partial)."""
+        q = select(func.count()).select_from(Run).where(
+            Run.user_id == user_id, Run.status.in_(["ok", "partial"]))
+        return int(self._db.scalar(q) or 0)
+
+    def count_data_runs_not_prefixed(self, user_id: str, prefix: str) -> int:
+        """ok/partial runs whose file name does NOT start with ``prefix`` (case-insensitive).
+
+        Plain substring compare (no LIKE) so the ``_`` in a prefix is not a wildcard."""
+        q = select(func.count()).select_from(Run).where(
+            Run.user_id == user_id, Run.status.in_(["ok", "partial"]),
+            func.substr(func.upper(Run.file_name), 1, len(prefix)) != prefix.upper())
+        return int(self._db.scalar(q) or 0)
+
+    def delete_ids(self, user_id: str, ids: Iterable[str]) -> int:
+        """Delete only the named run rows of this user (unrelated audit history is kept)."""
+        n = 0
+        for chunk in _chunks(sorted(set(ids)), 400):
+            n += self._db.execute(delete(Run).where(Run.user_id == user_id, Run.id.in_(chunk))).rowcount or 0
+        return n
+
 
 class FnoTradeRepo:
     def __init__(self, db: Session) -> None:
@@ -146,6 +174,12 @@ class FnoTradeRepo:
         q = select(func.count()).select_from(Trade).where(
             Trade.user_id == user_id, Trade.parse_status == "unparsed",
             Trade.trade_date >= date_from)
+        return int(self._db.scalar(q) or 0)
+
+    def count_non_prefixed(self, user_id: str, prefix: str) -> int:
+        """Fills whose trade_id does not start with ``prefix`` (real Console ids are numeric)."""
+        q = select(func.count()).select_from(Trade).where(
+            Trade.user_id == user_id, func.substr(Trade.trade_id, 1, len(prefix)) != prefix)
         return int(self._db.scalar(q) or 0)
 
     def purge(self, user_id: str) -> int:

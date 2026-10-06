@@ -78,3 +78,7 @@ trade_analysis:
   spot_series_max_points: 400
   spot_obs_max: 6
   spot_obs_concentration_pct: 60.0
+  # F42 P5 bundled sample data (files under data.input_dir/<sample_dir>, shipped by the deploy rsync)
+  sample_enabled: true
+  sample_dir: sample/fno
+  sample_file_prefix: SAMPLE_

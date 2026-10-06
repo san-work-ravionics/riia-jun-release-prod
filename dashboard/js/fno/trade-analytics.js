@@ -17,7 +17,7 @@ import { _esc, _num, _pnl, taGetFilters } from './trade-analysis.js';
 const _BASE = '/api/v1/experience/fno/trade-analysis/analytics/';
 const _DISCLAIMER = 'Observations from your own imported history, not investment advice or a forecast.';
 const _REASONS = {
-  no_data: 'Import your Console files on the Import panel first.',
+  no_data: 'Import your Console files on the Import tab, or load sample data there.',
   no_trades_in_scope: 'No option fills match the selected underlying, expiry and date filters.',
   no_ledger: 'No usable ledger cash history; cash metrics are omitted.',
   spot_unavailable: 'No spot price history for this underlying; the turn analysis is omitted.',

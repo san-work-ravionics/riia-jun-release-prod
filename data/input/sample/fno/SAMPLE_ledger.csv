@@ -1,0 +1,64 @@
+particulars,posting_date,cost_center,voucher_type,debit,credit,net_balance
+SAMPLE Opening fund transfer (synthetic),2026-07-01,SAMPLE F&O,Bank Receipts,,200000.00,200000.00
+SAMPLE Net obligation for the day F&O,2026-07-01,SAMPLE F&O,Book Voucher,,27992.29,227992.29
+SAMPLE Net obligation for the day F&O,2026-07-02,SAMPLE F&O,Book Voucher,,2144.80,230137.09
+SAMPLE Net obligation for the day F&O,2026-07-03,SAMPLE F&O,Book Voucher,705.64,,229431.45
+SAMPLE Net obligation for the day F&O,2026-07-06,SAMPLE F&O,Book Voucher,,17537.65,246969.10
+SAMPLE Net obligation for the day F&O,2026-07-07,SAMPLE F&O,Book Voucher,772.32,,246196.78
+SAMPLE Net obligation for the day F&O,2026-07-08,SAMPLE F&O,Book Voucher,806.89,,245389.89
+SAMPLE Net obligation for the day F&O,2026-07-09,SAMPLE F&O,Book Voucher,,4503.41,249893.30
+SAMPLE Fund top-up 1 (synthetic),2026-07-10,SAMPLE F&O,Bank Receipts,,100000.00,349893.30
+SAMPLE Net obligation for the day F&O,2026-07-10,SAMPLE F&O,Book Voucher,5663.09,,344230.21
+SAMPLE Net obligation for the day F&O,2026-07-13,SAMPLE F&O,Book Voucher,,111925.95,456156.16
+SAMPLE Net obligation for the day F&O,2026-07-14,SAMPLE F&O,Book Voucher,139186.42,,316969.74
+SAMPLE Net obligation for the day F&O,2026-07-15,SAMPLE F&O,Book Voucher,,30103.62,347073.36
+SAMPLE Account maintenance DP charges,2026-07-15,SAMPLE F&O,Journal Entry,118.00,,346955.36
+SAMPLE Net obligation for the day F&O,2026-07-16,SAMPLE F&O,Book Voucher,,44954.75,391910.11
+SAMPLE Net obligation for the day F&O,2026-07-17,SAMPLE F&O,Book Voucher,152213.92,,239696.19
+SAMPLE Net obligation for the day F&O,2026-07-20,SAMPLE F&O,Book Voucher,154032.65,,85663.54
+SAMPLE Net obligation for the day F&O,2026-07-21,SAMPLE F&O,Book Voucher,,3742.89,89406.43
+SAMPLE Net obligation for the day F&O,2026-07-22,SAMPLE F&O,Book Voucher,30397.63,,59008.80
+SAMPLE Net obligation for the day F&O,2026-07-23,SAMPLE F&O,Book Voucher,10621.74,,48387.06
+SAMPLE Net obligation for the day F&O,2026-07-24,SAMPLE F&O,Book Voucher,11391.30,,36995.76
+SAMPLE Net obligation for the day F&O,2026-07-27,SAMPLE F&O,Book Voucher,13170.63,,23825.13
+SAMPLE Net obligation for the day F&O,2026-07-28,SAMPLE F&O,Book Voucher,7171.91,,16653.22
+SAMPLE Net obligation for the day F&O,2026-07-29,SAMPLE F&O,Book Voucher,,3497.80,20151.02
+SAMPLE Net obligation for the day F&O,2026-07-30,SAMPLE F&O,Book Voucher,,3086.43,23237.45
+SAMPLE Net obligation for the day F&O,2026-07-31,SAMPLE F&O,Book Voucher,,2952.03,26189.48
+SAMPLE Net obligation for the day F&O,2026-08-03,SAMPLE F&O,Book Voucher,2549.68,,23639.80
+SAMPLE Net obligation for the day F&O,2026-08-04,SAMPLE F&O,Book Voucher,892.70,,22747.10
+SAMPLE Net obligation for the day F&O,2026-08-05,SAMPLE F&O,Book Voucher,,2957.64,25704.74
+SAMPLE Net obligation for the day F&O,2026-08-06,SAMPLE F&O,Book Voucher,,100087.93,125792.67
+SAMPLE Net obligation for the day F&O,2026-08-07,SAMPLE F&O,Book Voucher,,93981.00,219773.67
+SAMPLE Net obligation for the day F&O,2026-08-10,SAMPLE F&O,Book Voucher,,86428.50,306202.17
+SAMPLE Fund top-up 2 (synthetic),2026-08-11,SAMPLE F&O,Bank Receipts,,100000.00,406202.17
+SAMPLE Net obligation for the day F&O,2026-08-11,SAMPLE F&O,Book Voucher,,3284.89,409487.06
+SAMPLE Net obligation for the day F&O,2026-08-12,SAMPLE F&O,Book Voucher,,7454.11,416941.17
+SAMPLE Net obligation for the day F&O,2026-08-13,SAMPLE F&O,Book Voucher,,4191.72,421132.89
+SAMPLE Net obligation for the day F&O,2026-08-14,SAMPLE F&O,Book Voucher,,4292.34,425425.23
+SAMPLE Account maintenance DP charges,2026-08-14,SAMPLE F&O,Journal Entry,118.00,,425307.23
+SAMPLE Net obligation for the day F&O,2026-08-18,SAMPLE F&O,Book Voucher,,3990.63,429297.86
+SAMPLE Net obligation for the day F&O,2026-08-19,SAMPLE F&O,Book Voucher,7781.97,,421515.89
+SAMPLE Net obligation for the day F&O,2026-08-20,SAMPLE F&O,Book Voucher,,4229.62,425745.51
+SAMPLE Net obligation for the day F&O,2026-08-21,SAMPLE F&O,Book Voucher,,1835.04,427580.55
+SAMPLE Net obligation for the day F&O,2026-08-24,SAMPLE F&O,Book Voucher,,2528.82,430109.37
+SAMPLE Net obligation for the day F&O,2026-08-25,SAMPLE F&O,Book Voucher,9513.05,,420596.32
+SAMPLE Net obligation for the day F&O,2026-08-26,SAMPLE F&O,Book Voucher,1310.28,,419286.04
+SAMPLE Net obligation for the day F&O,2026-08-27,SAMPLE F&O,Book Voucher,10277.51,,409008.53
+SAMPLE Net obligation for the day F&O,2026-08-28,SAMPLE F&O,Book Voucher,,17710.59,426719.12
+SAMPLE Net obligation for the day F&O,2026-08-31,SAMPLE F&O,Book Voucher,,94734.58,521453.70
+SAMPLE Net obligation for the day F&O,2026-09-01,SAMPLE F&O,Book Voucher,107067.64,,414386.06
+SAMPLE Net obligation for the day F&O,2026-09-02,SAMPLE F&O,Book Voucher,,10220.96,424607.02
+SAMPLE Net obligation for the day F&O,2026-09-03,SAMPLE F&O,Book Voucher,,8325.64,432932.66
+SAMPLE Net obligation for the day F&O,2026-09-04,SAMPLE F&O,Book Voucher,,3530.35,436463.01
+SAMPLE Net obligation for the day F&O,2026-09-07,SAMPLE F&O,Book Voucher,1159.55,,435303.46
+SAMPLE Net obligation for the day F&O,2026-09-08,SAMPLE F&O,Book Voucher,3442.28,,431861.18
+SAMPLE Final settlement of expired contract,2026-09-08,SAMPLE F&O,Book Voucher,12367.53,,419493.65
+SAMPLE Net obligation for the day F&O,2026-09-09,SAMPLE F&O,Book Voucher,1178.88,,418314.77
+SAMPLE Net obligation for the day F&O,2026-09-10,SAMPLE F&O,Book Voucher,,1575.75,419890.52
+SAMPLE Net obligation for the day F&O,2026-09-11,SAMPLE F&O,Book Voucher,,116038.52,535929.04
+SAMPLE Account maintenance DP charges,2026-09-11,SAMPLE F&O,Journal Entry,118.00,,535811.04
+SAMPLE Net obligation for the day F&O,2026-09-15,SAMPLE F&O,Book Voucher,221082.42,,314728.62
+SAMPLE Net obligation for the day F&O,2026-09-16,SAMPLE F&O,Book Voucher,,31166.08,345894.70
+SAMPLE Net obligation for the day F&O,2026-09-17,SAMPLE F&O,Book Voucher,,3566.21,349460.91
+SAMPLE Net obligation for the day F&O,2026-09-18,SAMPLE F&O,Book Voucher,813.87,,348647.04
