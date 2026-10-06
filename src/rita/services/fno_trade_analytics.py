@@ -615,13 +615,18 @@ def buildup(ctx: Ctx, lots: LotInfo) -> dict[str, Any]:
 # ── spot returns / market turn ──────────────────────────────────────────────────
 
 
+def _ret_pct(c1: float, c0: float) -> float:
+    """Return in percent, rounded to 9 dp so an exact boundary move (e.g. +0.25%) is not lost to float error."""
+    return round((c1 / c0 - 1.0) * 100.0, 9) if c0 else 0.0
+
+
 def _returns(ss: SpotSeries) -> dict[date, tuple[float, float, Optional[float]]]:
     """date -> (close_t, close_{t-1}, r_{t-1} pct) with r_t computed by the caller."""
     out: dict[date, tuple[float, float, Optional[float]]] = {}
     prev_r: Optional[float] = None
     for i in range(1, len(ss.dates)):
         c0, c1 = ss.closes[i - 1], ss.closes[i]
-        r = (c1 / c0 - 1.0) * 100.0 if c0 else 0.0
+        r = _ret_pct(c1, c0)
         out[ss.dates[i]] = (c1, c0, prev_r)
         prev_r = r
     return out
@@ -650,6 +655,9 @@ def spot_days(ctx: Ctx, unds: Optional[list[str]] = None) -> dict[str, list[Spot
     start-of-day book bias.  Behaviour of market_turn's former inline loop, unchanged."""
     res = ctx.res
     unds = sorted(ctx.spot) if unds is None else [u for u in unds if u in ctx.spot]
+    cache = ctx.__dict__.setdefault("_spot_days_cache", {})   # one sweep per (ctx, underlyings)
+    if tuple(unds) in cache:
+        return cache[tuple(unds)]
     rets = {u: _returns(ctx.spot[u]) for u in unds}
     cutoffs: list[date] = []
     for u in unds:
@@ -665,7 +673,7 @@ def spot_days(ctx: Ctx, unds: Optional[list[str]] = None) -> dict[str, list[Spot
             if d not in rets[u] or not (ctx.date_from <= d <= ctx.date_to):
                 continue
             c1, c0, r_prev = rets[u][d]
-            r = (c1 / c0 - 1.0) * 100.0 if c0 else 0.0
+            r = _ret_pct(c1, c0)
             bias = 0
             syms_in: list[tuple[int, str]] = []
             proxy_in = 0.0
@@ -679,6 +687,7 @@ def spot_days(ctx: Ctx, unds: Optional[list[str]] = None) -> dict[str, list[Spot
                     proxy_in += -p.qty * m.strike
             days.append(SpotDay(d, c1, c0, r, r_prev, bias, syms_in, proxy_in))
         out[u] = days
+    cache[tuple(unds)] = out
     return out
 
 

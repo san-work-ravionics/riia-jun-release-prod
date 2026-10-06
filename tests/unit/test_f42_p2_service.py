@@ -161,7 +161,11 @@ def test_read_status_and_scope_filters(db_session):
     assert {i.trade_id for i in q(expiry_month=8).items} == {"3"} and q(expiry_month=8).filter.expiry_months == [8]
     assert {i.trade_id for i in q(date_from=date(2026, 6, 1)).items} == {"1", "2", "3", "7"}
     assert {i.trade_id for i in q(side="sell").items} == {"7"}
-    assert [i.trade_id for i in q(sort="trade_date_asc", date_from=date(2026, 6, 1)).items][0] == "2"
+    asc = q(sort="trade_date_asc", date_from=date(2026, 6, 1)).items
+    assert {i.trade_id for i in asc} == {"1", "2", "3", "7"} and asc[0].trade_id == "2" and asc[-1].trade_id == "7"
+    dates = [i.trade_date for i in asc]
+    assert dates == sorted(dates)                  # 1 and 3 tie on 2026-10-01, so only the date order is pinned
+    assert q(expiry_month=3).total == 0 and q(expiry_month=3).filter.expiry_months == [3]   # out-of-config month probe
     p = q(date_from=date(2026, 6, 1), page_size=2, page=2)
     assert p.total == 4 and p.total_pages == 2 and len(p.items) == 2
 

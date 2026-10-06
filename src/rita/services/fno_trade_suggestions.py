@@ -9,17 +9,17 @@ NOT re-run (in-sample, no second-order effects).
 """
 from __future__ import annotations
 
+import bisect
 import statistics
 from collections import defaultdict
 from datetime import date
 from typing import Any, Optional
 
-import bisect
-
 from rita.services.fno_trade_analytics import (
-    EPS, Ctx, LotInfo, _info, _r, _sgn, delta_sign, pct_nearest, spot_days,
+    EPS, Ctx, LotInfo, SpotDay, _info, _r, _ret_pct, _sgn, delta_sign, pct_nearest, spot_days,
 )
 from rita.services.fno_trade_fifo import ClosedTrade, FillEvent, sweep_positions
+from rita.services.fno_trade_spot_pnl import spot_vs_pnl
 
 DISCLAIMER = "Observations from your own imported history, not investment advice or a forecast."
 _VETO_RULES = ("max_trades_per_day", "qty_cap_per_expiry", "margin_headroom_floor",
@@ -292,7 +292,7 @@ def suggestions(ctx: Ctx, overtrading: dict[str, Any], build: dict[str, Any],
                    _CAVEATS + ["Same underlying, same day only."])
 
     # 7-10 — spot-linked rules (F42 P4), same Rule shape and what-if arithmetic
-    spot_view = spot_vs_pnl_for_rules(ctx)
+    spot_view = spot_vs_pnl(ctx, [], sorted({f.underlying for f in res.fills}))
     sp_rules, sp_vetoes = spot_rules(ctx, spot_view)
     rules.extend(sp_rules)
     vetoes.update(sp_vetoes)
@@ -365,12 +365,6 @@ def suggestions(ctx: Ctx, overtrading: dict[str, Any], build: dict[str, Any],
 # ── F42 P4: spot-linked rules ────────────────────────────────────────────────────
 
 
-def spot_vs_pnl_for_rules(ctx: Ctx) -> dict[str, Any]:
-    """Alignment / big-move / expiry statistics used as rule evidence (no P&L-sheet lines needed)."""
-    from rita.services.fno_trade_spot_pnl import spot_vs_pnl
-    return spot_vs_pnl(ctx, [], sorted({f.underlying for f in ctx.res.fills}))
-
-
 def _eod_bias_samples(ctx: Ctx) -> list[float]:
     """|EOD directional bias| of each underlying on each day the user had a fill in the window."""
     res = ctx.res
@@ -393,12 +387,14 @@ def _bias_of(eff: dict[str, float], res: Any, u: str) -> float:
                for s, q in eff.items() if q and res.meta[s].underlying == u)
 
 
-def spot_rules(ctx: Ctx, spot_view: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, dict[int, float]]]:
+def spot_rules(ctx: Ctx, spot_view: dict[str, Any],
+               days: Optional[dict[str, list[SpotDay]]] = None) -> tuple[list[dict[str, Any]], dict[str, dict[int, float]]]:
     """The four spot-linked rules.  Returns (rules, veto fractions per veto rule id).
 
     1 bias_limit, 2 expiry_proximity_entries, 3 counter_move_entries are opening-fill vetoes with
     the shared what-if arithmetic; 4 bias_hedge_illustrative is an ESTIMATE-tagged bound, never a
     veto and never part of ``combined``."""
+    days = spot_days(ctx) if days is None else days
     cfg = ctx.cfg
     res = ctx.res
     p = cfg.suggestion_percentile
@@ -502,19 +498,16 @@ def spot_rules(ctx: Ctx, spot_view: dict[str, Any]) -> tuple[list[dict[str, Any]
         insufficient("counter_move_entries", t3,
                      "too few closed trades" if not enough else "needs spot history")
     else:
-        prev_ret: dict[str, tuple[list[date], list[float]]] = {}
-        for u, days in spot_days(ctx).items():
-            prev_ret[u] = ([sd.d for sd in days], [sd.ret for sd in days])
         f3: dict[int, float] = {}
         for e in entries:
             f = e.fill
-            pr = prev_ret.get(f.underlying)
-            if not pr:
+            ss = ctx.spot.get(f.underlying)
+            if not ss:
                 continue
-            i = bisect.bisect_left(pr[0], f.trade_date) - 1
-            if i < 0 or (f.trade_date - pr[0][i]).days > cfg.spot_stale_days:
+            i = bisect.bisect_left(ss.dates, f.trade_date) - 1      # previous session (may precede date_from)
+            if i < 1 or (f.trade_date - ss.dates[i]).days > cfg.spot_stale_days:
                 continue
-            r = pr[1][i]
+            r = _ret_pct(ss.closes[i], ss.closes[i - 1])
             if abs(r) >= cfg.turn_threshold_pct and delta_sign(f.itype, f.sign) * _sgn(r) < 0:
                 f3[e.idx] = 1.0
         big_ev = []
@@ -539,8 +532,8 @@ def spot_rules(ctx: Ctx, spot_view: dict[str, Any]) -> tuple[list[dict[str, Any]
         cap4 = float(int(bound))
         offset = 0.0
         n_days = 0
-        for days in spot_days(ctx).values():
-            for sd in days:
+        for day_list in days.values():
+            for sd in day_list:
                 if abs(sd.bias) > cap4:
                     excess = sd.bias - _sgn(sd.bias) * cap4
                     offset += -excess * (sd.close - sd.prev_close)

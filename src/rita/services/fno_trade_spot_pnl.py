@@ -180,7 +180,7 @@ def _alignment(cfg: Any, days: list[SpotDay]) -> dict[str, Any]:
         if sd.bias == 0:
             flat_book += 1
             continue
-        if abs(sd.ret) < band:
+        if abs(sd.ret) < band or sd.ret == 0:
             flat_market += 1
             continue
         pts = sd.bias * (sd.close - sd.prev_close)
@@ -319,8 +319,11 @@ def _snapshot(ctx: Ctx, u: str, lines: list[PnlLine], spot_last: Optional[date])
             if ln.unrealized_pnl is not None and ln.open_quantity not in (None, 0)}
     base["fifo_open_symbols"] = len(fifo_open)
     base["symbols_missing_in_sheet"] = len(fifo_open - set(used))
-    if not used:
-        base["reason"] = ("no_pnl_sheet" if not mine or fifo_open else "no_open_positions")
+    if not fifo_open:
+        base["reason"] = "no_open_positions"
+        return base
+    if not used or base["symbols_missing_in_sheet"] == len(fifo_open):
+        base["reason"] = "no_pnl_sheet"
         return base
     as_of = max(ln.period_to for ln in used.values())
     behind = (spot_last - as_of).days if spot_last else None
@@ -414,9 +417,9 @@ def _block(ctx: Ctx, u: str, days: Optional[list[SpotDay]], segs: list[Segment],
         "all_days": corr_block(ret, pnl, cfg.spot_rel_min_days, cfg.spot_rel_ci_z, mixed),
         "closing_days": corr_block([ret[i] for i in close_idx], [pnl[i] for i in close_idx],
                                    cfg.spot_rel_min_closing_days, cfg.spot_rel_ci_z, mixed),
-        "by_direction": [bk("up", [i for i in all_idx if ret[i] >= band]),
-                         bk("down", [i for i in all_idx if ret[i] <= -band]),
-                         bk("flat", [i for i in all_idx if -band < ret[i] < band])],
+        "by_direction": [bk("up", [i for i in all_idx if ret[i] >= band and ret[i] > 0]),
+                         bk("down", [i for i in all_idx if ret[i] <= -band and ret[i] < 0]),
+                         bk("flat", [i for i in all_idx if not (ret[i] >= band and ret[i] > 0) and not (ret[i] <= -band and ret[i] < 0)])],
         "big_move": [bk("big_up", big_up), bk("big_down", big_dn), bk("reversal", rev_i), bk("other", other)],
         "big_any": bk("big_any", big_any),
         "expiry_days": [bk("expiry", [i for i in all_idx if d["exp"][i]]),
@@ -428,10 +431,11 @@ def _block(ctx: Ctx, u: str, days: Optional[list[SpotDay]], segs: list[Segment],
     return blk
 
 
-def spot_vs_pnl(ctx: Ctx, pnl_lines: list[PnlLine], unds: list[str]) -> dict[str, Any]:
+def spot_vs_pnl(ctx: Ctx, pnl_lines: list[PnlLine], unds: list[str],
+                days: Optional[dict[str, list[SpotDay]]] = None) -> dict[str, Any]:
     """Per-underlying blocks (never summed across underlyings) plus the view-level info."""
     cfg = ctx.cfg
-    days_by_u = spot_days(ctx, unds)
+    days_by_u = days if days is not None else spot_days(ctx, unds)
     segs_by_u = _segments_by_und(ctx)
     blocks = [_block(ctx, u, days_by_u.get(u), segs_by_u.get(u, []), pnl_lines) for u in unds]
     info = _info(

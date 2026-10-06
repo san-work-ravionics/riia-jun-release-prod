@@ -493,3 +493,30 @@ def test_widened_scope_reconciliation_old_symbols_unchanged_added_symbol_extra_r
     assert set(by_b) - set(by_a) == {"NIFTY26AUG20000CE"}
     for s_, row in by_a.items():
         assert by_b[s_]["fifo_measured"] == row["fifo_measured"] and by_b[s_]["gap_measured"] == row["gap_measured"]
+
+
+# ── review follow-up ───────────────────────────────────────────────────────────────────────
+
+def test_snapshot_unavailable_when_sheet_overlaps_no_open_symbol_and_no_open_positions_reason():
+    cx = _cx(OPEN)
+    other = _line("NIFTY26OCT19000CE", "2026-10-01", "2026-10-12", 9.0)          # open on the sheet, not in FIFO
+    s = _block(cx, [other])["unrealised_snapshot"]
+    assert s["available"] is False and s["reason"] == "no_pnl_sheet" and s["symbols_missing_in_sheet"] == 2
+    assert _block(_cx(), [])["unrealised_snapshot"]["reason"] == "no_open_positions"   # FIFO flat, no sheet
+
+
+def test_counter_move_rule_covers_first_day_of_window():
+    # window starts 10-02; the previous session (10-01, +1.0% big) lies BEFORE date_from
+    fs = [fill("sell", 10, 100.0, "2026-10-02", symbol="NIFTY26OCT20000CE"),
+          fill("buy", 10, 120.0, "2026-10-05", symbol="NIFTY26OCT20000CE")]
+    cx = ctx(fs, date_from="2026-10-02", date_to="2026-10-14", sp=spot(NIFTY=CLOSES),
+             c=cfg(**{**SMALL, "suggestion_min_closed_trades": 1}))
+    w = _rules(cx)[0]["counter_move_entries"]["what_if"]
+    assert w["trades_removed"] == 1 and w["delta"] == 200.0
+
+
+def test_zero_band_and_boundary_float_fixes():
+    cl = [("2026-09-30", 20000.0), ("2026-10-01", 20050.0)]                      # exactly +0.25%
+    cx = ctx([fill("buy", 1, 1.0, "2026-10-01")], date_from="2026-10-01", date_to="2026-10-02", sp=spot(NIFTY=cl),
+             c=cfg(**SMALL))
+    assert _block(cx)["relationship"]["by_direction"][0]["n_days"] == 1

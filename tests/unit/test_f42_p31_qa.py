@@ -282,7 +282,6 @@ def test_big_move_threshold_is_inclusive_and_just_below_is_not_big():
     assert b["series"]["reversal_flag"][1] == 1                                    # +1% then -1.01%: reversal
 
 
-@pytest.mark.xfail(strict=True, reason="QA-D1: float error at exact band/threshold boundary")
 def test_DEFECT_float_error_drops_an_exact_band_move_into_flat():
     """20000 -> 20050 is exactly +0.25% (the default band) but (c1/c0-1)*100 = 0.24999999999999467,
     so the day is classed flat and is not scored: the documented rule is 'r >= band' (inclusive)."""
@@ -294,7 +293,6 @@ def test_DEFECT_float_error_drops_an_exact_band_move_into_flat():
     assert up["n_days"] == 1                                                       # documented: up if r >= band
 
 
-@pytest.mark.xfail(strict=True, reason="QA-D2: flat band 0 puts a 0.00% day in BOTH up and down and scores it 'against'")
 def test_DEFECT_zero_band_zero_return_day_is_double_counted():
     days = _bdays("2026-09-01", 4)
     book = [fill("buy", 1, 1.0, days[0])]
@@ -424,7 +422,9 @@ def test_snapshot_never_mixes_underlyings():
                         unrealized_pnl=100.0),
              an.PnlLine("BANKNIFTY26OCT50000CE", "BANKNIFTY", "2026-10", D("2026-10-01"), D("2026-10-09"), 0.0, 5,
                         "Short", unrealized_pnl=-7.0)]
-    v = sp.spot_vs_pnl(ctx(cx.res.fills, date_from="2026-10-01", date_to="2026-10-12",
+    held = [fill("buy", 10, 10.0, "2026-10-08", symbol="NIFTY26OCT20000CE"),        # leave both sheet symbols open in FIFO (snapshot needs an open book)
+            fill("sell", 5, 100.0, "2026-10-08", symbol="BANKNIFTY26OCT50000CE", underlying="BANKNIFTY", strike=50000.0)]
+    v = sp.spot_vs_pnl(ctx(list(cx.res.fills) + held, date_from="2026-10-01", date_to="2026-10-12",
                            sp=cx.spot, c=cfg()), lines, ["NIFTY", "BANKNIFTY"])["underlyings"]
     assert v[0]["unrealised_snapshot"]["amount"] == 100.0 and v[0]["unrealised_snapshot"]["n_symbols"] == 1
     assert v[1]["unrealised_snapshot"]["amount"] == -7.0 and v[1]["unrealised_snapshot"]["n_symbols"] == 1

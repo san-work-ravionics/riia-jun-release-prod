@@ -347,8 +347,8 @@ function _spotVerdictLine(u) {
   const scored = (al.with_n || 0) + (al.against_n || 0);
   const alNeed = _need({ min_required: al.min_required, n: scored });
   const lean = al.verdict === 'insufficient_sample'
-    ? `${_esc(_verdict('insufficient_sample'))} (${alNeed})`
-    : `${_esc(_verdict(al.verdict))} (${_pct(al.pct_with)} of ${_num(scored)} scored days with the market)`;
+    ? _verdict('insufficient_sample') + ' (' + alNeed + ')'
+    : _verdict(al.verdict) + ' (' + _pct(al.pct_with) + ' of ' + _num(scored) + ' scored days with the market)';
   const corr = ad.reason ? `correlation ${ad.reason === 'insufficient_sample' ? _need(ad) : 'no variation'}`
     : `correlation ${_num(ad.pearson, 2)} (n=${_num(ad.n)})`;
   return `<b>${_esc(u.underlying)}</b>: ${_esc(lean)} · ${_esc(corr)}`;
@@ -424,7 +424,7 @@ function _spotChart(slot, u) {
   const sn = u.unrealised_snapshot || {};
   const hasEst = (s.realised_estimate || []).some(v => v);
   const datasets = [
-    { type: 'line', label: `${_esc(u.underlying)} close`, data: s.spot_close, borderColor: _BLUE, borderWidth: 1.5, pointStyle: style,
+    { type: 'line', label: u.underlying + ' close', data: s.spot_close, borderColor: _BLUE, borderWidth: 1.5, pointStyle: style,
       pointRadius: rad, pointBackgroundColor: _BLUE, pointBorderColor: bord, yAxisID: 'y', order: 1 },
     { type: 'bar', label: 'Realised P&L (measured)', data: s.realised_measured, stack: 'pnl', yAxisID: 'y1', order: 3,
       backgroundColor: s.realised_measured.map(v => (v || 0) >= 0 ? _GREEN : _RED) },
@@ -436,7 +436,7 @@ function _spotChart(slot, u) {
   datasets.push({ type: 'line', label: 'Cumulative P&L', data: s.cum_total, borderColor: _WARN, borderWidth: 1, pointRadius: 0, yAxisID: 'y2', order: 2 });
   if (sn.available && sn.amount != null) {
     const pt = s.dates.map((_, i) => i === n - 1 ? sn.amount : null);
-    datasets.push({ type: 'line', label: `Unrealised (sheet, as of ${_esc(sn.as_of || '—')})`, data: pt, borderColor: _WARN,
+    datasets.push({ type: 'line', label: 'Unrealised (sheet, as of ' + (sn.as_of || '—') + ')', data: pt, borderColor: _WARN,
       backgroundColor: _WARN, pointStyle: 'rectRot', pointRadius: 6, showLine: false, yAxisID: 'y2', order: 0 });
   }
   const tick = { font: { family: 'IBM Plex Mono, monospace', size: 10 } };
@@ -449,7 +449,7 @@ function _spotChart(slot, u) {
         if (i < 0 || i >= n) return [];
         const out = [`Close ${_num(s.spot_close[i], 2)} · return ${_pct(s.ret_pct[i])} · bias ${_num(s.bias_in[i])}`,
           `Realised ${_pnl(s.realised_measured[i])} · estimate ${_pnl(s.realised_estimate[i])} · cumulative ${_pnl(s.cum_total[i])}`];
-        if (sn.available && i === n - 1) out.push(`Unrealised as of ${_esc(sn.as_of || '—')}${sn.stale ? ' (stale)' : ''}: ${_pnl(sn.amount)}`);
+        if (sn.available && i === n - 1) out.push('Unrealised as of ' + (sn.as_of || '—') + (sn.stale ? ' (stale)' : '') + ': ' + _pnl(sn.amount));
         return out;
       } } } },
       scales: { x: { ..._axis, ticks: { ...tick, maxTicksLimit: 8 } }, y: { ..._axis, position: 'left' },
