@@ -14,14 +14,19 @@ from collections import defaultdict
 from datetime import date
 from typing import Any, Optional
 
+import bisect
+
 from rita.services.fno_trade_analytics import (
-    EPS, Ctx, LotInfo, _info, _r, pct_nearest,
+    EPS, Ctx, LotInfo, _info, _r, _sgn, delta_sign, pct_nearest, spot_days,
 )
-from rita.services.fno_trade_fifo import ClosedTrade, FillEvent
+from rita.services.fno_trade_fifo import ClosedTrade, FillEvent, sweep_positions
 
 DISCLAIMER = "Observations from your own imported history, not investment advice or a forecast."
 _VETO_RULES = ("max_trades_per_day", "qty_cap_per_expiry", "margin_headroom_floor",
-               "no_averaging_down", "cooling_off_after_loss")
+               "no_averaging_down", "cooling_off_after_loss", "bias_limit",
+               "expiry_proximity_entries", "counter_move_entries")
+SPOT_RULE_IDS = ("bias_limit", "expiry_proximity_entries", "counter_move_entries",
+                 "bias_hedge_illustrative")
 _CAVEATS = ["In-sample what-if on your own history; no second-order effects (the book is not re-simulated).",
             "Gross of charges; open slices of vetoed fills are reported as units, not priced."]
 
@@ -286,6 +291,12 @@ def suggestions(ctx: Ctx, overtrading: dict[str, Any], build: dict[str, Any],
                    [_ev("Re-entries after a loss", len(gaps), "overtrading.bursts.reentries_after_loss.count")],
                    _CAVEATS + ["Same underlying, same day only."])
 
+    # 7-10 — spot-linked rules (F42 P4), same Rule shape and what-if arithmetic
+    spot_view = spot_vs_pnl_for_rules(ctx)
+    sp_rules, sp_vetoes = spot_rules(ctx, spot_view)
+    rules.extend(sp_rules)
+    vetoes.update(sp_vetoes)
+
     # combined (union of veto rules; max fraction per fill) + stop add-on reported separately
     inc = [r for r in _VETO_RULES if r in vetoes]
     comb: dict[int, float] = {}
@@ -340,7 +351,7 @@ def suggestions(ctx: Ctx, overtrading: dict[str, Any], build: dict[str, Any],
                     f"ledger cash with at least one open position at a known loss.",
                     "evidence": [_ev("days", margin["trap"]["days"], "margintrap.trap.days")]})
 
-    order = {"applicable": 0, "not_triggered": 1, "insufficient_data": 2}
+    order = {"applicable": 0, "not_triggered": 1, "insufficient_data": 2, "illustrative": 3}
     rules.sort(key=lambda r: (order[r["status"]], -(r["what_if"]["delta"] if r["what_if"] else 0.0)))
     return {"disclaimer": DISCLAIMER, "sample": {"closed_trades": n_closed,
                                                  "min_required": cfg.suggestion_min_closed_trades},
@@ -349,3 +360,203 @@ def suggestions(ctx: Ctx, overtrading: dict[str, Any], build: dict[str, Any],
                     "your own percentiles or medians, and the what-if shows the P&L had that rule applied.",
                     ["Descriptive, deterministic, computed locally; no model or external service is used.",
                      "Vetoing an entry removes the FIFO slices it opened; the book is not re-simulated."])}
+
+
+# ── F42 P4: spot-linked rules ────────────────────────────────────────────────────
+
+
+def spot_vs_pnl_for_rules(ctx: Ctx) -> dict[str, Any]:
+    """Alignment / big-move / expiry statistics used as rule evidence (no P&L-sheet lines needed)."""
+    from rita.services.fno_trade_spot_pnl import spot_vs_pnl
+    return spot_vs_pnl(ctx, [], sorted({f.underlying for f in ctx.res.fills}))
+
+
+def _eod_bias_samples(ctx: Ctx) -> list[float]:
+    """|EOD directional bias| of each underlying on each day the user had a fill in the window."""
+    res = ctx.res
+    active: dict[str, set[date]] = defaultdict(set)
+    for e in ctx.events:
+        active[e.fill.underlying].add(e.fill.trade_date)
+    cutoffs = sorted({d for ds in active.values() for d in ds})
+    snaps = sweep_positions(res, cutoffs)
+    out: list[float] = []
+    for u, ds in active.items():
+        for d in ds:
+            b = sum(delta_sign(res.meta[s].itype, 1 if p.qty > 0 else -1) * abs(p.qty)
+                    for s, p in snaps[d].items() if res.meta[s].underlying == u)
+            out.append(float(abs(b)))
+    return out
+
+
+def _bias_of(eff: dict[str, float], res: Any, u: str) -> float:
+    return sum(delta_sign(res.meta[s].itype, 1 if q > 0 else -1) * abs(q)
+               for s, q in eff.items() if q and res.meta[s].underlying == u)
+
+
+def spot_rules(ctx: Ctx, spot_view: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, dict[int, float]]]:
+    """The four spot-linked rules.  Returns (rules, veto fractions per veto rule id).
+
+    1 bias_limit, 2 expiry_proximity_entries, 3 counter_move_entries are opening-fill vetoes with
+    the shared what-if arithmetic; 4 bias_hedge_illustrative is an ESTIMATE-tagged bound, never a
+    veto and never part of ``combined``."""
+    cfg = ctx.cfg
+    res = ctx.res
+    p = cfg.suggestion_percentile
+    baseline = sum(t.pnl for t in ctx.trades)
+    enough = len(ctx.trades) >= cfg.suggestion_min_closed_trades
+    open_units: dict[int, int] = defaultdict(int)
+    for lot in res.open_lots(ctx.include_est):
+        open_units[lot.open_idx] += lot.qty
+    entries = [e for e in ctx.events if e.opened_qty > 0]
+    rules: list[dict[str, Any]] = []
+    vetoes: dict[str, dict[int, float]] = {}
+    blocks = {b["underlying"]: b for b in spot_view.get("underlyings", [])}
+    has_spot = any(u in ctx.spot for u in blocks)
+
+    def insufficient(rid: str, title: str, why: str) -> None:
+        rules.append(_rule(rid, title, "insufficient_data", None, why, None, [], _CAVEATS))
+
+    def finish(rid: str, title: str, f: dict[int, float], param: dict[str, Any], basis: str,
+               evidence: list[dict[str, Any]], caveats: list[str]) -> None:
+        if not f:
+            rules.append(_rule(rid, title, "not_triggered", param, basis, None, evidence, caveats))
+            return
+        vetoes[rid] = f
+        rules.append(_rule(rid, title, "applicable", param, basis,
+                           _what_if(ctx, f, baseline, open_units, "veto_opening_fills"), evidence, caveats))
+
+    def al_ev() -> list[dict[str, Any]]:
+        out = []
+        for u, b in sorted(blocks.items()):
+            al = b.get("alignment")
+            if al:
+                out.append(_ev(f"{u} share of days with the market", al["pct_with"], f"spotpnl.{u}.alignment.pct_with"))
+                out.append(_ev(f"{u} net units x points", al["net_units_pts"], f"spotpnl.{u}.alignment.net_units_pts"))
+        return out
+
+    # 1 — bias limit
+    t1 = "What-if: net directional bias capped"
+    samples = _eod_bias_samples(ctx) if enough and has_spot else []
+    bound = pct_nearest(samples, p) if samples else None
+    if not enough or not has_spot or bound is None:
+        insufficient("bias_limit", t1, "too few closed trades" if not enough else
+                     "needs spot history and trading days")
+    else:
+        cap = int(bound)
+        eff: dict[str, float] = {}
+        f1: dict[int, float] = {}
+        for e in res.events:
+            f = e.fill
+            for sym in [s for s in eff if (x := res.meta[s].expiry_eff) is not None and x < f.trade_date]:
+                del eff[sym]
+            sym = f.symbol
+            if e.closed_qty:
+                q = eff.get(sym, 0.0)
+                eff[sym] = max(0.0, q - e.closed_qty) if q > 0 else min(0.0, q + e.closed_qty)
+            if e.opened_qty:
+                add = float(e.opened_qty)
+                veto_u = 0.0
+                if f.trade_date >= ctx.date_from:
+                    u = f.underlying
+                    b = _bias_of(eff, res, u)
+                    d = delta_sign(f.itype, f.sign)
+                    nb = b + d * add
+                    floor_ = max(float(cap), abs(b))
+                    if abs(nb) > floor_ + EPS:
+                        frac = min(1.0, (abs(nb) - floor_) / add)
+                        f1[e.idx] = frac
+                        veto_u = frac * add
+                eff[sym] = eff.get(sym, 0.0) + f.sign * (add - veto_u)
+        finish("bias_limit", f"What-if: net directional bias capped at {cap} units", f1,
+               {"name": "max_abs_bias_units", "value": cap, "unit": "units"},
+               f"{p}th percentile of your end-of-day |directional bias| over {len(samples)} "
+               "underlying-days on which you traded",
+               [_ev("Days sampled", len(samples), "spotpnl.alignment")] + al_ev(),
+               _CAVEATS + ["Per underlying, chronological; a fill is vetoed pro rata by the units that push "
+                           "|bias| above the limit in the direction increasing |bias|.",
+                           "Bias is a delta-sign proxy counting every open unit as +-1 regardless of delta."])
+
+    # 2 — expiry proximity
+    t2 = "What-if: no new entries close to expiry"
+    if not enough:
+        insufficient("expiry_proximity_entries", t2, "too few closed trades")
+    else:
+        n_d = cfg.expiry_proximity_days
+        f2 = {e.idx: 1.0 for e in entries
+              if e.fill.expiry_eff is not None and 0 <= (e.fill.expiry_eff - e.fill.trade_date).days <= n_d}
+        exp_ev = []
+        for u, b in sorted(blocks.items()):
+            rel = b.get("relationship")
+            xb = next((x for x in rel["expiry_days"] if x["key"] == "expiry"), None) if rel else None
+            if xb and xb["available"]:
+                exp_ev.append(_ev(f"{u} expiry-day P&L", xb["total_pnl"], f"spotpnl.{u}.relationship.expiry_days"))
+        finish("expiry_proximity_entries", f"What-if: no new entries within {n_d} days of expiry", f2,
+               {"name": "expiry_proximity_days", "value": n_d, "unit": "days"},
+               "entries made within the configured number of calendar days of the symbol's expiry",
+               [_ev("Entries in window", len(entries), "buildup.events")] + exp_ev,
+               _CAVEATS + ["The delta can be positive or negative; reported either way."])
+
+    # 3 — counter-move entries
+    t3 = "What-if: no entries leaning against a just-completed sharp move"
+    if not enough or not ctx.spot:
+        insufficient("counter_move_entries", t3,
+                     "too few closed trades" if not enough else "needs spot history")
+    else:
+        prev_ret: dict[str, tuple[list[date], list[float]]] = {}
+        for u, days in spot_days(ctx).items():
+            prev_ret[u] = ([sd.d for sd in days], [sd.ret for sd in days])
+        f3: dict[int, float] = {}
+        for e in entries:
+            f = e.fill
+            pr = prev_ret.get(f.underlying)
+            if not pr:
+                continue
+            i = bisect.bisect_left(pr[0], f.trade_date) - 1
+            if i < 0 or (f.trade_date - pr[0][i]).days > cfg.spot_stale_days:
+                continue
+            r = pr[1][i]
+            if abs(r) >= cfg.turn_threshold_pct and delta_sign(f.itype, f.sign) * _sgn(r) < 0:
+                f3[e.idx] = 1.0
+        big_ev = []
+        for u, b in sorted(blocks.items()):
+            rel = b.get("relationship")
+            if rel and rel["big_any"]["available"]:
+                big_ev.append(_ev(f"{u} big-move-day P&L", rel["big_any"]["total_pnl"],
+                                  f"spotpnl.{u}.relationship.big_any"))
+        finish("counter_move_entries", t3, f3,
+               {"name": "turn_threshold_pct", "value": cfg.turn_threshold_pct, "unit": "% prior-day move"},
+               "entries whose delta direction opposed the previous session's return when that return was "
+               "at least the turn threshold",
+               [_ev("Entries in window", len(entries), "buildup.events")] + big_ev,
+               _CAVEATS + ["Previous session = last spot day before the fill (within the stale limit)."])
+
+    # 4 — illustrative delta-1 offset (ESTIMATE, not a veto, not in combined)
+    t4 = "Illustrative: delta-1 offset of units above the bias limit"
+    if not enough or not has_spot or bound is None:
+        insufficient("bias_hedge_illustrative", t4, "too few closed trades" if not enough else
+                     "needs spot history and trading days")
+    else:
+        cap4 = float(int(bound))
+        offset = 0.0
+        n_days = 0
+        for days in spot_days(ctx).values():
+            for sd in days:
+                if abs(sd.bias) > cap4:
+                    excess = sd.bias - _sgn(sd.bias) * cap4
+                    offset += -excess * (sd.close - sd.prev_close)
+                    n_days += 1
+        if n_days:
+            rules.append(_rule(
+                "bias_hedge_illustrative", t4, "illustrative",
+                {"name": "illustrative_offset_inr", "value": _r(offset), "unit": "INR (estimate)"},
+                f"Illustrative bound: offsetting the units above {int(cap4)} with a delta-1 hedge on {n_days} "
+                f"days would have changed P&L by INR {_r(offset):,.0f} (ESTIMATE, upper bound, not P&L you "
+                "would have had).", None, [_ev("Days above the limit", n_days, "spotpnl.alignment")],
+                _CAVEATS + ["A delta-1 hedge over-states the hedge of an option book (option delta <= 1); no "
+                            "hedge instrument, cost or margin is modelled.",
+                            "Not a veto and not part of the combined what-if."]))
+        else:
+            rules.append(_rule("bias_hedge_illustrative", t4, "not_triggered",
+                               {"name": "illustrative_offset_inr", "value": 0.0, "unit": "INR (estimate)"},
+                               "no day had |bias| above the limit", None, [], _CAVEATS))
+    return rules, vetoes

@@ -4,6 +4,8 @@
 // (Promise.allSettled); every panel renders independently and fails to "—" on its own.
 //   GET /api/v1/experience/fno/trade-analysis/analytics/{foundation,overtrading,buildup,
 //       market-turn,margin-trap,suggestions}
+// F42 P4: a seventh GET, .../spot-vs-pnl, feeds ONE collapsed card and is fetched lazily on first
+// open (never by the six-panel loader).
 // PERSONAL DATA: the payloads are the caller's own rows.  Every server string goes through _esc;
 // numbers go through _num / _pnl / _pct.  Descriptive wording only: no causal claims, no advice.
 
@@ -21,8 +23,17 @@ const _REASONS = {
   spot_unavailable: 'No spot price history for this underlying; the turn analysis is omitted.',
   no_pnl_sheet: 'No P&L sheet imported.',
   no_timestamps: 'Needs execution timestamps, which are missing in too many fills.',
+  insufficient_sample: 'Too few days in this sample for this statistic.',
+  no_open_positions: 'No open positions to mark.',
+  sheet_stale: 'The P&L sheet snapshot is older than the latest spot day.',
+  no_trades_for_underlying: 'No option fills for this underlying in the selected scope.',
 };
 const _PANELS = ['overtrading', 'buildup', 'marketturn', 'margintrap', 'suggestions'];
+const _INFO_IDS = [..._PANELS, 'spotpnl'];   // panels with a Definition toggle (spotpnl is the lazy P4 card)
+const _VERDICTS = {
+  with_market: 'mostly positioned with the market', against_market: 'mostly positioned against the market',
+  no_clear_lean: 'no clear lean', insufficient_sample: 'too few days to say',
+};
 const _ENDPOINTS = {
   foundation: 'foundation', overtrading: 'overtrading', buildup: 'buildup',
   marketturn: 'market-turn', margintrap: 'margin-trap', suggestions: 'suggestions',
@@ -31,6 +42,12 @@ const _ENDPOINTS = {
 let _from = '';
 let _estimate = null;   // null = server default; set once the user toggles the checkbox
 let _seq = 0;
+// F42 P4 lazy Spot vs P&L card state
+let _spotLoaded = false;   // a successful load happened for _spotKey
+let _spotStale = false;    // filters changed (or a refresh was asked for) since the last load
+let _spotSeq = 0;          // response-ordering guard
+let _spotKey = '';         // the _query() used for the last load
+let _spotOpen = false;     // the details card is open
 
 // ── tiny html helpers (all inputs escaped or numeric) ─────────────────────────────
 
@@ -272,12 +289,14 @@ function _ruleCard(r) {
     + `(<span class="${_cls(w.delta)}">${_pnl(w.delta)}</span>) · ${_num(w.trades_removed)} entries removed · `
     + `${_num(w.units_removed, 0)} units · ${_num(w.closed_trades_affected)} closed trades affected`
     + ` · ${_num(w.open_units_vetoed, 0)} open units vetoed</div>` : '';
+  const ill = r.status === 'illustrative' && p
+    ? `<div class="kpi-sub">Illustrative bound (estimate): ${_pnl(p.value)}. Not P&L you would have had.</div>` : '';
   const ev = (r.evidence || []).map(e => `<li>${_esc(e.label)}: ${_dash(e.value)} <span style="color:var(--t3)">(${_esc(e.source)})</span></li>`).join('');
   const vs = (r.variants || []).length ? _tbl('Other stop multiples', ['Multiple', 'Trades beyond', 'Saved (est.)'],
     r.variants.map(v => [`${_num(v.multiple, 2)}x`, _num(v.n_exceeded), _pnlCell(v.saved_if_stopped)])) : '';
   return `<div class="kpi" style="margin:10px 0"><div class="kpi-label">${_esc(r.title)}${_esc(status)}</div>`
     + `${p ? `<div class="kpi-sub">Parameter: ${_esc(p.name)} = ${_dash(p.value)} ${_esc(p.unit)}${p.lots != null ? ` (~${_num(p.lots, 1)} lots)` : ''}</div>` : ''}`
-    + `<div class="kpi-sub">Basis: ${_esc(r.threshold_basis)}</div>${wi}`
+    + `<div class="kpi-sub">Basis: ${_esc(r.threshold_basis)}</div>${wi}${ill}`
     + `<ul style="margin:4px 0 4px 18px;padding:0;font-size:12px">${ev}</ul>${vs}`
     + `<div class="kpi-sub">${_list(r.caveats)}</div></div>`;
 }
@@ -314,6 +333,192 @@ function _renderFoundation(d) {
     + `${_infoBlock('Reconciliation.', r)}</details>`);
 }
 
+// ── F42 P4: Spot vs P&L (lazy, collapsed card) ─────────────────────────────────────────
+
+const _GREEN = 'rgba(26,107,60,.6)', _RED = 'rgba(155,28,28,.6)', _BLUE = '#0056B8', _WARN = '#92480A';
+const _GREEN_L = 'rgba(26,107,60,.28)', _RED_L = 'rgba(155,28,28,.28)';
+const _need = b => `needs at least ${_num(b.min_required)} days (have ${_num(b.n != null ? b.n : b.n_days)})`;
+
+const _verdict = v => _VERDICTS[v] || '—';
+
+function _spotVerdictLine(u) {
+  if (!u.available) return `${_esc(u.underlying)}: ${_esc(_REASONS[u.reason] || 'Not available.')}`;
+  const al = u.alignment || {}, ad = (u.relationship || {}).all_days || {};
+  const scored = (al.with_n || 0) + (al.against_n || 0);
+  const alNeed = _need({ min_required: al.min_required, n: scored });
+  const lean = al.verdict === 'insufficient_sample'
+    ? `${_esc(_verdict('insufficient_sample'))} (${alNeed})`
+    : `${_esc(_verdict(al.verdict))} (${_pct(al.pct_with)} of ${_num(scored)} scored days with the market)`;
+  const corr = ad.reason ? `correlation ${ad.reason === 'insufficient_sample' ? _need(ad) : 'no variation'}`
+    : `correlation ${_num(ad.pearson, 2)} (n=${_num(ad.n)})`;
+  return `<b>${_esc(u.underlying)}</b>: ${_esc(lean)} · ${_esc(corr)}`;
+}
+
+function _bucketRows(list) {
+  return (list || []).map(b => b.available
+    ? [_esc(b.key), _num(b.n_days), _num(b.n_closing_days), _pnlCell(b.total_pnl),
+      `${_pnl(b.total_measured)} / ${_pnl(b.total_estimate)}`, _pnl(b.mean_pnl), _pnl(b.median_pnl), _pct(b.hit_rate_pct), _pct(b.share_of_total_loss_pct)]
+    : [_esc(b.key), _num(b.n_days), _num(b.n_closing_days), `<span style="color:var(--t3)">${_esc(_need(b))}</span>`, '—', '—', '—', '—', '—']);
+}
+const _BUCKET_COLS = ['Bucket', 'Days', 'Closing days', 'P&L', 'Measured / estimate', 'Mean', 'Median', 'Hit rate', 'Share of total loss'];
+
+function _corrRow(label, c) {
+  return c.reason
+    ? [_esc(label), _num(c.n), `<span style="color:var(--t3)">${_esc(c.reason === 'insufficient_sample' ? _need(c) : 'no variation')}</span>`, '—', '—', '—', '—']
+    : [_esc(label), _num(c.n), _num(c.pearson, 3), _num(c.spearman, 3), _num(c.beta_inr_per_pct, 0), _num(c.r2, 3),
+      `${c.significant ? 'yes' : 'no'}${_badge(c.basis_tag === 'mixed' ? 'estimated' : 'measured')}`];
+}
+
+function _spotRelationHtml(u) {
+  if (!u.available) return _unavail({ reason: u.reason });
+  const rel = u.relationship || {}, al = u.alignment || {}, tt = u.totals || {}, sn = u.unrealised_snapshot || {};
+  const bb = al.by_bias || {};
+  const corr = _tbl('Correlation and beta (daily realised P&L vs spot return)',
+    ['Basis', 'Days', 'Pearson', 'Spearman', 'Beta (INR per +1%)', 'R squared', 'Beyond no-correlation band'],
+    [_corrRow('All days', rel.all_days || {}), _corrRow('Closing days', rel.closing_days || {})]);
+  const dir = _tbl('Up, down and flat days', _BUCKET_COLS, _bucketRows(rel.by_direction));
+  const big = _tbl('Big-move days (reversal days can also be big-up or big-down)', _BUCKET_COLS,
+    _bucketRows([...(rel.big_move || []), ...(rel.big_any ? [rel.big_any] : [])]));
+  const exp = _tbl('Expiry days', _BUCKET_COLS, _bucketRows(rel.expiry_days));
+  const align = _tbl('Positioning vs spot (start-of-day book)', ['Measure', 'Value'], [
+    ['Days with the market / against / flat market / flat book', `${_num(al.with_n)} / ${_num(al.against_n)} / ${_num(al.flat_market_n)} / ${_num(al.flat_book_n)}`],
+    ['Share with the market (95% interval)', `${_pct(al.pct_with)} (${_pct(al.pct_with_ci_low)} to ${_pct(al.pct_with_ci_high)})`],
+    ['Units x points: with / against / net', `${_pnl(al.with_units_pts)} / ${_pnl(al.against_units_pts)} / ${_pnl(al.net_units_pts)}${_badge('estimated')}`],
+    ['Mean same-day return when book bullish / bearish', `${_pct((bb.bullish || {}).mean_ret_pct)} (n=${_num((bb.bullish || {}).n)}) / ${_pct((bb.bearish || {}).mean_ret_pct)} (n=${_num((bb.bearish || {}).n)})`],
+  ]) + _note(al.caveat || '');
+  const snap = sn.available
+    ? `Unrealised (sheet snapshot, as of ${_esc(sn.as_of || '—')}): ${_pnl(sn.amount)} over ${_num(sn.n_symbols)} symbols`
+      + `${sn.stale ? ' (older than the latest spot day)' : ''}${_badge('measured')}`
+    : `Unrealised snapshot: ${_esc(_REASONS[sn.reason] || 'not available')}`;
+  const tot = _note(`Realised measured ${_pnl(tt.measured_realised)} · expiry estimate ${_pnl(tt.estimated_realised)} · rolled forward `
+    + `${_pnl(tt.pnl_rolled_amount)} (${_num(tt.pnl_rolled_days)} days) · after last spot day ${_pnl(tt.pnl_after_last_spot)} (${_num(tt.pnl_after_last_spot_count)} closes)`
+    + ` · realised plus unrealised (periods may differ) ${_pnl(tt.realised_plus_unrealised)}`);
+  return corr + dir + big + exp + align + `<div class="kpi-sub" style="margin:6px 0">${snap}</div>` + tot;
+}
+
+function _spotObsHtml(d) {
+  const rows = [];
+  (d.underlyings || []).forEach(u => (u.observations || []).forEach(o => rows.push(`<li>${_esc(o.text)}</li>`)));
+  return rows.length ? `<ul style="margin:4px 0 4px 18px;padding:0">${rows.join('')}</ul>`
+    : '<div class="kpi-sub">No observations: nothing passed its minimum-sample gate.</div>';
+}
+
+function _spotRulesHtml(d) {
+  const im = d.improvement || {};
+  const rel = (im.related || []).map(r => `<li>${_esc(r.observation_id)} relates to ${_esc(r.rule_id)}</li>`).join('');
+  return `<div class="kpi-sub" style="font-weight:700;margin:6px 0">${_esc(im.disclaimer || _DISCLAIMER)}</div>`
+    + (im.rules || []).map(_ruleCard).join('')
+    + (rel ? `<div class="kpi-sub">Related observations and rules:<ul style="margin:4px 0 4px 18px;padding:0">${rel}</ul></div>` : '');
+}
+
+function _spotChart(slot, u) {
+  const id = `ta-cv-spot-${slot}`;
+  _chart(id, null);
+  const s = u.series || {};
+  if (!u.available || !(s.dates || []).length) return;
+  const n = s.dates.length;
+  const idx = [...Array(n).keys()];
+  const style = idx.map(i => s.expiry_flag[i] ? 'rect' : (s.big_move_flag[i] ? 'triangle' : 'circle'));
+  const rad = idx.map(i => s.reversal_flag[i] ? 6 : (s.big_move_flag[i] || s.expiry_flag[i] ? 4 : 1));
+  const bord = idx.map(i => (s.big_move_flag[i] && s.adverse_flag[i]) ? '#9B1C1C' : _BLUE);
+  const sn = u.unrealised_snapshot || {};
+  const hasEst = (s.realised_estimate || []).some(v => v);
+  const datasets = [
+    { type: 'line', label: `${_esc(u.underlying)} close`, data: s.spot_close, borderColor: _BLUE, borderWidth: 1.5, pointStyle: style,
+      pointRadius: rad, pointBackgroundColor: _BLUE, pointBorderColor: bord, yAxisID: 'y', order: 1 },
+    { type: 'bar', label: 'Realised P&L (measured)', data: s.realised_measured, stack: 'pnl', yAxisID: 'y1', order: 3,
+      backgroundColor: s.realised_measured.map(v => (v || 0) >= 0 ? _GREEN : _RED) },
+  ];
+  if (hasEst) {
+    datasets.push({ type: 'bar', label: 'Expiry estimate', data: s.realised_estimate, stack: 'pnl', yAxisID: 'y1', order: 4,
+      backgroundColor: s.realised_estimate.map(v => (v || 0) >= 0 ? _GREEN_L : _RED_L) });
+  }
+  datasets.push({ type: 'line', label: 'Cumulative P&L', data: s.cum_total, borderColor: _WARN, borderWidth: 1, pointRadius: 0, yAxisID: 'y2', order: 2 });
+  if (sn.available && sn.amount != null) {
+    const pt = s.dates.map((_, i) => i === n - 1 ? sn.amount : null);
+    datasets.push({ type: 'line', label: `Unrealised (sheet, as of ${_esc(sn.as_of || '—')})`, data: pt, borderColor: _WARN,
+      backgroundColor: _WARN, pointStyle: 'rectRot', pointRadius: 6, showLine: false, yAxisID: 'y2', order: 0 });
+  }
+  const tick = { font: { family: 'IBM Plex Mono, monospace', size: 10 } };
+  _chart(id, {
+    data: { labels: s.dates, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { boxWidth: 10, font: { size: 10 } } }, tooltip: { callbacks: { afterBody: items => {
+        const i = items && items.length ? items[0].dataIndex : -1;
+        if (i < 0 || i >= n) return [];
+        const out = [`Close ${_num(s.spot_close[i], 2)} · return ${_pct(s.ret_pct[i])} · bias ${_num(s.bias_in[i])}`,
+          `Realised ${_pnl(s.realised_measured[i])} · estimate ${_pnl(s.realised_estimate[i])} · cumulative ${_pnl(s.cum_total[i])}`];
+        if (sn.available && i === n - 1) out.push(`Unrealised as of ${_esc(sn.as_of || '—')}${sn.stale ? ' (stale)' : ''}: ${_pnl(sn.amount)}`);
+        return out;
+      } } } },
+      scales: { x: { ..._axis, ticks: { ...tick, maxTicksLimit: 8 } }, y: { ..._axis, position: 'left' },
+        y1: { ..._axis, position: 'right', stacked: true, grid: { drawOnChartArea: false } }, y2: { display: false, grid: { display: false } } },
+    },
+  });
+}
+
+function _renderSpotPnl(d) {
+  const unds = d.underlyings || [];
+  [0, 1].forEach(i => { _chart(`ta-cv-spot-${i}`, null); setEl(`ta-an-spotpnl-rel-${i}`, ''); });
+  const grid = document.getElementById('ta-an-spotpnl-grid');
+  if (!d.available || !unds.length) {
+    [0, 1].forEach(i => { const el = document.getElementById(`ta-an-spotpnl-slot-${i}`); if (el) el.style.display = 'none'; });
+    setEl('ta-an-spotpnl-body', _unavail(d));
+    setEl('ta-an-spotpnl-obs', ''); setEl('ta-an-spotpnl-rules', ''); setEl('ta-an-spotpnl-def', '');
+    return;
+  }
+  const lines = unds.map(u => `<div style="margin:4px 0">${_spotVerdictLine(u)}</div>`).join('');
+  const trunc = unds.some(u => (u.series || {}).truncated) ? _note('Older days not drawn (the statistics use the full window).') : '';
+  const stale = unds.some(u => u.spot_stale) ? _note('Spot history looks stale: the last close is more than a few days old.') : '';
+  setEl('ta-an-spotpnl-body', (d.reason ? _unavail(d) : '') + lines + trunc + stale + _note(d.delta1_note || '')
+    + _note('In this sample. Observed, not a prediction.'));
+  [0, 1].forEach(i => {
+    const u = unds[i];
+    const el = document.getElementById(`ta-an-spotpnl-slot-${i}`);
+    if (el) el.style.display = u ? '' : 'none';
+    if (!u) return;
+    setEl(`ta-an-spotpnl-title-${i}`, `${_esc(u.underlying)}${_badge('measured')}${_badge('estimated')}`);
+    _spotChart(i, u);
+    setEl(`ta-an-spotpnl-rel-${i}`, _spotRelationHtml(u));
+  });
+  if (grid) grid.style.display = 'grid';
+  setEl('ta-an-spotpnl-obs', _spotObsHtml(d));
+  setEl('ta-an-spotpnl-rules', _spotRulesHtml(d));
+  setEl('ta-an-spotpnl-def', _defs(d, [['Spot vs P&L.', d.info]]));
+}
+
+async function loadSpotPnl() {
+  const seq = ++_spotSeq;
+  const qs = _query();
+  setEl('ta-an-spotpnl-body', '<div class="kpi-sub">Loading…</div>');
+  try {
+    const d = await api(`${_BASE}spot-vs-pnl?${qs}`);
+    if (seq !== _spotSeq) return;
+    if (!d) throw new Error('no data');
+    _renderSpotPnl(d);
+    _spotKey = qs;
+    _spotLoaded = true;
+    _spotStale = false;
+  } catch (e) {
+    if (seq !== _spotSeq) return;
+    _spotLoaded = false;
+    [0, 1].forEach(i => _chart(`ta-cv-spot-${i}`, null));
+    setEl('ta-an-spotpnl-body', '<div class="kpi-sub">— could not be loaded</div>');
+  }
+}
+
+// Fetch only when the card is open AND (never loaded, or the filter key changed, or a refresh was asked for).
+function _spotSync() {
+  if (_spotKey !== _query()) _spotStale = true;
+  if (_spotOpen && (!_spotLoaded || _spotStale)) loadSpotPnl();
+}
+
+export function taAnSpotToggle(open) {
+  _spotOpen = !!open;
+  if (_spotOpen) _spotSync();
+}
+
 const _RENDER = {
   foundation: _renderFoundation, overtrading: _renderOvertrading, buildup: _renderBuildup,
   marketturn: _renderMarketTurn, margintrap: _renderMarginTrap, suggestions: _renderSuggestions,
@@ -330,6 +535,7 @@ function _query() {
 
 // Loads all six endpoints in parallel; each panel renders (or fails) on its own.
 export async function loadAnalyticsPanels() {
+  _spotSync();   // F42 P4: closed card only marks itself stale; an open one reloads
   const seq = ++_seq;
   const qs = _query();
   const keys = Object.keys(_ENDPOINTS);
@@ -356,6 +562,7 @@ export async function loadAnalyticsPanels() {
 }
 
 export function taAnRefresh() {
+  _spotStale = true;   // an explicit refresh re-fetches the Spot vs P&L card when it is open
   return loadAnalyticsPanels();
 }
 
@@ -370,7 +577,7 @@ export function taAnToggleEstimate(flag) {
 }
 
 export function taAnToggleInfo(panelId) {
-  if (!_PANELS.includes(panelId)) return;
+  if (!_INFO_IDS.includes(panelId)) return;
   const el = document.getElementById(`ta-an-${panelId}-def`);
   if (el) el.style.display = el.style.display === 'none' ? '' : 'none';
 }

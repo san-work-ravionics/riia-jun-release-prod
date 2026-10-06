@@ -90,7 +90,7 @@ import { haSkipToVerdict } from './hedge-reasoning.js';
 import { loadStudy } from './study.js';
 import { loadExperiment, fetchExpData, switchExpTab } from './experiment.js';
 import { loadTradeAnalysis, taSetUnderlying, taSetExpiryMonth, taSetIncludeClosed, taRefresh } from './trade-analysis.js';
-import { taAnRefresh, taAnFromChanged, taAnToggleEstimate, taAnToggleInfo } from './trade-analytics.js';
+import { taAnRefresh, taAnFromChanged, taAnToggleEstimate, taAnToggleInfo, taAnSpotToggle } from './trade-analytics.js';
 import { taImpFilesChosen, taImpUpload, taImpSetFilter, taImpPage, taImpRefresh, taImpDelete } from './trade-import.js';
 import { loadHedgeWorkflow, hwGoToStep, hwSelectInstrument, hwSelectPortfolio, hwRefreshStep } from './hedge-workflow.js';
 import { hwToggleHedged, hwSelectStrategy, hwRerunAdvisor } from './hedge-workflow-recommendation.js';
@@ -175,6 +175,7 @@ window.taAnRefresh = taAnRefresh;
 window.taAnFromChanged = taAnFromChanged;
 window.taAnToggleEstimate = taAnToggleEstimate;
 window.taAnToggleInfo = taAnToggleInfo;
+window.taAnSpotToggle = taAnSpotToggle;   // F42 P4 — lazy Spot vs P&L card
 
 // My Portfolio CTA — navigates to the Hedge Workflow (Exposure step) from Overview.
 // Was "navItem = ...[data-section=...]" (stale selector — nav markup uses

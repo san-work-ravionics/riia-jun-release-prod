@@ -107,7 +107,8 @@ def test_page_ids_and_placeholder_removed():
 def test_bindings_and_inline_handlers():
     handlers = set(re.findall(r'on(?:click|change)="(taAn\w+)\(', HTML))
     bound = set(re.findall(r"window\.(taAn\w+)\s*=\s*\1;", MAIN))
-    assert handlers == {"taAnFromChanged", "taAnToggleEstimate", "taAnRefresh", "taAnToggleInfo"} == bound
+    assert handlers == {"taAnFromChanged", "taAnToggleEstimate", "taAnRefresh", "taAnToggleInfo"}
+    assert bound == handlers | {"taAnSpotToggle"}      # F42 P4: bound for the card's ontoggle attribute
     for n in bound:
         assert re.search(rf"export (async )?function {n}\b", JS), n
     assert "from './trade-analytics.js'" in MAIN

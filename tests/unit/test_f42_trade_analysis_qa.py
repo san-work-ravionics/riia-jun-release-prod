@@ -273,7 +273,7 @@ def test_route_empty_day_and_filters_echoed(client, _auth):
     with patch(_K, _kmc_mock()):
         b = client.get(_URL, params={"underlying": "NIFTY", "expiry_month": 3}).json()
     assert b["available"] and b["trades"] == [] and b["kpis"]["trades_count"] == 0
-    assert b["filter"]["underlying"] == "NIFTY" and b["filter"]["expiry_months"] == [9, 10, 11]
+    assert b["filter"]["underlying"] == "NIFTY" and b["filter"]["expiry_months"] == [4, 5, 6, 7, 8, 9, 10, 11]
     assert b["history_note"]
 
 

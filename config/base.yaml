@@ -29,7 +29,7 @@ instruments:
 # F42 FnO Trade Analysis — scope + Console import limits (keys must match TradeAnalysisSettings).
 trade_analysis:
   underlyings: ["NIFTY", "BANKNIFTY"]
-  expiry_months: [9, 10, 11]
+  expiry_months: [4, 5, 6, 7, 8, 9, 10, 11]
   expiry_year: 2026            # month filter applies to this year only
   date_from: 2026-07-01        # read/analysis window start; import keeps everything
   import_max_file_bytes: 10485760
@@ -66,3 +66,15 @@ trade_analysis:
   ledger_sign_min_tolerance_inr: 1.0
   ledger_sign_match_cutoff: 0.6
   stop_multiple_step: 0.25
+  # F42 P4 Spot-vs-P&L view
+  spot_flat_band_pct: 0.25
+  spot_rel_min_days: 20
+  spot_rel_min_closing_days: 10
+  spot_rel_min_bucket_days: 5
+  spot_rel_min_bias_days: 10
+  spot_rel_ci_z: 1.96
+  sheet_snapshot_stale_days: 5
+  expiry_proximity_days: 2
+  spot_series_max_points: 400
+  spot_obs_max: 6
+  spot_obs_concentration_pct: 60.0

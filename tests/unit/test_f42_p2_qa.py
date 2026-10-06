@@ -645,7 +645,7 @@ def test_route_output_keys_match_schema(client, users):
     assert set(s["last_imports"]) == {"tradebook", "pnl", "ledger"}
     for run in s["recent_runs"] + list(s["last_imports"].values()):
         assert set(run) == set(S.ImportRunSummary.model_fields)
-    assert s["scope"]["date_from"] == "2026-07-01" and s["scope"]["expiry_months"] == [9, 10, 11]
+    assert s["scope"]["date_from"] == "2026-07-01" and s["scope"]["expiry_months"] == [4, 5, 6, 7, 8, 9, 10, 11]
     t = client.get(_TR).json()
     assert set(t["filter"]) == set(S.ImportedTradesFilter.model_fields)
     assert set(t["items"][0]) == set(S.ImportedTradeRow.model_fields)
@@ -718,7 +718,7 @@ def test_routes_registered_with_design_paths_and_methods():
 
 def test_config_defaults_match_design():
     c = get_settings().trade_analysis
-    assert c.date_from == date(2026, 7, 1) and c.expiry_months == [9, 10, 11]
+    assert c.date_from == date(2026, 7, 1) and c.expiry_months == [4, 5, 6, 7, 8, 9, 10, 11]
     assert c.underlyings == ["NIFTY", "BANKNIFTY"]
     assert c.import_max_file_bytes == 10 * 1024 * 1024
     assert c.import_max_total_bytes == 25 * 1024 * 1024
