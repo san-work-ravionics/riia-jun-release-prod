@@ -92,6 +92,8 @@ class ReconTotals(BaseModel):
     gap_measured: Num = None
     gap_with_estimate: Num = None
     expiry_estimate_explains: Num = None
+    sheet_lines_overlap_dropped: int = 0
+    pre_history_symbols: int = 0
 
 
 class ReconBlock(Info):

@@ -31,7 +31,6 @@ from rita.services.fno_trade_suggestions import suggestions as build_suggestions
 
 log = structlog.get_logger(__name__)
 IST = ZoneInfo("Asia/Kolkata")
-_SPOT_PAD_DAYS = 7
 
 _REASON_TEXT = {
     "no_data": "No imported Console data yet. Import your Console files on the Import panel first.",
@@ -239,7 +238,7 @@ class FnoTradeAnalyticsService:
         if not any(f.trade_date >= d_from for f in fills):
             return self._empty(p, panel, "no_trades_in_scope", d_from, d_to)
         first = min(f.trade_date for f in fills)
-        start = min(first, d_from) - timedelta(days=_SPOT_PAD_DAYS)
+        start = min(first, d_from) - timedelta(days=cfg.spot_pad_days)
         spot: dict[str, SpotSeries] = {}
         for u in sorted({f.underlying for f in fills}):
             ss = SpotSeries(self._market.find_closes(u, start, d_to))
@@ -283,7 +282,12 @@ class FnoTradeAnalyticsService:
                 "assumptions": [
                     "Quantities are contract units; lots appear only where the Kite master knows the symbol.",
                     "Expiry-held lots are closed at spot-intrinsic as a flagged ESTIMATE, separate from measured "
-                    "P&L, and can be switched off with the estimate toggle."],
+                    "P&L, and can be switched off with the estimate toggle.",
+                    "FIFO only sees imported history: a fill with no earlier imported opening (for example a "
+                    "buy that covers a short opened before the first import) is treated as a new open of its "
+                    "own side, so such pre-history closes show as a lot of the opposite side. The count of "
+                    "symbols where the P&L sheet points to this is in the reconciliation totals "
+                    "(pre_history_symbols)."],
                 "quality": q, "tags": Tags(measured=_TAGS[panel][0], estimated=_TAGS[panel][1])}
 
     def _charge_periods(self, user_id: str) -> list[an.ChargePeriod]:

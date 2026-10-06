@@ -189,6 +189,42 @@ class TradeAnalysisSettings(BaseSettings):
     analytics_min_timestamp_coverage: float = 0.8
     analytics_max_rows: int = 200
     observation_high_churn_pct: float = 50.0
+    # F42 P3 advisory: thresholds formerly hard-coded in the analytics modules (defaults unchanged).
+    holding_bucket_edges_minutes: list[int] = [5, 30, 120]   # same-day holding bucket edges
+    spot_stale_days: int = 5                # spot history older than this (days) => market-turn "stale"
+    spot_pad_days: int = 7                  # spot look-back before the first fill / window start
+    ledger_sign_tolerance_frac: float = 0.001   # ledger balance-sign match tolerance (fraction of flow)
+    ledger_sign_min_tolerance_inr: float = 1.0  # ... floored at this many INR
+    ledger_sign_match_cutoff: float = 0.6   # share of ledger days that must agree to accept a sign
+    stop_multiple_step: float = 0.25        # rounding step of the suggested stop multiple
+
+    @field_validator("holding_bucket_edges_minutes")
+    @classmethod
+    def _edges_ascending(cls, v: list[int]) -> list[int]:
+        if len(v) != 3 or v[0] <= 0 or not v[0] < v[1] < v[2]:
+            raise ValueError("holding_bucket_edges_minutes must be three ascending positive minutes")
+        return v
+
+    @field_validator("ledger_sign_match_cutoff")
+    @classmethod
+    def _cutoff_unit(cls, v: float) -> float:
+        if not 0.5 < v <= 1.0:
+            raise ValueError("ledger_sign_match_cutoff must be within (0.5, 1]")
+        return v
+
+    @field_validator("spot_stale_days", "spot_pad_days")
+    @classmethod
+    def _days_nonneg(cls, v: int) -> int:
+        if v < 0:
+            raise ValueError("day counts must be >= 0")
+        return v
+
+    @field_validator("ledger_sign_tolerance_frac", "ledger_sign_min_tolerance_inr", "stop_multiple_step")
+    @classmethod
+    def _positive(cls, v: float) -> float:
+        if v <= 0:
+            raise ValueError("value must be > 0")
+        return v
 
     @field_validator("analytics_min_timestamp_coverage")
     @classmethod

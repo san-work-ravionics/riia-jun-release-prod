@@ -201,20 +201,29 @@ def _group_stats(trades: list[ClosedTrade], keyf: Any) -> list[dict[str, Any]]:
 
 # ── 3.1 overtrading ───────────────────────────────────────────────────────────────
 
-_EDGES = (5, 6 * 5, 120)      # same-day holding bucket edges, minutes
-_BUCKETS = [f"<{_EDGES[0]}m", f"{_EDGES[0]}-{_EDGES[1]}m", f"{_EDGES[1]}m-2h", ">2h same-day",
+def _fmt_min(m: int) -> str:
+    return f"{m // 60}h" if m % 60 == 0 else f"{m}m"
+
+
+def _bucket_labels(edges: Any) -> list[str]:
+    """Same-day holding bucket labels for ascending minute edges (default 5 / 30 / 120)."""
+    e0, e1, e2 = (int(x) for x in edges)
+    return [f"<{e0}m", f"{e0}-{e1}m", f"{e1}m-{_fmt_min(e2)}", f">{_fmt_min(e2)} same-day",
             "1d", "2-5d", ">5d"]
+
+
 _Q1 = 25.0
 _Q3 = 100.0 - _Q1
 
 
-def _bucket(t: ClosedTrade, ts_ok: bool) -> str:
+def _bucket(t: ClosedTrade, ts_ok: bool, edges: Any) -> str:
+    labels = _bucket_labels(edges)
     if t.same_day:
         if not ts_ok or t.holding_minutes is None:
             return "same-day (no timestamps)"
         m = t.holding_minutes
-        return (_BUCKETS[0] if m < _EDGES[0] else _BUCKETS[1] if m < _EDGES[1]
-                else _BUCKETS[2] if m < _EDGES[2] else _BUCKETS[3])
+        return (labels[0] if m < edges[0] else labels[1] if m < edges[1]
+                else labels[2] if m < edges[2] else labels[3])
     d = t.holding_days
     return "1d" if d <= 1 else "2-5d" if d <= 5 else ">5d"
 
@@ -299,8 +308,8 @@ def overtrading(ctx: Ctx, charge_periods: list[ChargePeriod]) -> dict[str, Any]:
     ts_ok = ctx.ts_ok
     bucket_counts: dict[str, int] = defaultdict(int)
     for t in ctx.trades:
-        bucket_counts[_bucket(t, ts_ok)] += 1
-    labels = list(_BUCKETS)
+        bucket_counts[_bucket(t, ts_ok, ctx.cfg.holding_bucket_edges_minutes)] += 1
+    labels = _bucket_labels(ctx.cfg.holding_bucket_edges_minutes)
     if bucket_counts.get("same-day (no timestamps)"):
         labels.insert(3, "same-day (no timestamps)")
     mins = [t.holding_minutes for t in ctx.trades if t.same_day and t.holding_minutes is not None]
@@ -649,7 +658,7 @@ def market_turn(ctx: Ctx) -> dict[str, Any]:
     if not ctx.spot:
         return {"spot": {"available": False, "last_date": None, "stale": None}, **base}
     last = max(d for s in ctx.spot.values() for d in s.dates)
-    stale = last < min(ctx.date_to, res.as_of) - timedelta(days=5)
+    stale = last < min(ctx.date_to, res.as_of) - timedelta(days=ctx.cfg.spot_stale_days)
     unds = sorted(ctx.spot)
     rows: list[dict[str, Any]] = []
     seg_by_key: dict[tuple, list[Segment]] = defaultdict(list)
@@ -742,7 +751,8 @@ def _worst_days(ctx: Ctx) -> list[dict[str, Any]]:
 # ── 3.4 margin trap + planned-vs-actual ────────────────────────────────────────────
 
 
-def detect_balance_sign(rows: list[LedgerRow]) -> tuple[Optional[int], Optional[float]]:
+def detect_balance_sign(rows: list[LedgerRow], tol_frac: float = 0.001, min_tol: float = 1.0,
+                        cutoff: float = 0.6) -> tuple[Optional[int], Optional[float]]:
     """Sign s such that cash = s x net_balance, from day-to-day balance changes.
 
     For each pair of consecutive ledger days the day's net flow (credit - debit) must equal
@@ -758,7 +768,7 @@ def detect_balance_sign(rows: list[LedgerRow]) -> tuple[Optional[int], Optional[
         if abs(flow) <= EPS:
             continue
         total += 1
-        tol = max(1.0, abs(flow) * 0.001)
+        tol = max(min_tol, abs(flow) * tol_frac)
         deltas = [c.net_balance - p.net_balance  # type: ignore[operator]
                   for p in by_day[prev_d] for c in by_day[d]]
         if any(abs(x - flow) <= tol for x in deltas):
@@ -768,8 +778,8 @@ def detect_balance_sign(rows: list[LedgerRow]) -> tuple[Optional[int], Optional[
     if not total:
         return None, None
     if pos >= neg:
-        return (1 if pos / total >= 0.6 else None), _r(pos / total * 100.0)
-    return (-1 if neg / total >= 0.6 else None), _r(neg / total * 100.0)
+        return (1 if pos / total >= cutoff else None), _r(pos / total * 100.0)
+    return (-1 if neg / total >= cutoff else None), _r(neg / total * 100.0)
 
 
 def cash_series(rows: list[LedgerRow], before: Optional[LedgerRow], sign: int, days: list[date],
@@ -857,7 +867,9 @@ def margin_trap(ctx: Ctx, ledger: list[LedgerRow], ledger_before: Optional[Ledge
         "stops": _stops(ctx, res),
     }
     all_rows = ([ledger_before] if ledger_before else []) + ledger
-    sign, match = detect_balance_sign(all_rows)
+    sign, match = detect_balance_sign(
+        all_rows, ctx.cfg.ledger_sign_tolerance_frac, ctx.cfg.ledger_sign_min_tolerance_inr,
+        ctx.cfg.ledger_sign_match_cutoff)
     out["ledger"]["balance_sign_match_pct"] = match
     out["ledger"]["balance_sign"] = sign
     if ledger:
@@ -1026,6 +1038,19 @@ def _open_sign(t: Optional[str]) -> int:
     return -1 if t and t.strip().lower().startswith("s") else 1
 
 
+def dedupe_pnl_lines(ls: list[PnlLine]) -> list[PnlLine]:
+    """One P&L-sheet line per overlapping period for a symbol (the longest period wins).
+
+    Cumulative exports overlap; summing every line would count the overlap's realised P&L (and
+    the FIFO closes inside it) twice.  Mirrors the charge-period dedupe in the service."""
+    picked: list[PnlLine] = []
+    for ln in sorted(ls, key=lambda x: (-(x.period_to - x.period_from).days, x.period_from)):
+        if any(ln.period_from <= k.period_to and k.period_from <= ln.period_to for k in picked):
+            continue
+        picked.append(ln)
+    return sorted(picked, key=lambda x: x.period_from)
+
+
 def reconciliation(ctx: Ctx, lines: list[PnlLine]) -> dict[str, Any]:
     cfg = ctx.cfg
     res = ctx.res
@@ -1035,6 +1060,11 @@ def reconciliation(ctx: Ctx, lines: list[PnlLine]) -> dict[str, Any]:
     by_sym: dict[str, list[PnlLine]] = defaultdict(list)
     for ln in lines:
         by_sym[ln.symbol].append(ln)
+    dropped = 0
+    for sym_, ls_ in list(by_sym.items()):
+        kept = dedupe_pnl_lines(ls_)
+        dropped += len(ls_) - len(kept)
+        by_sym[sym_] = kept
     fill_syms = set(res.meta)
     first_fill = min((f.trade_date for f in res.fills), default=None)
     resid: dict[str, list] = defaultdict(list)
@@ -1105,7 +1135,9 @@ def reconciliation(ctx: Ctx, lines: list[PnlLine]) -> dict[str, Any]:
               "fifo_expiry_estimate": _r(sum(r["fifo_expiry_estimate"] for r in rows)),
               "sheet_realised": _r(sum(r["sheet_realised"] for r in with_sheet)),
               "gap_measured": _r(tot_gap), "gap_with_estimate": _r(tot_gap_e),
-              "expiry_estimate_explains": _r(tot_gap - tot_gap_e)}
+              "expiry_estimate_explains": _r(tot_gap - tot_gap_e),
+              "sheet_lines_overlap_dropped": dropped,
+              "pre_history_symbols": sum(1 for r in rows if "pre_history_open" in r["causes"])}
     return {"tolerance_inr": tol, "rows": rows[: cfg.analytics_max_rows], "rows_total": len(rows),
             "totals": totals,
             **_info("Per-symbol comparison of FIFO-matched realised P&L with the realised P&L in your P&L "
@@ -1113,6 +1145,8 @@ def reconciliation(ctx: Ctx, lines: list[PnlLine]) -> dict[str, Any]:
                     ["FIFO realised covers closes dated inside each sheet period; expiry-held lots are shown "
                      "separately as an ESTIMATE (spot-intrinsic) and also cross-checked against the price the "
                      "sheet implies.",
+                     "Where P&L-sheet periods overlap for a symbol, only the longest period is used (overlap "
+                     "lines are dropped and counted) so sheet and FIFO totals are not double-counted.",
                      "Causes: expiry_unclosed, pre_history_open, period_mismatch, sheet_missing, "
                      "trades_missing, rounding, unexplained."])}
 

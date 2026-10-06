@@ -20,11 +20,20 @@ from rita.services.fno_trade_analytics import (
 from rita.services.fno_trade_fifo import ClosedTrade, FillEvent
 
 DISCLAIMER = "Observations from your own imported history, not investment advice or a forecast."
-STOP_STEP = 0.25
 _VETO_RULES = ("max_trades_per_day", "qty_cap_per_expiry", "margin_headroom_floor",
                "no_averaging_down", "cooling_off_after_loss")
 _CAVEATS = ["In-sample what-if on your own history; no second-order effects (the book is not re-simulated).",
             "Gross of charges; open slices of vetoed fills are reported as units, not priced."]
+
+
+def _release_expired(book: dict[tuple, dict[str, Any]], res: Any, d: date) -> None:
+    """Drop symbols whose expiry is before ``d`` from a per-group open-units book.
+
+    Same rule as ``sweep_positions`` (an expired symbol carries no exposure into a later day);
+    a symbol with unknown expiry is never released."""
+    for syms in book.values():
+        for sym in [s for s in syms if (x := res.meta[s].expiry_eff) is not None and x < d]:
+            del syms[sym]
 
 
 def _what_if(ctx: Ctx, f: dict[int, float], baseline: float, open_units: dict[int, int],
@@ -123,6 +132,7 @@ def suggestions(ctx: Ctx, overtrading: dict[str, Any], build: dict[str, Any],
     peaks: dict[tuple, int] = {}
     for e in res.events:
         g = (e.fill.underlying, e.fill.expiry_ym or "unknown")
+        _release_expired(gross, res, e.fill.trade_date)
         gross[g][e.fill.symbol] = abs(e.pos_after)
         if e.fill.trade_date >= ctx.date_from:
             peaks[g] = max(peaks.get(g, 0), sum(gross[g].values()))
@@ -131,22 +141,26 @@ def suggestions(ctx: Ctx, overtrading: dict[str, Any], build: dict[str, Any],
                                   "too few closed trades" if not enough else "fewer than two expiry groups"))
     else:
         cap2 = int(pct_nearest([float(v) for v in peaks.values()], p) or 0)
-        eff: dict[tuple, int] = defaultdict(int)
+        # Effective (post-veto) open units per group, tracked per symbol so lots held to expiry
+        # (never closed by a fill) are released once the symbol has expired.
+        eff: dict[tuple, dict[str, float]] = defaultdict(dict)
         f2: dict[int, float] = {}
         for e in res.events:
             g = (e.fill.underlying, e.fill.expiry_ym or "unknown")
+            _release_expired(eff, res, e.fill.trade_date)
+            sym = e.fill.symbol
             if e.closed_qty:
-                eff[g] = max(0, eff[g] - e.closed_qty)
+                eff[g][sym] = max(0.0, eff[g].get(sym, 0.0) - e.closed_qty)
             if e.opened_qty:
                 add = e.opened_qty
                 veto_u = 0.0
                 if e.fill.trade_date >= ctx.date_from:
-                    excess = max(0, eff[g] + add - cap2)
+                    excess = max(0.0, sum(eff[g].values()) + add - cap2)
                     frac = min(1.0, excess / add)
                     if frac > EPS:
                         f2[e.idx] = frac
                     veto_u = frac * add
-                eff[g] += add - veto_u
+                eff[g][sym] = eff[g].get(sym, 0.0) + add - veto_u
         sizes = {lots.by_underlying.get(u) for (u, _x) in peaks if lots.available}
         lot_note = (_r(cap2 / next(iter(sizes)), 2) if len(sizes) == 1 and None not in sizes else None)
         finish("qty_cap_per_expiry", f"What-if: at most {cap2} open units per expiry",
@@ -201,7 +215,8 @@ def suggestions(ctx: Ctx, overtrading: dict[str, Any], build: dict[str, Any],
         rules.append(insufficient("stop_discipline", t4,
                                   "too few closed trades" if not enough else "no losing short trades"))
     else:
-        lstar = max(STOP_STEP, round(statistics.median(ratios) / STOP_STEP) * STOP_STEP)
+        step = cfg.stop_multiple_step
+        lstar = max(step, round(statistics.median(ratios) / step) * step)
         mults = sorted({lstar, *cfg.stop_loss_multiples})
         variants = []
         for m in mults:
@@ -216,7 +231,7 @@ def suggestions(ctx: Ctx, overtrading: dict[str, Any], build: dict[str, Any],
         rules.append(_rule(
             "stop_discipline", f"What-if: stop shorts at {lstar:g}x premium", "applicable" if per_stop else "not_triggered",
             {"name": "stop_multiple", "value": lstar, "unit": "x premium"},
-            f"median loss / premium over {len(ratios)} losing short trades, rounded to {STOP_STEP}",
+            f"median loss / premium over {len(ratios)} losing short trades, rounded to {step:g}",
             wi if per_stop else None,
             [_ev("Losing short trades", len(ratios), "margintrap.stops.short_closed"),
              _ev("Median loss / premium", _r(statistics.median(ratios), 3), "margintrap.stops.rows")],
