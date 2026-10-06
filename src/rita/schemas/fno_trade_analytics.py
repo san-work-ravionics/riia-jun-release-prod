@@ -316,7 +316,22 @@ class AveragingBlock(Info):
     share_of_entries_pct: Num = None
     adverse_add_closed_pnl: Num = None
     adverse_add_open_units: int = 0
+    adverse_add_lots: Num = None
     spot_adverse_adds: Optional[int] = None
+
+
+class ChainStep(BaseModel):
+    """One fill of a position chain (F42 P6 chain ladder); all fields from the FIFO FillEvent."""
+    date: str
+    time: Optional[str] = None
+    cls: str
+    qty_delta: int = 0
+    pos_after: int = 0
+    lots_after: Num = None
+    price: Num = None
+    avg_before: Num = None
+    adverse: bool = False
+    worse_pct: Num = None
 
 
 class ChainRow(BaseModel):
@@ -331,6 +346,12 @@ class ChainRow(BaseModel):
     pnl_measured: Num = None
     pnl_estimated: Num = None
     still_open: bool = False
+    # F42 P6 additive: lots, story rank (1..N on the SAME ordering as chains[]), per-fill steps.
+    peak_lots: Num = None
+    story_rank: Optional[int] = None
+    steps: list[ChainStep] = Field(default_factory=list)
+    steps_total: Optional[int] = None
+    steps_truncated: bool = False
 
 
 class ChainTotals(BaseModel):
@@ -446,6 +467,11 @@ class CashPoint(BaseModel):
     date: str
     cash: Num = None
     carried: bool = False
+    # F42 P6 additive per-day fields (None / 0 when an older server omits them).
+    short_notional_proxy: Num = None
+    open_losers_count: int = 0
+    known_loss_est: Num = None
+    adverse_add_units: int = 0
 
 
 class Streak(BaseModel):
@@ -480,11 +506,19 @@ class LossGrowth(BaseModel):
     growth: Num = None
 
 
+class AddsOnLowCash(BaseModel):
+    fills: int = 0
+    units: int = 0
+    adverse_fills: int = 0
+    adverse_units: int = 0
+
+
 class TrapBlock(BaseModel):
     days: int = 0
     days_list: list[TrapDay] = Field(default_factory=list)
     loss_growth_est: Optional[LossGrowth] = None
     lots_unmarked: int = 0
+    adds_on_low_cash: Optional[AddsOnLowCash] = None   # None (not zeros) when absent -> UI hides the widget
     info: Optional[Info] = None
 
 

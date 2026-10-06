@@ -198,6 +198,52 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
 .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:18px;}
 
+/* F42 P6 — Behaviour + Suggestions rework.  Sizing is CONTAINER-based (the row/grid host `.ta-cq`
+   measures its own width, so the open/collapsed sidebar does not matter).  Default (also when container
+   queries are unsupported) = ONE row that scrolls sideways.  Thresholds: c8 >=900 grid, c5 >=700, c4 >=560;
+   <=479 wraps to 2 columns.  Between the "grid" threshold and 480 the row stays ONE scrolling row. */
+.ta-cq{container-type:inline-size;min-width:0}
+.kpi.kpi-compact{padding:10px;position:relative;min-width:0}
+.kpi.kpi-compact .kpi-label{font-size:9px;line-height:1.25;min-height:2.5em;padding-right:22px}
+.kpi.kpi-compact .kpi-value{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.kpi.kpi-compact .kpi-sub{font-size:10px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.kpi .kpi-est{position:absolute;top:6px;right:6px;font-family:var(--fm);font-size:8px;padding:0 4px;border-radius:6px;background:rgba(146,72,10,.12);color:#92480A}
+.kpi-row.ta-row1{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:6px}
+.kpi-row.ta-row1 .kpi{flex:0 0 120px;scroll-snap-align:start}
+@container (min-width:900px){ .kpi-row.c8{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));overflow:visible} .kpi-row.c8 .kpi{flex:none} }
+@container (min-width:700px){ .kpi-row.c5.ta-row1{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));overflow:visible} .kpi-row.c5.ta-row1 .kpi{flex:none} }
+@container (min-width:560px){ .kpi-row.c4.ta-row1{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));overflow:visible} .kpi-row.c4.ta-row1 .kpi{flex:none} }
+@container (max-width:479px){ .kpi-row.ta-row1{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible} .kpi-row.ta-row1 .kpi{flex:none} }
+.ta-chart-row{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+@container (min-width:720px){ .ta-chart-row{grid-template-columns:repeat(2,minmax(0,1fr))} }
+.ta-two-col{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:start}
+@container (min-width:900px){ .ta-two-col{grid-template-columns:repeat(2,minmax(0,1fr))} }
+.ta-tbl-wrap{max-height:320px;overflow:auto;border:1px solid var(--border);border-radius:6px}
+.ta-tbl-wrap thead th{position:sticky;top:0;background:var(--surface2)}
+.ta-headline{font-size:14px;font-weight:700;line-height:1.4;margin:6px 0 2px}
+.ta-what{font-size:12px;color:var(--t2);margin:2px 0}
+.ta-how{margin:4px 0 8px}
+.ta-how summary{font-size:11px;cursor:pointer;color:var(--t3)}
+.ta-how div{font-size:11px;color:var(--t2);margin-top:4px}
+.ta-chip{padding:3px 10px;margin:0 6px 6px 0;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--t2);font-family:var(--fm);font-size:11px;cursor:pointer}
+.ta-chip.active{background:var(--p02);border-color:var(--p02);color:#fff}
+.ta-sg-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:start}
+@container (min-width:600px){ .ta-sg-grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@container (min-width:960px){ .ta-sg-grid{grid-template-columns:repeat(3,minmax(0,1fr))} }
+.ta-sg-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:10px 12px;min-width:0}
+.ta-sg-card summary{cursor:pointer;list-style:none}
+.ta-sg-card summary::-webkit-details-marker{display:none}
+.ta-sg-sum{display:block}
+.ta-sg-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;font-weight:700;font-size:13px}
+.ta-sg-badge{font-family:var(--fm);font-size:9px;padding:2px 7px;border-radius:8px;white-space:nowrap;background:var(--surface2);color:var(--t3);border:1px solid var(--border)}
+.ta-sg-badge[data-status="applicable"]{background:var(--p02-bg);color:var(--p02);border-color:var(--p02-bd)}
+.ta-sg-badge[data-status="illustrative"]{background:rgba(146,72,10,.12);color:#92480A;border-color:rgba(146,72,10,.3)}
+.ta-sg-badge[data-status="insufficient_data"]{background:repeating-linear-gradient(45deg,var(--surface2),var(--surface2) 4px,var(--surface) 4px,var(--surface) 8px)}
+.ta-sg-eff{font-size:12px;margin-top:4px}
+.ta-sg-body{margin-top:8px;font-size:12px;border-top:1px dashed var(--border);padding-top:8px}
+.ta-sg-mini{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:6px 0}
+.ta-sg-mini div{background:var(--surface2);border-radius:6px;padding:4px 8px;font-size:11px}
+
 /* Margin util */
 .util-bar-outer{background:var(--surface2);border-radius:100px;height:16px;overflow:hidden;margin:8px 0;}
 .util-bar{height:100%;border-radius:100px;transition:width .6s ease;}
@@ -1649,20 +1695,31 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
         <div class="kpi-label" style="margin-bottom:0">Overtrading</div>
         <button onclick="taAnToggleInfo('overtrading')" title="Definition and assumptions" style="padding:3px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--t3);font-family:var(--fm);font-size:11px;cursor:pointer">Definition</button>
       </div>
-      <div class="kpi-sub">How often and how quickly you traded, what it cost, and how closed trades turned out.</div>
+      <div class="ta-headline" id="ta-an-overtrading-headline">—</div>
+      <div class="ta-what" id="ta-an-overtrading-what">How often and how quickly you traded, what it cost in charges, and how your closed trades turned out.</div>
+      <details class="ta-how" id="ta-an-overtrading-how"><summary>How to read this</summary><div>Each bar is a full Monday-Sunday week, filed under the month of its Monday, so a Thursday-Friday fill dated in the next month stays in the earlier month's last bar. Blue = executions (fills), green = trades you closed. Taller blue bars against flat green bars mean many orders for few finished trades. Hover a bar for active days and the exact dates. Wk 1-5 count the Mondays of that month. These are observations from your own history, not a verdict.</div></details>
       <div id="ta-an-overtrading-def" style="display:none"></div>
-      <div class="chart-wrap" style="margin:8px 0"><canvas id="ta-cv-weekly"></canvas></div>
       <div id="ta-an-overtrading-body" style="font-size:12px">—</div>
+      <div class="ta-cq"><div class="ta-chart-row">
+        <div><div class="kpi-sub" style="margin-bottom:4px">Executions and closed trades per week</div><div class="chart-wrap" style="margin:4px 0"><canvas id="ta-cv-weekly"></canvas></div></div>
+        <div><div class="kpi-sub" style="margin-bottom:4px">How long you held same-day trades</div><div class="chart-wrap" style="margin:4px 0"><canvas id="ta-cv-holding"></canvas></div><div id="ta-an-holding-empty" class="kpi-sub"></div></div>
+      </div></div>
+      <div id="ta-an-overtrading-note" class="kpi-sub" style="margin-top:6px"></div>
     </div>
     <div class="kpi" id="ta-panel-buildup" data-ta-tab="behaviour" style="margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
         <div class="kpi-label" style="margin-bottom:0">Position build-up</div>
         <button onclick="taAnToggleInfo('buildup')" title="Definition and assumptions" style="padding:3px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--t3);font-family:var(--fm);font-size:11px;cursor:pointer">Definition</button>
       </div>
-      <div class="kpi-sub">How positions were built, added to and reduced; averaging into losers.</div>
+      <div class="ta-headline" id="ta-an-buildup-headline">—</div>
+      <div class="ta-what" id="ta-an-buildup-what">Whether you add to a position after it has moved against you. Adding at a worse price than your average (&ldquo;averaging down&rdquo;) makes the position bigger at the moment it is losing.</div>
+      <div class="ta-what" id="ta-an-buildup-glossary" style="font-size:11px;color:var(--t3)">Position chain = one position from your first fill until it is fully closed. Lots = number of contracts&rsquo; worth of the lot size (from the Kite master). An &lsquo;adverse add&rsquo; = a fill that increased the position at a price worse than your average entry (higher for a short, lower for a long).</div>
+      <details class="ta-how" id="ta-an-buildup-how"><summary>How to read this</summary><div>The step line is the size of that position after each fill. Red dots = adds at a worse price, green dots = adds at a better price, grey = first fill / reductions. Hover a point for the price, your average at that moment, and how far worse it was. Pick another chain with the buttons above the chart.</div></details>
       <div id="ta-an-buildup-def" style="display:none"></div>
-      <div class="chart-wrap" style="margin:8px 0"><canvas id="ta-cv-buildup"></canvas></div>
       <div id="ta-an-buildup-body" style="font-size:12px">—</div>
+      <div id="ta-bu-chain-sel" style="margin:8px 0 2px"></div>
+      <div class="chart-wrap" style="margin:4px 0"><canvas id="ta-cv-buildup"></canvas></div>
+      <div id="ta-an-buildup-chain-note" class="kpi-sub"></div>
     </div>
     <div class="kpi" id="ta-panel-marketturn" data-ta-tab="market" style="margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
@@ -1702,19 +1759,45 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
         <div class="kpi-label" style="margin-bottom:0">Margin trap</div>
         <button onclick="taAnToggleInfo('margintrap')" title="Definition and assumptions" style="padding:3px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--t3);font-family:var(--fm);font-size:11px;cursor:pointer">Definition</button>
       </div>
-      <div class="kpi-sub">Ledger cash, debit streaks and low-cash days with open losers (proxy); planned vs actual stops.</div>
+      <div class="ta-headline" id="ta-an-margintrap-headline">—</div>
+      <div class="ta-what" id="ta-an-margintrap-what">Days when the cash in your account was low while you still held positions that were losing, and what you did on those days.</div>
+      <div class="kpi-sub" id="ta-an-margintrap-caveat" style="font-weight:700;color:var(--t2)">This describes what happened on the same days, not why. The ledger cannot show blocked margin or your reasons, so it cannot say whether low cash kept you in a trade.</div>
+      <details class="ta-how" id="ta-an-margintrap-how"><summary>How to read this</summary><div>Blue line = cash in your account (from your ledger, account-wide). Dashed red line = the low-cash level. Red-tinted background = days below that level. Amber background = a run of 3+ days when more money went out than came in. Orange bars = the notional of the short options you held (an ESTIMATE, not the broker's margin). Red dots = days you added to a position at a worse price. Stop-loss what-if: see Suggestions.</div></details>
       <div id="ta-an-margintrap-def" style="display:none"></div>
-      <div class="chart-wrap" style="margin:8px 0"><canvas id="ta-cv-cash"></canvas></div>
       <div id="ta-an-margintrap-body" style="font-size:12px">—</div>
+      <div class="chart-wrap tall" style="margin:8px 0"><canvas id="ta-cv-cash"></canvas></div>
+      <div class="kpi-sub">Stop-loss what-if: <a href="#" onclick="taSwitchTab('suggestions');return false" style="color:var(--p02)">see Suggestions</a></div>
     </div>
+    <div class="kpi" id="ta-panel-details" data-ta-tab="behaviour" style="margin-bottom:16px">
+      <div class="kpi-label">Where to look</div>
+      <div class="ta-cq"><div class="ta-two-col">
+        <div id="ta-an-detail-a" style="font-size:12px">—</div>
+        <div id="ta-an-detail-b" style="font-size:12px">—</div>
+      </div></div>
+    </div>
+    <details class="kpi" id="ta-an-fulltables" data-ta-tab="behaviour" style="margin-bottom:16px" ontoggle="taAnFullToggle(this.open)">
+      <summary style="cursor:pointer;font-size:12px;font-weight:700">Full data tables (11)</summary>
+      <div class="kpi-sub">The original detail tables, kept for now. Loaded when opened.</div>
+      <div id="ta-an-fulltables-body" style="font-size:12px"></div>
+    </details>
     <div class="kpi" id="ta-panel-suggestions" data-ta-tab="suggestions" style="margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
         <div class="kpi-label" style="margin-bottom:0">Suggestions</div>
         <button onclick="taAnToggleInfo('suggestions')" title="Definition and assumptions" style="padding:3px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--t3);font-family:var(--fm);font-size:11px;cursor:pointer">Definition</button>
       </div>
-      <div class="kpi-sub">Rule-based what-ifs computed from your own history. Observations from your own imported history, not investment advice or a forecast.</div>
+      <div class="ta-headline" id="ta-an-suggestions-headline">—</div>
+      <div class="ta-what" id="ta-an-suggestions-what">Rule-based what-ifs computed from your own history: what your closed P&amp;L would have been had a simple rule applied. Observations from your own imported history, not investment advice or a forecast.</div>
+      <details class="ta-how" id="ta-an-suggestions-how"><summary>How to read this</summary><div>Each card is one rule. The collapsed line shows the effect on closed P&amp;L had the rule applied in this period; open a card for the evidence, the figures behind it and the caveats. In-sample what-ifs on your own history: the book is not re-simulated, charges are excluded.</div></details>
       <div id="ta-an-suggestions-def" style="display:none"></div>
       <div id="ta-an-suggestions-body" style="font-size:12px">—</div>
+      <div id="ta-an-sg-summary"></div>
+      <details id="ta-an-sg-obs" style="margin:8px 0;font-size:12px"></details>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0">
+        <button id="ta-sg-expand-all" onclick="taAnSgExpandAll()" style="padding:3px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--t3);font-family:var(--fm);font-size:11px;cursor:pointer">Expand all</button>
+        <button id="ta-sg-collapse-all" onclick="taAnSgCollapseAll()" style="padding:3px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--t3);font-family:var(--fm);font-size:11px;cursor:pointer">Collapse all</button>
+        <span id="ta-an-sg-counts" class="kpi-sub"></span>
+      </div>
+      <div id="ta-an-sg-host" class="ta-cq"><div id="ta-an-sg-grid" class="ta-sg-grid"></div></div>
     </div>
   </div>
 

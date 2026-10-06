@@ -59,6 +59,9 @@ trade_analysis:
   analytics_min_timestamp_coverage: 0.8
   analytics_max_rows: 200
   observation_high_churn_pct: 50.0
+  # F42 P6 build-up chain story (per-fill steps for the worst N chains, at most M steps each)
+  chain_story_top_n: 3     # 1..5
+  chain_steps_max: 40      # 5..100
   holding_bucket_edges_minutes: [5, 30, 120]   # same-day holding buckets (minutes)
   spot_stale_days: 5
   spot_pad_days: 7

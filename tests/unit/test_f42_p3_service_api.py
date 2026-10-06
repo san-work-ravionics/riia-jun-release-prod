@@ -236,7 +236,14 @@ def test_kite_master_down_gives_lots_unavailable_rest_unchanged(client, user, db
     up = client.get(BASE + "buildup").json()
     assert up["lots"]["lots_available"] is True and up["lots"]["lots_basis"] == "kite_master"
     assert any(r["long_lots"] for r in up["timeline"])
-    assert up["averaging"] == down["averaging"] and up["chains"] == down["chains"]
+    # F42 P6: lot-derived fields (adverse_add_lots, peak_lots, steps[].lots_after) legitimately differ.
+    def _nolots(rows):
+        return [{k: ([{a: b for a, b in st.items() if a != "lots_after"} for st in v] if k == "steps" else v)
+                 for k, v in r.items() if k != "peak_lots"} for r in rows]
+    assert ({k: v for k, v in up["averaging"].items() if k != "adverse_add_lots"}
+            == {k: v for k, v in down["averaging"].items() if k != "adverse_add_lots"})
+    assert _nolots(up["chains"]) == _nolots(down["chains"])
+    assert down["averaging"]["adverse_add_lots"] is None
     monkeypatch.setattr(router_mod.kmc, "fetch_instrument_master_nfo", lambda: (_ for _ in ()).throw(RuntimeError("x")))
     assert client.get(BASE + "suggestions").json()["available"] is True
     called = []
