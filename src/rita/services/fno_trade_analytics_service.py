@@ -23,11 +23,15 @@ from rita.repositories.fno_import import FnoLedgerRepo, FnoPnlRepo, FnoTradeRepo
 from rita.repositories.market_data import MarketDataCacheRepository
 from rita.schemas.fno_trade_analytics import (
     AnalyticsFilter, BuildupResponse, FoundationResponse, MarginTrapResponse, MarketTurnResponse,
-    OvertradingResponse, Quality, SuggestionsResponse, Tags,
+    OvertradingResponse, Quality, SpotVsPnlResponse, SuggestionsResponse, Tags,
 )
 from rita.services import fno_trade_analytics as an
 from rita.services.fno_trade_fifo import Fill, SpotSeries, run_fifo
-from rita.services.fno_trade_suggestions import suggestions as build_suggestions
+from rita.services import fno_trade_spot_pnl as spot_pnl
+from rita.services.fno_trade_suggestions import (
+    DISCLAIMER, SPOT_RULE_IDS, spot_rules,
+    suggestions as build_suggestions,
+)
 
 log = structlog.get_logger(__name__)
 IST = ZoneInfo("Asia/Kolkata")
@@ -35,6 +39,11 @@ IST = ZoneInfo("Asia/Kolkata")
 _REASON_TEXT = {
     "no_data": "No imported Console data yet. Import your Console files on the Import panel first.",
     "no_trades_in_scope": "No option fills match the selected underlying, expiry and date filters.",
+    "spot_unavailable": "No spot price history for the selected underlying; the spot-vs-P&L view is omitted.",
+    "insufficient_sample": "Too few days in this sample for the statistic.",
+    "no_open_positions": "No open positions to mark.",
+    "sheet_stale": "The P&L sheet snapshot is older than the latest spot day.",
+    "no_pnl_sheet": "No P&L sheet line covers the open positions in this scope.",
 }
 
 _DEFS = {
@@ -44,6 +53,7 @@ _DEFS = {
     "market-turn": "Positioning and realised P&L around days the underlying moved sharply.",
     "margin-trap": "Ledger cash, debit streaks, low-cash days with open losers (proxy) and planned-vs-actual stops.",
     "suggestions": "Rule-based what-ifs derived from your own history.",
+    "spot-vs-pnl": "How the underlying moved against your realised P&L and whether your book was with or against it.",
 }
 _TAGS = {
     "foundation": (["fifo_realised", "sheet_realised", "gap"], ["fifo_expiry_estimate", "intrinsic_px"]),
@@ -52,7 +62,13 @@ _TAGS = {
     "market-turn": (["spot_returns", "realised_pnl_day"], ["delta1_bound_pnl", "bias_units"]),
     "margin-trap": (["cash", "debit_streaks"], ["short_notional_proxy", "trap_days", "stops"]),
     "suggestions": ([], ["what_if"]),
+    "spot-vs-pnl": (["spot_close", "spot_returns", "realised_pnl_day", "unrealised_snapshot"],
+                    ["expiry_estimate", "bias_units", "delta1_bound_pnl", "what_if"]),
 }
+
+_RELATED = {"book_against_market": ("bias_limit",), "loses_on_down_days": ("bias_limit",),
+            "negative_beta": ("bias_limit",), "big_move_concentration": ("counter_move_entries", "bias_limit"),
+            "expiry_day_loss": ("expiry_proximity_entries",)}
 
 
 @dataclass(frozen=True)
@@ -179,6 +195,31 @@ class FnoTradeAnalyticsService:
         env["definition"] = out.pop("definition")
         env["assumptions"] = out.pop("assumptions")
         return SuggestionsResponse(**env, **out)
+
+    def spot_vs_pnl(self, user_id: str, p: AnalyticsParams) -> SpotVsPnlResponse:
+        ctx = self._prepare(user_id, p, "spot-vs-pnl")
+        if isinstance(ctx, dict):
+            return SpotVsPnlResponse(**ctx)
+        lines = [an.PnlLine(
+            symbol=r.symbol, underlying=r.underlying, expiry_ym=r.expiry_ym, period_from=r.period_from,
+            period_to=r.period_to, realized_pnl=r.realized_pnl, open_quantity=r.open_quantity,
+            open_quantity_type=r.open_quantity_type,
+            unrealized_pnl=float(r.unrealized_pnl) if r.unrealized_pnl is not None else None,
+            prev_close_price=float(r.prev_close_price) if r.prev_close_price is not None else None)
+            for r in self._pnl.lines_for_scope(user_id, self._unds(p), self._months(p))]
+        view = spot_pnl.spot_vs_pnl(ctx, lines, self._unds(p))
+        rules, _vetoes = spot_rules(ctx, view)
+        obs_ids = {o["id"] for b in view["underlyings"] for o in b["observations"]}
+        rule_ids = {r["id"] for r in rules}
+        related = [{"observation_id": o, "rule_id": r} for o, rs in _RELATED.items() if o in obs_ids
+                   for r in rs if r in rule_ids]
+        env = self._env(user_id, p, ctx, "spot-vs-pnl")
+        if not ctx.spot:
+            env["reason"] = "spot_unavailable"
+            env["message"] = _REASON_TEXT["spot_unavailable"]
+        improvement = {"disclaimer": DISCLAIMER, "baseline_pnl": an._r(sum(t.pnl for t in ctx.trades)),
+                       "rules": [r for r in rules if r["id"] in SPOT_RULE_IDS], "related": related}
+        return SpotVsPnlResponse(**env, **view, improvement=improvement)
 
     def run_all(self, user_id: str, p: AnalyticsParams, master: Any = None) -> dict[str, Any]:
         """All six panels as plain dicts (for scripted end-to-end runs)."""

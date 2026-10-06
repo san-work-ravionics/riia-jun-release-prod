@@ -154,7 +154,7 @@ class TradeAnalysisSettings(BaseSettings):
     model_config = SettingsConfigDict(extra="forbid")
 
     underlyings: list[str] = ["NIFTY", "BANKNIFTY"]
-    expiry_months: list[int] = [9, 10, 11]
+    expiry_months: list[int] = [4, 5, 6, 7, 8, 9, 10, 11]
     # Month filter is month-number only; expiry_year pins the year it applies to.
     expiry_year: int = 2026
     # Read-side analysis window start (import itself always keeps everything in the files).
@@ -197,12 +197,73 @@ class TradeAnalysisSettings(BaseSettings):
     ledger_sign_min_tolerance_inr: float = 1.0  # ... floored at this many INR
     ledger_sign_match_cutoff: float = 0.6   # share of ledger days that must agree to accept a sign
     stop_multiple_step: float = 0.25        # rounding step of the suggested stop multiple
+    # F42 P4 Spot-vs-P&L view thresholds.
+    spot_flat_band_pct: float = 0.25        # |spot return| below this is a flat day
+    spot_rel_min_days: int = 20             # min spot days for the all-days correlation
+    spot_rel_min_closing_days: int = 10     # min closing days for the closing-days correlation
+    spot_rel_min_bucket_days: int = 5       # min days for a direction / big-move / expiry bucket
+    spot_rel_min_bias_days: int = 10        # min scored (with + against) days for a bias verdict
+    spot_rel_ci_z: float = 1.96             # z for the no-correlation band and the Wilson interval
+    sheet_snapshot_stale_days: int = 5      # P&L-sheet unrealised snapshot older than spot by more => stale
+    expiry_proximity_days: int = 2          # entries within this many days of expiry (what-if rule)
+    spot_series_max_points: int = 400       # chart-array ceiling (stats use the full window)
+    spot_obs_max: int = 6                   # max observations per underlying block
+    spot_obs_concentration_pct: float = 60.0    # big-move-day share of total loss that is reported
 
     @field_validator("holding_bucket_edges_minutes")
     @classmethod
     def _edges_ascending(cls, v: list[int]) -> list[int]:
         if len(v) != 3 or v[0] <= 0 or not v[0] < v[1] < v[2]:
             raise ValueError("holding_bucket_edges_minutes must be three ascending positive minutes")
+        return v
+
+    @field_validator("expiry_months")
+    @classmethod
+    def _months_valid(cls, v: list[int]) -> list[int]:
+        if not v or any(not 1 <= m <= 12 for m in v) or any(a >= b for a, b in zip(v, v[1:])):
+            raise ValueError("expiry_months must be a non-empty, strictly ascending, unique list of months 1-12")
+        return v
+
+    @field_validator("spot_flat_band_pct", "sheet_snapshot_stale_days", "expiry_proximity_days")
+    @classmethod
+    def _spot_non_negative(cls, v: float) -> float:
+        if v < 0:
+            raise ValueError("value must be >= 0")
+        return v
+
+    @field_validator("spot_rel_min_days", "spot_rel_min_closing_days")
+    @classmethod
+    def _spot_min_three(cls, v: int) -> int:
+        if v < 3:
+            raise ValueError("minimum sample days must be >= 3")
+        return v
+
+    @field_validator("spot_rel_min_bucket_days", "spot_rel_min_bias_days", "spot_obs_max")
+    @classmethod
+    def _spot_min_one(cls, v: int) -> int:
+        if v < 1:
+            raise ValueError("value must be >= 1")
+        return v
+
+    @field_validator("spot_rel_ci_z")
+    @classmethod
+    def _spot_z_positive(cls, v: float) -> float:
+        if v <= 0:
+            raise ValueError("spot_rel_ci_z must be > 0")
+        return v
+
+    @field_validator("spot_series_max_points")
+    @classmethod
+    def _spot_series_min(cls, v: int) -> int:
+        if v < 30:
+            raise ValueError("spot_series_max_points must be >= 30")
+        return v
+
+    @field_validator("spot_obs_concentration_pct")
+    @classmethod
+    def _spot_pct_range(cls, v: float) -> float:
+        if not 0.0 <= v <= 100.0:
+            raise ValueError("spot_obs_concentration_pct must be within 0..100")
         return v
 
     @field_validator("ledger_sign_match_cutoff")

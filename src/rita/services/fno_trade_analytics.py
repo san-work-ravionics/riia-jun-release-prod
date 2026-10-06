@@ -46,6 +46,8 @@ class PnlLine:
     realized_pnl: Optional[float]
     open_quantity: Optional[int]
     open_quantity_type: Optional[str]
+    unrealized_pnl: Optional[float] = None      # F42 P4: sheet mark at prev close (open book)
+    prev_close_price: Optional[float] = None
 
 
 @dataclass(frozen=True)
@@ -613,13 +615,18 @@ def buildup(ctx: Ctx, lots: LotInfo) -> dict[str, Any]:
 # ── spot returns / market turn ──────────────────────────────────────────────────
 
 
+def _ret_pct(c1: float, c0: float) -> float:
+    """Return in percent, rounded to 9 dp so an exact boundary move (e.g. +0.25%) is not lost to float error."""
+    return round((c1 / c0 - 1.0) * 100.0, 9) if c0 else 0.0
+
+
 def _returns(ss: SpotSeries) -> dict[date, tuple[float, float, Optional[float]]]:
     """date -> (close_t, close_{t-1}, r_{t-1} pct) with r_t computed by the caller."""
     out: dict[date, tuple[float, float, Optional[float]]] = {}
     prev_r: Optional[float] = None
     for i in range(1, len(ss.dates)):
         c0, c1 = ss.closes[i - 1], ss.closes[i]
-        r = (c1 / c0 - 1.0) * 100.0 if c0 else 0.0
+        r = _ret_pct(c1, c0)
         out[ss.dates[i]] = (c1, c0, prev_r)
         prev_r = r
     return out
@@ -627,6 +634,61 @@ def _returns(ss: SpotSeries) -> dict[date, tuple[float, float, Optional[float]]]
 
 def _sgn(x: Optional[float]) -> int:
     return 0 if x is None or abs(x) < EPS else (1 if x > 0 else -1)
+
+
+@dataclass(frozen=True)
+class SpotDay:
+    """One spot trading day of an underlying with its start-of-day book (shared by market-turn
+    and the spot-vs-P&L view so both use one definition of return and bias)."""
+    d: date
+    close: float
+    prev_close: float
+    ret: float                        # pct
+    prev_ret: Optional[float]         # previous session's return pct (None when unknown)
+    bias: int                         # EOD(d-1) directional bias units of this underlying
+    syms_in: list[tuple[int, str]]    # (abs units, symbol) open at EOD(d-1)
+    proxy_in: float                   # short-notional proxy at EOD(d-1)
+
+
+def spot_days(ctx: Ctx, unds: Optional[list[str]] = None) -> dict[str, list[SpotDay]]:
+    """Per underlying, the spot days inside [date_from, date_to] that have a return, with the
+    start-of-day book bias.  Behaviour of market_turn's former inline loop, unchanged."""
+    res = ctx.res
+    unds = sorted(ctx.spot) if unds is None else [u for u in unds if u in ctx.spot]
+    cache = ctx.__dict__.setdefault("_spot_days_cache", {})   # one sweep per (ctx, underlyings)
+    if tuple(unds) in cache:
+        return cache[tuple(unds)]
+    rets = {u: _returns(ctx.spot[u]) for u in unds}
+    cutoffs: list[date] = []
+    for u in unds:
+        for d in rets[u]:
+            if ctx.date_from <= d <= ctx.date_to:
+                cutoffs.append(d - timedelta(days=1))
+    snaps = sweep_positions(res, cutoffs)
+    meta = res.meta
+    out: dict[str, list[SpotDay]] = {}
+    for u in unds:
+        days: list[SpotDay] = []
+        for d in ctx.spot[u].dates:
+            if d not in rets[u] or not (ctx.date_from <= d <= ctx.date_to):
+                continue
+            c1, c0, r_prev = rets[u][d]
+            r = _ret_pct(c1, c0)
+            bias = 0
+            syms_in: list[tuple[int, str]] = []
+            proxy_in = 0.0
+            for sym, p in snaps[d - timedelta(days=1)].items():
+                m = meta[sym]
+                if m.underlying != u:
+                    continue
+                bias += delta_sign(m.itype, 1 if p.qty > 0 else -1) * abs(p.qty)
+                syms_in.append((abs(p.qty), sym))
+                if p.qty < 0 and m.strike is not None:
+                    proxy_in += -p.qty * m.strike
+            days.append(SpotDay(d, c1, c0, r, r_prev, bias, syms_in, proxy_in))
+        out[u] = days
+    cache[tuple(unds)] = out
+    return out
 
 
 def market_turn(ctx: Ctx) -> dict[str, Any]:
@@ -665,33 +727,11 @@ def market_turn(ctx: Ctx) -> dict[str, Any]:
     for s in ctx.segs:
         seg_by_key[(s.underlying, s.close_date)].append(s)
     series_out = []
-    all_cutoffs: list[date] = []
-    rets = {u: _returns(ctx.spot[u]) for u in unds}
-    for u in unds:
-        for d in rets[u]:
-            if ctx.date_from <= d <= ctx.date_to:
-                all_cutoffs.append(d - timedelta(days=1))
-    snaps = sweep_positions(res, all_cutoffs)
-    meta = res.meta
+    days_by_u = spot_days(ctx)
     for u in unds:
         s_dates, s_close, s_bias, s_pnl, s_flag = [], [], [], [], []
-        for d in ctx.spot[u].dates:
-            if d not in rets[u] or not (ctx.date_from <= d <= ctx.date_to):
-                continue
-            c1, c0, r_prev = rets[u][d]
-            r = (c1 / c0 - 1.0) * 100.0 if c0 else 0.0
-            snap = snaps[d - timedelta(days=1)]
-            bias = 0
-            syms_in = []
-            proxy_in = 0.0
-            for sym, p in snap.items():
-                m = meta[sym]
-                if m.underlying != u:
-                    continue
-                bias += delta_sign(m.itype, 1 if p.qty > 0 else -1) * abs(p.qty)
-                syms_in.append((abs(p.qty), sym))
-                if p.qty < 0 and m.strike is not None:
-                    proxy_in += -p.qty * m.strike
+        for sd in days_by_u[u]:
+            d, c1, c0, r_prev, r, bias = sd.d, sd.close, sd.prev_close, sd.prev_ret, sd.ret, sd.bias
             segs = seg_by_key.get((u, d), [])
             carried = sum(s.pnl for s in segs if s.open_date < d)
             opened = sum(s.pnl for s in segs if s.open_date >= d)
@@ -702,8 +742,9 @@ def market_turn(ctx: Ctx) -> dict[str, Any]:
                 "date": d.isoformat(), "underlying": u, "spot_close": _r(c1), "ret_pct": _r(r, 3),
                 "is_reversal": rev, "bias_units_in": bias,
                 "bias_label": "bullish" if bias > 0 else "bearish" if bias < 0 else "flat",
-                "adverse_exposed": adverse, "open_symbols_in": [s for _, s in sorted(syms_in, reverse=True)[:6]],
-                "short_notional_proxy_in": _r(proxy_in), "realised_pnl_day": _r(carried + opened),
+                "adverse_exposed": adverse,
+                "open_symbols_in": [s for _, s in sorted(sd.syms_in, reverse=True)[:6]],
+                "short_notional_proxy_in": _r(sd.proxy_in), "realised_pnl_day": _r(carried + opened),
                 "realised_from_carried_in": _r(carried), "realised_from_opened_that_day": _r(opened),
                 "delta1_bound_pnl": _r(bias * (c1 - c0))}
             rows.append({**row, "_big": big})

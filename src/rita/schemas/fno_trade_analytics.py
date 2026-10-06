@@ -584,3 +584,149 @@ class SuggestionsResponse(AnalyticsEnvelope):
     rules: list[Rule] = Field(default_factory=list)
     combined: Optional[Combined] = None
     observations: list[Observation] = Field(default_factory=list)
+
+
+# ── spot vs P&L (F42 P4) ──────────────────────────────────────────────────────
+
+
+class SpotPnlSeries(BaseModel):
+    dates: list[str] = Field(default_factory=list)
+    spot_close: list[Num] = Field(default_factory=list)
+    ret_pct: list[Num] = Field(default_factory=list)
+    realised_measured: list[Num] = Field(default_factory=list)
+    realised_estimate: list[Num] = Field(default_factory=list)
+    cum_measured: list[Num] = Field(default_factory=list)
+    cum_total: list[Num] = Field(default_factory=list)
+    bias_in: list[int] = Field(default_factory=list)
+    closing_day: list[int] = Field(default_factory=list)
+    big_move_flag: list[int] = Field(default_factory=list)
+    reversal_flag: list[int] = Field(default_factory=list)
+    expiry_flag: list[int] = Field(default_factory=list)
+    adverse_flag: list[int] = Field(default_factory=list)
+    truncated: bool = False
+    dropped_days: int = 0
+
+
+class SpotPnlTotals(BaseModel):
+    measured_realised: Num = None
+    estimated_realised: Num = None
+    pnl_rolled_days: int = 0
+    pnl_rolled_amount: Num = None
+    pnl_after_last_spot: Num = None
+    pnl_after_last_spot_count: int = 0
+    n_days: int = 0
+    n_closing_days: int = 0
+    realised_plus_unrealised: Num = None
+
+
+class UnrealisedSnapshot(BaseModel):
+    available: bool = False
+    reason: Optional[str] = None
+    as_of: Optional[str] = None
+    amount: Num = None
+    n_symbols: int = 0
+    fifo_open_symbols: int = 0
+    symbols_missing_in_sheet: int = 0
+    days_behind_spot: Optional[int] = None
+    stale: Optional[bool] = None
+    tag: str = "measured"
+    note: str = ""
+
+
+class CorrBlock(BaseModel):
+    n: int = 0
+    pearson: Num = None
+    spearman: Num = None
+    beta_inr_per_pct: Num = None
+    r2: Num = None
+    significant: Optional[bool] = None
+    reason: Optional[str] = None
+    min_required: int = 0
+    basis_tag: str = "measured"
+
+
+class SpotBucket(BaseModel):
+    key: str
+    n_days: int = 0
+    n_closing_days: int = 0
+    total_pnl: Num = None
+    total_measured: Num = None
+    total_estimate: Num = None
+    mean_pnl: Num = None
+    median_pnl: Num = None
+    hit_rate_pct: Num = None
+    share_of_total_loss_pct: Num = None
+    available: bool = False
+    reason: Optional[str] = None
+    min_required: int = 0
+
+
+class Relationship(BaseModel):
+    all_days: CorrBlock = Field(default_factory=CorrBlock)
+    closing_days: CorrBlock = Field(default_factory=CorrBlock)
+    by_direction: list[SpotBucket] = Field(default_factory=list)
+    big_move: list[SpotBucket] = Field(default_factory=list)
+    big_any: Optional[SpotBucket] = None
+    expiry_days: list[SpotBucket] = Field(default_factory=list)
+
+
+class BiasSide(BaseModel):
+    n: int = 0
+    mean_ret_pct: Num = None
+
+
+class ByBias(BaseModel):
+    bullish: BiasSide = Field(default_factory=BiasSide)
+    bearish: BiasSide = Field(default_factory=BiasSide)
+
+
+class Alignment(BaseModel):
+    days_with_bias: int = 0
+    with_n: int = 0
+    against_n: int = 0
+    flat_market_n: int = 0
+    flat_book_n: int = 0
+    pct_with: Num = None
+    pct_with_ci_low: Num = None
+    pct_with_ci_high: Num = None
+    verdict: str = "insufficient_sample"
+    min_required: int = 0
+    with_units_pts: Num = None
+    against_units_pts: Num = None
+    net_units_pts: Num = None
+    by_bias: ByBias = Field(default_factory=ByBias)
+    tag: str = "estimated"
+    caveat: str = ""
+
+
+class SpotPnlUnderlying(BaseModel):
+    underlying: str
+    available: bool = True
+    reason: Optional[str] = None
+    spot_last_date: Optional[str] = None
+    spot_stale: Optional[bool] = None
+    series: SpotPnlSeries = Field(default_factory=SpotPnlSeries)
+    totals: SpotPnlTotals = Field(default_factory=SpotPnlTotals)
+    unrealised_snapshot: UnrealisedSnapshot = Field(default_factory=UnrealisedSnapshot)
+    relationship: Optional[Relationship] = None
+    alignment: Optional[Alignment] = None
+    observations: list[Observation] = Field(default_factory=list)
+
+
+class RelatedLink(BaseModel):
+    observation_id: str
+    rule_id: str
+
+
+class Improvement(BaseModel):
+    disclaimer: str = ""
+    baseline_pnl: Num = None
+    rules: list[Rule] = Field(default_factory=list)
+    related: list[RelatedLink] = Field(default_factory=list)
+
+
+class SpotVsPnlResponse(AnalyticsEnvelope):
+    info: Optional[Info] = None
+    underlyings: list[SpotPnlUnderlying] = Field(default_factory=list)
+    improvement: Optional[Improvement] = None
+    delta1_note: str = ""

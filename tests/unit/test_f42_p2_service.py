@@ -135,7 +135,7 @@ def test_read_status_and_scope_filters(db_session):
     rows = [
         h.tb_row(tid="1", d="2026-10-01"),                                   # in scope
         h.tb_row(tid="2", d="2026-06-15"),                                   # before date_from
-        h.tb_row(tid="3", symbol="NIFTY26AUG24000CE", d="2026-10-01", exp="2026-08-25"),  # Aug
+        h.tb_row(tid="3", symbol="NIFTY26AUG24000CE", d="2026-10-01", exp="2026-08-25"),  # Aug (in scope since expiry_months widened to Apr-Nov, F42 P4)
         h.tb_row(tid="4", symbol="NIFTY27OCT24000CE", d="2026-10-01", exp="2027-10-26"),  # 2027
         h.tb_row(tid="5", symbol="RELIANCE26OCT2900CE", d="2026-10-01"),     # other underlying
         h.tb_row(tid="6", symbol="BANKNIFTY26OCTFUT", d="2026-10-01"),       # fut
@@ -144,7 +144,7 @@ def test_read_status_and_scope_filters(db_session):
     _imp(db_session, "t.csv", h.tradebook(rows))
     rd = FnoImportReadService(db_session)
     st = rd.status("u1")
-    assert st.has_data and st.trades.count == 7 and st.trades.in_scope_count == 2
+    assert st.has_data and st.trades.count == 7 and st.trades.in_scope_count == 3
     assert st.trades.fut_count == 1 and st.limits.max_files == 10
     assert st.last_imports.tradebook.rows_inserted == 7 and st.last_imports.pnl is None
 
@@ -154,16 +154,20 @@ def test_read_status_and_scope_filters(db_session):
         a.update(kw)
         return rd.trades("u1", **a)
 
-    assert {i.trade_id for i in q().items} == {"1", "7"}   # symbol-only month fallback for 7
-    assert {i.trade_id for i in q(include_fut=True).items} == {"1", "6", "7"}
+    assert {i.trade_id for i in q().items} == {"1", "3", "7"}   # symbol-only month fallback for 7
+    assert {i.trade_id for i in q(include_fut=True).items} == {"1", "3", "6", "7"}
     assert {i.trade_id for i in q(underlying="BANKNIFTY").items} == {"7"}
     assert {i.trade_id for i in q(expiry_month=11).items} == {"7"}
-    assert q(expiry_month=8).total == 0 and q(expiry_month=8).filter.expiry_months == [8]
-    assert {i.trade_id for i in q(date_from=date(2026, 6, 1)).items} == {"1", "2", "7"}
+    assert {i.trade_id for i in q(expiry_month=8).items} == {"3"} and q(expiry_month=8).filter.expiry_months == [8]
+    assert {i.trade_id for i in q(date_from=date(2026, 6, 1)).items} == {"1", "2", "3", "7"}
     assert {i.trade_id for i in q(side="sell").items} == {"7"}
-    assert [i.trade_id for i in q(sort="trade_date_asc", date_from=date(2026, 6, 1)).items] == ["2", "1", "7"]
+    asc = q(sort="trade_date_asc", date_from=date(2026, 6, 1)).items
+    assert {i.trade_id for i in asc} == {"1", "2", "3", "7"} and asc[0].trade_id == "2" and asc[-1].trade_id == "7"
+    dates = [i.trade_date for i in asc]
+    assert dates == sorted(dates)                  # 1 and 3 tie on 2026-10-01, so only the date order is pinned
+    assert q(expiry_month=3).total == 0 and q(expiry_month=3).filter.expiry_months == [3]   # out-of-config month probe
     p = q(date_from=date(2026, 6, 1), page_size=2, page=2)
-    assert p.total == 3 and p.total_pages == 2 and len(p.items) == 1
+    assert p.total == 4 and p.total_pages == 2 and len(p.items) == 2
 
 
 def test_sanitize_file_name():

@@ -1,13 +1,13 @@
 """Experience Layer — F42 Phase 3 Trade Analysis analytics (read-only).
 
-ADR-001 Tier 3: six GET endpoints, one per panel, composed by FnoTradeAnalyticsService from the
+ADR-001 Tier 3: seven GET endpoints, one per panel (spot-vs-pnl is lazy-loaded by the UI), composed by FnoTradeAnalyticsService from the
 caller's own imported rows (user_id = current_user.id).  No writes, no commit, the router never
 touches a repository.  The buildup and suggestions handlers look up lot sizes from the Kite NFO
 master in the ROUTER (only when include_lots=true; no personal data is sent) and pass the plain
 result into the service; a middleware failure never fails the endpoint (lots_available=false).
 
 GET /api/v1/experience/fno/trade-analysis/analytics/{foundation,overtrading,buildup,
-    market-turn,margin-trap,suggestions}
+    market-turn,margin-trap,suggestions,spot-vs-pnl}
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ from rita.database import get_db
 from rita.models.user import UserModel
 from rita.schemas.fno_trade_analytics import (
     BuildupResponse, FoundationResponse, MarginTrapResponse, MarketTurnResponse,
-    OvertradingResponse, SuggestionsResponse,
+    OvertradingResponse, SpotVsPnlResponse, SuggestionsResponse,
 )
 from rita.services import kite_middleware_client as kmc
 from rita.services.fno_trade_analytics_service import AnalyticsParams, FnoTradeAnalyticsService
@@ -102,3 +102,10 @@ def get_suggestions(p: AnalyticsParams = Depends(_params),
                     current_user: UserModel = Depends(get_current_user),
                     svc: FnoTradeAnalyticsService = Depends(_get_service)) -> SuggestionsResponse:
     return svc.suggestions(current_user.id, p, _master(p))
+
+
+@router.get(f"{_BASE}/spot-vs-pnl", response_model=SpotVsPnlResponse)
+def get_spot_vs_pnl(p: AnalyticsParams = Depends(_params),
+                    current_user: UserModel = Depends(get_current_user),
+                    svc: FnoTradeAnalyticsService = Depends(_get_service)) -> SpotVsPnlResponse:
+    return svc.spot_vs_pnl(current_user.id, p)

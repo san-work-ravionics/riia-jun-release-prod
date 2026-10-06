@@ -199,7 +199,7 @@ def test_requires_auth(client):
 def test_six_routes_registered_experience_get_only():
     from rita.main import app
     paths = {r.path: r.methods for r in app.routes if getattr(r, "path", "").startswith(BASE.rstrip("/"))}
-    assert set(paths) == {BASE + p for p in PANELS}
+    assert set(paths) == {BASE + p for p in PANELS} | {BASE + "spot-vs-pnl"}   # F42 P4 adds the 7th route
     assert all(m == {"GET"} for m in paths.values())
 
 
