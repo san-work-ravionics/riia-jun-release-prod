@@ -8,6 +8,7 @@ Returned structures are plain dicts (the service validates them against the Pyda
 """
 from __future__ import annotations
 
+import itertools
 import math
 import statistics
 from collections import defaultdict
@@ -449,13 +450,14 @@ def _chains(ctx: Ctx, spot: dict[str, SpotSeries]) -> list[dict[str, Any]]:
         for s in res.est_segments:
             est_by_sym[s.symbol] += s.pnl
     est_syms = {s.symbol for s in res.est_segments} if ctx.include_est else set()
+    seq = itertools.count()
 
     def new_chain(e: FillEvent) -> dict[str, Any]:
         f = e.fill
         return {"symbol": f.symbol, "underlying": f.underlying, "expiry_ym": f.expiry_ym,
                 "itype": f.itype, "open_date": f.trade_date, "close_date": None, "peak_qty": 0,
                 "adds": 0, "adverse_adds": 0, "spot_adverse_adds": 0, "pnl_measured": 0.0,
-                "still_open": True, "side": f.sign}
+                "still_open": True, "side": f.sign, "_evs": [], "_order": next(seq)}
 
     for e in res.events:
         f = e.fill
@@ -465,6 +467,7 @@ def _chains(ctx: Ctx, spot: dict[str, SpotSeries]) -> list[dict[str, Any]]:
         if c is None:
             continue
         c["pnl_measured"] += e.realised
+        c["_evs"].append(e)
         if e.cls == "scale_in":
             c["adds"] += 1
             c["adverse_adds"] += 1 if e.adverse_add else 0
@@ -484,6 +487,7 @@ def _chains(ctx: Ctx, spot: dict[str, SpotSeries]) -> list[dict[str, Any]]:
             if e.cls == "flip":
                 n = cur[f.symbol] = new_chain(e)
                 n["peak_qty"] = abs(e.pos_after)
+                n["_evs"].append(e)
     for sym, c in cur.items():
         c["pnl_estimated"] = _r(est_by_sym.get(sym)) if sym in est_syms else None
         if sym in est_syms:
@@ -492,6 +496,63 @@ def _chains(ctx: Ctx, spot: dict[str, SpotSeries]) -> list[dict[str, Any]]:
             c["close_date"] = exp
         out.append(c)
     return [c for c in out if c["close_date"] is None or c["close_date"] >= ctx.date_from]
+
+
+def chain_sort_key(c: dict[str, Any]) -> tuple:
+    """Authoritative chain ordering (F42 P6 design 17.2): pnl_measured ascending with None last,
+    then symbol, open_date, creation order.  The frontend picker follows story_rank with no re-sort."""
+    pm = c.get("pnl_measured")
+    return (pm is None, pm if pm is not None else 0.0, c["symbol"], c["open_date"], c["_order"])
+
+
+def _pick_steps(flags: list[bool], budget: int) -> list[int]:
+    """Indices to keep (chronological): first, last, adverse adds (evenly thinned when over budget),
+    then the remaining budget filled by even downsampling of the other steps."""
+    n = len(flags)
+    if n <= budget:
+        return list(range(n))
+    keep = {0, n - 1}
+    adv = [i for i in range(n) if flags[i] and i not in keep]
+    room = budget - len(keep)
+    if len(adv) > room:
+        adv = ([adv[round(k * (len(adv) - 1) / (room - 1))] for k in range(room)]
+               if room > 1 else adv[:room])
+    keep.update(adv)
+    room = budget - len(keep)
+    if room > 0:
+        rest = [i for i in range(n) if i not in keep]
+        if len(rest) <= room:
+            keep.update(rest)
+        elif room > 1:
+            keep.update(rest[round(k * (len(rest) - 1) / (room - 1))] for k in range(room))
+        else:
+            keep.add(rest[0])
+    return sorted(keep)
+
+
+def _chain_steps(c: dict[str, Any], lots: LotInfo, budget: int) -> tuple[list[dict[str, Any]], int, bool]:
+    steps: list[dict[str, Any]] = []
+    evs = c["_evs"]
+    for i, e in enumerate(evs):
+        f = e.fill
+        ls, _b = lots.lot_size(f.symbol, f.underlying)
+        adv = bool(e.adverse_add)
+        worse = (abs(f.price - e.avg_before) / e.avg_before * 100.0 if adv and e.avg_before else None)
+        delta, after, avg_b = e.pos_after - e.pos_before, e.pos_after, e.avg_before
+        if e.cls == "flip":
+            if i == 0:                      # this fill opened the new (flipped) chain
+                delta, avg_b = e.pos_after, None
+            else:                           # this fill closed the old chain to flat
+                delta, after = -e.pos_before, 0
+        steps.append({
+            "date": f.trade_date.isoformat(), "time": _hhmm(f.exec_dt), "cls": e.cls,
+            "qty_delta": delta, "pos_after": after,
+            "lots_after": _r(abs(after) / ls) if ls else None,
+            "price": _r(f.price, 4), "avg_before": _r(avg_b, 4) if avg_b else None,
+            "adverse": adv, "worse_pct": _r(worse) if worse is not None else None})
+    total = len(steps)
+    idx = _pick_steps([s["adverse"] for s in steps], budget)
+    return [steps[i] for i in idx], total, len(idx) < total
 
 
 def buildup(ctx: Ctx, lots: LotInfo) -> dict[str, Any]:
@@ -511,13 +572,27 @@ def buildup(ctx: Ctx, lots: LotInfo) -> dict[str, Any]:
     spot_adv: Optional[int] = None
     if ctx.spot:
         spot_adv = sum(c["spot_adverse_adds"] for c in chains)
-    top_chains = sorted(chains, key=lambda c: (c["pnl_measured"], c["symbol"]))[:TOP_N * 2]
-    chains_out = [{
-        "symbol": c["symbol"], "expiry_ym": c["expiry_ym"], "side": "long" if c["side"] > 0 else "short",
-        "open_date": _iso(c["open_date"]), "close_date": _iso(c["close_date"]),
-        "peak_qty": c["peak_qty"], "adds": c["adds"], "adverse_adds": c["adverse_adds"],
-        "pnl_measured": _r(c["pnl_measured"]), "pnl_estimated": c.get("pnl_estimated"),
-        "still_open": c["still_open"]} for c in top_chains]
+    top_chains = sorted(chains, key=chain_sort_key)[:TOP_N * 2]
+    chains_out = []
+    for rank, c in enumerate(top_chains, start=1):
+        ls, _basis = lots.lot_size(c["symbol"], c["underlying"])
+        row = {
+            "symbol": c["symbol"], "expiry_ym": c["expiry_ym"], "side": "long" if c["side"] > 0 else "short",
+            "open_date": _iso(c["open_date"]), "close_date": _iso(c["close_date"]),
+            "peak_qty": c["peak_qty"], "adds": c["adds"], "adverse_adds": c["adverse_adds"],
+            "pnl_measured": _r(c["pnl_measured"]), "pnl_estimated": c.get("pnl_estimated"),
+            "still_open": c["still_open"],
+            "peak_lots": _r(c["peak_qty"] / ls) if ls else None,
+            "story_rank": None, "steps": [], "steps_total": None, "steps_truncated": False}
+        if rank <= cfg.chain_story_top_n:
+            st, total, trunc = _chain_steps(c, lots, cfg.chain_steps_max)
+            row.update({"story_rank": rank, "steps": st, "steps_total": total, "steps_truncated": trunc})
+        chains_out.append(row)
+    adv_lots: Optional[float] = None
+    if lots.available:
+        sizes = [lots.lot_size(e.fill.symbol, e.fill.underlying)[0] for e in adverse]
+        if all(sizes):   # None (no partial sum) if any contributing symbol lacks a lot size
+            adv_lots = _r(sum(e.opened_qty / ls for e, ls in zip(adverse, sizes)))  # type: ignore[operator]
     chain_totals = {"count": len(chains), "with_adverse_add": sum(1 for c in chains if c["adverse_adds"]),
                     "max_adds": max((c["adds"] for c in chains), default=0)}
 
@@ -589,6 +664,7 @@ def buildup(ctx: Ctx, lots: LotInfo) -> dict[str, Any]:
             "adverse_add_fills": len(adverse), "adverse_add_units": sum(e.opened_qty for e in adverse),
             "share_of_entries_pct": _r(len(adverse) / len(entries) * 100.0) if entries else None,
             "adverse_add_closed_pnl": _r(adv_pnl), "adverse_add_open_units": adv_open,
+            "adverse_add_lots": adv_lots,
             "spot_adverse_adds": spot_adv,
             **_info("Adding to an open position at a price worse than its average entry (long: lower, "
                     "short: higher) is counted as averaging down.",
@@ -963,6 +1039,14 @@ def margin_trap(ctx: Ctx, ledger: list[LedgerRow], ledger_before: Optional[Ledge
     trap_days: list[dict[str, Any]] = []
     unmarked = 0
     first_trap: Optional[tuple[date, dict[str, float]]] = None
+    adv_by_day: dict[date, int] = defaultdict(int)
+    adds_by_day: dict[date, list[FillEvent]] = defaultdict(list)
+    for e in ctx.events:
+        if e.cls == "scale_in":
+            adds_by_day[e.fill.trade_date].append(e)
+            if e.adverse_add:
+                adv_by_day[e.fill.trade_date] += e.opened_qty
+    low = {"fills": 0, "units": 0, "adverse_fills": 0, "adverse_units": 0}
     for d in sdays:
         cash, carried = series[d]
         proxy = 0.0
@@ -986,7 +1070,16 @@ def margin_trap(ctx: Ctx, ledger: list[LedgerRow], ledger_before: Optional[Ledge
                 loss_est += pl
                 loser_syms[sym] = pl
         ratio = _r(proxy / cash, 3) if cash > 0 else None
-        series_out.append({"date": d.isoformat(), "cash": _r(cash), "carried": carried})
+        series_out.append({"date": d.isoformat(), "cash": _r(cash), "carried": carried,
+                           "short_notional_proxy": _r(proxy), "open_losers_count": losers,
+                           "known_loss_est": _r(loss_est), "adverse_add_units": adv_by_day.get(d, 0)})
+        if cash < thr:
+            for ae in adds_by_day.get(d, ()):
+                low["fills"] += 1
+                low["units"] += ae.opened_qty
+                if ae.adverse_add:
+                    low["adverse_fills"] += 1
+                    low["adverse_units"] += ae.opened_qty
         proxies.append(proxy)
         if ratio is not None:
             ratios.append(ratio)
@@ -1019,7 +1112,8 @@ def margin_trap(ctx: Ctx, ledger: list[LedgerRow], ledger_before: Optional[Ledge
                       "loss_at_first_trap_est": _r(at_trap), "final_closed_pnl": _r(final),
                       "growth": _r(final - at_trap)}
     out["trap"].update({"days": len(trap_days), "days_list": trap_days[: cfg.analytics_max_rows],
-                        "loss_growth_est": growth, "lots_unmarked": unmarked})
+                        "loss_growth_est": growth, "lots_unmarked": unmarked,
+                        "adds_on_low_cash": low})
     return out
 
 

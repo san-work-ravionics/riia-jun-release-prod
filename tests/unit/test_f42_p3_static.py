@@ -107,8 +107,11 @@ def test_page_ids_and_placeholder_removed():
 def test_bindings_and_inline_handlers():
     handlers = set(re.findall(r'on(?:click|change)="(taAn\w+)\(', HTML))
     bound = set(re.findall(r"window\.(taAn\w+)\s*=\s*\1;", MAIN))
-    assert handlers == {"taAnFromChanged", "taAnToggleEstimate", "taAnRefresh", "taAnToggleInfo"}
-    assert bound == handlers | {"taAnSpotToggle"}      # F42 P4: bound for the card's ontoggle attribute
+    assert handlers == {"taAnFromChanged", "taAnToggleEstimate", "taAnRefresh", "taAnToggleInfo",
+                        "taAnSgExpandAll", "taAnSgCollapseAll"}      # F42 P6: Suggestions toolbar buttons
+    # F42 P4 ontoggle attribute; F42 P6 handlers written by the renderers (picker, card toggle, tables)
+    assert bound == handlers | {"taAnSpotToggle", "taAnChainPick", "taAnSgToggle", "taAnFullToggle",
+                                "taAnDetailBToggle"}
     for n in bound:
         assert re.search(rf"export (async )?function {n}\b", JS), n
     assert "from './trade-analytics.js'" in MAIN
@@ -150,7 +153,10 @@ def test_no_banned_patterns_and_parallel_independent_loading():
 
 
 _SAFE = ("_esc", "_num", "_pnl", "_pct", "_cls", "_dash", "_badge", "_kpi", "_kpis", "_tbl", "_pnlCell",
-         "_list", "_note", "_unavail", "_quality", "_infoBlock", "_defs", "_ruleCard", "_th", "_td")
+         "_list", "_note", "_unavail", "_quality", "_infoBlock", "_defs", "_ruleCard", "_th", "_td",
+         # F42 P6 helpers: attribute escape, compact numeric formatters, widgets, builders over escaped parts
+         "_ea", "_f1", "_numShort", "_pnlShort", "_pctShort", "_ratioShort", "_ck", "_html", "_tip", "_pill",
+         "_unavailText", "_stopsTable", "_dlabel")
 
 
 def _template_exprs(js: str) -> list[str]:

@@ -27,6 +27,10 @@ _VETO_RULES = ("max_trades_per_day", "qty_cap_per_expiry", "margin_headroom_floo
                "expiry_proximity_entries", "counter_move_entries")
 SPOT_RULE_IDS = ("bias_limit", "expiry_proximity_entries", "counter_move_entries",
                  "bias_hedge_illustrative")
+# Every rule id the Suggestions payload can carry (entry-rule modules above + spot-linked rules + stop discipline).
+# The dashboard's _RULE_COPY map must have exactly these keys (checked by test_f42_p6_backend).
+RULE_IDS = ("max_trades_per_day", "qty_cap_per_expiry", "margin_headroom_floor", "stop_discipline",
+            "no_averaging_down", "cooling_off_after_loss", *SPOT_RULE_IDS)
 _CAVEATS = ["In-sample what-if on your own history; no second-order effects (the book is not re-simulated).",
             "Gross of charges; open slices of vetoed fills are reported as units, not priced."]
 

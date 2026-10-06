@@ -189,6 +189,9 @@ class TradeAnalysisSettings(BaseSettings):
     analytics_min_timestamp_coverage: float = 0.8
     analytics_max_rows: int = 200
     observation_high_churn_pct: float = 50.0
+    # F42 P6 build-up chain story: chains that carry per-fill steps, and the per-chain step budget.
+    chain_story_top_n: int = 3
+    chain_steps_max: int = 40
     # F42 P3 advisory: thresholds formerly hard-coded in the analytics modules (defaults unchanged).
     holding_bucket_edges_minutes: list[int] = [5, 30, 120]   # same-day holding bucket edges
     spot_stale_days: int = 5                # spot history older than this (days) => market-turn "stale"
@@ -344,6 +347,20 @@ class TradeAnalysisSettings(BaseSettings):
     def _threshold_non_negative(cls, v: float) -> float:
         if v < 0:
             raise ValueError("thresholds must be >= 0")
+        return v
+
+    @field_validator("chain_story_top_n")
+    @classmethod
+    def _chain_top_n_bounds(cls, v: int) -> int:
+        if not 1 <= v <= 5:
+            raise ValueError("chain_story_top_n must be within 1..5")
+        return v
+
+    @field_validator("chain_steps_max")
+    @classmethod
+    def _chain_steps_bounds(cls, v: int) -> int:
+        if not 5 <= v <= 100:
+            raise ValueError("chain_steps_max must be within 5..100")
         return v
 
     @model_validator(mode="after")
