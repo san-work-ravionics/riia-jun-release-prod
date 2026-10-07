@@ -91,7 +91,7 @@ import { loadStudy } from './study.js';
 import { loadExperiment, fetchExpData, switchExpTab } from './experiment.js';
 import { loadTradeAnalysis, taSetUnderlying, taSetExpiryMonth, taSetIncludeClosed, taRefresh, taSwitchTab } from './trade-analysis.js';
 import { taAnRefresh, taAnFromChanged, taAnToggleEstimate, taAnToggleInfo, taAnSpotToggle,
-  taAnChainPick, taAnSgExpandAll, taAnSgCollapseAll, taAnSgToggle, taAnFullToggle, taAnDetailBToggle } from './trade-analytics.js';
+  taAnChainPick, taAnSgExpandAll, taAnSgCollapseAll, taAnSgToggle, taAnDetailBToggle } from './trade-analytics.js';
 import { taImpFilesChosen, taImpUpload, taImpSetFilter, taImpPage, taImpRefresh, taImpDelete, taSampleLoad, taSampleRemove } from './trade-import.js';
 import { loadHedgeWorkflow, hwGoToStep, hwSelectInstrument, hwSelectPortfolio, hwRefreshStep } from './hedge-workflow.js';
 import { hwToggleHedged, hwSelectStrategy, hwRerunAdvisor } from './hedge-workflow-recommendation.js';
@@ -185,7 +185,6 @@ window.taAnChainPick = taAnChainPick;     // F42 P6 — build-up chain picker (r
 window.taAnSgExpandAll = taAnSgExpandAll; // F42 P6 — Suggestions: Expand all / Collapse all / remembered open-state
 window.taAnSgCollapseAll = taAnSgCollapseAll;
 window.taAnSgToggle = taAnSgToggle;
-window.taAnFullToggle = taAnFullToggle;   // F42 P6 — legacy "Full data tables (11)" lazy render
 window.taAnDetailBToggle = taAnDetailBToggle;   // F42 P6 — Table B top 10 / show all
 
 // My Portfolio CTA — navigates to the Hedge Workflow (Exposure step) from Overview.

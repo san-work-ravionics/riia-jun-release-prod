@@ -57,7 +57,6 @@ const _cache = { overtrading: null, buildup: null, margintrap: null, suggestions
 let _chainSel = 0;          // chain picker position (index into the story chains)
 const _sgOpen = new Set();  // Suggestions cards the user opened (rule ids); cleared when the filter scope changes
 let _sgScope = null;        // the _query() the Set belongs to
-let _fullOpen = false;      // legacy "Full data tables" card is open
 let _detailBAll = false;    // Table B shows every row instead of the top 10
 
 // ── tiny html helpers (all inputs escaped or numeric) ─────────────────────────────
@@ -799,66 +798,6 @@ export function taAnDetailBToggle() {
   setEl('ta-an-detail-b', _tableB());
 }
 
-// ── Legacy "Full data tables (11)": the original tables, rendered lazily from the cache ──
-
-const _tblByExpiry = d => _tbl('By expiry', ['Expiry', 'Fills', 'Closed', 'Win rate', 'P&L'],
-  (d.by_expiry || []).map(r => [_esc(r.key), _num(r.fills), _num(r.closed_trades), _pct(r.win_rate), _pnlCell(r.pnl)]));
-const _tblByUnderlying = d => _tbl('By underlying', ['Underlying', 'Fills', 'Closed', 'Win rate', 'P&L'],
-  (d.by_underlying || []).map(r => [_esc(r.key), _num(r.fills), _num(r.closed_trades), _pct(r.win_rate), _pnlCell(r.pnl)]));
-const _tblHolding = h => _tbl(`Holding time${h.median_minutes != null ? ` (same-day median ${_num(h.median_minutes, 1)} min)` : ''}`,
-  ['Bucket', 'Closed trades'], (h.buckets || []).map(r => [_esc(r.label), _num(r.count)]));
-const _tblBursts = b => b.available
-  ? _tbl(`Bursts (${_num(b.count)}) · re-entries within window after a loss: ${_num((b.reentries_after_loss || {}).count)} `
-    + `(P&L ${_pnl((b.reentries_after_loss || {}).pnl)})`, ['Date', 'Start', 'Fills', 'Symbols', 'P&L'],
-  (b.top || []).map(r => [_esc(r.date), _dash(r.start), _num(r.fills), _num(r.symbols_count), _pnlCell(r.pnl)]), 'No bursts')
-  : _note(`Bursts and re-entries: ${_REASONS[b.reason] || 'not available'}`);
-const _tblWeekly = d => _tbl('Per week', ['ISO week', 'Fills', 'Active days', 'Closed trades'],
-  (d.weekly || []).map(r => [_esc(r.week), _num(r.fills), _num(r.active_days), _num(r.closed_trades)]));
-const _tblBySide = w => _tbl('Win / loss by side', ['Side', 'Closed', 'Win rate', 'P&L'],
-  (w.by_side || []).map(r => [_esc(r.key), _num(r.n), _pct(r.win_rate), _pnlCell(r.pnl)]));
-const _tblChains = d => _tbl('Worst position chains (flat to flat)',
-  ['Symbol', 'Expiry', 'Side', 'Opened', 'Closed', 'Peak qty', 'Adds', 'Adverse adds', 'P&L (measured)', 'Status'],
-  (d.chains || []).map(r => [_esc(r.symbol), _dash(r.expiry_ym), _esc(r.side), _dash(r.open_date), _dash(r.close_date),
-    _num(r.peak_qty), _num(r.adds), _num(r.adverse_adds), _pnlCell(r.pnl_measured),
-    r.still_open ? 'open' : (r.pnl_estimated != null ? `expiry est. ${_pnl(r.pnl_estimated)}` : 'closed')]));
-const _tblFillClasses = ev => _tbl('Fill classes', ['Open new', 'Scale in', 'Scale out', 'Close', 'Flip'],
-  [[_num(ev.open_new), _num(ev.scale_in), _num(ev.scale_out), _num(ev.close), _num(ev.flip)]]);
-const _tblStreaks = d => _tbl('Debit streaks', ['From', 'To', 'Days', 'Net outflow', 'Cash at end'],
-  (d.debit_streaks || []).map(r => [_esc(r.start), _esc(r.end), _num(r.days), _pnl(r.net_outflow), _pnl(r.cash_at_end)]), 'No streaks');
-const _tblTrapDays = t => _tbl('Low-cash days with open losers (proxy; no causal claim)',
-  ['Date', 'Cash', 'Open losers', 'Short notional proxy', 'Proxy / cash', 'Known loss (est.)'],
-  (t.days_list || []).map(r => [_esc(r.date), _pnl(r.cash), _num(r.open_losers_count), _num(r.short_notional_proxy),
-    _num(r.proxy_to_cash_ratio, 2), _pnlCell(r.known_loss_est)]), 'No such days');
-
-function _fullTablesHtml() {
-  const ot = _cache.overtrading, bu = _cache.buildup, mt = _cache.margintrap;
-  const off = n => `<div class="kpi-sub">${_esc(n)} could not be loaded.</div>`;
-  let h = '';
-  if (!ot) h += off('Overtrading tables');
-  else if (ot.available) {
-    h += _tblByExpiry(ot) + _tblByUnderlying(ot) + _tblHolding(ot.holding || {}) + _tblBursts(ot.bursts || {})
-      + _tblWeekly(ot) + _tblBySide(ot.winloss || {});
-  } else h += _unavail(ot);
-  if (!bu) h += off('Build-up tables');
-  else if (bu.available) h += _tblChains(bu) + _tblFillClasses(bu.events || {});
-  else h += _unavail(bu);
-  if (!mt) h += off('Margin trap tables');
-  else if (mt.available) {
-    if ((mt.ledger || {}).available) h += _tblStreaks(mt) + _tblTrapDays(mt.trap || {});
-    h += _stopsTable(mt.stops || {});
-  } else h += _unavail(mt);
-  return h;
-}
-
-function _renderFullTablesIfOpen() {
-  if (_fullOpen) setEl('ta-an-fulltables-body', _fullTablesHtml());
-}
-
-export function taAnFullToggle(open) {
-  _fullOpen = !!open;
-  if (_fullOpen) setEl('ta-an-fulltables-body', _fullTablesHtml());
-}
-
 
 function _ruleCard(r) {
   const w = r.what_if;
@@ -1267,7 +1206,6 @@ export async function loadAnalyticsPanels() {
     }
   });
   try { _renderBehaviourDetails(); } catch (e) { setEl('ta-an-detail-a', '— could not be loaded'); setEl('ta-an-detail-b', '— could not be loaded'); }
-  try { _renderFullTablesIfOpen(); } catch (e) { setEl('ta-an-fulltables-body', '— could not be loaded'); }
   setEl('ta-an-status', ok === keys.length ? '' : `${_num(keys.length - ok)} of ${_num(keys.length)} analytics panels could not be loaded`);
 }
 

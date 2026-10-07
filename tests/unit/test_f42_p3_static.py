@@ -110,7 +110,7 @@ def test_bindings_and_inline_handlers():
     assert handlers == {"taAnFromChanged", "taAnToggleEstimate", "taAnRefresh", "taAnToggleInfo",
                         "taAnSgExpandAll", "taAnSgCollapseAll"}      # F42 P6: Suggestions toolbar buttons
     # F42 P4 ontoggle attribute; F42 P6 handlers written by the renderers (picker, card toggle, tables)
-    assert bound == handlers | {"taAnSpotToggle", "taAnChainPick", "taAnSgToggle", "taAnFullToggle",
+    assert bound == handlers | {"taAnSpotToggle", "taAnChainPick", "taAnSgToggle",
                                 "taAnDetailBToggle"}
     for n in bound:
         assert re.search(rf"export (async )?function {n}\b", JS), n

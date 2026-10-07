@@ -33,7 +33,7 @@ NEW_IDS = (
     + [f"ta-an-{k}-what" for k in ("overtrading", "buildup", "margintrap", "suggestions")]
     + [f"ta-an-{k}-how" for k in ("overtrading", "buildup", "margintrap", "suggestions")]
     + ["ta-cv-holding", "ta-an-overtrading-note", "ta-bu-chain-sel", "ta-an-buildup-glossary", "ta-an-margintrap-caveat",
-       "ta-panel-details", "ta-an-detail-a", "ta-an-detail-b", "ta-an-fulltables", "ta-an-fulltables-body",
+       "ta-panel-details", "ta-an-detail-a", "ta-an-detail-b",
        "ta-an-sg-summary", "ta-an-sg-obs", "ta-an-sg-grid", "ta-an-sg-host", "ta-sg-expand-all", "ta-sg-collapse-all"])
 KEPT_IDS = (["ta-panel-overtrading", "ta-panel-buildup", "ta-panel-margintrap", "ta-panel-suggestions", "ta-panel-marketturn",
              "ta-panel-spotpnl", "ta-cv-weekly", "ta-cv-buildup", "ta-cv-cash", "ta-an-recon", "ta-an-status", "ta-empty-cta",
@@ -49,14 +49,12 @@ def test_ids_exist_once(i):
 
 def test_panel_order_and_details_hosts():
     pos = [HTML.index(f'id="{i}"') for i in ("ta-panel-overtrading", "ta-panel-buildup", "ta-panel-margintrap",
-                                             "ta-panel-details", "ta-an-fulltables")]
+                                             "ta-panel-details")]
     assert pos == sorted(pos)
     assert 'data-ta-tab="behaviour"' in re.search(r'<[^>]*id="ta-panel-details"[^>]*>', HTML).group(0)
     assert 'data-ta-tab="suggestions"' in re.search(r'<[^>]*id="ta-panel-suggestions"[^>]*>', HTML).group(0)
     assert 'class="ta-cq"' in HTML and re.search(r'id="ta-an-sg-host" class="ta-cq"', HTML)
-    ft = re.search(r'<details[^>]*id="ta-an-fulltables"[^>]*>', HTML).group(0)
-    assert " open" not in ft and "taAnFullToggle(this.open)" in ft
-    assert "Full data tables (11)" in HTML
+    assert "ta-an-fulltables" not in HTML and "Full data tables" not in HTML       # P7: legacy tables removed
 
 
 def test_static_copy_present():
@@ -130,7 +128,7 @@ def test_charts_use_local_plugins_only():
 def test_cache_lifecycle_order_in_loader():
     body = _func("loadAnalyticsPanels")
     order = [body.index(s) for s in ("++_seq", "_cache[k] = null", "Promise.allSettled", "if (seq !== _seq) return",
-                                     "_cache[key] =", "_RENDER[key](data)", "_renderBehaviourDetails()", "_renderFullTablesIfOpen()")]
+                                     "_cache[key] =", "_RENDER[key](data)", "_renderBehaviourDetails()")]
     assert order == sorted(order) and len(set(order)) == len(order)
     assert "taSwitchTab" not in body
 
@@ -146,7 +144,7 @@ def test_cache_keys_and_scope_reset():
 # ── bindings ──────────────────────────────────────────────────────────────────────────────────
 
 def test_p6_handlers_bound_exported_and_resolved():
-    names = ["taAnChainPick", "taAnSgExpandAll", "taAnSgCollapseAll", "taAnSgToggle", "taAnFullToggle", "taAnDetailBToggle"]
+    names = ["taAnChainPick", "taAnSgExpandAll", "taAnSgCollapseAll", "taAnSgToggle", "taAnDetailBToggle"]
     for n in names:
         assert re.search(rf"window\.{n} = {n};", MAIN), n
         assert re.search(rf"export function {n}\b", JS), n

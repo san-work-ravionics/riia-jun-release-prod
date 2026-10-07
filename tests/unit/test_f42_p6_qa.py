@@ -1094,34 +1094,6 @@ def _money(s: str) -> float | None:
 
 
 @needs_node
-def test_all_eleven_legacy_tables_are_reachable_with_their_data(harness):
-    html = harness["fullHtml"]
-    assert html.count("<table") == 11
-    titles = re.findall(r'font-weight:700;font-size:12px">([^<]*)</div><div class="tbl-wrap"', html)
-    assert len(titles) == 11
-    for needle in ("2026-08", "2026-07", "2026-09",                    # by expiry
-                   "BANKNIFTY",                                          # by underlying
-                   "5-30m", "30m-2h",                                    # holding buckets
-                   "2026-08-10", "10:05",                                # bursts
-                   "2026-W27", "2026-W37",                               # per week (ISO key kept, column renamed)
-                   "long", "short",                                      # by side
-                   "NIFTYAAA", "BANKNIFTYCCC",                           # chains
-                   "Open new", "Scale in",                               # fill classes
-                   "2026-08-04",                                         # debit streak start
-                   "1.50x"):                                             # stops
-        assert needle in html, needle
-    assert "ISO week" in html and "closed long trades are excluded" in html and "estimated" in html
-    # row counts of the legacy tables equal the payload list sizes
-    from tests.unit.test_f42_p6_js import _ok
-    ok = _ok()
-    tbls = html.split('<div style="margin:10px 0 4px;font-weight:700;font-size:12px">')[1:]
-    rows = {t.split("</div>")[0][:14]: len(re.findall(r"<tr>", t.split("<tbody>")[1].split("</tbody>")[0])) for t in tbls}
-    assert rows["By expiry"] == len(ok["overtrading"]["by_expiry"]) and rows["By underlying"] == len(ok["overtrading"]["by_underlying"])
-    assert rows["Per week"] == len(ok["overtrading"]["weekly"]) and rows["Worst position"] == len(ok["buildup"]["chains"])
-    assert rows["Debit streaks"] == len(ok["margintrap"]["debit_streaks"]) and next(v for k, v in rows.items() if k.startswith("Win / loss")) == 2
-
-
-@needs_node
 def test_table_b_rows_sorted_note_present_and_null_pnl_rules(harness):
     for key in ("okB", "bAll", "bTop"):
         b = harness[key]

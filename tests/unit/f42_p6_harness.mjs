@@ -122,12 +122,6 @@ const B2 = el('ta-an-detail-b'); out.B2 = { n: [...B2.matchAll(/<tr><td[^>]*><sp
 T.taAnDetailBToggle();
 { // sort ascending by P&L numerically
   const p = base(); await load(p); const html = el('ta-an-detail-b'); out.Bsort = [...html.matchAll(/class="(neg|pos)">([^<]*)</g)].map(m => m[2]).slice(0, 5); }
-out.fullClosed = el('ta-an-fulltables-body');
-T.taAnFullToggle(true);
-const F = el('ta-an-fulltables-body');
-out.full = { tables: count(F, /<table/g), titles: ['By expiry', 'By underlying', 'Holding time', 'Bursts', 'Per week', 'Win / loss by side', 'Worst position chains', 'Fill classes', 'Debit streaks', 'Low-cash days with open losers', 'Planned vs actual'].filter(t => F.includes(t)).length,
-  isoWeek: F.includes('ISO week'), stopHeads: ['Multiple', 'Trades beyond', 'Loss beyond stop', 'Saved if stopped (est.)', '% of total loss', 'Open beyond (est.)'].filter(h => F.includes(h)).length, note: F.includes('closed long trades are excluded'), badge: F.includes('estimated') };
-T.taAnFullToggle(false);
 // failure matrix
 { const p = base(); g.fail = new Set(['margin-trap']); await load(p, 2);
   out.failMt = { B: el('ta-an-detail-b'), grid: el('ta-an-sg-grid'), summary: el('ta-an-sg-summary'), margin: el('ta-an-margintrap-body'), mtHead: el('ta-an-margintrap-headline'), chart: !!g.charts['ta-cv-cash'] }; g.fail = new Set(); }
@@ -186,12 +180,12 @@ out.noTabCalls = true;
   p.margintrap.reason = X; p.overtrading.message = X;
   p.suggestions.rules.forEach(r => { r.id = Q + r.id; r.title = X; r.threshold_basis = X; r.status = Q; r.evidence = [{ label: X, value: X, source: X }]; r.caveats = [X]; r.parameter = { name: X, value: X, unit: X, lots: 1 }; });
   p.suggestions.observations = [{ id: 'o', text: X, evidence: [] }]; p.suggestions.disclaimer = X;
-  await load(p, 17); T.taAnFullToggle(true); T.taAnSgExpandAll();
+  await load(p, 17); T.taAnSgExpandAll();
   const all = Object.values(g.els).join('\n').replace(/="[^"]*"/g, '=""');   // attribute values are escaped separately (rawAttr)
   const allWithAttrs = Object.values(g.els).join('\n');
   out.xss = { rawImg: /<img/i.test(allWithAttrs), escapedImg: allWithAttrs.includes('&lt;img'), rawAttr: /="[^"]*"><img/i.test(allWithAttrs), onerrorTag: /<[a-z]+ [^>]*onerror=/i.test(all), onerrorCtx: (all.match(/.{60}<[a-z]+ [^>]*onerror=.{30}/i) || [''])[0], n: Object.keys(g.els).length };
   const cfgs = JSON.stringify(Object.values(g.charts).map(c => c.data.labels)); out.xss.chartLabelsPlain = !/&lt;/.test(cfgs);
-  T.taAnFullToggle(false); }
+  }
 
 // ── 8. stale response guard ───────────────────────────────────────────────────────────────
 { reset(); const first = base(), second = base(); first.overtrading.activity.fills_total = 111; second.overtrading.activity.fills_total = 222;

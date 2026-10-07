@@ -48,9 +48,9 @@ const grabAll = async (p, run) => {
   const parts = {};
   const snap = tag => { for (const [k, v] of Object.entries(g.els)) parts[tag + ':' + k] = v; };
   snap('base');
-  T.taAnFullToggle(true); T.taAnSgExpandAll(); T.taAnDetailBToggle(); snap('open');
+  T.taAnSgExpandAll(); T.taAnDetailBToggle(); snap('open');
   for (let i = 0; i < 3; i++) { T.taAnChainPick(i); snap('pick' + i); }
-  T.taAnDetailBToggle(); T.taAnFullToggle(false); T.taAnSgCollapseAll();
+  T.taAnDetailBToggle(); T.taAnSgCollapseAll();
   return parts;
 };
 const tokenise = html => {   // quote-aware tag/attribute tokeniser: [{tag, attrs:[[name,value]]}]
@@ -181,7 +181,6 @@ out.scope = {};
 
 // ── 9. details tables, legacy tables ──────────────────────────────────────────────────────────────────
 reset(); g.filters = { underlying: 'ALL', month: '' }; await load(base(), run++);
-T.taAnFullToggle(true); out.fullHtml = el('ta-an-fulltables-body');
 out.defs = { mt: el('ta-an-margintrap-def'), sg: el('ta-an-suggestions-def'), mtBody: el('ta-an-margintrap-body'), mtHead: el('ta-an-margintrap-headline') };
 T.taAnDetailBToggle(); out.bAll = el('ta-an-detail-b'); T.taAnDetailBToggle(); out.bTop = el('ta-an-detail-b');
 out.bAllStateAfter = el('ta-an-detail-b');
@@ -207,9 +206,8 @@ out.noTab = { grid: el('ta-an-sg-grid'), sum: el('ta-an-sg-summary'), stops: /Pl
   globalThis.document = { getElementById: () => ({ style: {}, checked: false, value: '' }) }; }
 
 // ── 11. whole-render text for the wording scan ──────────────────────────────────────────────────────────────
-reset(); await load(base(), run++); T.taAnFullToggle(true); T.taAnSgExpandAll(); T.taAnDetailBToggle();
+reset(); await load(base(), run++); T.taAnSgExpandAll(); T.taAnDetailBToggle();
 out.allText = Object.fromEntries(Object.entries(g.els));
-T.taAnFullToggle(false);
 { const c = g.charts; out.chartStrings = JSON.stringify(Object.fromEntries(Object.entries(c).map(([k, v]) => [k, { labels: v.data.labels, ds: v.data.datasets.map(d => d.label) }]))); }
 
 // ── 12. extreme / odd data renders ───────────────────────────────────────────────────────────────────────────
@@ -235,7 +233,6 @@ for (const [name, mut] of [['chainsObject', p => { p.buildup.chains = {}; }], ['
   ['daysListObject', p => { p.margintrap.trap.days_list = {}; }], ['rulesObject', p => { p.suggestions.rules = {}; }]]) {
   const p = base(); mut(p); reset();
   try { await load(p, run++); out.badShape[name] = { threw: false, status: el('ta-an-status'), A: el('ta-an-detail-a').length, B: el('ta-an-detail-b').length }; } catch (e) { out.badShape[name] = { threw: String(e) }; }
-  try { T.taAnFullToggle(true); T.taAnFullToggle(false); } catch (e) { out.badShape[name].fullThrew = String(e); }
 }
 // sparse but available
 { const p = base(); p.overtrading = { available: true, quality: {}, weekly: [], activity: {}, winloss: {}, churn: {}, charges: {}, holding: {}, bursts: {} };

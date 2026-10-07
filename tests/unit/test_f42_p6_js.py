@@ -366,13 +366,10 @@ def test_stale_response_does_not_overwrite_newer_render(out):
     assert "222" in out["stale2"]["head"] and "111" not in out["stale2"]["head"]
 
 
-def test_full_tables_lazy_and_single_stops_builder(out):
-    assert out["fullClosed"] == ""
-    f = out["full"]
-    assert f["tables"] == 11 and f["titles"] == 11 and f["isoWeek"]
-    assert f["stopHeads"] == 6 and f["note"] and f["badge"]
-    assert len(re.findall(r"function _stopsTable\(", JS)) == 1                           # one builder, two call sites
-    assert len(re.findall(r"_stopsTable\(", JS)) == 3
+def test_legacy_tables_removed_and_single_stops_builder():
+    assert "_fullTablesHtml" not in JS and "taAnFullToggle" not in JS and "_renderFullTablesIfOpen" not in JS
+    assert len(re.findall(r"function _stopsTable\(", JS)) == 1                           # one builder, one call site (Suggestions card)
+    assert len(re.findall(r"_stopsTable\(", JS)) == 2
 
 
 # ── suggestions ───────────────────────────────────────────────────────────────────────────────
