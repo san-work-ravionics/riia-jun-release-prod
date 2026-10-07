@@ -75,13 +75,12 @@ const _badge = kind => `<span style="font-family:var(--fm);font-size:9px;padding
 // precision value goes in the widget's title attribute).  Indian grouping: K, L (lakh), Cr (crore).
 const _sgn = n => n < 0 ? '-' : '';
 const _f1 = n => n.toFixed(1);
-const _html = h => h;   // marks a string already built from escaped/numeric parts (kept out of the template-safety scan)
 function _scaled(a) {
   if (a >= 1e10) return '999Cr+';   // beyond 1,000 Cr: the full value is in the widget title
   if (a < 1e3) return `${Math.round(a)}`;
   if (a < 1e5) return `${(a / 1e3).toFixed(1)}K`;
   if (a < 1e7) return `${(a / 1e5).toFixed(1)}L`;
-  return a < 1e9 ? `${_f1(a / 1e7)}Cr` : `${Math.round(a / 1e7)}Cr`;
+  return a < 99.95e7 ? `${_f1(a / 1e7)}Cr` : `${Math.round(a / 1e7)}Cr`;   // >= 99.95 Cr: no decimals (stays <= 8 chars)
 }
 export function _numShort(v) {
   if (v == null || Number.isNaN(Number(v))) return '—';
@@ -389,7 +388,8 @@ function _storyChains(d) {
   return ranked.length ? ranked : all.slice(0, 3);
 }
 
-const _size = (c, lotsOk) => lotsOk && c.peak_lots != null ? `${_num(c.peak_lots, 1)} lots` : `${_num(c.peak_qty)} units`;
+// size is always UNITS; lots (when the lot size is known) appear in brackets / hover text only
+const _size = c => `${_num(c.peak_qty)} units${c.peak_lots != null ? ` (${_num(c.peak_lots, 1)} lots)` : ''}`;
 
 function _headlineBuildup(d) {
   const ct = d.chain_totals || {}, ch = _storyChains(d), w = ch[0];
@@ -399,9 +399,12 @@ function _headlineBuildup(d) {
     ? `${_num(adv)} of your ${_num(ct.count)} position chains were added to at a worse price.`
     : `None of your ${_num(ct.count)} position chains were added to at a worse price.`;
   if (w) {
-    const lotsOk = w.peak_lots != null;
+    const expiryOnly = !w.still_open && w.pnl_estimated != null;
+    const end = w.still_open ? ' and is still open'
+      : (expiryOnly ? ` and was closed only by the expiry estimate (measured P&L ${_pnl(w.pnl_measured)}, expiry estimate ${_pnl(w.pnl_estimated)})`
+        : ` and closed at ${_pnl(w.pnl_measured)}`);
     t += ` Worst chain: ${_esc(w.symbol)} (${_esc(w.side)}) — you added ${_num(w.adds)} times, ${_num(w.adverse_adds)} at a worse price,`
-      + ` the position peaked at ${_size(w, lotsOk)}${w.still_open ? ' and is still open' : ` and closed at ${_pnl(w.pnl_measured)}`}.`;
+      + ` the position peaked at ${_size(w)}${end}.`;
   }
   const ev = d.events || {};
   const entries = (ev.open_new || 0) + (ev.scale_in || 0);
@@ -430,29 +433,28 @@ function _renderChainLadder(c) {
   setEl('ta-an-buildup-chain-note', '');
   if (!c) return;
   const steps = c.steps || [];
-  const lotsOk = steps.length > 0 && steps.every(s => s.lots_after != null);
   let labels, sizes, colors, radius, tipSteps = null;
-  const unit = (steps.length ? lotsOk : c.peak_lots != null) ? 'lots' : 'units';
   if (steps.length) {
     labels = steps.map(_stepLabel);
-    sizes = steps.map(s => lotsOk ? s.lots_after : Math.abs(s.pos_after));
+    sizes = steps.map(s => Math.abs(s.pos_after));
     colors = steps.map(_stepColor);
     radius = steps.map(s => s.adverse ? 6 : (s.cls === 'scale_in' ? 5 : 3));
     tipSteps = steps;
   } else {   // schematic fallback: open -> peak -> close; never an empty chart
-    const peak = c.peak_lots != null ? c.peak_lots : c.peak_qty;
+    const peak = c.peak_qty;
     labels = [c.open_date || 'open', 'peak size', c.close_date || 'now'];
     sizes = [0, peak, c.still_open ? peak : 0];
     colors = ['#8C877A', '#8C877A', '#8C877A'];
     radius = [3, 3, 3];
     setEl('ta-an-buildup-chain-note', _esc('Per-fill detail needs a newer server; showing a three-point outline.'));
   }
-  const datasets = [{ label: `Position size (${unit})`, data: sizes, stepped: 'after',
+  const datasets = [{ label: 'Position size (units)', data: sizes, stepped: 'after',
     borderColor: '#0056B8', borderWidth: 1.5, pointBackgroundColor: colors, pointBorderColor: colors, pointRadius: radius, fill: false }];
   const last = steps.length ? steps[steps.length - 1] : null;
-  if (last && last.pos_after === 0) {   // the close: an x point carrying the chain P&L
+  const expiryOnly = !c.still_open && c.pnl_estimated != null && last && last.pos_after !== 0;
+  if (last && (last.pos_after === 0 || expiryOnly)) {   // the close: an x point carrying the chain P&L
     const idx = steps.length - 1;
-    datasets.push({ label: `Closed: ${_pnlShort(c.pnl_measured)}`, data: sizes.map((v, i) => i === idx ? v : null), showLine: false,
+    datasets.push({ label: expiryOnly ? `Closed by expiry estimate: ${_pnlShort(c.pnl_estimated)}` : `Closed: ${_pnlShort(c.pnl_measured)}`, data: sizes.map((v, i) => i === idx ? v : null), showLine: false,
       pointStyle: 'crossRot', pointRadius: 9, pointBorderWidth: 2, pointBorderColor: '#1A1814', borderColor: '#1A1814' });
   }
   _chart('ta-cv-buildup', {
@@ -465,11 +467,12 @@ function _renderChainLadder(c) {
           if (!s) return [];
           const kind = _CLS_TEXT[s.cls] || s.cls;
           const out = [`${_dash(kind)}: ${_num(Math.abs(s.qty_delta))} units at ${_num(s.price, 2)}`];
+          if (s.lots_after != null) out.push(`position after: ${_num(Math.abs(s.pos_after))} units (${_num(s.lots_after, 1)} lots)`);
           if (s.avg_before != null) out.push(`your average before this fill: ${_num(s.avg_before, 2)}`);
           if (s.adverse) out.push(`added ${_num(s.worse_pct, 1)}% worse than your average`);
           return out;
         } } } },
-      scales: { x: { ..._axis, ticks: { ..._axis.ticks, maxTicksLimit: 10 } }, y: { ..._axis, beginAtZero: true, title: { display: true, text: unit, font: { size: 10 } } } } }),
+      scales: { x: { ..._axis, ticks: { ..._axis.ticks, maxTicksLimit: 10 } }, y: { ..._axis, beginAtZero: true, title: { display: true, text: 'units', font: { size: 10 } } } } }),
   });
   if (c.steps_truncated) {
     setEl('ta-an-buildup-chain-note', _esc(`Showing ${_num(steps.length)} of ${_num(c.steps_total)} fills (first, last and all adds at a worse price are kept).`));
@@ -493,7 +496,7 @@ function _renderBuildup(d) {
   setEl('ta-bu-chain-sel', '');
   setEl('ta-an-buildup-chain-note', '');
   if (!d.available) { _setUnavail('buildup', d); return; }
-  const av = d.averaging || {}, ct = d.chain_totals || {}, lots = d.lots || {};
+  const av = d.averaging || {}, ct = d.chain_totals || {};
   const advLots = av.adverse_add_lots != null ? ` (${_num(av.adverse_add_lots, 1)} lots)` : '';
   const kp = _kpis([
     _ck('Adds at a worse price', _numShort(av.adverse_add_fills), '', `${_pctShort(av.share_of_entries_pct)} of entries`,
@@ -506,10 +509,8 @@ function _renderBuildup(d) {
     _ck('Adds after a worse spot move', av.spot_adverse_adds == null ? '—' : _numShort(av.spot_adverse_adds), '', 'needs spot data',
       { title: 'Adds made after the market had already moved against the position since it was first opened.' }),
   ], 'c4');
-  const lotNote = _note(lots.lots_available ? `Lots from the Kite master (${_esc(lots.lots_basis)}, ${_pct(lots.coverage_pct)} of symbols)`
-    : 'Lots unavailable (Kite master not reachable): quantities shown in units.');
   _setHead('buildup', _headlineBuildup(d));
-  _setPanel('buildup', _quality(d) + kp + lotNote,
+  _setPanel('buildup', _quality(d) + kp,
     _defs(d, [['Adverse adds.', av], ['Chains.', d.chains_info], ['Timeline.', d.timeline_info]]));
   const ch = _storyChains(d);
   _chainSel = 0;
@@ -612,7 +613,10 @@ function _headlineMarginTrap(d) {
     s += ` On the first such day ${_num(g.symbols_n)} positions showed about ${_pnl(g.loss_at_first_trap_est)} of loss (estimate);`
       + ` the same positions closed at ${_pnl(g.final_closed_pnl)} in total.`;
   }
-  if (a) s += ` You added ${_num(a.adverse_fills)} fills at a worse price on low-cash days.`;
+  if (a) {
+    s += ` Separately, on all days with cash below ${thr} (with or without open losers) you made ${_num(a.fills)} fills that added to a position,`
+      + ` ${_num(a.adverse_fills)} of them at a worse price.`;
+  }
   if (_filterActive()) s += ' (cash: whole account; positions and adds: selected underlying/expiry)';
   return s;
 }
@@ -623,11 +627,11 @@ function _marginKpis(d) {
   const worst = (d.debit_streaks || []).reduce((m, r) => Math.max(m, r.days || 0), 0);
   const a = t.adds_on_low_cash;
   const items = [
-    _ck('Lowest cash', _pnlShort(c.min), _cls(c.min), `on ${_esc(c.min_date || '—')}`, { title: `Lowest ledger cash ${_pnl(c.min)} on ${_dash(c.min_date)}.` }),
+    _ck('Lowest cash', _pnlShort(c.min), _cls(c.min), `on ${_esc(c.min_date || '—')}`, { title: `Lowest ledger cash ${_pnl(c.min)}.` }),
     _ck(`Days below ${_pnlShort(c.threshold)}`, _numShort(c.days_below_threshold), '', `${_numShort(c.days_negative)} negative`,
       { title: `Days with ledger cash below ${_pnl(c.threshold)}; ${_num(c.days_negative)} of them negative.` }),
     _ck('Longest debit streak', `${_numShort(worst)}d`, '', `${_numShort((d.debit_streaks || []).length)} streaks`,
-      { title: 'Longest run of 3 or more days when more money went out than came in.' }),
+      { title: 'Longest run of consecutive days when more money went out than came in (the minimum run length is a setting).' }),
     _ck('Low-cash days with open losers', _numShort(t.days), '', 'proxy, no cause shown',
       { tag: 'est.', title: 'Days when ledger cash was below the level while at least one open position was at a loss (estimate).' }),
   ];
@@ -749,35 +753,36 @@ function _momentRows() {
   const ot = _cache.overtrading, bu = _cache.buildup, mt = _cache.margintrap;
   if (!ot) notes.push('bursts could not be loaded');
   else if (ot.available && (ot.bursts || {}).available) {
-    ((ot.bursts || {}).top || []).forEach(r => rows.push({ kind: 'Fast burst', when: `${_esc(r.date)}${r.start ? ` ${_esc(r.start)}` : ''}`,
+    ((ot.bursts || {}).top || []).forEach(r => rows.push({ kind: 'Fast burst', when: r.date + (r.start ? ' ' + r.start : ''),   // plain text: escaped once, in _tableB
       what: `${_num(r.fills)} fills in ${_num(r.symbols_count)} symbols`, pnl: r.pnl, basis: 'measured', sub: '' }));
   }
   if (!bu) notes.push('positions could not be loaded');
   else if (bu.available) {
-    (bu.chains || []).forEach(c => rows.push({ kind: 'Position', when: `${_dash(c.open_date)} → ${_dash(c.close_date || (c.still_open ? 'open' : null))}`,
-      what: `${_esc(c.symbol)} ${_esc(c.side)}, peak ${c.peak_lots != null ? `${_num(c.peak_lots, 1)} lots` : `${_num(c.peak_qty)} units`}, `
-        + `${_num(c.adds)} adds (${_num(c.adverse_adds)} at a worse price)`,
+    (bu.chains || []).forEach(c => rows.push({ kind: 'Position', when: (c.open_date || '—') + ' → ' + (c.close_date || (c.still_open ? 'open' : '—')),
+      what: c.symbol + ' ' + c.side + ', peak ' + _size(c) + `, ${_num(c.adds)} adds (${_num(c.adverse_adds)} at a worse price)`,
       pnl: c.pnl_measured, basis: 'measured', sub: c.pnl_estimated != null ? `expiry est. ${_pnl(c.pnl_estimated)}` : '' }));
   }
   if (!mt) notes.push('low-cash days could not be loaded');
   else if (mt.available) {
-    ((mt.trap || {}).days_list || []).forEach(r => rows.push({ kind: 'Low-cash day', when: _esc(r.date),
+    ((mt.trap || {}).days_list || []).forEach(r => rows.push({ kind: 'Low-cash day', when: r.date,
       what: `cash ${_pnl(r.cash)}, ${_num(r.open_losers_count)} open losers`, pnl: r.known_loss_est, basis: 'estimated', sub: '' }));
   }
   // keep a row unless its P&L is null AND its basis is estimated (a measured zero is always kept)
   return { rows: rows.filter(r => !(r.pnl == null && r.basis === 'estimated')).sort(_byPnl), notes };
 }
 
+const _bCells = r => [_pill(r.kind), _esc(r.when), _esc(r.what),
+  (r.pnl == null ? '—' : _pnlCell(r.pnl)) + (r.sub ? `<div class="kpi-sub">${_esc(r.sub)}</div>` : ''), _badge(r.basis)];
+
 function _tableB() {
   const { rows, notes } = _momentRows();
   if (!_cache.overtrading && !_cache.buildup && !_cache.margintrap) return '<div class="kpi-sub">— could not be loaded</div>';
   const shown = _detailBAll ? rows : rows.slice(0, 10);
-  const body = shown.map(r => `<tr>${[_pill(r.kind), _html(r.when), _html(r.what), `${r.pnl == null ? '—' : _pnlCell(r.pnl)}${r.sub ? `<div class="kpi-sub">${_esc(r.sub)}</div>` : ''}`,
-    _badge(r.basis)].map(_td).join('')}</tr>`).join('') || `<tr><td colspan="5" style="color:var(--t3);text-align:center">No notable moments</td></tr>`;
+  const body = shown.map(r => `<tr>${_bCells(r).map(_td).join('')}</tr>`).join('') || `<tr><td colspan="5" style="color:var(--t3);text-align:center">No notable moments</td></tr>`;
   const more = rows.length > 10
-    ? `<button onclick="taAnDetailBToggle()" style="margin:6px 0;padding:3px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);cursor:pointer;font-size:11px">${_detailBAll ? 'Show top 10' : `Show all ${_num(rows.length)}`}</button>` : '';
+    ? `<button onclick="taAnDetailBToggle()" style="margin:6px 0;padding:3px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);cursor:pointer;font-size:11px">${_detailBAll ? 'Show top 10' : `Show all ${_num(rows.length)} listed`}</button>` : '';
   return `<div style="font-weight:700;font-size:12px">Notable moments by P&amp;L</div>`
-    + `<div class="kpi-sub">The biggest bursts, positions and low-cash days, lowest P&amp;L first.</div>`
+    + `<div class="kpi-sub">The top bursts, the worst 10 positions the server returns and the low-cash days, lowest P&amp;L first.</div>`
     + `<div class="kpi-sub" style="font-weight:700">Rows overlap and are not additive: a burst&rsquo;s fills can sit inside a position, and a low-cash day&rsquo;s open losers are positions listed here. Do not add the rows up. No total is shown.</div>`
     + notes.map(_note).join('')
     + `<div class="ta-tbl-wrap"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>${_B_COLS.map(c => _tip(c[0], c[1])).join('')}</tr></thead><tbody>${body}</tbody></table></div>`
@@ -883,7 +888,7 @@ const _RULE_COPY = {
   max_trades_per_day: ['Daily entry cap', 'Days on which you opened more new entries than your typical busy day, and what those extra entries made or lost.'],
   cooling_off_after_loss: ['Pause after a loss', 'Entries made soon after a losing close, and how they turned out.'],
   no_averaging_down: ['Averaging down', 'Adds made at a worse price than your average entry, and how those slices closed.'],
-  stop_discipline: ['Stop at a multiple of premium', 'Closed short trades that lost more than 1x, 1.5x or 2x the premium received (one-sided estimate).'],
+  stop_discipline: ['Stop at a multiple of premium', 'Closed short trades that lost more than a set multiple of the premium received (one-sided estimate).'],
   qty_cap_per_expiry: ['Size per expiry', 'Expiries where your open size exceeded your usual maximum.'],
   margin_headroom_floor: ['Cash headroom', 'Entries made when ledger cash was already low.'],
   counter_move_entries: ['Entries against the day\'s move', 'Entries in the direction opposite to that day\'s spot move (needs spot data).'],
@@ -891,7 +896,12 @@ const _RULE_COPY = {
   bias_limit: ['Directional lean', 'Days when your book leaned strongly in one direction (needs spot data).'],
   bias_hedge_illustrative: ['Hedge bound (illustrative)', 'What a simple hedge would have bounded, as an upper estimate (needs spot data).'],
 };
-const _copy = r => _RULE_COPY[r.id] || [r.title, r.threshold_basis];
+const _copy = r => {
+  const c = _RULE_COPY[r.id] || [r.title, r.threshold_basis];
+  if (r.id !== 'stop_discipline') return c;
+  const m = (((_cache.margintrap || {}).stops || {}).rows || []).map(x => `${_num(x.multiple, 2)}x`);   // multiples come from config
+  return m.length ? [c[0], c[1].replace('a set multiple', m.join(', '))] : c;
+};
 
 const _SG_STATUS = { applicable: 'Applicable', not_triggered: 'Not triggered', illustrative: 'Illustrative', insufficient_data: 'Not enough data' };
 
@@ -949,6 +959,7 @@ function _sgCard(r, d) {
 
 function _renderSgGrid() {
   const d = _cache.suggestions;
+  if (!d) return;   // a load is in flight: keep the previous render
   if (!d || !d.available) { setEl('ta-an-sg-grid', ''); setEl('ta-an-sg-counts', ''); return; }
   const rules = d.rules || [];
   const n = k => rules.filter(r => r.status === k).length;
@@ -963,10 +974,12 @@ export function taAnSgToggle(el) {
   if (el.open) _sgOpen.add(id); else _sgOpen.delete(id);
 }
 export function taAnSgExpandAll() {
+  if (!_cache.suggestions) return;
   ((_cache.suggestions || {}).rules || []).forEach(r => _sgOpen.add(r.id));
   _renderSgGrid();
 }
 export function taAnSgCollapseAll() {
+  if (!_cache.suggestions) return;
   _sgOpen.clear();
   _renderSgGrid();
 }
@@ -1248,12 +1261,13 @@ export async function loadAnalyticsPanels() {
       const from = document.getElementById('ta-an-from');
       if (from && !_from && data.filter && data.filter.date_from) from.value = data.filter.date_from;
     } catch (e) {
+      if (key in _cache) _cache[key] = null;   // a failed panel must not feed the joined views
       if (key === 'foundation') setEl('ta-an-recon', '— could not be loaded');
       else _fail(key);
     }
   });
-  _renderBehaviourDetails();
-  _renderFullTablesIfOpen();
+  try { _renderBehaviourDetails(); } catch (e) { setEl('ta-an-detail-a', '— could not be loaded'); setEl('ta-an-detail-b', '— could not be loaded'); }
+  try { _renderFullTablesIfOpen(); } catch (e) { setEl('ta-an-fulltables-body', '— could not be loaded'); }
   setEl('ta-an-status', ok === keys.length ? '' : `${_num(keys.length - ok)} of ${_num(keys.length)} analytics panels could not be loaded`);
 }
 

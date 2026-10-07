@@ -251,15 +251,18 @@ def test_buildup_headline_picker_and_ladder(out):
     b = out["bu"]
     assert b["kpis"] == 4 and b["row"] == 1
     assert "12 of your 83 position chains were added to at a worse price." in b["head"]
-    assert "Worst chain: NIFTYAAA (long) — you added 2 times, 1 at a worse price, the position peaked at 10.0 lots and closed at -₹20,000." in b["head"]
+    assert "Worst chain: NIFTYAAA (long) — you added 2 times, 1 at a worse price, the position peaked at 250 units (10.0 lots) and closed at -₹20,000." in b["head"]
     assert "30 of your 80 entries were adds to an existing position." in b["head"]
     assert b["picker"] == ["0", "1", "2"]                                           # chains with story_rank, not the 4th
     assert "NIFTYAAA" in b["pickerText"] and "NIFTYDDD" not in b["pickerText"]
     lad = out["ladder"]
-    assert lad["stepped"] == "after" and lad["n"] == 4 and lad["sizes"] == [4.0, 8.0, 10.0, 0.0]
+    assert lad["stepped"] == "after" and lad["n"] == 4 and lad["sizes"] == [100, 200, 250, 0]     # always UNITS
     assert lad["colors"] == ["#8C877A", "#9B1C1C", "#1A6B3C", "#8C877A"]            # grey open, red adverse add, green add, grey close
-    assert lad["closeSet"] and lad["closeLabel"].startswith("Closed:") and lad["label0"] == "Position size (lots)"
+    assert lad["closeSet"] and lad["closeLabel"].startswith("Closed:") and lad["label0"] == "Position size (units)"
     assert any("25.0% worse" in t for t in lad["tip"])
+    assert any("200 units (8.0 lots)" in t for t in lad["tip"])                       # lots only in the hover text
+    assert "Lots from the Kite master" not in out["bu"]["bodyHtml"] and "Lots unavailable" not in out["bu"]["bodyHtml"]
+    assert out["ladder"]["yTitle"] == "units"
 
 
 def test_chain_pick_rerenders_only_the_chart(out):
@@ -289,7 +292,7 @@ def test_margin_headline_caveat_widgets_no_table(out):
     h = m["head"]
     assert h.startswith("In the selected scope, on 3 days your account cash was below ₹50,000 while you held positions that were at a loss (estimate).")
     assert "On the first such day 1 positions showed about -₹4,000 of loss (estimate); the same positions closed at -₹20,000 in total." in h
-    assert "You added 2 fills at a worse price on low-cash days." in h and "whole account" not in h
+    assert "you made 3 fills that added to a position, 2 of them at a worse price." in h and "(with or without open losers)" in h and "whole account" not in h
     assert "whole account" in out["mtFilter"]
     assert "Cash stayed above ₹50,000" in out["mtNoTrap"]
     assert "the same positions closed" not in out["mtNoGrowth"] and "on 3 days" in out["mtNoGrowth"]
@@ -418,3 +421,13 @@ def test_only_the_six_gets_are_called(out):
 
 def test_no_taswitchtab_dependency():
     assert "taSwitchTab" not in JS.split("export async function loadAnalyticsPanels")[1][:3000]
+
+
+def test_review_followups(out):
+    r = out["review"]
+    assert r["expiryHead"].count("closed only by the expiry estimate") == 1 and r["expiryMarker"].startswith("Closed by expiry estimate")
+    assert r["gridDuringLoad"] > 100 and r["gridAfterNullCollapse"] == r["gridDuringLoad"]        # Expand/Collapse no-op while loading
+    assert r["rendererThrowDetails"] == "ok" and r["statusSet"]                                # joined views guarded; status still written
+    assert r["stopCopy"] == "1.00x, 1.50x, 2.00x"
+    assert r["pnlShort"] == ["₹-99.9Cr", "₹-100Cr", "₹100Cr"] and all(len(v) <= 8 for v in r["pnlShort"])
+    assert "&amp;amp;" not in r["titles"]
