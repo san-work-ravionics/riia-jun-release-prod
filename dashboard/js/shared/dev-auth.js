@@ -11,9 +11,9 @@ export function isLocalDev() {
 
 const _apiBase = () => (window.RITA_API_BASE || '').replace(/\/$/, '');
 
-export async function ensureDevToken() {
+export async function ensureDevToken(force = false) {
   if (!isLocalDev()) return false;
-  if (sessionStorage.getItem('auth_token')) return true;
+  if (!force && sessionStorage.getItem('auth_token')) return true;
   try {
     const r = await fetch(_apiBase() + '/auth/token', {
       method: 'POST',

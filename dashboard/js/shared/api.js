@@ -1,10 +1,12 @@
+import { ensureDevToken } from './dev-auth.js';
+
 // ── Shared API client ─────────────────────────────────────────────────────────
 // api()      → throws on error — use for writes/actions
 // apiFetch() → returns null on error — use for reads
 
 export const apiBase = () => (window.RITA_API_BASE || '').replace(/\/$/, '');
 
-export async function api(path, method = 'GET', body = null) {
+export async function api(path, method = 'GET', body = null, _retried = false) {
   const token = sessionStorage.getItem('auth_token');
   const opts = { method, headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) } };
   if (body) opts.body = JSON.stringify(body);
@@ -12,6 +14,8 @@ export async function api(path, method = 'GET', body = null) {
   if (!r.ok) {
     if (r.status === 401) {
       sessionStorage.removeItem('auth_token');
+      // Localhost: a stale/expired dev token is re-minted transparently (once), as boot does.
+      if (!_retried && await ensureDevToken(true)) return api(path, method, body, true);
       const _isLocal = ['localhost', '127.0.0.1', '0.0.0.0'].includes(location.hostname);
       if (!_isLocal) {
         sessionStorage.setItem('post_login_redirect', window.location.href);
@@ -36,7 +40,7 @@ function _detailText(detail, fallback) {
 
 // apiUpload() → multipart POST (FormData). No Content-Type header: the browser adds the boundary.
 // Mirrors api()'s 401 handling and throws Error(message) with a readable FastAPI `detail`.
-export async function apiUpload(path, formData, method = 'POST') {
+export async function apiUpload(path, formData, method = 'POST', _retried = false) {
   const token = sessionStorage.getItem('auth_token');
   const r = await fetch(apiBase() + path, {
     method, body: formData, headers: token ? { 'Authorization': `Bearer ${token}` } : {},
@@ -44,6 +48,8 @@ export async function apiUpload(path, formData, method = 'POST') {
   if (!r.ok) {
     if (r.status === 401) {
       sessionStorage.removeItem('auth_token');
+      // Localhost: a stale/expired dev token is re-minted transparently (once), as boot does.
+      if (!_retried && await ensureDevToken(true)) return apiUpload(path, formData, method, true);
       const _isLocal = ['localhost', '127.0.0.1', '0.0.0.0'].includes(location.hostname);
       if (!_isLocal) {
         sessionStorage.setItem('post_login_redirect', window.location.href);
