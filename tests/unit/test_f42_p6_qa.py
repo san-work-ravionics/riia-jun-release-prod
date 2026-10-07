@@ -1316,6 +1316,8 @@ def test_spot_vs_pnl_p4_code_and_markup_unchanged():
 def test_p5_sample_banner_and_empty_state_handlers_untouched():
     for rel in ("dashboard/js/fno/trade-analysis.js", "dashboard/js/fno/api.js"):
         d = subprocess.run(["git", "-C", str(ROOT), "diff", "--quiet", BASE_REV, "HEAD", "--", rel]).returncode
+        if d == 128:      # git error (e.g. BASE_REV absent in a CI clone) is not a diff
+            pytest.skip("pre-P6 baseline unavailable")
         assert d == 0, f"{rel} changed by P6"
     for needle in ("ta-empty-cta", "ta-sample-banner"):
         assert needle in HTML
