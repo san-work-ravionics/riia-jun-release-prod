@@ -260,6 +260,7 @@ function writeInputs(inputs) {
 // fire-and-forget, silent on failure (no login redirect — the plan is still shown).
 let _lastSaved = null;
 let _restored = false;
+let _dirty = false;    // user edited the form before the restore GET returned → don't overwrite
 async function savePlan(p) {
   const token = sessionStorage.getItem('auth_token');
   const body = JSON.stringify(p);
@@ -302,11 +303,14 @@ export async function loadWhatINeed() {
   if (!_bound) {
     _bound = true;
     ['wn-calc', 'wn-i-calc', 'wn-h-calc', 'wn-h2-calc', 'wn-bx-calc'].forEach(id => document.getElementById(id).addEventListener('click', () => calculate()));
+    // Any edit before the restore finishes wins over the restored plan
+    document.getElementById('sec-what-i-need').addEventListener('input', () => { if (!_restored) _dirty = true; });
     // Enter in any field recalculates too
     document.getElementById('sec-what-i-need').addEventListener('keydown', e => {
       if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); calculate(); }
     });
     document.querySelectorAll('#wn-h2-mode .pill').forEach(btn => btn.addEventListener('click', () => {
+      if (!_restored) _dirty = true;
       document.querySelectorAll('#wn-h2-mode .pill').forEach(b => {
         b.classList.toggle('active', b === btn);
         b.setAttribute('aria-pressed', String(b === btn));
@@ -320,7 +324,7 @@ export async function loadWhatINeed() {
     try {
       const token = sessionStorage.getItem('auth_token');
       const plan = await apiFetch(PLAN_PATH, token ? { headers: { 'Authorization': `Bearer ${token}` } } : {});
-      if (plan && plan.inputs) {
+      if (plan && plan.inputs && !_dirty) {
         writeInputs(plan.inputs);
         if (plan.saved) _lastSaved = JSON.stringify(readInputs());
       }

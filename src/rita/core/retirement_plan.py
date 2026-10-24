@@ -23,6 +23,7 @@ MAX_AGE = 120  # corpus run-out is followed past plan-until up to this age
 AGE_PANELS: tuple[int, ...] = (55, 60, 65, 70, 75, 80, 85)
 ASSET_KEYS: tuple[str, ...] = ("idx", "eq", "com", "alt")
 MAX_AMOUNT = 1_000_000_000.0
+MIN_INFL = -0.5  # inflation floor: keeps the inflated need (a divisor) > 0
 
 _NUMERIC_FIELDS: tuple[str, ...] = (
     "need", "infl", "now", "ret", "end", "tax", "partial", "exit",
@@ -232,6 +233,13 @@ def validate_plan(raw: Mapping[str, Any]) -> str | None:
     )
     if any(a > MAX_AMOUNT for a in amounts):
         return "Amounts must be at most €1,000,000,000"
+    # The inflated need is a divisor (share of the need); keep it > 0 at every age up to
+    # plan-until. With infl ≥ −50% and at most 120 years the factor stays ≥ 0.5**120, and
+    # the floor check catches any remaining underflow (e.g. a tiny need).
+    if raw["infl"] < MIN_INFL:
+        return "Inflation must be between −50% and 100%"
+    if not (raw["need"] * (1.0 + raw["infl"]) ** (raw["end"] - raw["now"]) > 0):
+        return "Check monthly need and tax %"
     return None
 
 

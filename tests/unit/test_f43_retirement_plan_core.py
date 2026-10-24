@@ -173,6 +173,9 @@ def _ev(raw: dict, group: str, i: int, **kw) -> dict:
     (_raw(idx_rate=1.5), "Rates must be between −100% and 100%"),
     (_raw(need=2e9), "Amounts must be at most €1,000,000,000"),
     (_ev(_raw(), "sv", 1, amt=5e9), "Amounts must be at most €1,000,000,000"),
+    (_raw(infl=-0.9999999999), "Inflation must be between −50% and 100%"),  # C2
+    (_raw(infl=-0.51), "Inflation must be between −50% and 100%"),
+    (_raw(need=1e-300, infl=-0.5, now=0, end=120, ret=60, exit=60, h_sell=60), "Check monthly need and tax %"),  # underflow
 ])
 def test_validation_messages(raw, msg):
     assert validate_plan(raw) == msg
@@ -199,3 +202,13 @@ def test_core_uses_no_builtin_sum_or_fsum():
             f = node.func
             name = f.id if isinstance(f, ast.Name) else f.attr if isinstance(f, ast.Attribute) else None
             assert name not in ("sum", "fsum"), f"builtin {name}() at line {node.lineno}"
+
+
+def test_c2_inflation_floor_keeps_need_positive():
+    """C2 regression: infl ≈ −100% must be rejected, never reach a divide by zero."""
+    assert validate_plan(_raw(infl=-0.9999999999)) == "Inflation must be between −50% and 100%"
+    # the floor itself is accepted and every inflated need stays > 0
+    raw = _raw(infl=-0.5)
+    assert validate_plan(raw) is None
+    r = calc(to_params(raw), 2026)
+    assert all(c.need > 0 for c in r.by_age if not c.off)

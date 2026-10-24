@@ -296,3 +296,24 @@ def test_save_only_in_workflow_tier():
     assert (SAVE, "PUT") in routes
     assert (LOAD, "PUT") not in routes and (LOAD, "POST") not in routes
     assert (CALC, "POST") in routes and (LOAD, "GET") in routes
+
+
+def test_c2_calculate_near_minus_100_inflation_is_422_not_500(client):
+    r = client.post(CALC, json=_inp(infl=-0.9999999999))
+    assert r.status_code == 422
+    assert r.json()["detail"] == "Inflation must be between −50% and 100%"
+
+
+def test_c2_save_near_minus_100_inflation_is_422(client, db_session):
+    _as("u1")
+    r = client.put(SAVE, json=_inp(infl=-0.9999999999))
+    assert r.status_code == 422
+    assert db_session.query(UserRetirementPlanModel).count() == 0
+
+
+def test_c3_restore_skips_write_when_dirty():
+    js = (Path(__file__).parent.parent.parent / "dashboard" / "js" / "investgame-app" / "what-i-need.js").read_text(encoding="utf-8")
+    assert "let _dirty = false;" in js
+    assert "addEventListener('input', () => { if (!_restored) _dirty = true; })" in js
+    assert "if (plan && plan.inputs && !_dirty) {" in js
+    assert "if (save && _restored) savePlan(p);" in js
