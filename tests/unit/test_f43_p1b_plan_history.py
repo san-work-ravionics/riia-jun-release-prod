@@ -207,3 +207,23 @@ def test_history_endpoints_never_write(client, db_session):
 def test_experience_routes_still_have_no_commit():
     src = (Path(__file__).parent.parent.parent / "src" / "rita" / "api" / "experience" / "invest_game.py").read_text()
     assert ".commit(" not in src
+
+
+def test_history_entry_with_unreadable_inputs_is_404_not_500(client, db_session):
+    from datetime import datetime, timezone
+    db_session.add(UserRetirementPlanHistoryModel(
+        history_id="bad-1", user_id="u1", saved_at=datetime.now(timezone.utc), inputs={"need": "x"},
+        location="europe", retire_age=55, plan_until=85, need_at_retire=1.0, monthly_at_retire=1.0,
+        corpus_at_retire=1.0, schema_version=1, app_version="t",
+    ))
+    db_session.commit()
+    _as("u1")
+    assert client.get(f"{HISTORY}/bad-1").status_code == 404
+    assert len(client.get(HISTORY).json()["items"]) == 1  # still listed with its key figures
+
+
+def test_save_button_blocks_concurrent_saves():
+    js = (Path(__file__).parent.parent.parent / "dashboard" / "js" / "investgame-app" / "what-i-need.js").read_text(encoding="utf-8")
+    assert "if (!_restored || _saving) return;" in js
+    save_fn = js.split("async function savePlan()")[1].split("let _flash")[0]
+    assert "_saving = true;" in save_fn and "} finally {\n    _saving = false;" in save_fn

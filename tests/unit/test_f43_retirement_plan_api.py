@@ -321,6 +321,6 @@ def test_c3_restore_skips_write_when_dirty():
     assert "addEventListener('input', () => { if (!_restored) _dirty = true; })" in js
     assert "if (plan && plan.inputs && !_dirty) {" in js
     # Phase 1b: saving is explicit (Save button) and still blocked until the restore finished
-    assert "if (!_restored) return;" in js
+    assert "if (!_restored || _saving) return;" in js
     assert "document.getElementById('wn-save').addEventListener('click', () => savePlan());" in js
     assert "savePlan(" not in js.split("async function calculate()")[1].split("let _bound")[0]

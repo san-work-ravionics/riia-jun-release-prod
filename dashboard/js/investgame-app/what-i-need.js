@@ -270,20 +270,26 @@ function flash(cls, text, ms = 1600) {
   status.textContent = text;
   if (ms) _flash = setTimeout(() => { status.className = 'badge neu'; status.textContent = 'Europe · EUR'; }, ms);
 }
+let _saving = false;   // one Save at a time — a double click must not write two history rows
 async function savePlan() {
-  if (!_restored) return;
+  if (!_restored || _saving) return;
   const token = sessionStorage.getItem('auth_token');
   if (!token) { flash('neu', 'Sign in to save', 2400); return; }
-  if (!(await calculate())) return;      // invalid inputs: the badge already shows why
-  const p = readInputs();
-  const body = JSON.stringify(p);
-  if (body === _lastSaved) { flash('ok', 'Already saved'); return; }
-  const res = await apiFetch(SAVE_PATH, {
-    method: 'PUT', body,
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-  });
-  if (res && res.saved) { _lastSaved = body; flash('ok', 'Saved'); }
-  else flash('neu', 'Could not save — try again', 2400);
+  _saving = true;
+  try {
+    if (!(await calculate())) return;    // invalid inputs: the badge already shows why
+    const p = readInputs();
+    const body = JSON.stringify(p);
+    if (body === _lastSaved) { flash('ok', 'Already saved'); return; }
+    const res = await apiFetch(SAVE_PATH, {
+      method: 'PUT', body,
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    });
+    if (res && res.saved) { _lastSaved = body; flash('ok', 'Saved'); }
+    else flash('neu', 'Could not save — try again', 2400);
+  } finally {
+    _saving = false;
+  }
 }
 
 let _flash = null;

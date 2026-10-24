@@ -120,13 +120,24 @@ class RetirementPlanService:
         row = self._history.find_for_user(user_id, history_id)
         if row is None:
             return None
-        inputs = RetirementPlanInputs.model_validate(row.inputs)
+        try:
+            if row.schema_version != SCHEMA_VERSION:
+                raise ValueError(f"unsupported schema_version {row.schema_version}")
+            inputs = RetirementPlanInputs.model_validate(row.inputs)
+            result = calculate(inputs)
+        except (ValidationError, ValueError, TypeError) as exc:  # PlanValidationError is a ValueError
+            log.warning("retirement_plan.history_entry_unreadable", user_id=user_id,
+                        history_id=history_id, error=str(exc))
+            return None
         item = RetirementPlanHistoryItem.model_validate(row, from_attributes=True)
-        return RetirementPlanHistoryDetail(**item.model_dump(), inputs=inputs, result=calculate(inputs))
+        return RetirementPlanHistoryDetail(**item.model_dump(), inputs=inputs, result=result)
 
     def save(self, user_id: str, inputs: RetirementPlanInputs) -> RetirementPlanOut:
         """Validate, upsert the user's plan and append it to the history; one commit."""
         result = calculate(inputs)  # validates (PlanValidationError) and gives the key figures
+        at_ret = result.at_ret
+        if at_ret.need is None or at_ret.monthly is None:  # core.at() always fills the retirement cell
+            raise RuntimeError("retirement cell missing need/monthly")
         key, currency, _ = _preset()
         dumped = inputs.model_dump(mode="json", by_alias=True)
         try:
@@ -137,10 +148,10 @@ class RetirementPlanService:
                 saved_at=datetime.now(timezone.utc),
                 inputs=dumped,
                 location=key,
-                retire_age=result.at_ret.age,
+                retire_age=at_ret.age,
                 plan_until=int(inputs.end),
-                need_at_retire=result.at_ret.need,
-                monthly_at_retire=result.at_ret.monthly,
+                need_at_retire=at_ret.need,
+                monthly_at_retire=at_ret.monthly,
                 corpus_at_retire=result.value,
                 sustainable_until=result.portfolio.run_out,
                 corpus_out_age=result.portfolio.corpus_out,

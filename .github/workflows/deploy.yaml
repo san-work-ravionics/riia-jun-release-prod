@@ -180,7 +180,8 @@ jobs:
       - name: Check GHCR login on EC2
         run: |
           ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} \
-            "echo '${{ secrets.GHCR_PAT }}' | docker login ghcr.io -u san-work-ravionics --password-stdin"
+            "echo '${{ secrets.GHCR_PAT }}' | docker login ghcr.io -u san-work-ravionics --password-stdin \
+             && docker manifest inspect '${{ env.IMAGE }}' > /dev/null"
 
       - name: Free EC2 disk space
         run: |
