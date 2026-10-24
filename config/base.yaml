@@ -85,3 +85,44 @@ trade_analysis:
   sample_enabled: true
   sample_dir: sample/fno
   sample_file_prefix: SAMPLE_
+
+# F43 "What I Need" retirement plan — location presets. `defaults` is the camelCase
+# RetirementPlanInputs shape (rates as fractions) served by GET
+# /api/experience/invest-game/retirement-plan when the user has no saved plan.
+# Europe defaults = mock rev 39 form defaults (golden fixture `defaults` input).
+retirement_plan:
+  default_location: europe
+  locations:
+    europe:
+      currency: EUR
+      defaults:
+        need: 2000
+        infl: 0.025
+        now: 35
+        ret: 55
+        end: 85
+        tax: 0.3
+        partial: 0.5
+        exit: 70
+        hValue: 400000
+        hAppr: 0.03
+        hSell: 60
+        hTax: 0.3
+        h2Price: 250000
+        h2Mode: new
+        sv:
+          - {age: 50, amt: 100000}
+          - {age: 55, amt: 100000}
+          - {age: 60, amt: 100000}
+        bx:
+          - {age: 55, amt: 500000}
+          - {age: 60, amt: 100000}
+          - {age: 65, amt: 0}
+        idxMonthly: 1000
+        idxRate: 0.07
+        eqMonthly: 700
+        eqRate: 0.10
+        comMonthly: 150
+        comRate: 0.04
+        altMonthly: 150
+        altRate: 0.05

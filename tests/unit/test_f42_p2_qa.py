@@ -736,7 +736,10 @@ def test_migration_schema_equals_design_single_head_and_reversible(tmp_path):
     db = tmp_path / "m.db"
     assert _alembic(db, "upgrade", "head").returncode == 0
     heads = _alembic(db, "heads")
-    assert heads.stdout.count("(head)") == 1 and "20261006_f42_console_import" in heads.stdout
+    # Single head; F42 is no longer the head since F43 P1 chains on it (20261024_f43_user_retirement_plans).
+    assert heads.stdout.count("(head)") == 1
+    hist = _alembic(db, "history").stdout
+    assert "20261006_f42_console_import" in hist
     con = sqlite3.connect(db)
     try:
         for table, cols in _DESIGN.items():
@@ -752,7 +755,8 @@ def test_migration_schema_equals_design_single_head_and_reversible(tmp_path):
             assert (table, frozenset(ucols)) in found, table
     finally:
         con.close()
-    assert _alembic(db, "downgrade", "-1").returncode == 0
+    # Downgrade below the F42 migration (to its parent) — later heads chain on top of it.
+    assert _alembic(db, "downgrade", "20261005_f40_hedge_plan_history").returncode == 0
     con = sqlite3.connect(db)
     left = {r[0] for r in con.execute("select name from sqlite_master where name like 'personal_fno%'")}
     con.close()

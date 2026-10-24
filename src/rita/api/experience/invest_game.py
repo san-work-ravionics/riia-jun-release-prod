@@ -11,8 +11,23 @@ from typing import List, Literal, TypedDict
 
 import pandas as pd
 import structlog
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from rita.auth import get_optional_user
+from rita.database import get_db
+from rita.models.user import UserModel
+from rita.schemas.retirement_plan import (
+    RetirementPlanInputs,
+    RetirementPlanOut,
+    RetirementPlanResult,
+)
+from rita.services.retirement_plan_service import (
+    PlanValidationError,
+    RetirementPlanService,
+    calculate,
+)
 
 log = structlog.get_logger()
 router = APIRouter(prefix="/api/experience/invest-game", tags=["invest-game"])
@@ -362,6 +377,27 @@ def _write_run_log(game_id: str, session: dict) -> None:
 
 
 # ── Endpoints ──────────────────────────────────────────────────────────────────
+
+
+# F43 "What I Need" — read-only (ADR-001 Experience tier). Saving lives in the
+# workflow tier: PUT /api/v1/workflow/invest-game/retirement-plan.
+@router.post("/retirement-plan/calculate", response_model=RetirementPlanResult)
+def calculate_retirement_plan(body: RetirementPlanInputs) -> RetirementPlanResult:
+    """Pure calculation of the plan (no DB, no auth). 422 detail = the mock's message."""
+    try:
+        return calculate(body)
+    except PlanValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/retirement-plan", response_model=RetirementPlanOut)
+def load_retirement_plan(
+    user: UserModel | None = Depends(get_optional_user),
+    db: Session = Depends(get_db),
+) -> RetirementPlanOut:
+    """The signed-in user's saved plan, else the location preset defaults (never 401)."""
+    return RetirementPlanService(db).load(user.id if user is not None else None)
+
 
 
 @router.post("/select-days", response_model=SelectDaysResponse)

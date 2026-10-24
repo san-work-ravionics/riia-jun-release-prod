@@ -25,6 +25,7 @@ from .user_portfolio_key import UserPortfolioKeyModel
 from .user_portfolio import UserPortfolioModel
 from .user_hedge_plan import UserHedgePlanModel
 from .user_hedge_plan_history import UserHedgePlanHistoryModel
+from .user_retirement_plan import UserRetirementPlanModel
 from .fno_import import (
     FnoImportRunModel, FnoLedgerEntryModel, FnoPnlChargeModel, FnoPnlLineModel, FnoTradeModel,
 )
@@ -61,6 +62,7 @@ __all__ = [
     "UserPortfolioModel",
     "UserHedgePlanModel",
     "UserHedgePlanHistoryModel",
+    "UserRetirementPlanModel",
     "FnoImportRunModel",
     "FnoTradeModel",
     "FnoPnlLineModel",
