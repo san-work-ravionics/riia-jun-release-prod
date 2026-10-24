@@ -5,10 +5,12 @@ import { loadCrispDm, switchCrispTab } from './crisp-dm.js';
 import { loadAgentPerformance, setAgentPerfPeriod, loadAgentPerfTimeline } from './agent-performance.js';
 import { loadAgentBuilds, submitTokenEstimate, toggleEstimateWidget, closeChartModal } from './agent-builds.js';
 import { loadAgentPanel, agentPanelStep, resetAgentPanel, approveAgentProposal, rejectAgentProposal } from './agent-panel.js';
+import { loadWhatINeed } from './what-i-need.js?v=56';
 import { ensureDevToken } from '../shared/dev-auth.js';
 
 // ── Register section loaders ─────────────────────────────────────────────────
 registerLoader('investgame', () => {}); // intro page — no data to load
+registerLoader('what-i-need', loadWhatINeed);
 registerLoader('journey', () => {
   const frame = document.getElementById('journey-frame');
   if (frame && !frame.src) frame.src = frame.dataset.src;

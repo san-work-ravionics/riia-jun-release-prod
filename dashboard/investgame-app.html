@@ -334,6 +334,134 @@ tr:hover td{background:var(--surface2);}
   .sidebar.open{display:block;}
   .content{padding:16px;}
 }
+
+/* ── What I Need (scoped, mirrors #sec-investgame control styling) ── */
+#sec-what-i-need input[type="number"],#sec-what-i-need input[type="text"],#sec-what-i-need select{font-family:var(--fm);font-size:11px;color:var(--text);background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:4px 6px;outline:none;width:96px;transition:border-color .12s;}
+/* one sizing system: ages and percentages are short, money amounts a little wider */
+#sec-what-i-need input[type="number"][step="1"],#sec-what-i-need input[type="number"][step="0.1"]{width:64px;}
+#sec-what-i-need .ctrl-group label{font-size:9px;}
+#sec-what-i-need input[type="number"]:focus,#sec-what-i-need input[type="text"]:focus,#sec-what-i-need select:focus{border-color:var(--game);}
+#sec-what-i-need .pill.dis{opacity:.45;cursor:not-allowed;}
+#sec-what-i-need .wn-kpis{margin:16px 0 0;}
+#sec-what-i-need .wn-need-row{display:grid;grid-template-columns:auto auto 1fr;gap:14px;align-items:stretch;}
+#sec-what-i-need .wn-box{border:1.5px solid var(--border);border-radius:var(--r);padding:10px 14px;background:var(--surface2);}
+#sec-what-i-need .wn-plan{display:flex;gap:16px;align-items:flex-start;}
+#sec-what-i-need .wn-inline{display:flex;flex-direction:column;gap:8px;}
+#sec-what-i-need .wn-pills-v{flex-direction:column;border-radius:var(--r);align-self:flex-start;}
+#sec-what-i-need .wn-pills-v .pill{border-right:none;justify-content:space-between;}
+#sec-what-i-need .wn-pills-v .pill+.pill{border-top:1.5px solid var(--border);}
+#sec-what-i-need .wn-need-row .wn-kpis .card{display:flex;flex-direction:column;justify-content:center;}
+#sec-what-i-need .wn-ages-hdr{font-family:var(--fm);font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
+#sec-what-i-need .wn-ages-grid{display:flex;gap:10px;}
+#sec-what-i-need .wn-need-row .wn-kpis{margin:0;}
+/* need + monthly available at four ages: five compact tiles in one row */
+#sec-what-i-need .wn-kpis-1{grid-template-columns:minmax(0,240px);}
+/* monthly available by age: ages side by side as table columns, one row at any width */
+#sec-what-i-need .wn-ages-col{min-width:0;display:flex;flex-direction:column;}
+#sec-what-i-need .wn-need-line{margin-top:10px;font-family:var(--fm);font-size:10px;color:var(--t3);}
+#sec-what-i-need .wn-need-line b{font-size:14px;font-weight:600;color:var(--text);}
+#sec-what-i-need .wn-age-tbl{overflow-x:auto;}
+#sec-what-i-need .wn-age-tbl tr.need td{color:var(--t3);}
+#sec-what-i-need .wn-ages-sub{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:0 0 6px;font-family:var(--fm);font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.08em;}
+#sec-what-i-need .wn-ages-key{font-weight:400;color:var(--t3);text-transform:none;letter-spacing:0;}
+#sec-what-i-need .wn-age-tbl{margin:0;max-height:none;}
+#sec-what-i-need .wn-age-tbl th,#sec-what-i-need .wn-age-tbl td{text-align:right;font-family:var(--fm);white-space:nowrap;padding:4px 7px;font-size:11px;}
+#sec-what-i-need .wn-age-tbl th:first-child,#sec-what-i-need .wn-age-tbl td:first-child{text-align:left;}
+
+#sec-what-i-need .wn-age-tbl .ret{background:var(--game-light);}
+#sec-what-i-need .wn-age-tbl .off{color:var(--t4);}
+#sec-what-i-need .wn-age-tbl tr.total td{font-size:13px;font-weight:600;color:var(--text);}
+#sec-what-i-need .wn-age-tbl tr.total td.ok{color:var(--ok);}
+#sec-what-i-need .wn-age-tbl tr.total td .pc{font-size:10px;font-weight:400;color:var(--t3);}
+#sec-what-i-need .wn-calc{margin-top:10px;width:100%;}
+/* a chart inside a .card is not boxed again (rita-parity .chart-wrap is a standalone panel) */
+#sec-what-i-need .card .chart-wrap{border:none;box-shadow:none;border-radius:0;padding:0;margin:0;}
+#sec-what-i-need .wn-dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+#sec-what-i-need .wn-assets{display:grid;grid-template-columns:auto repeat(4,1fr);gap:10px;align-items:stretch;}
+#sec-what-i-need .wn-asset-card{border:1.5px solid var(--border);border-radius:var(--r);background:var(--surface);padding:8px 10px;display:flex;flex-direction:column;gap:7px;border-top:3px solid var(--border);transition:box-shadow .15s;min-width:0;}
+#sec-what-i-need .wn-asset-card:hover{box-shadow:var(--shm);}
+#sec-what-i-need .wn-asset-idx{border-top-color:var(--build);}
+#sec-what-i-need .wn-asset-eq{border-top-color:var(--run);}
+#sec-what-i-need .wn-asset-com{border-top-color:var(--game);}
+#sec-what-i-need .wn-asset-alt{border-top-color:var(--mon);}
+#sec-what-i-need .wn-asset-title{display:flex;align-items:center;gap:6px;font-family:var(--fd);font-size:12px;font-weight:600;}
+#sec-what-i-need .wn-asset-title .badge{margin-left:auto;font-size:9px;padding:1px 6px;}
+#sec-what-i-need .wn-house-inputs{display:flex;flex-direction:column;gap:6px;}
+/* current house: 2 × 2, inputs bottom-aligned so a wrapped label does not shift its row */
+#sec-what-i-need .wn-house-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 10px;align-items:end;}
+#sec-what-i-need .wn-house-inputs .pill{padding:4px 10px;font-size:11px;}
+#sec-what-i-need .wn-house-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px;margin-top:auto;}
+#sec-what-i-need .wn-house-foot .card-sub{font-size:10px;}
+#sec-what-i-need .wn-inv-box{display:flex;flex-direction:column;}
+#sec-what-i-need .wn-inv-inputs{display:grid;grid-template-columns:repeat(2,max-content);gap:6px 10px;}
+#sec-what-i-need .wn-inv-inputs input{width:56px;}
+/* asset panels: compact so the 2-column input box and four assets share one row */
+#sec-what-i-need .wn-assets .wn-asset-card{padding:6px 8px;gap:5px;}
+#sec-what-i-need .wn-assets .wn-asset-inputs{gap:4px 8px;}
+#sec-what-i-need .wn-assets .wn-asset-inputs input[step="50"]{width:72px;}
+#sec-what-i-need .wn-assets .wn-asset-inputs input[step="0.1"]{width:52px;}
+#sec-what-i-need .wn-assets .wn-al{grid-template-columns:minmax(0,1fr) auto;column-gap:8px;padding:2px 0;}
+#sec-what-i-need .wn-assets .wn-al.net b{font-size:12px;}
+#sec-what-i-need .wn-inv-box .wn-calc{margin-top:auto;}
+@media(max-width:1250px){#sec-what-i-need .wn-assets{grid-template-columns:auto 1fr 1fr;}#sec-what-i-need .wn-inv-box{grid-row:span 2;}}
+@media(max-width:700px){#sec-what-i-need .wn-assets{grid-template-columns:1fr;}#sec-what-i-need .wn-inv-box{grid-row:auto;}}
+#sec-what-i-need .wn-asset-inputs{display:grid;grid-template-columns:repeat(2,max-content);justify-content:start;gap:6px 12px;}
+#sec-what-i-need .wn-asset-lines{display:flex;flex-direction:column;}
+#sec-what-i-need .wn-al{display:grid;grid-template-columns:minmax(96px,max-content) auto;justify-content:start;column-gap:12px;align-items:baseline;padding:3px 0;border-bottom:1px solid var(--border);}
+#sec-what-i-need .wn-al span{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);}
+#sec-what-i-need .wn-al b{font-family:var(--fm);font-size:11px;font-weight:500;color:var(--text);}
+#sec-what-i-need .wn-al.net{border-bottom:none;padding-top:5px;}
+#sec-what-i-need .wn-al.net span{color:var(--ok);font-weight:600;}
+#sec-what-i-need .wn-al.net b{font-size:13px;font-weight:600;color:var(--ok);}
+#sec-what-i-need .wn-dot-idx{background:var(--build);}
+#sec-what-i-need .wn-dot-eq{background:var(--run);}
+#sec-what-i-need .wn-dot-com{background:var(--game);}
+#sec-what-i-need .wn-dot-alt{background:var(--mon);}
+#sec-what-i-need input:disabled{background:var(--surface2);color:var(--t4);cursor:not-allowed;}
+#sec-what-i-need input[readonly]{background:var(--surface2);color:var(--t3);cursor:not-allowed;}
+#sec-what-i-need .kpi-value.pos{color:var(--pos);}
+#sec-what-i-need .wn-charts{display:grid;grid-template-columns:3fr 2fr 2fr;gap:16px;}
+@media(max-width:1250px){#sec-what-i-need .wn-charts{grid-template-columns:1fr 1fr;}#sec-what-i-need .wn-charts>.card:first-child{grid-column:1/-1;}}
+@media(max-width:900px){#sec-what-i-need .wn-charts{grid-template-columns:1fr;}}
+
+@media(max-width:700px){#sec-what-i-need .wn-need-row{grid-template-columns:1fr;}}
+#sec-what-i-need .note{font-family:var(--fm);font-size:10px;color:var(--t3);line-height:1.6;}
+#sec-what-i-need .wn-compare{display:grid;grid-template-columns:minmax(0,3fr) repeat(3,minmax(0,1fr));gap:12px;align-items:stretch;}
+#sec-what-i-need .wn-cmp{border-top:3px solid var(--t4);padding:10px;margin-bottom:12px;}
+#sec-what-i-need .wn-cmp-1{border-top-color:var(--build);}
+#sec-what-i-need .wn-cmp .card-hdr{margin-bottom:6px;}
+#sec-what-i-need .wn-cmp .chart-wrap{margin-top:6px;}
+#sec-what-i-need .wn-cmp-1{display:flex;flex-direction:column;}
+/* chart fills the row height (set by the input panels); canvas absolute so it cannot grow the row */
+#sec-what-i-need .wn-cmp-chart{flex:1;min-height:220px;}
+#sec-what-i-need .wn-cmp-chart canvas{position:absolute;inset:0;}
+#sec-what-i-need .wn-cmp.wn-house-card{border-top-color:var(--warn);display:flex;flex-direction:column;gap:6px;}
+#sec-what-i-need .wn-compare .ctrl-group label{white-space:normal;}
+#sec-what-i-need .wn-compare input[type="number"]:not([step="1"]):not([step="0.1"]){width:80px;}
+#sec-what-i-need .wn-compare input[type="number"][step="1"]{width:52px;}
+#sec-what-i-need .wn-compare .wn-al{grid-template-columns:minmax(0,1fr) auto;}
+#sec-what-i-need .wn-bx-panel{border-top-color:var(--game);display:flex;flex-direction:column;gap:6px;}
+#sec-what-i-need .wn-bx-grid{display:grid;grid-template-columns:max-content max-content max-content;justify-content:start;align-items:center;gap:4px 6px;}
+#sec-what-i-need .wn-sign{font-family:var(--fm);font-size:14px;font-weight:600;color:var(--t3);width:10px;text-align:center;}
+#sec-what-i-need .wn-sign.plus{color:var(--ok);}
+#sec-what-i-need .wn-fb{margin:0 0 16px;font-family:var(--fm);font-size:12px;color:var(--t2);background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:6px 10px;}
+#sec-what-i-need .wn-fb b{font-weight:600;color:var(--text);}
+#sec-what-i-need .wn-fb.ok{background:var(--ok-bg);border-color:var(--ok-bd);}
+#sec-what-i-need .wn-fb.ok b{color:var(--ok);}
+#sec-what-i-need .wn-bx-grid label{font-family:var(--fm);font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;}
+#sec-what-i-need .wn-bx-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto;}
+#sec-what-i-need .wn-bx-foot .card-sub{font-size:10px;}
+
+@media(max-width:1250px){#sec-what-i-need .wn-compare{grid-template-columns:repeat(3,minmax(0,1fr));}#sec-what-i-need .wn-cmp-1{grid-column:1/-1;}}
+@media(max-width:800px){#sec-what-i-need .wn-compare{grid-template-columns:1fr;}}
+#sec-what-i-need .wn-step{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--game-bg);border:1px solid var(--game-bd);color:var(--game);font-family:var(--fm);font-size:10px;font-weight:600;margin-right:8px;vertical-align:1px;}
+#sec-what-i-need #wn-status{transition:background .2s,color .2s;}
+#sec-what-i-need .wn-assume{margin-top:6px;font-family:var(--fm);font-size:11px;color:var(--t2);}
+#sec-what-i-need .wn-assume summary{cursor:pointer;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);padding:6px 0;}
+#sec-what-i-need .wn-assume summary:hover{color:var(--text);}
+#sec-what-i-need .wn-assume ul{margin:4px 0 8px 18px;line-height:1.8;}
+
+#sec-what-i-need td.num,#sec-what-i-need th.num{text-align:right;font-family:var(--fm);}
 </style>
 </head>
 <body>
@@ -367,6 +495,9 @@ tr:hover td{background:var(--surface2);}
     <div class="nav-label">Invest Game</div>
     <div class="nav-item active" data-s="investgame" onclick="show('investgame',this)">
       <span class="nav-icon">🎮</span> Invest Game
+    </div>
+    <div class="nav-item" data-s="what-i-need" onclick="show('what-i-need',this)">
+      <span class="nav-icon">🎯</span> What I Need
     </div>
     <div class="nav-item" data-s="journey" onclick="show('journey',this)">
       <span class="nav-icon">🧭</span> Journey
@@ -581,6 +712,165 @@ tr:hover td{background:var(--surface2);}
     </div>
     </div>
   </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Section: What I Need (F43 Phase 0 mock — retirement need, calculated in browser)
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="section rita-parity" id="sec-what-i-need">
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">What I Need</div>
+      <div class="page-sub">What you need to retire, what your investments, house and big expenses add up to — and how long the money lasts</div>
+    </div>
+    <div class="hdr-actions"><span id="wn-status" class="badge neu">Europe · EUR</span></div>
+  </div>
+
+  <!-- Row 1: the need, without investing -->
+  <div class="card">
+    <div class="card-hdr"><span class="card-title"><span class="wn-step">1</span>What I Need</span><span class="badge neu">Without investing</span></div>
+    <div class="wn-need-row">
+      <div class="wn-box wn-plan">
+        <div class="ctrl-group"><label>Location</label>
+          <div class="pill-group wn-pills-v"><button type="button" class="pill active">Europe <span class="pill-ccy">EUR</span></button><button type="button" class="pill dis" title="Coming later">India <span class="pill-ccy">INR</span></button><button type="button" class="pill dis" title="Coming later">US <span class="pill-ccy">USD</span></button></div></div>
+        <div class="wn-inline">
+          <div class="ctrl-group"><label for="wn-need">Monthly need (EUR)</label><input type="number" id="wn-need" value="2000" step="50"></div><div class="ctrl-group"><label for="wn-infl">Inflation %</label><input type="number" id="wn-infl" value="2.5" step="0.1"></div>
+        </div>
+      </div>
+      <div class="wn-box">
+        <div class="wn-ages-hdr">Age</div>
+        <div class="wn-ages-grid">
+          <div class="ctrl-group"><label for="wn-age-now">Current</label><input type="number" id="wn-age-now" value="35" step="1"></div><div class="ctrl-group"><label for="wn-age-ret">Retirement</label><input type="number" id="wn-age-ret" value="55" step="1"></div><div class="ctrl-group"><label for="wn-age-end">Plan until</label><input type="number" id="wn-age-end" value="85" step="1"></div>
+        </div>
+        <div class="wn-need-line"><span id="wn-k-need-lbl">Monthly need at retirement</span> <b id="wn-k-need">—</b><div id="wn-k-need-sub"></div></div>
+        <button type="button" class="btn btn-primary btn-sm wn-calc" id="wn-calc">Calculate</button>
+      </div>
+      <div class="wn-ages-col">
+        <div class="wn-ages-sub"><span>Monthly available by age</span><span class="wn-ages-key">investing (after tax) + pot (events + house, spread to plan-until) · highlighted = retirement</span></div>
+        <div class="tbl-wrap wn-age-tbl"><table><thead id="wn-age-head"></thead><tbody id="wn-age-body"></tbody></table></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 2: money year by year (50%) + one time events + mortgage (current house, house after the sell age) -->
+  <div class="wn-compare">
+    <div class="card wn-cmp wn-cmp-1">
+      <div class="card-hdr"><span class="card-title">Your money, year by year</span><span class="hdr-actions"><span class="badge neu" id="wn-c1-badge">—</span><span class="badge neu" id="wn-c0-badge">—</span></span></div>
+      <div class="chart-wrap wn-cmp-chart"><canvas id="wn-port"></canvas></div>
+    </div>
+    <div class="card wn-cmp wn-bx-panel">
+      <div class="card-hdr"><span class="card-title"><span class="wn-step">2</span>One time events</span></div>
+      <div class="wn-bx-grid">
+        <span></span><label>At age</label><label>Amount (EUR)</label>
+        <span class="wn-sign plus" title="Savings — money in">+</span><input type="number" id="wn-sv1-age" value="50" step="1" aria-label="Savings 1 age"><input type="number" id="wn-sv1-amt" value="100000" step="10000" aria-label="Savings 1 amount (EUR)">
+        <span class="wn-sign plus" title="Savings — money in">+</span><input type="number" id="wn-sv2-age" value="55" step="1" aria-label="Savings 2 age"><input type="number" id="wn-sv2-amt" value="100000" step="10000" aria-label="Savings 2 amount (EUR)">
+        <span class="wn-sign plus" title="Savings — money in">+</span><input type="number" id="wn-sv3-age" value="60" step="1" aria-label="Savings 3 age"><input type="number" id="wn-sv3-amt" value="100000" step="10000" aria-label="Savings 3 amount (EUR)">
+        <span class="wn-sign" title="Expense — money out">−</span><input type="number" id="wn-bx1-age" value="55" step="1" aria-label="Expense 1 age"><input type="number" id="wn-bx1-amt" value="500000" step="10000" aria-label="Expense 1 amount (EUR)">
+        <span class="wn-sign" title="Expense — money out">−</span><input type="number" id="wn-bx2-age" value="60" step="1" aria-label="Expense 2 age"><input type="number" id="wn-bx2-amt" value="100000" step="10000" aria-label="Expense 2 amount (EUR)">
+        <span class="wn-sign" title="Expense — money out">−</span><input type="number" id="wn-bx3-age" value="65" step="1" aria-label="Expense 3 age"><input type="number" id="wn-bx3-amt" value="0" step="10000" aria-label="Expense 3 amount (EUR)">
+      </div>
+      <div class="wn-bx-foot"><span class="card-sub" id="wn-bx-total"></span><button type="button" class="btn btn-primary btn-sm" id="wn-bx-calc">Calculate</button></div>
+    </div>
+    <div class="card wn-cmp wn-house-card">
+      <div class="card-hdr"><span class="card-title"><span class="wn-step">3</span>Current house</span></div>
+      <div class="wn-house-inputs wn-house-grid"><div class="ctrl-group"><label for="wn-h-value">Value today (EUR)</label><input type="number" id="wn-h-value" value="400000" step="10000"></div><div class="ctrl-group"><label for="wn-h-appr">Avg appreciation %</label><input type="number" id="wn-h-appr" value="3" step="0.1"></div><div class="ctrl-group"><label for="wn-h-sell">Value until age</label><input type="number" id="wn-h-sell" value="60" step="1"></div><div class="ctrl-group"><label for="wn-h-tax">Tax on gain %</label><input type="number" id="wn-h-tax" value="30" step="1"></div></div>
+      <div class="wn-asset-lines">
+          <div class="wn-al "><span id="wn-k-hfv-lbl">Value at 60</span><b id="wn-k-hfv">—</b></div>
+          <div class="wn-al "><span id="wn-k-hgain-lbl">Gain</span><b id="wn-k-hgain">—</b></div>
+          <div class="wn-al "><span id="wn-k-htax-lbl">Tax on gain</span><b id="wn-k-htax">—</b></div>
+          <div class="wn-al net"><span id="wn-k-hnet-lbl">Value after tax</span><b id="wn-k-hnet">—</b></div>
+        </div>
+      <div class="wn-house-foot"><span class="card-sub" id="wn-k-hfv-sub"></span><button type="button" class="btn btn-primary btn-sm" id="wn-h-calc">Calculate</button></div>
+    </div>
+    <div class="card wn-cmp wn-house-card">
+      <div class="card-hdr"><span class="card-title" id="wn-h2-title">House after 60</span></div>
+      <div class="wn-house-inputs">
+          <div class="ctrl-group"><label>Second inning</label>
+            <div class="pill-group wn-pills-v" id="wn-h2-mode"><button type="button" class="pill" data-mode="same" aria-pressed="false">Continue same house</button><button type="button" class="pill active" data-mode="new" aria-pressed="true">Buy new house</button></div></div>
+          <div class="ctrl-group"><label for="wn-h2-price">New house value today (EUR)</label><input type="number" id="wn-h2-price" value="250000" step="10000"></div>
+      </div>
+      <div class="wn-asset-lines">
+          <div class="wn-al "><span id="wn-k-h2now-lbl">New house today</span><b id="wn-k-h2now">—</b></div>
+          <div class="wn-al "><span id="wn-k-h2fv-lbl">New house at 60</span><b id="wn-k-h2fv">—</b></div>
+          <div class="wn-al "><span id="wn-k-hsale-lbl">Current house, after tax</span><b id="wn-k-hsale">—</b></div>
+          <div class="wn-al net"><span id="wn-k-hrel-lbl">Added to retirement</span><b id="wn-k-hrel">—</b></div>
+        </div>
+      <div class="wn-house-foot"><span class="card-sub" id="wn-k-hrel-sub"></span><button type="button" class="btn btn-primary btn-sm" id="wn-h2-calc">Calculate</button></div>
+    </div>
+  </div>
+  <div class="wn-fb" id="wn-h-fb"></div>
+
+  <!-- Row 3: investments — index fund, equity, commodities, alternate — from current age until the value-until age -->
+  <div class="card">
+    <div class="card-hdr"><span class="card-title"><span class="wn-step">4</span>Investments</span><span class="badge neu" id="wn-idx-badge">Index · Equity · Commodities · Alternate</span></div>
+    <div class="wn-assets">
+      <div class="wn-box wn-inv-box">
+        <div class="wn-inv-inputs">
+          <div class="ctrl-group"><label for="wn-idx-start">Start age</label><input type="number" id="wn-idx-start" value="35" step="1" readonly></div><div class="ctrl-group"><label for="wn-i-partial-age">Partial age</label><input type="number" id="wn-i-partial-age" value="55" step="1" readonly title="Linked to retirement age"></div><div class="ctrl-group"><label for="wn-i-partial">Partial profit %</label><input type="number" id="wn-i-partial" value="50" step="1"></div><div class="ctrl-group"><label for="wn-i-tax">Tax on gain %</label><input type="number" id="wn-i-tax" value="30" step="1"></div><div class="ctrl-group"><label for="wn-i-exit">Exit age</label><input type="number" id="wn-i-exit" value="70" step="1" title="From this age all of the profit is withdrawn (nothing re-invested), and the corpus is sold whenever the money falls short of the monthly need"></div>
+        </div>
+        <button type="button" class="btn btn-primary btn-sm wn-calc" id="wn-i-calc">Calculate</button>
+      </div>
+      <div class="wn-asset-card wn-asset-idx">
+        <div class="wn-asset-title"><span class="wn-dot wn-dot-idx"></span>Index fund<span class="badge neu" id="wn-k-idx-badge">7% / yr</span></div>
+        <div class="wn-asset-inputs"><div class="ctrl-group"><label for="wn-a-idx-monthly">Monthly (EUR)</label><input type="number" id="wn-a-idx-monthly" value="1000" step="50"></div><div class="ctrl-group"><label for="wn-a-idx-rate">Return % / yr</label><input type="number" id="wn-a-idx-rate" value="7" step="0.1"></div></div>
+        <div class="wn-asset-lines">
+          <div class="wn-al "><span id="wn-k-idx-fv-lbl">Value at 60</span><b id="wn-k-idx-fv">—</b></div>
+          <div class="wn-al "><span id="wn-k-idx-put-lbl">You put in</span><b id="wn-k-idx-put">—</b></div>
+          <div class="wn-al "><span id="wn-k-idx-gain-lbl">Gain</span><b id="wn-k-idx-gain">—</b></div>
+          <div class="wn-al"><span id="wn-k-idx-tax-lbl">Tax on gain</span><b id="wn-k-idx-tax">—</b></div>
+          <div class="wn-al net"><span id="wn-k-idx-net-lbl">Net after tax</span><b id="wn-k-idx-net">—</b></div>
+        </div>
+      </div>
+      <div class="wn-asset-card wn-asset-eq">
+        <div class="wn-asset-title"><span class="wn-dot wn-dot-eq"></span>Equity<span class="badge neu" id="wn-k-eq-badge">10% / yr</span></div>
+        <div class="wn-asset-inputs"><div class="ctrl-group"><label for="wn-a-eq-monthly">Monthly (EUR)</label><input type="number" id="wn-a-eq-monthly" value="700" step="50"></div><div class="ctrl-group"><label for="wn-a-eq-rate">Return % / yr</label><input type="number" id="wn-a-eq-rate" value="10" step="0.1"></div></div>
+        <div class="wn-asset-lines">
+          <div class="wn-al "><span id="wn-k-eq-fv-lbl">Value at 60</span><b id="wn-k-eq-fv">—</b></div>
+          <div class="wn-al "><span id="wn-k-eq-put-lbl">You put in</span><b id="wn-k-eq-put">—</b></div>
+          <div class="wn-al "><span id="wn-k-eq-gain-lbl">Gain</span><b id="wn-k-eq-gain">—</b></div>
+          <div class="wn-al"><span id="wn-k-eq-tax-lbl">Tax on gain</span><b id="wn-k-eq-tax">—</b></div>
+          <div class="wn-al net"><span id="wn-k-eq-net-lbl">Net after tax</span><b id="wn-k-eq-net">—</b></div>
+        </div>
+      </div>
+      <div class="wn-asset-card wn-asset-com">
+        <div class="wn-asset-title"><span class="wn-dot wn-dot-com"></span>Commodities<span class="badge neu" id="wn-k-com-badge">4% / yr</span></div>
+        <div class="wn-asset-inputs"><div class="ctrl-group"><label for="wn-a-com-monthly">Monthly (EUR)</label><input type="number" id="wn-a-com-monthly" value="150" step="50"></div><div class="ctrl-group"><label for="wn-a-com-rate">Return % / yr</label><input type="number" id="wn-a-com-rate" value="4" step="0.1"></div></div>
+        <div class="wn-asset-lines">
+          <div class="wn-al "><span id="wn-k-com-fv-lbl">Value at 60</span><b id="wn-k-com-fv">—</b></div>
+          <div class="wn-al "><span id="wn-k-com-put-lbl">You put in</span><b id="wn-k-com-put">—</b></div>
+          <div class="wn-al "><span id="wn-k-com-gain-lbl">Gain</span><b id="wn-k-com-gain">—</b></div>
+          <div class="wn-al"><span id="wn-k-com-tax-lbl">Tax on gain</span><b id="wn-k-com-tax">—</b></div>
+          <div class="wn-al net"><span id="wn-k-com-net-lbl">Net after tax</span><b id="wn-k-com-net">—</b></div>
+        </div>
+      </div>
+      <div class="wn-asset-card wn-asset-alt">
+        <div class="wn-asset-title"><span class="wn-dot wn-dot-alt"></span>Alternate investment<span class="badge neu" id="wn-k-alt-badge">5% / yr</span></div>
+        <div class="wn-asset-inputs"><div class="ctrl-group"><label for="wn-a-alt-monthly">Monthly (EUR)</label><input type="number" id="wn-a-alt-monthly" value="150" step="50"></div><div class="ctrl-group"><label for="wn-a-alt-rate">Return % / yr</label><input type="number" id="wn-a-alt-rate" value="5" step="0.1"></div></div>
+        <div class="wn-asset-lines">
+          <div class="wn-al "><span id="wn-k-alt-fv-lbl">Value at 60</span><b id="wn-k-alt-fv">—</b></div>
+          <div class="wn-al "><span id="wn-k-alt-put-lbl">You put in</span><b id="wn-k-alt-put">—</b></div>
+          <div class="wn-al "><span id="wn-k-alt-gain-lbl">Gain</span><b id="wn-k-alt-gain">—</b></div>
+          <div class="wn-al"><span id="wn-k-alt-tax-lbl">Tax on gain</span><b id="wn-k-alt-tax">—</b></div>
+          <div class="wn-al net"><span id="wn-k-alt-net-lbl">Net after tax</span><b id="wn-k-alt-net">—</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wn-charts">
+    <div class="card"><div class="card-hdr"><span class="card-title" id="wn-pot-title">Your index pot</span><span class="badge neu">You put in vs growth</span></div>
+      <div class="chart-wrap h260"><canvas id="wn-pot"></canvas></div></div>
+    <div class="card"><div class="card-hdr"><span class="card-title">Monthly spend in retirement</span><span class="badge neu">Inflation-adjusted</span></div>
+      <div class="chart-wrap h260"><canvas id="wn-spend"></canvas></div></div>
+    <div class="card"><div class="card-hdr"><span class="card-title">Year by year</span><span class="badge neu">Plain sum</span></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Age</th><th>Year</th><th class="num">Monthly need</th><th class="num">Cumulative</th><th class="num">Without inv.</th><th class="num">With inv.</th></tr></thead><tbody id="wn-year-body"></tbody></table></div></div>
+  </div>
+
+  <details class="wn-assume">
+    <summary>Assumptions</summary>
+    <ul><li>Retirement spending taken monthly; the monthly need rises with inflation once a year</li><li>Default returns: index fund 7%, equity 10%, commodities 4%, alternate 5% a year</li><li>tax on the withdrawn profit (default 30%)</li><li>no pension</li><li>house: sold at the value-until age, new house grows at the same appreciation</li><li>one time events: savings (+) added and expenses (−) taken at the amount entered for that age</li><li>one time events (+ in, − out) and the house release (sale − new house) go into a pot of additional money; the monthly need is paid from the investment withdrawal first, then from that pot; it is sustainable while the pot stays at or above zero</li><li>monthly available at an age: that month's investment withdrawal after tax + the pot at that age spread to plan-until (rising with inflation; a pot below zero is a debt that comes off); events after that age count from the next tile on</li><li>investments: monthly investing goes in and stays 100% invested until retirement, then stops; from retirement each month the partial profit % (default 50%) of that month's profit is withdrawn and, after tax, is the monthly available; the rest is re-invested, split over the assets by the selected monthly amounts</li><li>exit age (default 70): from then nothing is re-invested (all of the profit is withdrawn) and, whenever the pot falls below zero (the money falls short of the monthly need), invested money is sold to bring it back to zero; tax applies to the gain part of what is sold; corpus runs out = the age the invested money is used up, followed past plan-until (the need keeps rising with inflation) so the exact age is shown</li><li>Mock (Phase 0): calculated in the browser for UI review; Phase 1 moves this to the backend</li></ul>
+    <div class="note">For education only — not financial advice.</div>
+  </details>
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -1301,7 +1591,7 @@ tr:hover td{background:var(--surface2);}
 })();
 </script>
 <script type="module" src="./js/invest-game/main.js"></script>
-<script type="module" src="./js/investgame-app/main.js"></script>
+<script type="module" src="./js/investgame-app/main.js?v=61"></script>
 <script>fetch('/health').then(r=>r.json()).then(d=>{document.querySelectorAll('.app-ver').forEach(e=>e.textContent='v'+d.version)}).catch(()=>{})</script>
 </body>
 </html>
