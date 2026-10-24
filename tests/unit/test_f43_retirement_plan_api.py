@@ -269,6 +269,10 @@ def test_save_with_foreign_keys_enforced_for_existing_user():
                 c.put(SAVE, json=DEFAULTS)
             session.rollback()
         assert session.query(UserRetirementPlanModel).count() == 1
+        # Phase 1b: the history row is FK-bound to the real user too; the ghost save left none
+        from rita.models.user_retirement_plan_history import UserRetirementPlanHistoryModel
+        hist = session.query(UserRetirementPlanHistoryModel).all()
+        assert len(hist) == 1 and hist[0].user_id == "rita-dev"
     finally:
         app.dependency_overrides.pop(get_db, None)
         session.close()
@@ -316,4 +320,7 @@ def test_c3_restore_skips_write_when_dirty():
     assert "let _dirty = false;" in js
     assert "addEventListener('input', () => { if (!_restored) _dirty = true; })" in js
     assert "if (plan && plan.inputs && !_dirty) {" in js
-    assert "if (save && _restored) savePlan(p);" in js
+    # Phase 1b: saving is explicit (Save button) and still blocked until the restore finished
+    assert "if (!_restored || _saving) return;" in js
+    assert "document.getElementById('wn-save').addEventListener('click', () => savePlan());" in js
+    assert "savePlan(" not in js.split("async function calculate()")[1].split("let _bound")[0]

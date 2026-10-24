@@ -11,17 +11,20 @@ from typing import List, Literal, TypedDict
 
 import pandas as pd
 import structlog
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from rita.auth import get_optional_user
+from rita.auth import get_current_user, get_optional_user
 from rita.database import get_db
 from rita.models.user import UserModel
 from rita.schemas.retirement_plan import (
+    RetirementPlanHistoryDetail,
+    RetirementPlanHistoryOut,
     RetirementPlanInputs,
     RetirementPlanOut,
     RetirementPlanResult,
+    RetirementPlanWithResult,
 )
 from rita.services.retirement_plan_service import (
     PlanValidationError,
@@ -397,6 +400,42 @@ def load_retirement_plan(
 ) -> RetirementPlanOut:
     """The signed-in user's saved plan, else the location preset defaults (never 401)."""
     return RetirementPlanService(db).load(user.id if user is not None else None)
+
+
+# Declared before GET /{game_id}/result, which would otherwise match /retirement-plan/result.
+@router.get("/retirement-plan/result", response_model=RetirementPlanWithResult)
+def retirement_plan_result(
+    user: UserModel | None = Depends(get_optional_user),
+    db: Session = Depends(get_db),
+) -> RetirementPlanWithResult:
+    """The signed-in user's saved plan (else preset defaults) with its result, calculated now.
+
+    The single read for other screens that need the user's "What I Need" numbers.
+    """
+    return RetirementPlanService(db).load_with_result(user.id if user is not None else None)
+
+
+@router.get("/retirement-plan/history", response_model=RetirementPlanHistoryOut)
+def retirement_plan_history(
+    limit: int = Query(50, ge=1, le=500),
+    user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> RetirementPlanHistoryOut:
+    """The signed-in user's saved plans, newest first, with the key figures at save time."""
+    return RetirementPlanService(db).history(user.id, limit=limit)
+
+
+@router.get("/retirement-plan/history/{history_id}", response_model=RetirementPlanHistoryDetail)
+def retirement_plan_history_entry(
+    history_id: str,
+    user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> RetirementPlanHistoryDetail:
+    """One saved plan of the signed-in user, with its result recalculated from its inputs."""
+    entry = RetirementPlanService(db).history_entry(user.id, history_id)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    return entry
 
 
 

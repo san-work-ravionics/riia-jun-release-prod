@@ -2,7 +2,8 @@
 // Every number comes from the backend (core/retirement_plan.py, a port of the mock rev 39):
 //   POST /api/experience/invest-game/retirement-plan/calculate  → result (camelCase, EUR, fractions)
 //   GET  /api/experience/invest-game/retirement-plan            → saved plan or Europe preset
-//   PUT  /api/v1/workflow/invest-game/retirement-plan           → save (signed-in users only)
+//   PUT  /api/v1/workflow/invest-game/retirement-plan           → save on the Save button (signed-in
+//                                                                    users only; also appends a history row)
 // This module only reads the form, renders the result and formats the copy (D7).
 import { mkChart, C } from '../shared/charts.js';
 import { api, apiFetch } from './api.js';
@@ -256,25 +257,45 @@ function writeInputs(inputs) {
   });
 }
 
-// Save after a successful user-triggered Calculate: signed-in only, only when changed,
-// fire-and-forget, silent on failure (no login redirect — the plan is still shown).
+// Save is explicit (Save button in the Age panel): signed-in only. It recalculates first so
+// the saved plan is the one on screen; the backend stores it and appends a history row.
+// apiFetch, not api(): a 401 must not redirect to Google login and lose the form.
 let _lastSaved = null;
 let _restored = false;
 let _dirty = false;    // user edited the form before the restore GET returned → don't overwrite
-async function savePlan(p) {
+function flash(cls, text, ms = 1600) {
+  const status = document.getElementById('wn-status');
+  clearTimeout(_flash);
+  status.className = 'badge ' + cls;
+  status.textContent = text;
+  if (ms) _flash = setTimeout(() => { status.className = 'badge neu'; status.textContent = 'Europe · EUR'; }, ms);
+}
+let _saving = false;   // one Save at a time — a double click must not write two history rows
+async function savePlan() {
+  if (!_restored || _saving) return;
   const token = sessionStorage.getItem('auth_token');
-  const body = JSON.stringify(p);
-  if (!token || body === _lastSaved) return;
-  const res = await apiFetch(SAVE_PATH, {
-    method: 'PUT', body,
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-  });
-  if (res && res.saved) _lastSaved = body;
+  if (!token) { flash('neu', 'Sign in to save', 2400); return; }
+  _saving = true;
+  try {
+    if (!(await calculate())) return;    // invalid inputs: the badge already shows why
+    const p = readInputs();
+    const body = JSON.stringify(p);
+    if (body === _lastSaved) { flash('ok', 'Already saved'); return; }
+    const res = await apiFetch(SAVE_PATH, {
+      method: 'PUT', body,
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    });
+    if (res && res.saved) { _lastSaved = body; flash('ok', 'Saved'); }
+    else flash('neu', 'Could not save — try again', 2400);
+  } finally {
+    _saving = false;
+  }
 }
 
 let _flash = null;
 let _seq = 0;
-async function calculate({ save = true } = {}) {
+// Returns true when the result was rendered.
+async function calculate() {
   const p = readInputs();
   const status = document.getElementById('wn-status');
   const seq = ++_seq;
@@ -286,15 +307,12 @@ async function calculate({ save = true } = {}) {
     clearTimeout(_flash);
     status.className = 'badge neu';      // never red (D7); last good render stays
     status.textContent = (e && e.message) || 'Could not calculate — try again';
-    return;
+    return false;
   }
-  if (seq !== _seq || !r) return;        // stale response — drop it
-  clearTimeout(_flash);
+  if (seq !== _seq || !r) return false;  // stale response — drop it
   render(p, r);
-  status.className = 'badge ok';
-  status.textContent = 'Updated';
-  _flash = setTimeout(() => { status.className = 'badge neu'; status.textContent = 'Europe · EUR'; }, 1200);
-  if (save && _restored) savePlan(p);
+  flash('ok', 'Updated', 1200);
+  return true;
 }
 
 let _bound = false;
@@ -303,6 +321,7 @@ export async function loadWhatINeed() {
   if (!_bound) {
     _bound = true;
     ['wn-calc', 'wn-i-calc', 'wn-h-calc', 'wn-h2-calc', 'wn-bx-calc'].forEach(id => document.getElementById(id).addEventListener('click', () => calculate()));
+    document.getElementById('wn-save').addEventListener('click', () => savePlan());
     // Any edit before the restore finishes wins over the restored plan
     document.getElementById('sec-what-i-need').addEventListener('input', () => { if (!_restored) _dirty = true; });
     // Enter in any field recalculates too
@@ -334,5 +353,5 @@ export async function loadWhatINeed() {
       _restored = true;
     }
   }
-  await calculate({ save: false });
+  await calculate();
 }

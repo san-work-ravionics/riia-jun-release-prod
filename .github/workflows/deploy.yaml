@@ -175,6 +175,14 @@ jobs:
             ubuntu@${{ secrets.AWS_EC2_IP }}:/opt/rita_output/models/ \
             /tmp/rita_models_backup/ || echo "No models to backup (first deploy or empty)"
 
+      # PATTERN-003 guard: prove the GHCR credential works BEFORE the running container is
+      # stopped and its image pruned — an expired GHCR_PAT must fail the deploy, not take prod down.
+      - name: Check GHCR login on EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} \
+            "echo '${{ secrets.GHCR_PAT }}' | docker login ghcr.io -u san-work-ravionics --password-stdin \
+             && docker manifest inspect '${{ env.IMAGE }}' > /dev/null"
+
       - name: Free EC2 disk space
         run: |
           ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} \
