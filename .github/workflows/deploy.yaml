@@ -151,11 +151,20 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} \
             "sudo mkdir -p /opt/rita_input/raw /opt/rita_input/input /opt/rita_input/agent-ops/runs /opt/rita_output && sudo chown -R ubuntu:ubuntu /opt/rita_input /opt/rita_output"
-          rsync -av --update \
+          # Price CSVs on EC2 are kept current by /refresh-all-instruments-data, not by deploys.
+          # A fresh checkout has new mtimes, so --update would replace the refreshed copies with
+          # the older git ones: only seed missing files (a new instrument), never overwrite.
+          rsync -av --ignore-existing \
             -e "ssh -o StrictHostKeyChecking=no" \
             data/raw/ \
             ubuntu@${{ secrets.AWS_EC2_IP }}:/opt/rita_input/raw/
+          rsync -av --ignore-existing \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            data/input/ \
+            ubuntu@${{ secrets.AWS_EC2_IP }}:/opt/rita_input/input/
+          # Other input files ship with the deploy (Kite put-premium snapshot, ASTA dataset, samples)
           rsync -av --update \
+            --exclude '*_daily.csv' \
             -e "ssh -o StrictHostKeyChecking=no" \
             data/input/ \
             ubuntu@${{ secrets.AWS_EC2_IP }}:/opt/rita_input/input/
