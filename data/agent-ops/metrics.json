@@ -1,53 +1,53 @@
 {
-  "generated_at": "2026-10-04T12:20:37",
-  "total_runs": 19,
+  "generated_at": "2026-10-24T15:10:25",
+  "total_runs": 25,
   "status_counts": {
-    "pass_with_warnings": 9,
-    "pass": 10
+    "pass_with_warnings": 14,
+    "pass": 11
   },
   "app_counts": {
     "rl": 2,
-    "rita": 5,
+    "rita": 6,
     "ops": 1,
-    "fno": 11
+    "fno": 16
   },
-  "total_estimated_tokens": 3938800,
-  "total_actual_tokens": 5513380,
-  "total_duration_minutes": 1249,
-  "avg_duration_minutes": 65.7,
+  "total_estimated_tokens": 6248800,
+  "total_actual_tokens": 8711406,
+  "total_duration_minutes": 2299,
+  "avg_duration_minutes": 92.0,
   "per_agent": {
     "pm": {
-      "runs": 13,
+      "runs": 19,
       "avg_adherence": 1.0,
-      "total_estimated_tokens": 390000,
-      "total_actual_tokens": 296441,
-      "token_overrun_ratio": 0.76,
+      "total_estimated_tokens": 600000,
+      "total_actual_tokens": 505356,
+      "token_overrun_ratio": 0.84,
       "top_failure_modes": {}
     },
     "architect": {
-      "runs": 13,
+      "runs": 19,
       "avg_adherence": 1.0,
-      "total_estimated_tokens": 350000,
-      "total_actual_tokens": 190142,
-      "token_overrun_ratio": 0.54,
+      "total_estimated_tokens": 530000,
+      "total_actual_tokens": 614355,
+      "token_overrun_ratio": 1.16,
       "top_failure_modes": {}
     },
     "design_reviewer": {
-      "runs": 13,
+      "runs": 19,
       "avg_adherence": 1.0,
-      "total_estimated_tokens": 324000,
-      "total_actual_tokens": 220233,
-      "token_overrun_ratio": 0.68,
+      "total_estimated_tokens": 504000,
+      "total_actual_tokens": 501980,
+      "token_overrun_ratio": 1.0,
       "top_failure_modes": {
         "DR-001": 1
       }
     },
     "engineer": {
-      "runs": 18,
-      "avg_adherence": 0.981,
-      "total_estimated_tokens": 1003000,
-      "total_actual_tokens": 848516,
-      "token_overrun_ratio": 0.85,
+      "runs": 24,
+      "avg_adherence": 0.985,
+      "total_estimated_tokens": 1543000,
+      "total_actual_tokens": 1699976,
+      "token_overrun_ratio": 1.1,
       "top_failure_modes": {
         "FC-LINT: unused import shipped, caught by CI ruff gate": 1,
         "FC-COV: new 538-line module shipped without coverage omit entry": 1,
@@ -57,31 +57,32 @@
       }
     },
     "code_reviewer": {
-      "runs": 11,
-      "avg_adherence": 0.977,
-      "total_estimated_tokens": 576000,
-      "total_actual_tokens": 420410,
-      "token_overrun_ratio": 0.73,
+      "runs": 17,
+      "avg_adherence": 0.985,
+      "total_estimated_tokens": 996000,
+      "total_actual_tokens": 941766,
+      "token_overrun_ratio": 0.95,
       "top_failure_modes": {
         "CR-WORKTREE-FALSE-POSITIVE: spec blocking findings overridden \u2014 specs confirmed present in worktree branch": 1
       }
     },
     "qa": {
-      "runs": 11,
-      "avg_adherence": 0.955,
-      "total_estimated_tokens": 775000,
-      "total_actual_tokens": 489857,
-      "token_overrun_ratio": 0.63,
+      "runs": 17,
+      "avg_adherence": 0.971,
+      "total_estimated_tokens": 1225000,
+      "total_actual_tokens": 1233851,
+      "token_overrun_ratio": 1.01,
       "top_failure_modes": {
+        "FC-004": 2,
         "No unit tests \u2014 no RITA backend code to test (external middleware)": 1
       }
     },
     "techwriter": {
-      "runs": 11,
-      "avg_adherence": 0.79,
-      "total_estimated_tokens": 520000,
-      "total_actual_tokens": 442826,
-      "token_overrun_ratio": 0.85,
+      "runs": 17,
+      "avg_adherence": 0.825,
+      "total_estimated_tokens": 850000,
+      "total_actual_tokens": 609167,
+      "token_overrun_ratio": 0.72,
       "top_failure_modes": {
         "Confluence key not present in aug workspace": 1
       }
@@ -96,14 +97,8 @@
     }
   },
   "alerts": [
-    "[ALERT] techwriter adherence 0.67 < 0.7 in run 20260628-1007",
-    "[ALERT] techwriter adherence 0.67 < 0.7 in run 20260708-0828",
-    "[ALERT] techwriter adherence 0.67 < 0.7 in run 20260809-0908",
-    "[ALERT] qa adherence 0.50 < 0.7 in run 20260918-1049",
-    "[ALERT] techwriter adherence 0.67 < 0.7 in run 20260918-1049",
-    "[ALERT] techwriter adherence 0.67 < 0.7 in run 20260918-1101",
-    "[ALERT] techwriter adherence 0.67 < 0.7 in run 20261003-1114",
-    "[ALERT] techwriter adherence 0.67 < 0.7 in run 20261003-1806"
+    "[ALERT] techwriter adherence 0.67 < 0.7 in run 20261005-1939",
+    "[ALERT] techwriter adherence 0.67 < 0.7 in run 20261005-2005"
   ],
   "skill_version_history": [
     {

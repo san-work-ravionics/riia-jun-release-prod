@@ -1,0 +1,130 @@
+{
+  "run_id": "20261004-1446",
+  "app": "fno",
+  "request": "F41 \u2014 Risk & Greeks page UI rework (grouped Greeks, no horizontal scroll); follow-ups: Net Greeks/Stress as tables, Per-Instrument card removed, 3-panel row",
+  "skill_file": "project-office/skills/skill-add-fno-feature.md",
+  "agents": [
+    {
+      "role": "pm",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 35000,
+      "actual_tokens": {
+        "total_tokens": 44310,
+        "tool_uses": null
+      },
+      "grounding_checks": {},
+      "failure_modes": [],
+      "notes": ""
+    },
+    {
+      "role": "architect",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 30000,
+      "actual_tokens": {
+        "total_tokens": 62835,
+        "tool_uses": null
+      },
+      "grounding_checks": {},
+      "failure_modes": [],
+      "notes": ""
+    },
+    {
+      "role": "design_reviewer",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 30000,
+      "actual_tokens": {
+        "total_tokens": 44517,
+        "tool_uses": null
+      },
+      "grounding_checks": {},
+      "failure_modes": [],
+      "notes": "PASS, 3 advisories"
+    },
+    {
+      "role": "engineer",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 90000,
+      "actual_tokens": {
+        "total_tokens": 89916,
+        "tool_uses": null
+      },
+      "grounding_checks": {},
+      "failure_modes": [],
+      "notes": "bbbf976; follow-ups d40f243, 790a135, c9024de on master"
+    },
+    {
+      "role": "code_reviewer",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 70000,
+      "actual_tokens": {
+        "total_tokens": 75315,
+        "tool_uses": null
+      },
+      "grounding_checks": {},
+      "failure_modes": [],
+      "notes": "CONDITIONAL, 0 blocking"
+    },
+    {
+      "role": "qa",
+      "status": "pass_with_warnings",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 75000,
+      "actual_tokens": {
+        "total_tokens": 74357,
+        "tool_uses": null
+      },
+      "grounding_checks": {},
+      "failure_modes": [
+        "FC-004"
+      ],
+      "notes": "F41-QA-1 fixed 101d3c3; F41-QA-2 API lacks full/type/side (pre-existing)"
+    },
+    {
+      "role": "techwriter",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 55000,
+      "actual_tokens": {
+        "total_tokens": 64634,
+        "tool_uses": null
+      },
+      "grounding_checks": {},
+      "failure_modes": [],
+      "notes": ""
+    }
+  ],
+  "overall_status": "pass_with_warnings",
+  "total_tokens_estimated": 385000,
+  "total_actual_tokens": 455884,
+  "duration_minutes": 240,
+  "branch": "feature/f41-risk-greeks-ui",
+  "merge_status": "merged",
+  "merge_commit": "4692577",
+  "human_score": {
+    "accuracy": 4,
+    "relevance": 4,
+    "csat": 4,
+    "planning_ok": true,
+    "time_saved_hours": 1.5,
+    "notes": "Day total 3-8h (scored 5h), split across the day's 3 /enhance runs"
+  }
+}

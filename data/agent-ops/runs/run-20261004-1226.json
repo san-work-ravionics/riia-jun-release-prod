@@ -1,0 +1,109 @@
+{
+  "run_id": "20261004-1226",
+  "app": "fno",
+  "request": "F40 Phase 2 \u2014 hedge save fixes + append-only hedge history dataset (selections, history table, export, isolated e2e); QA defect F40-QA-1 fixed; live v1.2.32",
+  "skill_file": "project-office/skills/skill-add-fno-feature.md",
+  "agents": [
+    {
+      "role": "pm",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 35000,
+      "actual_tokens": null,
+      "grounding_checks": {},
+      "failure_modes": [],
+      "notes": ""
+    },
+    {
+      "role": "architect",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 30000,
+      "actual_tokens": null,
+      "grounding_checks": {},
+      "failure_modes": [],
+      "notes": ""
+    },
+    {
+      "role": "design_reviewer",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 30000,
+      "actual_tokens": null,
+      "grounding_checks": {},
+      "failure_modes": [],
+      "notes": "1 FAIL then PASS (v2 design)"
+    },
+    {
+      "role": "engineer",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 90000,
+      "actual_tokens": null,
+      "grounding_checks": {},
+      "failure_modes": [],
+      "notes": "cf70171"
+    },
+    {
+      "role": "code_reviewer",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 70000,
+      "actual_tokens": null,
+      "grounding_checks": {},
+      "failure_modes": [],
+      "notes": "CONDITIONAL, 8 advisories"
+    },
+    {
+      "role": "qa",
+      "status": "pass_with_warnings",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 75000,
+      "actual_tokens": null,
+      "grounding_checks": {},
+      "failure_modes": [
+        "FC-004"
+      ],
+      "notes": "F40-QA-1 found, fixed 279eb61"
+    },
+    {
+      "role": "techwriter",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 55000,
+      "actual_tokens": null,
+      "grounding_checks": {},
+      "failure_modes": [],
+      "notes": ""
+    }
+  ],
+  "overall_status": "pass_with_warnings",
+  "total_tokens_estimated": 385000,
+  "total_actual_tokens": null,
+  "duration_minutes": 300,
+  "branch": "feature/f40-hedge-history-fno",
+  "merge_status": "merged",
+  "merge_commit": "eb9db88",
+  "human_score": {
+    "accuracy": 4,
+    "relevance": 4,
+    "csat": 4,
+    "planning_ok": true,
+    "time_saved_hours": 2,
+    "notes": "Day total 3-8h (scored 5h), split across the day's 3 /enhance runs"
+  }
+}
