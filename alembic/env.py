@@ -75,6 +75,7 @@ from rita.models.user_portfolio_key import UserPortfolioKeyModel  # noqa: E402, 
 from rita.models.user_portfolio import UserPortfolioModel  # noqa: E402, F401
 from rita.models.agent_performance import AgentPerformance  # noqa: E402, F401
 from rita.models.user_retirement_plan import UserRetirementPlanModel  # noqa: E402, F401
+from rita.models.user_retirement_plan_history import UserRetirementPlanHistoryModel  # noqa: E402, F401
 from rita.config import get_settings  # noqa: E402
 
 # this is the Alembic Config object, which provides

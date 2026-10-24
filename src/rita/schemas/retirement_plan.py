@@ -174,6 +174,39 @@ class RetirementPlanOut(_Camel):
     inputs: RetirementPlanInputs
 
 
+class RetirementPlanWithResult(RetirementPlanOut):
+    """The user's saved plan (or the preset defaults) with its result, calculated now."""
+
+    result: RetirementPlanResult
+
+
+class RetirementPlanHistoryItem(_Camel):
+    """One saved plan in the user's history: the key figures shown at save time."""
+
+    history_id: str
+    saved_at: datetime
+    location: str
+    retire_age: int
+    plan_until: int
+    need_at_retire: float
+    monthly_at_retire: float
+    corpus_at_retire: float
+    sustainable_until: int | None = None
+    corpus_out_age: int | None = None
+    app_version: str = ""
+
+
+class RetirementPlanHistoryOut(_Camel):
+    items: list[RetirementPlanHistoryItem]
+
+
+class RetirementPlanHistoryDetail(RetirementPlanHistoryItem):
+    """A history row with its inputs and the result recalculated from them."""
+
+    inputs: RetirementPlanInputs
+    result: RetirementPlanResult
+
+
 class UserRetirementPlanSchema(BaseModel):
     model_config = {"from_attributes": True}
 
