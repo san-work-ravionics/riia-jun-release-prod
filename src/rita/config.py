@@ -403,6 +403,28 @@ class SecuritySettings(BaseSettings):
     )
 
 
+class RetirementLocationPreset(BaseSettings):
+    """F43 "What I Need" location preset: currency + the default plan inputs.
+
+    ``defaults`` is the camelCase ``RetirementPlanInputs`` shape (rates as fractions);
+    it is validated by the schema when served, not here (keeps config free of schema imports).
+    """
+
+    model_config = SettingsConfigDict(extra="forbid")
+
+    currency: str = "EUR"
+    defaults: dict[str, Any] = {}
+
+
+class RetirementPlanSettings(BaseSettings):
+    """F43 retirement plan presets (``retirement_plan:`` in base.yaml)."""
+
+    model_config = SettingsConfigDict(extra="forbid")
+
+    default_location: str = "europe"
+    locations: dict[str, RetirementLocationPreset] = {}
+
+
 # ---------------------------------------------------------------------------
 # Root Settings
 # ---------------------------------------------------------------------------
@@ -428,6 +450,7 @@ class Settings(BaseSettings):
     database: DatabaseSettings = DatabaseSettings()
     integrations: IntegrationsSettings = IntegrationsSettings()
     trade_analysis: TradeAnalysisSettings = TradeAnalysisSettings()
+    retirement_plan: RetirementPlanSettings = RetirementPlanSettings()
 
     # The active environment name (informational — used during construction).
     env: str = "development"

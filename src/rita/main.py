@@ -71,6 +71,7 @@ from rita.api.experience.users import router as users_traffic_router
 from rita.api.v1.workflow.chat import router as chat_router
 from rita.api.v1.workflow.commentary import router as commentary_router
 from rita.api.v1.workflow.user_portfolio import router as user_portfolio_workflow_router
+from rita.api.v1.workflow.invest_game_plan import router as invest_game_plan_router
 from rita.api.v1.portfolio import router as portfolio_router
 from rita.api.experience.user_portfolio import router as user_portfolio_experience_router
 from rita.api.experience.portfolio_hedge import router as portfolio_hedge_router
@@ -401,6 +402,7 @@ app.include_router(evaluate_router, dependencies=[Depends(get_current_user)])
 app.include_router(pipeline_router)
 app.include_router(instrument_onboard_router)
 app.include_router(user_portfolio_workflow_router, dependencies=[Depends(get_current_user)])
+app.include_router(invest_game_plan_router, dependencies=[Depends(get_current_user)])
 
 # -- Experience Layer -- UI-shaped aggregation routers (read-only) -------------
 app.include_router(dashboard_router)
