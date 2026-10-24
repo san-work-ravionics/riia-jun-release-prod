@@ -5,7 +5,7 @@ import { loadCrispDm, switchCrispTab } from './crisp-dm.js';
 import { loadAgentPerformance, setAgentPerfPeriod, loadAgentPerfTimeline } from './agent-performance.js';
 import { loadAgentBuilds, submitTokenEstimate, toggleEstimateWidget, closeChartModal } from './agent-builds.js';
 import { loadAgentPanel, agentPanelStep, resetAgentPanel, approveAgentProposal, rejectAgentProposal } from './agent-panel.js';
-import { loadWhatINeed } from './what-i-need.js?v=58';
+import { loadWhatINeed, hasPendingSave } from './what-i-need.js?v=59';
 import { ensureDevToken } from '../shared/dev-auth.js';
 
 // ── Register section loaders ─────────────────────────────────────────────────
@@ -44,7 +44,8 @@ window.rejectAgentProposal = rejectAgentProposal;
 // ── Init ─────────────────────────────────────────────────────────────────────
 window.addEventListener('load', async () => {
   await ensureDevToken();
-  // Show the intro section by default
-  const defaultNav = document.querySelector('[data-s="investgame"]');
-  if (defaultNav) show('investgame', defaultNav);
+  // Show the intro section by default; back from sign-in to save → What I Need
+  const start = hasPendingSave() ? 'what-i-need' : 'investgame';
+  const defaultNav = document.querySelector(`[data-s="${start}"]`);
+  if (defaultNav) show(start, defaultNav);
 });

@@ -6,11 +6,13 @@
 //                                                                    users only; also appends a history row)
 // This module only reads the form, renders the result and formats the copy (D7).
 import { mkChart, C } from '../shared/charts.js';
-import { api, apiFetch } from './api.js';
+import { api, apiFetch, apiBase } from './api.js';
+import { isLocalDev } from '../shared/dev-auth.js';
 
 const CALC_PATH = '/api/experience/invest-game/retirement-plan/calculate';
 const PLAN_PATH = '/api/experience/invest-game/retirement-plan';
 const SAVE_PATH = '/api/v1/workflow/invest-game/retirement-plan';
+const PENDING_KEY = 'wn_pending_save';   // plan inputs kept across the Google sign-in round trip
 
 const ASSETS = [
   { key: 'idx',  name: 'Index fund',  color: 'rgba(26,107,60,.75)' },
@@ -259,7 +261,9 @@ function writeInputs(inputs) {
 
 // Save is explicit (Save button in the Age panel): signed-in only. It recalculates first so
 // the saved plan is the one on screen; the backend stores it and appends a history row.
-// apiFetch, not api(): a 401 must not redirect to Google login and lose the form.
+// The page itself is public. Save while signed out (or with an expired token) keeps the plan
+// in sessionStorage, goes to Google sign-in and finishes the save on return (index.html
+// follows post_login_redirect). Localhost always has the dev token, so this is prod only.
 let _lastSaved = null;
 let _restored = false;
 let _dirty = false;    // user edited the form before the restore GET returned → don't overwrite
@@ -270,21 +274,42 @@ function flash(cls, text, ms = 1600) {
   status.textContent = text;
   if (ms) _flash = setTimeout(() => { status.className = 'badge neu'; status.textContent = 'Europe · EUR'; }, ms);
 }
+function signInToSave(body) {
+  if (isLocalDev()) { flash('neu', 'Sign in to save', 2400); return; }
+  sessionStorage.removeItem('auth_token');
+  sessionStorage.setItem(PENDING_KEY, body);
+  sessionStorage.setItem('post_login_redirect', window.location.href);
+  flash('neu', 'Sign in to save…', 0);
+  window.location.href = '/auth/google/login';
+}
+
+export function hasPendingSave() {
+  return !!sessionStorage.getItem(PENDING_KEY);
+}
+
 let _saving = false;   // one Save at a time — a double click must not write two history rows
 async function savePlan() {
   if (!_restored || _saving) return;
-  const token = sessionStorage.getItem('auth_token');
-  if (!token) { flash('neu', 'Sign in to save', 2400); return; }
   _saving = true;
   try {
     if (!(await calculate())) return;    // invalid inputs: the badge already shows why
     const p = readInputs();
     const body = JSON.stringify(p);
+    const token = sessionStorage.getItem('auth_token');
+    if (!token) { signInToSave(body); return; }
     if (body === _lastSaved) { flash('ok', 'Already saved'); return; }
-    const res = await apiFetch(SAVE_PATH, {
-      method: 'PUT', body,
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-    });
+    // fetch, not apiFetch: a 401 (expired session) must be told apart from other errors
+    let res = null;
+    try {
+      const r = await fetch(apiBase() + SAVE_PATH, {
+        method: 'PUT', body,
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      });
+      if (r.status === 401) { signInToSave(body); return; }
+      if (r.ok) res = await r.json();
+    } catch (e) {
+      // network error → "Could not save" below
+    }
     if (res && res.saved) { _lastSaved = body; flash('ok', 'Saved'); }
     else flash('neu', 'Could not save — try again', 2400);
   } finally {
@@ -337,9 +362,13 @@ export async function loadWhatINeed() {
       calculate();
     }));
   }
+  let resumeSave = false;
   if (!_loaded) {
     _loaded = true;
     // Restore the saved plan (or the Europe preset); on any error keep the HTML defaults.
+    // A plan kept for sign-in (Save while signed out) wins and is saved once signed in.
+    const pending = sessionStorage.getItem(PENDING_KEY);
+    sessionStorage.removeItem(PENDING_KEY);
     try {
       const token = sessionStorage.getItem('auth_token');
       const plan = await apiFetch(PLAN_PATH, token ? { headers: { 'Authorization': `Bearer ${token}` } } : {});
@@ -347,11 +376,16 @@ export async function loadWhatINeed() {
         writeInputs(plan.inputs);
         if (plan.saved) _lastSaved = JSON.stringify(readInputs());
       }
+      if (pending && !_dirty) {
+        writeInputs(JSON.parse(pending));
+        resumeSave = !!token;            // sign-in cancelled → plan stays on screen, not saved
+      }
     } catch (e) {
       // keep HTML defaults
     } finally {
       _restored = true;
     }
   }
-  await calculate();
+  if (resumeSave) await savePlan();      // recalculates, then saves
+  else await calculate();
 }

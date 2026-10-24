@@ -227,3 +227,56 @@ def test_save_button_blocks_concurrent_saves():
     assert "if (!_restored || _saving) return;" in js
     save_fn = js.split("async function savePlan()")[1].split("let _flash")[0]
     assert "_saving = true;" in save_fn and "} finally {\n    _saving = false;" in save_fn
+
+
+# ── Save while signed out → Google sign-in → save on return (prod only) ──────
+
+_IG = Path(__file__).parent.parent.parent / "dashboard" / "js" / "investgame-app"
+
+
+def _wn_js() -> str:
+    return (_IG / "what-i-need.js").read_text(encoding="utf-8")
+
+
+def test_save_signed_out_keeps_plan_and_goes_to_google_sign_in():
+    js = _wn_js()
+    fn = js.split("function signInToSave(body)")[1].split("export function hasPendingSave")[0]
+    assert "if (isLocalDev()) { flash('neu', 'Sign in to save', 2400); return; }" in fn
+    assert "sessionStorage.setItem(PENDING_KEY, body);" in fn
+    assert "sessionStorage.setItem('post_login_redirect', window.location.href);" in fn
+    assert "window.location.href = '/auth/google/login';" in fn
+    save_fn = js.split("async function savePlan()")[1].split("let _flash")[0]
+    # validates first (no sign-in round trip for an invalid plan), then signs in
+    assert save_fn.index("await calculate()") < save_fn.index("if (!token) { signInToSave(body); return; }")
+
+
+def test_expired_session_on_save_goes_to_sign_in_not_could_not_save():
+    save_fn = _wn_js().split("async function savePlan()")[1].split("let _flash")[0]
+    assert "if (r.status === 401) { signInToSave(body); return; }" in save_fn
+
+
+def test_return_from_sign_in_restores_pending_plan_and_saves_it():
+    js = _wn_js()
+    load = js.split("export async function loadWhatINeed()")[1]
+    assert "sessionStorage.removeItem(PENDING_KEY);" in load   # one-shot: no save loop
+    assert "writeInputs(JSON.parse(pending));" in load
+    assert "resumeSave = !!token;" in load                      # cancelled sign-in → shown, not saved
+    assert "if (resumeSave) await savePlan();" in load
+    # pending plan is applied after the saved one, so it wins
+    assert load.index("writeInputs(plan.inputs);") < load.index("writeInputs(JSON.parse(pending));")
+
+
+def test_boot_opens_what_i_need_when_returning_to_save():
+    main = (_IG / "main.js").read_text(encoding="utf-8")
+    assert "import { loadWhatINeed, hasPendingSave } from './what-i-need.js?v=59';" in main
+    assert "const start = hasPendingSave() ? 'what-i-need' : 'investgame';" in main
+    html = (Path(__file__).parent.parent.parent / "dashboard" / "investgame-app.html").read_text(encoding="utf-8")
+    assert "js/investgame-app/main.js?v=64" in html
+
+
+def test_google_callback_lands_on_index_which_follows_post_login_redirect():
+    # the return leg the Save flow relies on
+    idx = (Path(__file__).parent.parent.parent / "dashboard" / "index.html").read_text(encoding="utf-8")
+    assert "const redirect = sessionStorage.getItem('post_login_redirect');" in idx
+    auth = (Path(__file__).parent.parent.parent / "src" / "rita" / "api" / "v1" / "auth.py").read_text(encoding="utf-8")
+    assert '"/dashboard/fno.html" if state == "fno" else "/dashboard/index.html"' in auth
