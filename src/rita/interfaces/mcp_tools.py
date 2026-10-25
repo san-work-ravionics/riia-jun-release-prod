@@ -1,279 +1,216 @@
 """
-Shared MCP Server instance — tool definitions and handlers.
+Shared MCP Server instance — one server, namespaced tools, one dispatch (F44 P1, ADR-007).
 
-Imported by both transports:
-  - rita_mcp_server.py  (stdio, spawned by Claude Desktop locally)
-  - mcp_sse_app.py      (SSE, mounted in the FastAPI app on EC2)
+Served by every transport:
+  - in-memory  ``mcp_client.py``      (RITA modules / Jarvis, same process)
+  - HTTP       ``mcp_http_app.py``    (``/mcp`` streamable HTTP, JWT)
+  - SSE        ``mcp_sse_app.py``     (``/mcp/sse``, JWT, deprecated)
+  - stdio      ``rita_mcp_server.py`` (Claude Desktop local; Auth ``none`` tools + legacy aliases)
 
-No transport-specific setup (no chdir, no logging redirect, no sys.path hacks)
-belongs here — keep this module side-effect-free at import time.
+The dispatch is the single path every call takes: resolve the caller identity → check the tool is
+offered on this transport and the caller has the access it declares → validate the input (Pydantic)
+→ run the synchronous handler in a worker thread (never on the event loop) → build the result
+(structured content + short text, or a coded error) → write one ``mcp_calls`` row.  A logger
+failure never fails the call.
+
+No transport-specific setup (no chdir, no logging redirect, no sys.path hacks) belongs here — keep
+this module side-effect-free at import time.
 """
 from __future__ import annotations
 
 import time
+import uuid
+from typing import Any
 
+import anyio
+import structlog
 from mcp.server import Server
-from mcp.types import TextContent, Tool
+from mcp.types import CallToolResult, TextContent, Tool
+from pydantic import BaseModel, ValidationError
+
+from rita.interfaces.mcp_auth import McpIdentity, current_context_identity, identity_from_request
+from rita.interfaces.tools import ToolContext, ToolError, ToolSpec, all_tools
 
 try:
     from rita.core.mcp_logger import log_mcp_call as _log_call
-except ImportError:
+except ImportError:  # pragma: no cover
     def _log_call(**_kw) -> None:  # noqa: E704
         pass
 
+log = structlog.get_logger(__name__)
+
 server = Server("rita")
 
+REGISTRY: dict[str, ToolSpec] = {spec.name: spec for spec in all_tools()}
 
-# ── Tool catalogue ─────────────────────────────────────────────────────────────
+_ANONYMOUS = McpIdentity(transport="memory", caller="external")
+
+
+def tools_registered() -> int:
+    return len(REGISTRY)
+
+
+# ── identity + access ──────────────────────────────────────────────────────────
+
+def _call_identity() -> McpIdentity:
+    """HTTP / SSE: the identity the JWT gate put on the request.  Memory / stdio: the context
+    identity set by the client helper / stdio server.  Otherwise an anonymous caller (no user)."""
+    request = None
+    try:
+        request = server.request_context.request
+    except LookupError:
+        pass
+    ident = identity_from_request(request)
+    if ident is not None:
+        return ident
+    ident = current_context_identity()
+    if ident is not None:
+        return ident
+    return _ANONYMOUS
+
+
+def offered(spec: ToolSpec, identity: McpIdentity) -> bool:
+    """stdio offers only the tools that need no user (+ legacy aliases); others offer all."""
+    return spec.stdio if identity.transport == "stdio" else True
+
+
+def check_access(spec: ToolSpec, identity: McpIdentity) -> None:
+    if identity.transport == "stdio":
+        if not spec.stdio:
+            raise ToolError("forbidden", f"{spec.name} needs a signed-in user; not available over stdio")
+        return  # local process: today's behaviour for the stdio tools
+    if "none" in spec.auth:
+        return
+    if identity.caller == "system" and "system" in spec.auth:
+        return
+    if "user" in spec.auth and identity.user_id:
+        if spec.requires_flag and not getattr(identity, spec.requires_flag, False):
+            raise ToolError("forbidden", f"{spec.name} requires {spec.requires_flag}")
+        return
+    raise ToolError("forbidden", f"{spec.name} needs a signed-in user")
+
+
+# ── catalogue ──────────────────────────────────────────────────────────────────
+
+def tool_definition(spec: ToolSpec) -> Tool:
+    return Tool(
+        name=spec.name,
+        description=spec.description,
+        inputSchema=spec.input_json_schema(),
+        outputSchema=spec.output_json_schema(),
+    )
+
 
 @server.list_tools()
 async def list_tools() -> list[Tool]:
-    return [
-        Tool(
-            name="ask_rita",
-            description=(
-                "Ask RITA an investment question about Nifty 50, Bank Nifty, ASML, or Nvidia. "
-                "Uses a local all-MiniLM-L6-v2 embedding classifier to route to one of 20 "
-                "fixed intents, then runs a deterministic OHLCV-data handler. "
-                "Fully offline — no LLM generation at runtime."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": (
-                            "Natural-language investment question, e.g. "
-                            "'Should I invest in Nifty now?' or 'What is the 3-year return estimate?'"
-                        ),
-                    },
-                    "instrument": {
-                        "type": "string",
-                        "enum": ["NIFTY", "BANKNIFTY", "ASML", "NVIDIA"],
-                        "description": "Instrument to analyse. Defaults to NIFTY.",
-                        "default": "NIFTY",
-                    },
-                    "portfolio_inr": {
-                        "type": "number",
-                        "description": (
-                            "Portfolio size in INR used for stress and allocation calculations. "
-                            "Default 1,000,000."
-                        ),
-                        "default": 1_000_000,
-                    },
-                    "target_return_pct": {
-                        "type": "number",
-                        "description": (
-                            "Target annual return % — optional. When set on return-estimate "
-                            "intents, RITA assesses feasibility against historical percentiles."
-                        ),
-                    },
-                    "time_horizon_days": {
-                        "type": "integer",
-                        "description": "Investment horizon in days — optional.",
-                    },
-                },
-                "required": ["query"],
-            },
-        ),
-        Tool(
-            name="rita_market_overview",
-            description=(
-                "Get the current market state for an instrument: overall sentiment score, "
-                "trend direction, RSI-14, ATR volatility percentile, Bollinger Band position, "
-                "and EMA levels. Equivalent to opening the RITA Market Analysis panel."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "instrument": {
-                        "type": "string",
-                        "enum": ["NIFTY", "BANKNIFTY", "ASML", "NVIDIA"],
-                        "description": "Instrument to summarise. Defaults to NIFTY.",
-                        "default": "NIFTY",
-                    },
-                },
-                "required": [],
-            },
-        ),
-        Tool(
-            name="rita_monitor",
-            description=(
-                "Retrieve RITA chat KPIs and the 10 most recent queries: "
-                "total calls, average latency, low-confidence rate, success rate, "
-                "and intent distribution. Useful for checking classifier health."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {},
-                "required": [],
-            },
-        ),
-    ]
+    identity = _call_identity()
+    return [tool_definition(s) for s in REGISTRY.values() if offered(s, identity)]
 
 
-# ── Tool dispatch ──────────────────────────────────────────────────────────────
+# ── dispatch ───────────────────────────────────────────────────────────────────
 
-@server.call_tool()
-async def call_tool(name: str, arguments: dict) -> list[TextContent]:
+def _error_result(code: str, message: str) -> CallToolResult:
+    return CallToolResult(
+        content=[TextContent(type="text", text=f"{code}: {message}")],
+        structuredContent={"error": {"code": code, "message": message}},
+        isError=True,
+    )
+
+
+def _summarise_args(arguments: dict[str, Any]) -> str:
+    """Key args for mcp_calls.args_summary — never message text (``query`` → its length)."""
+    parts = []
+    for key, value in (arguments or {}).items():
+        if value is None:
+            continue
+        if key == "query":
+            parts.append(f"query_len={len(str(value))}")
+        else:
+            parts.append(f"{key}={str(value)[:40]}")
+    return ", ".join(parts)[:300]
+
+
+def _write_log(**kw) -> None:
+    try:
+        _log_call(**kw)
+    except Exception as exc:  # noqa: BLE001 — logging never fails a tool call
+        log.warning("mcp.log_failed", tool=kw.get("tool_name"), error=type(exc).__name__)
+
+
+async def dispatch(name: str, arguments: dict[str, Any] | None) -> CallToolResult:
+    """Run one tool call for the current caller identity (all transports come through here)."""
+    identity = _call_identity()
+    arguments = arguments or {}
+    call_id = str(uuid.uuid4())
     t0 = time.perf_counter()
     status = "ok"
-    result_text = ""
-
+    summary = ""
+    spec = REGISTRY.get(name)
     try:
-        if name == "ask_rita":
-            result_text = _handle_ask_rita(arguments)
-        elif name == "rita_market_overview":
-            result_text = _handle_market_overview(arguments)
-        elif name == "rita_monitor":
-            result_text = _handle_monitor()
+        if spec is None:
+            raise ToolError("not_found", f"Unknown tool: {name}")
+        check_access(spec, identity)
+        try:
+            inp = spec.input_model.model_validate(arguments)
+        except ValidationError as exc:
+            raise ToolError("invalid_input", _validation_message(exc)) from exc
+        ctx = ToolContext(identity=identity)
+        out = await anyio.to_thread.run_sync(spec.handler, inp, ctx)
+        if spec.legacy:
+            text = str(out)
+            result = CallToolResult(content=[TextContent(type="text", text=text)])
+            summary = spec.summary(text)
         else:
-            raise ValueError(f"Unknown tool: {name}")
-    except Exception as exc:  # noqa: BLE001
+            if not isinstance(out, spec.output_model):
+                out = spec.output_model.model_validate(out)
+            result = CallToolResult(
+                content=[TextContent(type="text", text=spec.text(out))],
+                structuredContent=_dump(out),
+            )
+            summary = spec.summary(out)
+    except ToolError as exc:
         status = "error"
-        result_text = f"RITA error ({name}): {exc}"
+        summary = f"{exc.code}: {exc.message}"
+        if spec is not None and spec.legacy and exc.code in ("not_found", "unavailable"):
+            # Legacy aliases answered failures as text before F44 — keep that shape.
+            result = CallToolResult(content=[TextContent(type="text", text=f"RITA error ({name}): {exc.message}")])
+        else:
+            result = _error_result(exc.code, exc.message)
+    except Exception as exc:  # noqa: BLE001 — a tool bug is an 'unavailable' error, never a 500
+        status = "error"
+        log.warning("mcp.tool_failed", tool=name, error=type(exc).__name__, detail=str(exc)[:200])
+        summary = f"unavailable: {type(exc).__name__}"
+        if spec is not None and spec.legacy:
+            result = CallToolResult(content=[TextContent(type="text", text=f"RITA error ({name}): {exc}")])
+        else:
+            result = _error_result("unavailable", f"{name} failed: {type(exc).__name__}")
 
     duration_ms = round((time.perf_counter() - t0) * 1_000, 1)
-    try:
-        _log_call(
-            tool_name=name,
-            args_summary=_summarise_args(arguments),
-            result_summary=result_text[:200],
-            duration_ms=duration_ms,
-            status=status,
-        )
-    except Exception as _log_exc:  # noqa: BLE001
-        import logging as _logging
-        _logging.getLogger(__name__).warning("mcp_log_failed tool=%s err=%s", name, _log_exc)
-
-    return [TextContent(type="text", text=result_text)]
-
-
-# ── Handler: ask_rita ──────────────────────────────────────────────────────────
-
-def _handle_ask_rita(args: dict) -> str:
-    from pathlib import Path
-    from rita.core.classifier import classify, dispatch
-    from rita.config import get_settings
-
-    query      = args["query"]
-    instrument = args.get("instrument", "NIFTY").upper()
-    port_inr   = float(args.get("portfolio_inr", 1_000_000))
-    target_ret = args.get("target_return_pct")
-    horizon    = args.get("time_horizon_days")
-
-    settings   = get_settings()
-    output_dir = str(Path(settings.data.output_dir) / instrument)
-
-    df     = _load_df(instrument)
-    result = classify(query)
-
-    header = f"**Instrument:** {instrument}"
-    if result.low_confidence:
-        header += (
-            f"\n**Intent:** uncertain (confidence {result.confidence:.2f} — below 0.42 threshold)"
-            "\n\nRITA could not confidently match your question to a known intent. "
-            "Try rephrasing, or ask about: market sentiment, RSI, volatility, "
-            "return estimates (1m/3m/1y/3y), stress scenarios, or strategy allocation."
-        )
-        return header
-
-    header += f"\n**Intent:** {result.intent.name} (confidence {result.confidence:.2f})"
-    response = dispatch(
-        result, df,
-        portfolio_inr=port_inr,
-        output_dir=output_dir,
-        target_return_pct=target_ret,
-        time_horizon_days=horizon,
-    )
-    return f"{header}\n\n{response}"
+    await anyio.to_thread.run_sync(lambda: _write_log(
+        tool_name=name,
+        args_summary=_summarise_args(arguments),
+        result_summary=summary[:200],
+        duration_ms=duration_ms,
+        status=status,
+        transport=identity.transport,
+        caller=identity.caller,
+        user_id=identity.user_id,
+        call_id=call_id,
+    ))
+    result.meta = {**(result.meta or {}), "mcp_call_id": call_id}
+    return result
 
 
-# ── Handler: rita_market_overview ──────────────────────────────────────────────
-
-def _handle_market_overview(args: dict) -> str:
-    from rita.core.technical_analyzer import get_market_summary, get_sentiment_score
-
-    instrument = args.get("instrument", "NIFTY").upper()
-    df      = _load_df(instrument)
-    summary = get_market_summary(df)
-    scored  = get_sentiment_score(summary)
-    signals = scored["signals"]
-
-    lines = [
-        f"**{instrument} — Market Overview**",
-        "",
-        f"Sentiment:   **{scored['overall_sentiment']}** (score {scored['total_score']:+d}/6)",
-        f"Trend:       {summary['trend']} (score {summary['trend_score']:+.3f})",
-        f"RSI-14:      {summary['rsi_14']:.1f} — {summary['rsi_signal']}",
-        f"ATR-14:      {summary['atr_14']:,.2f}  "
-        f"(volatility at {summary['atr_percentile'] * 100:.0f}th percentile)",
-        f"Bollinger:   {summary['bb_position']}  (bb%B {summary['bb_pct_b']:.2f})",
-        f"EMA-50:      {summary['ema_50']:,.2f}   |   EMA-200: {summary['ema_200']:,.2f}",
-        f"Close:       {summary['close']:,.2f} as of {summary['date']}",
-        "",
-        "**Signal breakdown:**",
-        f"  Trend      {signals['trend']['value']:22s} ({signals['trend']['score']:+d})",
-        f"  MACD       {signals['macd']['value']:22s} ({signals['macd']['score']:+d})",
-        f"  RSI        {signals['rsi']['value']:22s} ({signals['rsi']['score']:+d})",
-        f"  Bollinger  {signals['bollinger']['value']:22s} ({signals['bollinger']['score']:+d})",
-        f"  Volatility {signals['volatility']['value']:22s} ({signals['volatility']['score']:+d})",
-    ]
-    return "\n".join(lines)
+def _dump(out: BaseModel) -> dict[str, Any]:
+    return out.model_dump(mode="json")
 
 
-# ── Handler: rita_monitor ──────────────────────────────────────────────────────
-
-def _handle_monitor() -> str:
-    from rita.core.chat_monitor import get_intent_distribution, get_recent_queries, get_summary
-
-    summary = get_summary()
-    recent  = get_recent_queries(10)
-    intents = get_intent_distribution()
-
-    lines = [
-        "**RITA Chat Monitor**",
-        "",
-        f"Total queries:     {summary.get('total_queries', 0)}",
-        f"Avg latency:       {float(summary.get('avg_latency_ms', 0)):.1f} ms",
-        f"Low confidence:    {float(summary.get('low_conf_pct', 0)):.1f}%",
-        f"Queries today:     {summary.get('queries_today', 0)}",
-        "",
-        "**Intent distribution (top 5):**",
-    ]
-    for entry in (intents or [])[:5]:
-        lines.append(
-            f"  {entry.get('intent_name', '?'):28s} {entry.get('count', 0)} calls"
-        )
-
-    lines += ["", "**Recent queries:**"]
-    for r in (recent or []):
-        ts    = str(r.get("timestamp", ""))[:16]
-        conf  = float(r.get("confidence", 0))
-        qtext = str(r.get("query_text", ""))[:60]
-        lines.append(
-            f"  [{ts}] {r.get('intent_name', '?'):22s} conf={conf:.2f}  {qtext}"
-        )
-
-    return "\n".join(lines)
+def _validation_message(exc: ValidationError) -> str:
+    errs = exc.errors()[:3]
+    return "; ".join(f"{'.'.join(str(p) for p in e.get('loc', ())) or 'input'}: {e.get('msg')}" for e in errs)
 
 
-# ── Shared helpers ─────────────────────────────────────────────────────────────
-
-def _load_df(instrument: str):
-    from rita.api.v1.workflow.chat import _get_df
-    return _get_df(instrument)
-
-
-def _summarise_args(args: dict) -> str:
-    if not args:
-        return ""
-    parts = []
-    if "query" in args:
-        parts.append(f"query={str(args['query'])[:60]!r}")
-    if "instrument" in args:
-        parts.append(f"instrument={args['instrument']}")
-    for key in ("portfolio_inr", "target_return_pct", "time_horizon_days"):
-        if args.get(key) is not None:
-            parts.append(f"{key}={args[key]}")
-    return ", ".join(parts) if parts else str(args)[:80]
+@server.call_tool(validate_input=False)
+async def call_tool(name: str, arguments: dict) -> CallToolResult:
+    # Input is validated by the tool's Pydantic model inside dispatch (coded invalid_input + log).
+    return await dispatch(name, arguments)

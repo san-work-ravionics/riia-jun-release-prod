@@ -53,6 +53,7 @@ from rita.api.v1.system.data_prep import router as data_prep_router
 from rita.api.v1.system.mcp_calls import router as mcp_calls_router
 from rita.api.v1.system.hedge_plan_history import router as hedge_plan_history_router
 from rita.interfaces.mcp_sse_app import handle_sse, sse_messages_app
+from rita.interfaces.mcp_http_app import mcp_endpoint, mcp_http_app
 from rita.api.v1.system.client_errors import router as client_errors_router
 from rita.api.v1.workflow.train import router as train_router
 from rita.api.v1.workflow.backtest import router as backtest_router
@@ -341,7 +342,9 @@ async def lifespan(app: FastAPI):
     except Exception as _exc:
         log.warning("paper_positions.seed_failed", error=str(_exc))
 
-    yield
+    # ── F44 P1: MCP streamable HTTP session manager (/mcp) runs with the app ──
+    async with mcp_http_app.lifespan():
+        yield
     log.info("app.shutdown")
 
 
@@ -390,6 +393,9 @@ app.include_router(data_prep_router)
 app.include_router(mcp_calls_router)
 app.include_router(hedge_plan_history_router)
 app.include_router(client_errors_router)
+
+# -- MCP (F44 P1, ADR-007) -- streamable HTTP at /mcp, RITA JWT required --------
+app.add_route("/mcp", mcp_endpoint, methods=["GET", "POST", "DELETE"], include_in_schema=False)
 
 # -- MCP SSE transport (deprecated, F44 P1) -- JWT-gated; removed in F44 P4 ---
 app.add_api_route("/mcp/sse", handle_sse, methods=["GET"], include_in_schema=False)
@@ -589,6 +595,19 @@ def health(db: Session = Depends(get_db)) -> dict:
         "data_freshness": data_freshness,
         "sharpe_trend_last5": sharpe_trend_last5,
         "output_dir": output_dir,
+        "mcp": _mcp_health(),
+    }
+
+
+def _mcp_health() -> dict:
+    """F44 P1 — MCP bus status (stdio is a separate process and is not reported)."""
+    from rita.interfaces.mcp_tools import tools_registered
+
+    return {
+        "tools_registered": tools_registered(),
+        "auth": "on",
+        "transports": ["http", "memory", "sse"],
+        "sse": "deprecated",
     }
 
 

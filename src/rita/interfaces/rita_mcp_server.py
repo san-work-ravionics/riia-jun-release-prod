@@ -1,8 +1,12 @@
 """
 RITA MCP Server — stdio transport for Claude Desktop (local use)
 
-For production/remote access use the SSE endpoint mounted at /mcp/sse in the
-FastAPI app (see mcp_sse_app.py).
+Local process, no user: exposes only the tools that need no user (catalogue Auth ``none``:
+``portfolio.optimal_allocation``, ``market.overview``, ``market.ask``) plus the legacy aliases
+(``ask_rita``, ``rita_market_overview``, ``rita_monitor`` — unchanged Markdown).  A user tool called
+here returns ``forbidden``.  Calls are logged to ``mcp_calls`` with ``transport=stdio``.
+
+For production/remote access use streamable HTTP at /mcp with a RITA JWT (see mcp_http_app.py).
 
 Installation (local):
     pip install -e .[interfaces]
@@ -22,12 +26,14 @@ Claude Desktop config (local, stdio):
       }
     }
 
-Claude Desktop config (production, SSE via mcp-remote):
+Claude Desktop config (production, streamable HTTP via mcp-remote):
     {
       "mcpServers": {
         "rita": {
           "command": "npx",
-          "args": ["mcp-remote", "http://<EC2_IP>/mcp/sse"]
+          "args": ["mcp-remote", "https://riia.ravionics.nl/mcp",
+                   "--header", "Authorization: Bearer ${RITA_JWT}"],
+          "env": { "RITA_JWT": "<RITA JWT>" }
         }
       }
     }
@@ -70,16 +76,22 @@ structlog.configure(
 from mcp.server.stdio import stdio_server  # noqa: E402
 
 # Import the shared server instance (tools + handlers defined in mcp_tools.py)
+from rita.interfaces.mcp_auth import McpIdentity, identity_scope  # noqa: E402
 from rita.interfaces.mcp_tools import server  # noqa: E402
+
+STDIO_IDENTITY = McpIdentity(transport="stdio", caller="external")
 
 
 async def _main() -> None:
-    async with stdio_server() as (read_stream, write_stream):
-        await server.run(
-            read_stream,
-            write_stream,
-            server.create_initialization_options(),
-        )
+    # Every call served by this process runs as the stdio identity (no user): the dispatch then
+    # offers only the stdio tools and logs transport=stdio.
+    with identity_scope(STDIO_IDENTITY):
+        async with stdio_server() as (read_stream, write_stream):
+            await server.run(
+                read_stream,
+                write_stream,
+                server.create_initialization_options(),
+            )
 
 
 if __name__ == "__main__":
