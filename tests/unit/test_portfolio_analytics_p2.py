@@ -661,29 +661,33 @@ class TestAppInitJsContract:
     # ── Test 28: auth_token key used (not rita_token or jwt_token) ─────────────
 
     def test_app_init_uses_correct_auth_token_key(self):
-        """app-init.js must use 'auth_token' as the sessionStorage key (FC-AUTH-KEY)."""
+        """FC-AUTH-KEY: the JWT comes from sessionStorage 'auth_token'.
+
+        F44 P2: app-init no longer reads the token itself — its authenticated calls go through
+        api() (fno/api.js → shared/api.js), which reads 'auth_token' (project.md §9)."""
+        import os
         content = self._read_app_init_js()
-        assert "sessionStorage.getItem('auth_token')" in content, (
-            "app-init.js must use auth_token key — FC-AUTH-KEY rule"
-        )
+        assert "from './api.js'" in content and "await api('/api/v1/experience/fno/portfolio-analytics" in content
+        assert "rita_token" not in content and "jwt_token" not in content
+        root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        with open(os.path.join(root, "dashboard/js/shared/api.js")) as f:
+            assert "sessionStorage.getItem('auth_token')" in f.read()
 
     # ── Test 29: 401 error path falls back ────────────────────────────────────
 
     def test_app_init_handles_401_response(self):
-        """app-init.js must handle status === 401 response (Phase 2 toggle edge case)."""
+        """401 is handled by api(): localhost re-mints the dev token and retries once, production
+        redirects to sign-in (api() resolves undefined → app-init renders and stops)."""
         content = self._read_app_init_js()
-        assert "401" in content, (
-            "app-init.js must handle 401 response for toggle fallback logic"
-        )
+        assert "if (!data) { _renderAll(); return; }" in content
 
     # ── Test 30: 404 error path falls back ────────────────────────────────────
 
     def test_app_init_handles_404_response(self):
-        """app-init.js must handle status === 404 response (Phase 2 toggle edge case)."""
+        """404 (no portfolio) → the 'No portfolio configured' message (api() throws the detail)."""
         content = self._read_app_init_js()
-        assert "404" in content, (
-            "app-init.js must handle 404 response for toggle fallback logic"
-        )
+        assert "No portfolio configured — set one in Portfolio Builder" in content
+        assert "/^No (active )?portfolio/i.test(msg)" in content
 
 
 # ---------------------------------------------------------------------------
