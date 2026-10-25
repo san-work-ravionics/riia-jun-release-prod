@@ -60,9 +60,10 @@ def upgrade() -> None:
                 inputs JSON NOT NULL,
                 schema_version INTEGER NOT NULL DEFAULT 1,
                 location TEXT NOT NULL DEFAULT 'europe',
-                created_at DATETIME,
-                updated_at DATETIME NOT NULL,
-                PRIMARY KEY (user_id, location)
+                created_at DATETIME DEFAULT (CURRENT_TIMESTAMP),
+                updated_at DATETIME NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+                PRIMARY KEY (user_id, location),
+                FOREIGN KEY (user_id) REFERENCES users (id)
             )
         """))
         bind.execute(sa.text(f"""
@@ -92,9 +93,10 @@ def downgrade() -> None:
                 inputs JSON NOT NULL,
                 schema_version INTEGER NOT NULL DEFAULT 1,
                 location TEXT NOT NULL DEFAULT 'europe',
-                created_at DATETIME,
-                updated_at DATETIME NOT NULL,
-                PRIMARY KEY (user_id)
+                created_at DATETIME DEFAULT (CURRENT_TIMESTAMP),
+                updated_at DATETIME NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+                PRIMARY KEY (user_id),
+                FOREIGN KEY (user_id) REFERENCES users (id)
             )
         """))
         bind.execute(sa.text(f"""

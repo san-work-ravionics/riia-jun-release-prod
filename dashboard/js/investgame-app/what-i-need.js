@@ -302,10 +302,13 @@ function flash(cls, text, ms = 1600) {
   status.textContent = text;
   if (ms) _flash = setTimeout(() => { _flash = null; status.className = 'badge neu'; status.textContent = statusText(); }, ms);
 }
+let _devRetried = false;   // local dev: one fresh-token retry per save
 async function signInToSave(body) {
   if (isLocalDev()) {
-    const ok = await ensureDevToken();
-    if (ok) { savePlan(); return; }
+    // force a fresh token (the stored one was just rejected); retry the save once only
+    const ok = !_devRetried && await ensureDevToken(true);
+    _devRetried = true;
+    if (ok) { await savePlan(); _devRetried = false; return; }
     flash('neu', 'Dev token error — check /auth/token', 2400); return;
   }
   sessionStorage.removeItem('auth_token');

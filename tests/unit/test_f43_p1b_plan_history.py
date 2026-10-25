@@ -241,7 +241,10 @@ def _wn_js() -> str:
 def test_save_signed_out_keeps_plan_and_goes_to_google_sign_in():
     js = _wn_js()
     fn = js.split("function signInToSave(body)")[1].split("export function hasPendingSave")[0]
-    assert "if (isLocalDev()) { flash('neu', 'Sign in to save', 2400); return; }" in fn
+    # local dev: mint a dev token and retry the save instead of a Google round trip
+    assert "const ok = !_devRetried && await ensureDevToken(true);" in fn
+    assert "if (ok) { await savePlan(); _devRetried = false; return; }" in fn
+    assert fn.index("if (isLocalDev()) {") < fn.index("sessionStorage.setItem(PENDING_KEY")
     assert "sessionStorage.setItem(PENDING_KEY, JSON.stringify({ location: _loc, inputs: JSON.parse(body) }));" in fn
     assert "sessionStorage.setItem('post_login_redirect', window.location.href);" in fn
     assert "window.location.href = '/auth/google/login';" in fn
@@ -268,10 +271,10 @@ def test_return_from_sign_in_restores_pending_plan_and_saves_it():
 
 def test_boot_opens_what_i_need_when_returning_to_save():
     main = (_IG / "main.js").read_text(encoding="utf-8")
-    assert "import { loadWhatINeed, hasPendingSave } from './what-i-need.js?v=60';" in main
+    assert "import { loadWhatINeed, hasPendingSave } from './what-i-need.js?v=62';" in main
     assert "const start = hasPendingSave() ? 'what-i-need' : 'investgame';" in main
     html = (Path(__file__).parent.parent.parent / "dashboard" / "investgame-app.html").read_text(encoding="utf-8")
-    assert "js/investgame-app/main.js?v=65" in html
+    assert "js/investgame-app/main.js?v=67" in html
 
 
 def test_google_callback_lands_on_index_which_follows_post_login_redirect():

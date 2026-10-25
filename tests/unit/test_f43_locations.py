@@ -148,3 +148,13 @@ def test_js_sends_location_and_formats_currency():
     assert "PLAN_PATH + '?location=' + loc" in js
     assert "'en-IN'" in js and "'₹'" in js and "'$'" in js
     assert "'€' + v.toLocaleString" not in js        # no hardcoded euro formatting left
+
+
+def test_p2_migration_keeps_timestamp_defaults_and_fk():
+    # raw-SQL table rebuild must keep the server defaults, else every save INSERT fails (NOT NULL updated_at)
+    from pathlib import Path
+    src = (Path(__file__).parent.parent.parent / "alembic" / "versions"
+           / "20261025_f43p2_rename_retire_columns_location_pk.py").read_text(encoding="utf-8")
+    assert src.count("updated_at DATETIME NOT NULL DEFAULT (CURRENT_TIMESTAMP)") == 2   # upgrade + downgrade
+    assert src.count("created_at DATETIME DEFAULT (CURRENT_TIMESTAMP)") == 2
+    assert src.count("FOREIGN KEY (user_id) REFERENCES users (id)") == 2
