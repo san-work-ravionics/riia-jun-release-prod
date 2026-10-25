@@ -395,11 +395,18 @@ def calculate_retirement_plan(body: RetirementPlanInputs) -> RetirementPlanResul
 
 @router.get("/retirement-plan", response_model=RetirementPlanOut)
 def load_retirement_plan(
+    location: str | None = Query(None, description="Preset key (europe, india, us); default = saved plan's"),
     user: UserModel | None = Depends(get_optional_user),
     db: Session = Depends(get_db),
 ) -> RetirementPlanOut:
-    """The signed-in user's saved plan, else the location preset defaults (never 401)."""
-    return RetirementPlanService(db).load(user.id if user is not None else None)
+    """The signed-in user's saved plan, else the location preset defaults (never 401).
+
+    With ``location``: the saved plan only if it is for that location, else that preset.
+    """
+    try:
+        return RetirementPlanService(db).load(user.id if user is not None else None, location)
+    except PlanValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 # Declared before GET /{game_id}/result, which would otherwise match /retirement-plan/result.

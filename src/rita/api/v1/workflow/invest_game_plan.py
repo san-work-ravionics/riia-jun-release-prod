@@ -7,7 +7,7 @@ Reads (calculate / load) live in the Experience tier: ``api/experience/invest_ga
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from rita.auth import get_current_user
@@ -26,11 +26,12 @@ def _get_service(db: Session = Depends(get_db)) -> RetirementPlanService:
 @router.put("/retirement-plan", response_model=RetirementPlanOut)
 def save_retirement_plan(
     body: RetirementPlanInputs,
+    location: str | None = Query(None, description="Preset key (europe, india, us); default location if omitted"),
     current_user: UserModel = Depends(get_current_user),
     svc: RetirementPlanService = Depends(_get_service),
 ) -> RetirementPlanOut:
-    """Save (replace) the signed-in user's plan inputs. Invalid plans are never stored."""
+    """Save (replace) the signed-in user's plan inputs for ``location``. Invalid plans are never stored."""
     try:
-        return svc.save(current_user.id, body)
+        return svc.save(current_user.id, body, location)
     except PlanValidationError as exc:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)) from exc

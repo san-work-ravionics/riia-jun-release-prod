@@ -1,9 +1,10 @@
 // ── Invest Game App — What I Need (F43 Phase 1) ──────────────────────────────
 // Every number comes from the backend (core/retirement_plan.py, a port of the mock rev 39):
-//   POST /api/experience/invest-game/retirement-plan/calculate  → result (camelCase, EUR, fractions)
-//   GET  /api/experience/invest-game/retirement-plan            → saved plan or Europe preset
-//   PUT  /api/v1/workflow/invest-game/retirement-plan           → save on the Save button (signed-in
+//   POST /api/experience/invest-game/retirement-plan/calculate  → result (camelCase, plan currency, fractions)
+//   GET  /api/experience/invest-game/retirement-plan[?location=] → saved plan or the location preset
+//   PUT  /api/v1/workflow/invest-game/retirement-plan?location=  → save on the Save button (signed-in
 //                                                                    users only; also appends a history row)
+// Locations: Europe (EUR), India (INR, lakh/crore grouping), US (USD). One saved plan per user.
 // This module only reads the form, renders the result and formats the copy (D7).
 import { mkChart, C } from '../shared/charts.js';
 import { api, apiFetch, apiBase } from './api.js';
@@ -21,8 +22,19 @@ const ASSETS = [
   { key: 'alt',  name: 'Alternate',   color: 'rgba(107,47,160,.7)' },
 ];
 
-const fmt  = v => (v < 0 ? '−€' : '€') + Math.abs(Math.round(v)).toLocaleString('en-US');
-const fmtK = v => v < 0 ? '−' + fmtK(-v) : v >= 1e6 ? '€' + (v / 1e6).toFixed(2).replace(/\.?0+$/, '') + 'M' : '€' + Math.round(v / 1000) + 'k';
+const LOCS = {
+  europe: { name: 'Europe', ccy: 'EUR', sym: '€', locale: 'en-US' },
+  india:  { name: 'India',  ccy: 'INR', sym: '₹', locale: 'en-IN' },
+  us:     { name: 'US',     ccy: 'USD', sym: '$', locale: 'en-US' },
+};
+let _loc = 'europe';
+const L = () => LOCS[_loc];
+const dec2 = x => x.toFixed(2).replace(/\.?0+$/, '');
+const fmt  = v => (v < 0 ? '−' : '') + L().sym + Math.abs(Math.round(v)).toLocaleString(L().locale);
+// Short form: India in lakh (L) / crore (Cr), others in k / M
+const fmtK = v => v < 0 ? '−' + fmtK(-v)
+  : _loc === 'india' ? L().sym + (v >= 1e7 ? dec2(v / 1e7) + 'Cr' : v >= 1e5 ? dec2(v / 1e5) + 'L' : Math.round(v / 1000) + 'k')
+  : L().sym + (v >= 1e6 ? dec2(v / 1e6) + 'M' : Math.round(v / 1000) + 'k');
 const num  = id => parseFloat(document.getElementById(id).value);
 const set  = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
 const pct  = (v, d = 0) => (v * 100).toFixed(d) + '%';
@@ -228,7 +240,7 @@ function render(p, r) {
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: { callbacks: { title: i => 'Age ' + i[0].label, label: c => fmt(c.parsed.y) + ' / month' } } },
-      scales: { x: { grid, ticks: { font: mono, maxTicksLimit: 10 } }, y: { grid, ticks: { callback: v => '€' + v.toLocaleString('en-US'), font: mono } } },
+      scales: { x: { grid, ticks: { font: mono, maxTicksLimit: 10 } }, y: { grid, ticks: { callback: fmt, font: mono } } },
     },
   });
 }
@@ -241,6 +253,22 @@ const FIELD_IDS = {
   hValue: 'wn-h-value', hAppr: 'wn-h-appr', hSell: 'wn-h-sell', hTax: 'wn-h-tax', h2Price: 'wn-h2-price',
 };
 ASSETS.forEach(a => { FIELD_IDS[a.key + 'Monthly'] = `wn-a-${a.key}-monthly`; FIELD_IDS[a.key + 'Rate'] = `wn-a-${a.key}-rate`; });
+
+// Show a location: active pill, status badge and the currency in every '(EUR)' label
+function setLocation(loc) {
+  _loc = LOCS[loc] ? loc : 'europe';
+  document.querySelectorAll('#wn-loc .pill').forEach(b => {
+    const on = b.dataset.loc === _loc;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-pressed', String(on));
+  });
+  const sec = document.getElementById('sec-what-i-need');
+  const ccy = s => s.replace(/\((EUR|INR|USD)\)/, `(${L().ccy})`);
+  sec.querySelectorAll('label').forEach(l => { if (/\((EUR|INR|USD)\)/.test(l.textContent)) l.textContent = ccy(l.textContent); });
+  sec.querySelectorAll('[aria-label]').forEach(el => el.setAttribute('aria-label', ccy(el.getAttribute('aria-label'))));
+  if (!_flash) set('wn-status', statusText());
+}
+const statusText = () => `${L().name} · ${L().ccy}`;
 
 function writeInputs(inputs) {
   const put = (id, v) => { const el = document.getElementById(id); if (el) el.value = v === null || v === undefined ? '' : v; };
@@ -272,12 +300,12 @@ function flash(cls, text, ms = 1600) {
   clearTimeout(_flash);
   status.className = 'badge ' + cls;
   status.textContent = text;
-  if (ms) _flash = setTimeout(() => { status.className = 'badge neu'; status.textContent = 'Europe · EUR'; }, ms);
+  if (ms) _flash = setTimeout(() => { _flash = null; status.className = 'badge neu'; status.textContent = statusText(); }, ms);
 }
 function signInToSave(body) {
   if (isLocalDev()) { flash('neu', 'Sign in to save', 2400); return; }
   sessionStorage.removeItem('auth_token');
-  sessionStorage.setItem(PENDING_KEY, body);
+  sessionStorage.setItem(PENDING_KEY, JSON.stringify({ location: _loc, inputs: JSON.parse(body) }));
   sessionStorage.setItem('post_login_redirect', window.location.href);
   flash('neu', 'Sign in to save…', 0);
   window.location.href = '/auth/google/login';
@@ -297,11 +325,12 @@ async function savePlan() {
     const body = JSON.stringify(p);
     const token = sessionStorage.getItem('auth_token');
     if (!token) { signInToSave(body); return; }
-    if (body === _lastSaved) { flash('ok', 'Already saved'); return; }
+    const key = _loc + ':' + body;
+    if (key === _lastSaved) { flash('ok', 'Already saved'); return; }
     // fetch, not apiFetch: a 401 (expired session) must be told apart from other errors
     let res = null;
     try {
-      const r = await fetch(apiBase() + SAVE_PATH, {
+      const r = await fetch(apiBase() + SAVE_PATH + '?location=' + _loc, {
         method: 'PUT', body,
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       });
@@ -310,7 +339,7 @@ async function savePlan() {
     } catch (e) {
       // network error → "Could not save" below
     }
-    if (res && res.saved) { _lastSaved = body; flash('ok', 'Saved'); }
+    if (res && res.saved) { _lastSaved = key; flash('ok', 'Saved'); }
     else flash('neu', 'Could not save — try again', 2400);
   } finally {
     _saving = false;
@@ -331,13 +360,36 @@ async function calculate() {
     if (seq !== _seq) return;            // a newer request is in flight
     clearTimeout(_flash);
     status.className = 'badge neu';      // never red (D7); last good render stays
-    status.textContent = (e && e.message) || 'Could not calculate — try again';
+    status.textContent = ((e && e.message) || 'Could not calculate — try again').replace(/€/g, L().sym);
     return false;
   }
   if (seq !== _seq || !r) return false;  // stale response — drop it
   render(p, r);
   flash('ok', 'Updated', 1200);
   return true;
+}
+
+// Location pill: load the user's saved plan for that location, else its preset, and recalculate
+let _locSeq = 0;
+async function switchLocation(loc) {
+  if (!_restored || loc === _loc || !LOCS[loc]) return;
+  const seq = ++_locSeq;
+  const prev = _loc;
+  setLocation(loc);
+  try {
+    const token = sessionStorage.getItem('auth_token');
+    const plan = await apiFetch(PLAN_PATH + '?location=' + loc, token ? { headers: { 'Authorization': `Bearer ${token}` } } : {});
+    if (seq !== _locSeq) return;         // a newer switch is in flight
+    if (!plan || !plan.inputs) throw new Error('no plan');
+    writeInputs(plan.inputs);
+    if (plan.saved) _lastSaved = _loc + ':' + JSON.stringify(readInputs());
+  } catch (e) {
+    if (seq !== _locSeq) return;
+    setLocation(prev);                   // form still holds the previous location's plan
+    flash('neu', 'Could not load ' + LOCS[loc].name + ' — try again', 2400);
+    return;
+  }
+  await calculate();
 }
 
 let _bound = false;
@@ -353,6 +405,7 @@ export async function loadWhatINeed() {
     document.getElementById('sec-what-i-need').addEventListener('keydown', e => {
       if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); calculate(); }
     });
+    document.querySelectorAll('#wn-loc .pill').forEach(btn => btn.addEventListener('click', () => switchLocation(btn.dataset.loc)));
     document.querySelectorAll('#wn-h2-mode .pill').forEach(btn => btn.addEventListener('click', () => {
       if (!_restored) _dirty = true;
       document.querySelectorAll('#wn-h2-mode .pill').forEach(b => {
@@ -365,7 +418,7 @@ export async function loadWhatINeed() {
   let resumeSave = false;
   if (!_loaded) {
     _loaded = true;
-    // Restore the saved plan (or the Europe preset); on any error keep the HTML defaults.
+    // Restore the saved plan (or the default location's preset); on any error keep the HTML defaults.
     // A plan kept for sign-in (Save while signed out) wins and is saved once signed in.
     const pending = sessionStorage.getItem(PENDING_KEY);
     sessionStorage.removeItem(PENDING_KEY);
@@ -373,11 +426,14 @@ export async function loadWhatINeed() {
       const token = sessionStorage.getItem('auth_token');
       const plan = await apiFetch(PLAN_PATH, token ? { headers: { 'Authorization': `Bearer ${token}` } } : {});
       if (plan && plan.inputs && !_dirty) {
+        setLocation(plan.location);
         writeInputs(plan.inputs);
-        if (plan.saved) _lastSaved = JSON.stringify(readInputs());
+        if (plan.saved) _lastSaved = _loc + ':' + JSON.stringify(readInputs());
       }
       if (pending && !_dirty) {
-        writeInputs(JSON.parse(pending));
+        const kept = JSON.parse(pending);   // { location, inputs }; older tabs kept the bare inputs
+        if (kept.inputs) setLocation(kept.location);
+        writeInputs(kept.inputs || kept);
         resumeSave = !!token;            // sign-in cancelled → plan stays on screen, not saved
       }
     } catch (e) {
