@@ -10,14 +10,15 @@ Provides two pure-computation entry points consumed by the portfolio API router:
 
 Whole-share constraint:
     Each allocation is converted to a number of whole shares using the
-    approximate FX rate.  Uninvested capital (remainder) stays flat at 1.0.
+    FX rate passed in by the caller.  Uninvested capital (remainder) stays flat at 1.0.
     This means a €250 allocation into ASML (~€700/share) yields 0 shares and
     no RL exposure — the user sees a cash return of 0%.
 
-FX rates (static approximations — sufficient for exploration):
-    EUR/INR ≈ 91  →  1 INR = 1/91 EUR
-    EUR/USD ≈ 1.09 → 1 USD = 1/1.09 EUR
-    EUR/EUR = 1.0
+FX rates (F44 P2): no static table.  The caller passes ``fx_eur_per_unit``
+({currency: EUR per 1 unit}) from ``services/fx_service.FxService.eur_per_unit()``
+(cached daily rates); core stays pure.  A currency without a rate skips the
+whole-share constraint for that instrument (fully invested) and is listed in
+``fx_unavailable`` — never a static fallback.
 """
 
 from __future__ import annotations
@@ -40,12 +41,6 @@ from rita.core.performance import compute_all_metrics, sharpe_ratio
 log = structlog.get_logger()
 
 # ── Constants ──────────────────────────────────────────────────────────────────
-
-FX_EUR_PER_UNIT: dict[str, float] = {
-    "INR": 1 / 91.0,
-    "EUR": 1.0,
-    "USD": 1 / 1.09,
-}
 
 INSTRUMENT_CCY: dict[str, str] = {
     "NIFTY":     "INR",
@@ -272,8 +267,12 @@ def portfolio_backtest(
     allocations_eur: dict[str, float],
     start_date: str,
     end_date: str,
+    fx_eur_per_unit: dict[str, float] | None = None,
 ) -> dict[str, Any]:
     """Run DDQN portfolio backtest for selected instruments.
+
+    ``fx_eur_per_unit``: EUR value of 1 unit per currency (cached rates, passed in by the
+    caller).  EUR is always 1.0; a currency missing from it skips the whole-share constraint.
 
     Pipeline per instrument:
     1. Load OHLCV + indicators, filter to [start_date, end_date].
@@ -309,11 +308,13 @@ def portfolio_backtest(
 
     # ── Per-instrument run ─────────────────────────────────────────────────────
     inst_results: list[dict] = []
+    fx_rates: dict[str, float] = dict(fx_eur_per_unit or {})
+    fx_unavailable: list[str] = []
 
     for iid in inst_upper:
         alloc_eur = alloc_norm[iid]
         ccy       = INSTRUMENT_CCY.get(iid, "USD")
-        fx        = FX_EUR_PER_UNIT.get(ccy, 1.0)
+        fx        = 1.0 if ccy == "EUR" else fx_rates.get(ccy)
 
         try:
             df = _load_with_indicators(iid)
@@ -323,9 +324,14 @@ def portfolio_backtest(
                 log.warning("portfolio_backtest.insufficient_data", instrument=iid, rows=len(df_f))
                 continue
 
-            # Whole-share constraint
-            first_price_eur = float(df_f["Close"].iloc[0]) * fx
-            inv_frac = _invested_fraction(alloc_eur, first_price_eur)
+            # Whole-share constraint (needs the FX rate; skipped when it is not cached)
+            if fx is None:
+                inv_frac = 1.0
+                if ccy not in fx_unavailable:
+                    fx_unavailable.append(ccy)
+            else:
+                first_price_eur = float(df_f["Close"].iloc[0]) * fx
+                inv_frac = _invested_fraction(alloc_eur, first_price_eur)
 
             # Model or B&H fallback
             model_path = _find_best_model(iid)
@@ -433,6 +439,7 @@ def portfolio_backtest(
         "instruments":                inst_results,
         "daily":                      daily_out,
         "instrument_series":          instrument_series,
+        "fx_unavailable":             fx_unavailable,
     }
 
 

@@ -90,6 +90,7 @@ from rita.api.experience.hedge_reasoning import router as hedge_reasoning_router
 from rita.api.experience.optimal_allocation import router as optimal_allocation_router
 from rita.api.experience.equity_scenarios import router as equity_scenarios_router
 from rita.api.experience.experiment_backtest import router as experiment_backtest_router
+from rita.api.experience.fx import router as fx_router
 
 _MOBILE_UA_RE = re.compile(r"Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini", re.IGNORECASE)
 
@@ -436,6 +437,7 @@ app.include_router(hedge_reasoning_router)
 app.include_router(optimal_allocation_router)
 app.include_router(equity_scenarios_router)
 app.include_router(experiment_backtest_router)
+app.include_router(fx_router)
 
 # -- Chat -- local intent classifier + OHLCV dispatch (no external API) -------
 app.include_router(chat_router)

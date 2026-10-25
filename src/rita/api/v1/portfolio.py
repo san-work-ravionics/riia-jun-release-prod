@@ -74,7 +74,7 @@ def get_portfolio_overview(instruments: str | None = None) -> dict[str, Any]:
 
 
 @router.post("/backtest")
-def run_portfolio_backtest(req: PortfolioBacktestRequest) -> dict[str, Any]:
+def run_portfolio_backtest(req: PortfolioBacktestRequest, db: Session = Depends(get_db)) -> dict[str, Any]:
     """Run a portfolio backtest for the selected instruments.
 
     For each instrument the most recent trained DDQN model is loaded and run
@@ -85,12 +85,14 @@ def run_portfolio_backtest(req: PortfolioBacktestRequest) -> dict[str, Any]:
     for the cumulative return chart.
     """
     from rita.core.portfolio_engine import portfolio_backtest
+    from rita.services.fx_service import FxService
     try:
         return portfolio_backtest(
             instruments=req.instruments,
             allocations_eur=req.allocations_eur,
             start_date=req.start_date,
             end_date=req.end_date,
+            fx_eur_per_unit=FxService(db).eur_per_unit(),  # F44 P2: cached rates, no static table
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))

@@ -6,6 +6,8 @@ Provides five functions:
   rebuild_input()      — re-run load_instrument_data() and write normalized input CSV
   upsert_cache_delta() — insert new (instrument, date) rows into market_data_cache
   refresh_all()        — orchestrate full pipeline for all 11 instruments
+  refresh_fx()         — F44 P2: daily FX rates into market_data_cache (skill run only;
+                         NOT called by refresh_all(), which a request can reach)
 
 Rules:
 - Use structlog — no print() statements
@@ -403,4 +405,60 @@ def refresh_all(db: Session) -> list[dict[str, Any]]:
                 "error": str(exc),
             })
 
+    return results
+
+
+# ── refresh_fx (F44 P2) ───────────────────────────────────────────────────────
+
+FX_SEED_DAYS = 400  # first run: ~13 months of daily rates
+
+
+def refresh_fx(db: Session, downloader: Any = None) -> list[dict[str, Any]]:
+    """Fetch daily FX rates (EUR→INR, EUR→USD) from yfinance into ``market_data_cache``.
+
+    Called **only** by the ``/refresh-all-instruments-data`` skill run — deliberately NOT by
+    ``refresh_all()``, which is also reachable from a request
+    (``api/v1/workflow/instrument_onboard.py``); request code never fetches FX (org.md §3,
+    Design Review A6a).  Rows: ``underlying = FX_EURINR`` / ``FX_EURUSD``, close = units of
+    quote per 1 EUR.  Incremental (last cached date + 1 → today); insert-only through
+    ``MarketDataCacheRepository.add_daily_rows``.  Per-pair errors are recorded, never raised.
+
+    ``downloader`` defaults to ``yfinance.download`` (injectable for tests).
+    """
+    from rita.repositories.market_data import MarketDataCacheRepository
+    from rita.services.fx_service import FX_YF_TICKERS
+
+    if downloader is None:
+        import yfinance as yf
+        downloader = yf.download
+
+    repo = MarketDataCacheRepository(db)
+    results: list[dict[str, Any]] = []
+    for underlying, ticker in FX_YF_TICKERS.items():
+        try:
+            last = repo.find_latest(underlying)
+            start = (last.date + timedelta(days=1)) if last is not None else date.today() - timedelta(days=FX_SEED_DAYS)
+            if last is not None and last.date >= date.today():
+                results.append({"pair": underlying, "ticker": ticker, "rows_inserted": 0,
+                                "status": "current", "error": None})
+                continue
+            df = downloader(ticker, start=start.strftime("%Y-%m-%d"), interval="1d",
+                            auto_adjust=True, progress=False)
+            rows: list[tuple[date, float, float, float, float]] = []
+            if df is not None and len(df) > 0:
+                if isinstance(df.columns, pd.MultiIndex):
+                    df.columns = [col[0] if isinstance(col, tuple) else col for col in df.columns]
+                df = df.dropna(subset=["Close"])
+                for ts, r in df.iterrows():
+                    c = float(r["Close"])
+                    rows.append((ts.date(), float(r.get("Open", c)), float(r.get("High", c)),
+                                 float(r.get("Low", c)), c))
+            inserted = repo.add_daily_rows(underlying, rows)
+            results.append({"pair": underlying, "ticker": ticker, "rows_inserted": inserted,
+                            "status": "ok", "error": None})
+            log.info("data_refresh.fx_done", pair=underlying, inserted=inserted)
+        except Exception as exc:
+            log.warning("data_refresh.fx_error", pair=underlying, error=str(exc))
+            results.append({"pair": underlying, "ticker": ticker, "rows_inserted": 0,
+                            "status": "error", "error": str(exc)})
     return results
