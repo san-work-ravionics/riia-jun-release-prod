@@ -65,6 +65,7 @@ CONTRACT_AUTH = {
     "market.overview":              ({"none"}, None),
     "market.ask":                   ({"none"}, None),
     "market.monitor":               ({"user"}, "can_access_ops"),
+    "market.fx_rate":               ({"none"}, None),  # F44 P2
     # legacy aliases (rita_monitor needs ops over the network — recorded Engineer deviation)
     "ask_rita":                     ({"none"}, None),
     "rita_market_overview":         ({"none"}, None),

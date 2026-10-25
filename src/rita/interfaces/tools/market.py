@@ -9,6 +9,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from rita.interfaces.tools._base import ToolContext, ToolError, ToolSpec
+from rita.schemas.fx import FxRateIn, FxRateOut
 from rita.schemas.mcp_tools import (
     InstrumentIn,
     MarketAskIn,
@@ -82,6 +83,17 @@ def monitor_data(recent: int = 10) -> tuple[dict, list, list]:
 
 # ── tools ──────────────────────────────────────────────────────────────────────
 
+def fx_rate(inp: FxRateIn, ctx: ToolContext) -> FxRateOut:
+    """F44 P2 — cached daily FX rate (``services/fx_service``); never a network call."""
+    from rita.services.fx_service import FxService
+
+    with ctx.session() as db:
+        r = FxService(db).rate(inp.base, inp.quote, inp.as_of)
+    if r is None:
+        raise ToolError("not_found", f"no fx rate for {inp.base}/{inp.quote}")
+    return FxRateOut(base=r.base, quote=r.quote, rate=r.rate, as_of=r.as_of, source=r.source)
+
+
 def overview(inp: InstrumentIn, _ctx: ToolContext) -> MarketOverviewOut:
     inst = inp.instrument.upper()
     summary, scored = market_snapshot(inst)
@@ -152,6 +164,21 @@ TOOLS = [
         stdio=True,
         text=lambda o: o.answer,
         summary=lambda o: f"intent={o.intent} confidence={o.confidence:.2f} low={o.low_confidence}",
+    ),
+    ToolSpec(
+        name="market.fx_rate",
+        description=(
+            "Daily FX rate between EUR, INR and USD from RITA's cached market data: units of "
+            "quote per 1 base, with the rate's as_of date. Optional as_of = latest rate on or "
+            "before that date. not_found if no rate is cached."
+        ),
+        input_model=FxRateIn,
+        output_model=FxRateOut,
+        handler=fx_rate,
+        auth=frozenset({"none"}),
+        stdio=True,
+        text=lambda o: f"1 {o.base} = {o.rate:,.4f} {o.quote} (as of {o.as_of}).",
+        summary=lambda o: f"base={o.base} quote={o.quote} as_of={o.as_of}",
     ),
     ToolSpec(
         name="market.monitor",

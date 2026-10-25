@@ -48,8 +48,9 @@ P1_TOOLS = {
     "whatineed.get_plan", "portfolio.get_holdings", "portfolio.optimal_allocation",
     "fno.position_value", "fno.get_hedge_plan", "market.overview", "market.ask", "market.monitor",
 }
+P2_TOOLS = {"market.fx_rate"}  # F44 P2
 ALIASES = {"ask_rita", "rita_market_overview", "rita_monitor"}
-STDIO_TOOLS = {"portfolio.optimal_allocation", "market.overview", "market.ask"} | ALIASES
+STDIO_TOOLS = {"portfolio.optimal_allocation", "market.overview", "market.ask", "market.fx_rate"} | ALIASES
 
 
 # ── fixtures ───────────────────────────────────────────────────────────────────
@@ -132,8 +133,8 @@ def _fake_classify():
 # ── catalogue + import rules ───────────────────────────────────────────────────
 
 def test_registry_has_p1_tools_and_aliases():
-    assert set(mt.REGISTRY) == P1_TOOLS | ALIASES
-    assert mt.tools_registered() == 11
+    assert set(mt.REGISTRY) == P1_TOOLS | P2_TOOLS | ALIASES
+    assert mt.tools_registered() == 12
 
 
 def test_no_tool_has_a_user_id_input():
@@ -141,7 +142,7 @@ def test_no_tool_has_a_user_id_input():
         async with memory_client(identity_for(_user("alice"), "jarvis")) as c:
             return await c.list_tools()
     tools = _run(go())
-    assert {t.name for t in tools} == P1_TOOLS | ALIASES
+    assert {t.name for t in tools} == P1_TOOLS | P2_TOOLS | ALIASES
     for t in tools:
         props = (t.inputSchema or {}).get("properties", {})
         assert "user_id" not in props, t.name

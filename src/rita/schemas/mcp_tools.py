@@ -54,6 +54,12 @@ class NoArgsIn(_In):
     pass
 
 
+class PortfolioHoldingsIn(_In):
+    location: Literal["europe", "india", "us"] | None = Field(
+        None, description="Portfolio location: europe | india | us. Omit = the most recently saved portfolio.",
+    )
+
+
 class PortfolioHoldingOut(BaseModel):
     instrument_id: str
     allocation_pct: float

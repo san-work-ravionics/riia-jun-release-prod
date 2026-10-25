@@ -4,36 +4,33 @@ from __future__ import annotations
 
 from rita.interfaces.tools._base import ToolContext, ToolError, ToolSpec
 from rita.schemas.mcp_tools import (
-    NoArgsIn,
     OptimalAllocationIn,
     PortfolioHoldingOut,
+    PortfolioHoldingsIn,
     PortfolioHoldingsOut,
 )
 from rita.schemas.portfolio_optimizer import OptimalAllocationResponse
 
-# P1: every saved portfolio is a legacy EUR portfolio (no location yet).  P2 adds currency +
-# location columns and this tool reads them (Spec_DB § F44).
-_P1_CURRENCY = "EUR"
-
-
-def get_holdings(_inp: NoArgsIn, ctx: ToolContext) -> PortfolioHoldingsOut:
+def get_holdings(inp: PortfolioHoldingsIn, ctx: ToolContext) -> PortfolioHoldingsOut:
+    """F44 P2: currency / location / total_value / cash from the saved portfolio (legacy rows:
+    EUR, no location, ``total_value_eur`` / ``cash_eur``)."""
     from rita.services.user_portfolio_service import UserPortfolioService
 
     user = ctx.require_user()
     with ctx.session() as db:
-        pf = UserPortfolioService(db).get(user.id)
+        pf = UserPortfolioService(db).get(user.id, inp.location)
     if pf is None:
         raise ToolError("not_found", "no saved portfolio")
     return PortfolioHoldingsOut(
         portfolio_id=pf.portfolio_id,
         name=pf.name,
-        currency=_P1_CURRENCY,
-        location=None,
-        total_value=pf.total_value_eur,
+        currency=pf.currency,
+        location=pf.location,
+        total_value=pf.total_value,
         holdings=[
             PortfolioHoldingOut(
                 instrument_id=h.instrument_id, allocation_pct=h.allocation_pct,
-                shares=h.shares, cash=h.cash_eur,
+                shares=h.shares, cash=h.cash,
             )
             for h in pf.holdings
         ],
@@ -52,10 +49,12 @@ TOOLS = [
     ToolSpec(
         name="portfolio.get_holdings",
         description=(
-            "The signed-in user's active saved portfolio: holdings (instrument, allocation %, "
-            "whole shares, leftover cash), total value and currency. not_found if none is saved."
+            "The signed-in user's active saved portfolio for a location (europe | india | us; omit = "
+            "the most recently saved): holdings (instrument, allocation %, whole shares, leftover "
+            "cash), total value, currency and location. Amounts are in the portfolio currency. "
+            "not_found if none is saved."
         ),
-        input_model=NoArgsIn,
+        input_model=PortfolioHoldingsIn,
         output_model=PortfolioHoldingsOut,
         handler=get_holdings,
         auth=frozenset({"user", "system"}),

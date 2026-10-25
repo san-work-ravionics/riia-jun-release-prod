@@ -168,7 +168,7 @@ def test_mcp_tool_error_is_coded_not_500(client, tool_db):
 
 def test_health_mcp_block(client):
     body = client.get("/health").json()
-    assert body["mcp"] == {"tools_registered": 11, "auth": "on",
+    assert body["mcp"] == {"tools_registered": 12, "auth": "on",  # 11 P1 + market.fx_rate (P2)
                            "transports": ["http", "memory", "sse"], "sse": "deprecated"}
 
 
@@ -395,6 +395,7 @@ def test_stdio_process_lists_userless_tools_and_answers_alias(tmp_path):
 
     tools, overview, forbidden = asyncio.run(asyncio.wait_for(go(), timeout=240))
     assert tools == {"portfolio.optimal_allocation", "market.overview", "market.ask",
+                     "market.fx_rate",  # F44 P2
                      "ask_rita", "rita_market_overview", "rita_monitor"}
     assert overview.content[0].text.startswith("**NIFTY — Market Overview**")
     assert forbidden.isError and forbidden.structuredContent["error"]["code"] == "forbidden"
