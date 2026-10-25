@@ -146,7 +146,7 @@ function render(p, r) {
   // Row 2 — investments
   document.getElementById('wn-idx-start').value = p.now;
   document.getElementById('wn-i-partial-age').value = p.ret;
-  set('wn-idx-badge', `Index · Equity · Commodities · Alternate · invest ${p.now} → ${p.ret}, ${pct(p.partial)} of profit out + rest re-invested from ${p.ret}, all profit out + sell when short from ${p.exit}`);
+  set('wn-idx-badge', `Index · Equity · Commodities · Alternate · invest ${p.now} → ${p.exit} (from savings from ${p.ret}), ${pct(p.partial)} of profit out + rest re-invested from ${p.ret}, all profit out + sell when short from ${p.exit}`);
   r.assets.forEach(a => {
     set(`wn-k-${a.key}-badge`, `${pct(a.rate, 1)} / yr`);
     set(`wn-k-${a.key}-fv-lbl`, `Value at ${p.ret}`);

@@ -363,6 +363,14 @@ def simulate(
                     s = split[i]
                     bal[i] = bal[i] + (profits[i] * (1.0 - sh) if s is None else kept * s)
             state["savings"] = state["savings"] + (withdrawn * (1.0 - p.tax) - need)
+            if invest and age < p.exit and total > 0:
+                # retirement → exit: keep investing the monthly amounts, paid from savings (after the
+                # need); when savings fall short, invest what they cover, split in the same proportions
+                put = min(total, max(0.0, state["savings"]))
+                for i in range(n):
+                    bal[i] = bal[i] + put * monthly[i] / total
+                    basis[i] = basis[i] + put * monthly[i] / total
+                state["savings"] = state["savings"] - put
             sold_year = sold_year + sell_portfolio(age)
             if savings_out is None and age < p.end and state["savings"] < -0.5:
                 savings_out = age
