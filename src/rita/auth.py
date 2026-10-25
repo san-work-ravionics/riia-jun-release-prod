@@ -25,12 +25,13 @@ def create_access_token(subject: str) -> str:
     )
 
 
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-    db: Session = Depends(get_db)
-) -> UserModel:
+def resolve_token_user(token: str, db: Session) -> UserModel:
+    """Validate a RITA JWT and return its user — shared by ``get_current_user`` and the MCP gate.
+
+    Same secret, algorithm and expiry for every caller; the ``rita-dev`` subject is accepted only
+    when ``settings.env == "development"``.  Raises ``HTTPException(401)`` on any failure.
+    """
     settings = get_settings()
-    token = credentials.credentials
     try:
         payload = jwt.decode(
             token,
@@ -40,7 +41,7 @@ def get_current_user(
         subject: str = payload.get("sub")
         if subject is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-            
+
         if subject == "rita-dev" and settings.env == "development":
             return UserModel(id="rita-dev", can_access_ops=True, can_assist_research=True, can_create_portfolio=True, can_review_portfolio=True)
 
@@ -53,6 +54,14 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
         )
+
+
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    db: Session = Depends(get_db)
+) -> UserModel:
+    return resolve_token_user(credentials.credentials, db)
+
 
 class RequireRole:
     def __init__(self, role_name: str):
