@@ -18,6 +18,7 @@ import { loadFunctionalKPIs } from './functional-kpis.js';
 import { loadUtilities, runGoal, runMarket, runStrategy, runFullPipeline, doReset } from './utils.js';
 import { loadApiMetrics, filterApiMetrics } from './api-metrics.js';
 import { initI18n, setLanguage, applyTranslations } from '../shared/i18n.js';
+import { ensureDevToken } from '../shared/dev-auth.js';
 
 // ── Populate section loader registry ─────────────────────────────────────────
 sectionLoaders['overview']             = loadOverview;
@@ -59,7 +60,8 @@ window.setLanguage            = setLanguage;
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 initI18n(); applyTranslations();
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await ensureDevToken();  // localhost: mint the dev token before the first call (production: ops.html login gate)
   loadOverview();
   loadMonitoring();
   loadAlerts();

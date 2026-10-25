@@ -188,51 +188,103 @@ def _seed_calls(db_session):
     db_session.commit()
 
 
-@pytest.fixture
-def as_user():
-    from rita.auth import get_current_user
-    from rita.main import app
-
-    def _set(uid: str, ops: bool = False):
-        app.dependency_overrides[get_current_user] = lambda: UserModel(id=uid, can_access_ops=ops)
-    yield _set
-    app.dependency_overrides.pop(get_current_user, None)
+_ANON_KEYS = ("user_id", "args_summary", "result_summary")
+_KEPT_KEYS = ("call_id", "timestamp", "tool_name", "status", "duration_ms", "transport", "caller")
 
 
-def test_mcp_calls_requires_auth(client, db_session):
+def _seed_users(db_session):
+    db_session.add(UserModel(id="alice"))
+    db_session.add(UserModel(id="ops-admin", can_access_ops=True))
+    db_session.commit()
+
+
+def _get_calls(client, token: str | None = None, limit: int = 10):
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
+    resp = client.get(f"/api/v1/mcp-calls?limit={limit}", headers=headers)
+    assert resp.status_code == 200, resp.text
+    return resp.json()
+
+
+def _assert_anonymised(row):
+    for key in _ANON_KEYS:
+        assert row[key] is None, (row["call_id"], key)
+    for key in _KEPT_KEYS:
+        assert key in row
+
+
+def _assert_full(row):
+    assert row["args_summary"] is not None and row["result_summary"] is not None, row["call_id"]
+
+
+def test_mcp_calls_anonymous_view_without_token(client, db_session):
+    """Option B (user 2026-10-25): no token → 200, every row anonymised — no user, args or result."""
     _seed_calls(db_session)
-    resp = client.get("/api/v1/mcp-calls")
-    assert resp.status_code in (401, 403)  # HTTPBearer: no credentials
-    assert client.get("/api/v1/mcp-calls", headers={"Authorization": f"Bearer {_expired()}"}).status_code == 401
+    rows = _get_calls(client)
+    assert [r["call_id"] for r in rows] == ["c-alice", "c-bob", "c-anon", "c-old"]
+    for r in rows:
+        _assert_anonymised(r)
+    by_id = {r["call_id"]: r for r in rows}
+    assert (by_id["c-alice"]["transport"], by_id["c-alice"]["caller"]) == ("memory", "jarvis")
+    dumped = json.dumps(rows)
+    assert "bob@example.com" not in dumped and "alice" not in dumped.replace("c-alice", "")
+    assert "saved=True" not in dumped
 
 
-def test_mcp_calls_non_ops_sees_own_and_userless_rows(client, db_session, as_user):
+def test_mcp_calls_invalid_or_expired_token_is_anonymous_not_401(client, db_session):
     _seed_calls(db_session)
-    as_user("alice")
-    rows = client.get("/api/v1/mcp-calls?limit=10").json()
-    assert {r["call_id"] for r in rows} == {"c-alice", "c-anon", "c-old"}
-    assert all(r["user_id"] in (None, "alice") for r in rows)
+    _seed_users(db_session)
+    for token in ("not.a.jwt", _expired("alice"), create_access_token("mallory")):  # mallory: no users row
+        rows = _get_calls(client, token)
+        assert len(rows) == 4
+        for r in rows:
+            _assert_anonymised(r)
+
+
+def test_mcp_calls_non_ops_sees_own_and_userless_in_full_others_anonymised(client, db_session):
+    _seed_calls(db_session)
+    _seed_users(db_session)
+    rows = _get_calls(client, create_access_token("alice"))
+    by_id = {r["call_id"]: r for r in rows}
+    assert set(by_id) == {"c-alice", "c-bob", "c-anon", "c-old"}
+    assert by_id["c-alice"]["user_id"] == "alice" and by_id["c-alice"]["result_summary"] == "saved=True"
+    for cid in ("c-alice", "c-anon", "c-old"):
+        _assert_full(by_id[cid])
+    assert by_id["c-anon"]["user_id"] is None and by_id["c-anon"]["result_summary"] == "saved=True"
+    _assert_anonymised(by_id["c-bob"])
+    assert by_id["c-bob"]["tool_name"] == "whatineed.get_plan" and by_id["c-bob"]["caller"] == "jarvis"
     assert "bob@example.com" not in json.dumps(rows)
 
 
-def test_mcp_calls_ops_sees_all_rows_with_new_fields(client, db_session, as_user):
+def test_mcp_calls_ops_sees_all_rows_with_new_fields(client, db_session):
     _seed_calls(db_session)
-    as_user("ops-admin", ops=True)
-    rows = client.get("/api/v1/mcp-calls?limit=10").json()
+    _seed_users(db_session)
+    tok = create_access_token("ops-admin")
+    rows = _get_calls(client, tok)
     by_id = {r["call_id"]: r for r in rows}
-    assert set(by_id) == {"c-alice", "c-bob", "c-anon", "c-old"}
     assert [r["call_id"] for r in rows] == ["c-alice", "c-bob", "c-anon", "c-old"]  # newest first
+    for r in rows:
+        _assert_full(r)
+    assert by_id["c-bob"]["user_id"] == "bob@example.com"
     assert (by_id["c-alice"]["transport"], by_id["c-alice"]["caller"], by_id["c-alice"]["user_id"]) == (
         "memory", "jarvis", "alice")
     assert by_id["c-old"]["transport"] is None and by_id["c-old"]["user_id"] is None
-    for key in ("call_id", "timestamp", "tool_name", "status", "duration_ms", "args_summary", "result_summary"):
-        assert key in by_id["c-old"]
-    assert len(client.get("/api/v1/mcp-calls?limit=2").json()) == 2
+    assert len(_get_calls(client, tok, limit=2)) == 2
+
+
+def test_mcp_calls_repository_viewer_rule(db_session):
+    from rita.repositories.mcp_call import MCPCallRepository
+
+    _seed_calls(db_session)
+    repo = MCPCallRepository(db_session)
+    full = lambda uid, ops: {r.call_id for r, f in repo.get_recent_for_viewer(uid, all_users=ops) if f}  # noqa: E731
+    assert full(None, False) == set()
+    assert full("alice", False) == {"c-alice", "c-anon", "c-old"}
+    assert full("ops-admin", True) == {"c-alice", "c-bob", "c-anon", "c-old"}
 
 
 def test_mcp_calls_js_consumers_send_the_jwt():
-    """Every dashboard consumer goes through shared/api.js api() (401 → ensureDevToken(true) →
-    retry once on localhost) — no raw fetch / plain link without a token (project.md §9)."""
+    """Every dashboard consumer goes through shared/api.js api() — the JWT is sent when there is one
+    (full view for own rows); signed out the route answers the anonymous view, so no 401 / redirect."""
     js = _ROOT / "dashboard" / "js"
     for rel in ("rita/mcp.js", "ds/mcp.js", "ds/model-mcp.js", "ops/overview.js", "ops/observability.js"):
         src = (js / rel).read_text(encoding="utf-8")
@@ -248,9 +300,40 @@ def test_mcp_calls_js_consumers_send_the_jwt():
     assert "window.downloadJSON" in (js / "rita" / "main.js").read_text(encoding="utf-8")
 
 
+def test_ops_pages_require_login_at_page_load():
+    """User 2026-10-25: Ops requires login. Desktop + mobile Ops gate on auth_token at load (the
+    ds.html gate: production → Google sign-in via post_login_redirect; localhost → ensureDevToken)."""
+    gate = ("if (!t || expired) {\n    sessionStorage.removeItem('auth_token');\n"
+            "    sessionStorage.setItem('post_login_redirect', window.location.href);\n"
+            "    window.location.href = '/auth/google/login';")
+    ds_html = (_ROOT / "dashboard" / "ds.html").read_text(encoding="utf-8")
+    assert gate in ds_html  # the existing pattern being reused
+    ops_html = (_ROOT / "dashboard" / "ops.html").read_text(encoding="utf-8")
+    assert gate in ops_html
+    assert ops_html.index(gate) < ops_html.index('src="./js/ops/main.js"')
+    assert ops_html.index(gate) < ops_html.index("<title>")  # in <head>, before the page renders
+    ops_main = (_ROOT / "dashboard" / "js" / "ops" / "main.js").read_text(encoding="utf-8")
+    assert "import { ensureDevToken } from '../shared/dev-auth.js';" in ops_main
+    boot = ops_main[ops_main.index("document.addEventListener('DOMContentLoaded'"):]
+    assert boot.index("await ensureDevToken();") < boot.index("loadOverview();")
+
+    mobile = (_ROOT / "mobileapp" / "ops.html").read_text(encoding="utf-8")
+    assert gate in mobile and mobile.index(gate) < mobile.index("<title>")
+    assert "rita_token" not in mobile  # canonical key only (engineer.md §9 FC-AUTH-KEY)
+    assert "return sessionStorage.getItem('auth_token') || '';" in mobile
+    fetch_fn = mobile[mobile.index("async function apiFetch(path, _retried)"):]
+    fetch_fn = fetch_fn[:fetch_fn.index("\n}\n")]
+    assert "headers['Authorization'] = 'Bearer ' + token;" in fetch_fn
+    assert "if (!_retried && await ensureDevToken(true)) return apiFetch(path, true);" in fetch_fn
+    assert "window.location.href = '/auth/google/login';" in fetch_fn
+    init = mobile[mobile.index("async function initData()"):]
+    assert init.index("await ensureDevToken();") < init.index("loadStatus()")
+    assert "apiFetch('/api/v1/mcp-calls')" in mobile
+
+
 # ── the real stdio process ─────────────────────────────────────────────────────
 
-def test_stdio_process_lists_userless_tools_and_answers_alias():
+def test_stdio_process_lists_userless_tools_and_answers_alias(tmp_path):
     """Spawn ``python -m rita.interfaces.rita_mcp_server`` and talk MCP over stdio."""
     import asyncio
 
@@ -264,9 +347,14 @@ def test_stdio_process_lists_userless_tools_and_answers_alias():
     except FileNotFoundError:
         pytest.skip("no NIFTY price CSV in this checkout")
 
+    # F44 P1 review #9: the subprocess logs its calls into a temp DB, never the dev rita_output/rita.db.
+    log_db = tmp_path / "stdio_mcp_calls.db"
+    log_engine = create_engine(f"sqlite:///{log_db}")
+    Base.metadata.create_all(log_engine)
     params = StdioServerParameters(
         command=sys.executable, args=["-m", "rita.interfaces.rita_mcp_server"],
-        env={**os.environ, "PYTHONPATH": str(_ROOT / "src")}, cwd=str(_ROOT),
+        env={**os.environ, "PYTHONPATH": str(_ROOT / "src"), "DATABASE_URL": f"sqlite:///{log_db}"},
+        cwd=str(_ROOT),
     )
 
     async def go():
@@ -283,3 +371,8 @@ def test_stdio_process_lists_userless_tools_and_answers_alias():
                      "ask_rita", "rita_market_overview", "rita_monitor"}
     assert overview.content[0].text.startswith("**NIFTY — Market Overview**")
     assert forbidden.isError and forbidden.structuredContent["error"]["code"] == "forbidden"
+    with log_engine.connect() as conn:  # the override took effect: both calls logged in the temp DB
+        logged = [tuple(r) for r in conn.exec_driver_sql(
+            "SELECT tool_name, transport, user_id FROM mcp_calls ORDER BY timestamp")]
+    log_engine.dispose()
+    assert logged == [("rita_market_overview", "stdio", None), ("portfolio.get_holdings", "stdio", None)]

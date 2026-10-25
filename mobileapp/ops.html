@@ -20,6 +20,22 @@ window.addEventListener('unhandledrejection', function(e) {
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<script>
+// Login gate (F44 P1 review pass 2 — user 2026-10-25: Ops requires login). Same gate as
+// dashboard/ds.html + dashboard/ops.html: production without a valid auth_token → Google sign-in,
+// back here via post_login_redirect. Localhost: initData() mints the dev token first.
+(function(){
+  if (['localhost', '127.0.0.1', '0.0.0.0'].includes(location.hostname)) return;
+  var t = sessionStorage.getItem('auth_token');
+  var expired = false;
+  if (t) { try { var p = JSON.parse(atob(t.split('.')[1])); expired = p.exp && (Date.now()/1000 > p.exp); } catch(e){} }
+  if (!t || expired) {
+    sessionStorage.removeItem('auth_token');
+    sessionStorage.setItem('post_login_redirect', window.location.href);
+    window.location.href = '/auth/google/login';
+  }
+})();
+</script>
 <title>RITA Ops</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -491,16 +507,48 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
 const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
   ? 'http://localhost:8000' : '';
 
+const _IS_LOCAL = ['localhost', '127.0.0.1', '0.0.0.0'].includes(location.hostname);
+
+// Canonical key (engineer.md §9 FC-AUTH-KEY): sessionStorage 'auth_token' — the same key shared/api.js reads.
 function getToken() {
-  try { return localStorage.getItem('rita_token') || ''; } catch { return ''; }
+  try { return sessionStorage.getItem('auth_token') || ''; } catch { return ''; }
 }
 
-async function apiFetch(path) {
+// Inline mirror of dashboard/js/shared/dev-auth.js ensureDevToken() (single-file page, Spec_Mobile_App §19).
+// Localhost only: POST /auth/token rita-dev → sessionStorage 'auth_token'. No-op in production.
+async function ensureDevToken(force) {
+  if (!_IS_LOCAL) return false;
+  if (!force && getToken()) return true;
+  try {
+    const r = await fetch(API_BASE + '/auth/token', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: 'rita-dev', password: 'rita-dev' }),
+    });
+    if (!r.ok) return false;
+    const data = await r.json();
+    if (!data.access_token) return false;
+    sessionStorage.setItem('auth_token', data.access_token);
+    return true;
+  } catch { return false; }
+}
+
+// Reads return null on failure (as before). A 401 mirrors shared/api.js api(): clear auth_token;
+// localhost → ensureDevToken(true) and retry once; production → Google sign-in (post_login_redirect).
+async function apiFetch(path, _retried) {
   try {
     const token = getToken();
     const headers = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = 'Bearer ' + token;
     const res = await fetch(API_BASE + path, { headers });
+    if (res.status === 401) {
+      sessionStorage.removeItem('auth_token');
+      if (!_retried && await ensureDevToken(true)) return apiFetch(path, true);
+      if (!_IS_LOCAL) {
+        sessionStorage.setItem('post_login_redirect', window.location.href);
+        window.location.href = '/auth/google/login';
+      }
+      return null;
+    }
     if (!res.ok) return null;
     return await res.json();
   } catch { return null; }
@@ -772,6 +820,7 @@ async function loadActivity() {
 // ── Bootstrap ───────────────────────────────────────────────────────────
 async function initData() {
   document.getElementById('s0-updated').textContent = 'Loading…';
+  await ensureDevToken();  // localhost: dev token before the first call (production: head login gate)
   await Promise.all([loadStatus(), loadMonitor()]);
 }
 

@@ -33,3 +33,19 @@ class MCPCallRepository:
         if not all_users:
             q = q.filter(or_(MCPCallModel.user_id.is_(None), MCPCallModel.user_id == user_id))
         return q.order_by(desc(MCPCallModel.timestamp)).limit(limit).all()
+
+    def get_recent_for_viewer(
+        self, user_id: str | None, *, all_users: bool, limit: int = 100,
+    ) -> list[tuple[MCPCallModel, bool]]:
+        """Newest-first rows for the mcp-calls view (F44 P1 review pass 2, user option B), each paired
+        with ``full`` — whether the viewer may see ``user_id`` / ``args_summary`` / ``result_summary``.
+
+        - ``all_users`` (ops)                → every row full;
+        - signed in (``user_id`` given)      → own rows and rows with no user full, others anonymised;
+        - anonymous (``user_id`` is None)    → every row anonymised.
+        """
+        rows = self.get_recent(limit)
+        return [
+            (r, all_users or (user_id is not None and (r.user_id is None or r.user_id == user_id)))
+            for r in rows
+        ]

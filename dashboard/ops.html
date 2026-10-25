@@ -13,6 +13,22 @@
   if (mobile || narrow) location.replace('/mobile?from=ops');
 })();
 </script>
+<script>
+// Login gate (F44 P1 review pass 2 — user 2026-10-25: Ops requires login). Same gate as ds.html:
+// production without a valid auth_token → Google sign-in, back here via post_login_redirect.
+// Localhost: ops/main.js boot calls ensureDevToken() first. Login only — no can_access_ops gate.
+(function(){
+  if (['localhost', '127.0.0.1', '0.0.0.0'].includes(location.hostname)) return;
+  var t = sessionStorage.getItem('auth_token');
+  var expired = false;
+  if (t) { try { var p = JSON.parse(atob(t.split('.')[1])); expired = p.exp && (Date.now()/1000 > p.exp); } catch(e){} }
+  if (!t || expired) {
+    sessionStorage.removeItem('auth_token');
+    sessionStorage.setItem('post_login_redirect', window.location.href);
+    window.location.href = '/auth/google/login';
+  }
+})();
+</script>
 <title>RIIA — Operations Portal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
