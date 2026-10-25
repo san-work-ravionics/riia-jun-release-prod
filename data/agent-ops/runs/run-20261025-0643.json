@@ -1,0 +1,39 @@
+{
+  "run_id": "20261025-0643",
+  "app": "rita",
+  "request": "Record v1.2.40 (2dbd237) prod deploy as successful: deploy log, PLAN_STATUS, F43 status, Confluence Engineering v71",
+  "skill_file": "n/a",
+  "agents": [
+    {
+      "role": "ops",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 6000,
+      "grounding_checks": {
+        "branch_created": false,
+        "code_changed": false,
+        "spec_updated": true,
+        "ruff_passed": true,
+        "contract_matches_architect": true
+      },
+      "failure_modes": [],
+      "notes": "/health ok v1.2.40, data fresh to 2026-10-23 (price CSVs survived deploy). DEPLOYMENT_KNOWLEDGE row + header, root and F43 PLAN_STATUS, Confluence Engineering 76611602 v70->v71. Commit 4c2cc53 (riia-agentic-firm)."
+    }
+  ],
+  "overall_status": "pass",
+  "total_tokens_estimated": 6000,
+  "duration_minutes": 10,
+  "branch": "main",
+  "merge_status": "n/a",
+  "merge_commit": "4c2cc53",
+  "human_score": {
+    "accuracy": 3,
+    "relevance": 4,
+    "csat": 3,
+    "planning_ok": true,
+    "time_saved_hours": 5,
+    "notes": ""
+  }
+}
