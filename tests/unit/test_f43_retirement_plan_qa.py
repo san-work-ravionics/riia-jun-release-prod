@@ -163,6 +163,74 @@ def test_saved_europe_plan_savings_cover_need_at_55():
     assert c.share >= 1 - 1e-9          # 100K savings ≥ a year of the shortfall → need fully met
 
 
+
+# ── Rules agreed with the user 2026-10-25 ────────────────────────────────────
+_RICH = {"sv": [{"age": 47, "amt": 500_000}, {"age": 50, "amt": 0}, {"age": 55, "amt": 0}],
+         "bx": [{"age": 55, "amt": 0}, {"age": 60, "amt": 0}, {"age": 65, "amt": 0}]}
+
+
+def _monthly_total(inp):
+    return sum(inp[k + "Monthly"] for k in ("idx", "eq", "com", "alt"))
+
+
+def test_rule_investing_continues_from_savings_until_exit_then_stops():
+    # retirement → exit: the monthly amounts keep going in (paid from savings); from exit: nothing goes in
+    inp = _inp(now=45, ret=55, exit=70, **_RICH)
+    pts = {x.age: x for x in _calc(inp).with_investing.points}
+    year = 12 * _monthly_total(inp)
+    for a in range(55, 70):
+        assert abs((pts[a + 1].put_in - pts[a].put_in) - year) < EUR, a
+    for a in range(70, 75):
+        assert pts[a + 1].put_in <= pts[a].put_in + EUR, a   # stops (sales may lower it)
+
+
+def test_rule_post_retirement_investing_is_paid_from_savings():
+    # same plan with investing set to 0 after retirement is not possible as an input, so compare
+    # savings drop over one retired year: need + investing − withdrawn profit after tax
+    inp = _inp(now=45, ret=55, exit=70, **_RICH)
+    r = _calc(inp)
+    pts = {x.age: x for x in r.with_investing.points}
+    x, y = pts[56], pts[57]   # no events at 56
+    assert y.savings < x.savings
+    assert abs((y.put_in - x.put_in) - 12 * _monthly_total(inp)) < EUR
+
+
+def test_rule_short_savings_invest_what_they_cover_in_same_split():
+    # 6K savings at retirement, tiny need, no house release: savings cover only part of a year's
+    # investing → something (not all) goes in, always in the entered proportions
+    inp = _inp(now=45, ret=55, exit=70, need=10, h2Mode="same",
+               sv=[{"age": 47, "amt": 0}, {"age": 50, "amt": 0}, {"age": 55, "amt": 6_000}],
+               bx=[{"age": 55, "amt": 0}, {"age": 60, "amt": 0}, {"age": 65, "amt": 0}])
+    pts = {x.age: x for x in _calc(inp).with_investing.points}
+    tot = _monthly_total(inp)
+    went_in = pts[56].put_in - pts[55].put_in
+    assert 6_000 - EUR <= went_in < 12 * tot               # the savings (plus profit), not the full year
+    assert pts[56].savings >= -EUR                          # investing never pushes savings below zero
+    for i, k in enumerate(("idx", "eq", "com", "alt")):
+        assert abs((pts[56].basis[i] - pts[55].basis[i]) / went_in - inp[k + "Monthly"] / tot) < 1e-9
+
+
+def test_rule_working_age_shows_need_and_savings_backed_available():
+    # retirement 60, savings at 55 → the 55 column shows its need and what savings could pay
+    inp = _inp(now=45, ret=60, end=85, exit=70,
+               sv=[{"age": 47, "amt": 100_000}, {"age": 50, "amt": 100_000}, {"age": 55, "amt": 0}],
+               bx=[{"age": 55, "amt": 0}, {"age": 60, "amt": 0}, {"age": 65, "amt": 0}])
+    c = next(x for x in _calc(inp).by_age if x.age == 55)
+    assert abs(c.need - inp["need"] * (1 + inp["infl"]) ** (55 - 45)) < EUR
+    assert c.income == 0                                    # still working: no withdrawal
+    assert abs(c.from_savings - min(c.need, c.savings / 12)) < EUR
+    assert c.monthly > 0 and c.share >= 1 - 1e-9            # 200K covers a year of the need
+
+
+def test_rule_one_time_events_reach_savings_at_their_age():
+    # user check: 100K at 47 + 50K at 50 + 50K at 55 − 200K at 55 → savings 0 at 55
+    inp = _inp(now=45, ret=60,
+               sv=[{"age": 47, "amt": 100_000}, {"age": 50, "amt": 50_000}, {"age": 55, "amt": 50_000}],
+               bx=[{"age": 55, "amt": 200_000}, {"age": 60, "amt": 0}, {"age": 65, "amt": 0}])
+    pts = {x.age: x for x in _calc(inp).with_investing.points}
+    assert abs(pts[47].savings - 100_000) < EUR and abs(pts[50].savings - 150_000) < EUR
+    assert abs(pts[55].savings) < EUR
+
 # ── Properties ───────────────────────────────────────────────────────────────
 
 
