@@ -107,8 +107,8 @@ class SimEventOut(_Camel):
 
 class SimPointOut(_Camel):
     age: int
-    pot: float
-    corpus: float
+    savings: float
+    portfolio: float
     put_in: float
     income: float
     need: float
@@ -120,8 +120,8 @@ class SimPointOut(_Camel):
 
 class SimResultOut(_Camel):
     points: list[SimPointOut]
-    run_out: int | None
-    corpus_out: int | None
+    savings_out: int | None
+    portfolio_out: int | None
 
 
 class AgeCellOut(_Camel):
@@ -129,9 +129,9 @@ class AgeCellOut(_Camel):
     off: bool = False
     monthly: float | None = None
     income: float | None = None
-    from_pot: float | None = None
-    pot: float | None = None
-    corpus: float | None = None
+    from_savings: float | None = None
+    savings: float | None = None
+    portfolio: float | None = None
     need: float | None = None
     share: float | None = None
 
@@ -145,9 +145,9 @@ class RetirementPlanResult(_Camel):
     monthly: float
     put: float
     value: float
-    pot: list[PotRowOut]
-    portfolio: SimResultOut
-    portfolio0: SimResultOut
+    portfolio_growth: list[PotRowOut]
+    with_investing: SimResultOut
+    without_investing: SimResultOut
     h_value_at: float
     h_gain: float
     h_tax_amt: float
@@ -190,9 +190,9 @@ class RetirementPlanHistoryItem(_Camel):
     plan_until: int
     need_at_retire: float
     monthly_at_retire: float
-    corpus_at_retire: float
+    portfolio_at_retire: float
     sustainable_until: int | None = None
-    corpus_out_age: int | None = None
+    portfolio_out_age: int | None = None
     app_version: str = ""
 
 

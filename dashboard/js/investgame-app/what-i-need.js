@@ -65,49 +65,49 @@ function readInputs() {
 
 // How long it is sustainable: 'Sustainable until 71' or 'Sustainable beyond 85'
 function outcome(p, port) {
-  return port.runOut === null ? `Sustainable beyond ${p.end}` : `Sustainable until ${port.runOut}`;
+  return port.savingsOut === null ? `Sustainable beyond ${p.end}` : `Sustainable until ${port.savingsOut}`;
 }
-// Where the invested corpus finishes once it is sold from the exit age on
-function corpusOutcome(port, maxAge) {
-  return port.corpusOut === null ? `Corpus never runs out (still growing at ${maxAge})` : `Corpus runs out at ${port.corpusOut}`;
+// Where the invested portfolio is fully sold from the exit age on
+function portfolioOutcome(port, maxAge) {
+  return port.portfolioOut === null ? `Portfolio never runs out (still growing at ${maxAge})` : `Portfolio runs out at ${port.portfolioOut}`;
 }
 // Event copy for the chart tooltip (backend returns kind + amount only)
 function fmtEvent(e) {
   return e.kind === 'house' ? `house ${fmt(e.amount)}` : e.kind === 'saving' ? `one time +${fmt(e.amount)}` : `one time −${fmt(e.amount)}`;
 }
 
-// One chart: the pot of additional money with and without investment (a line stops at zero in the
-// year it runs out — no minus values), and the invested corpus, sold from the exit age when short.
+// One chart: the savings with and without investment (a line stops at zero in the
+// year it runs out — no minus values), and the portfolio, sold from the exit age when short.
 function renderCompare(p, r) {
-  const ages = r.portfolio.points.map(x => x.age);
+  const ages = r.withInvesting.points.map(x => x.age);
   const line = port => port.points.map(x =>
-    port.runOut === null || x.age < port.runOut ? Math.round(x.pot) : x.age === port.runOut ? 0 : null);
+    port.savingsOut === null || x.age < port.savingsOut ? Math.round(x.savings) : x.age === port.savingsOut ? 0 : null);
   const marker = (age, text, color, position) => ({
     type: 'line', xMin: ages.indexOf(age), xMax: ages.indexOf(age), borderColor: color, borderWidth: 1, borderDash: [3, 3],
     label: { display: true, content: text, position, backgroundColor: color, padding: 3, font: { family: C.mono, size: 9 } },
   });
   const annotations = {};
   if (ages.includes(p.ret)) annotations.retire = marker(p.ret, `Retire ${p.ret}`, C.t4, 'start');
-  if (r.portfolio.runOut !== null) annotations.out1 = marker(r.portfolio.runOut, `With: until ${r.portfolio.runOut}`, C.build, 'center');
+  if (r.withInvesting.savingsOut !== null) annotations.out1 = marker(r.withInvesting.savingsOut, `With: until ${r.withInvesting.savingsOut}`, C.build, 'center');
   if (ages.includes(p.exit)) annotations.exit = marker(p.exit, `Exit ${p.exit}`, C.t4, 'start');
-  if (ages.includes(r.portfolio.corpusOut)) annotations.cOut = marker(r.portfolio.corpusOut, `Corpus out ${r.portfolio.corpusOut}`, 'rgba(0,86,184,.7)', 'end');
-  if (r.portfolio0.runOut !== null) annotations.out0 = marker(r.portfolio0.runOut, `Without: until ${r.portfolio0.runOut}`, C.t3, 'end');
-  const pts = r.portfolio.points;
+  if (ages.includes(r.withInvesting.portfolioOut)) annotations.cOut = marker(r.withInvesting.portfolioOut, `Portfolio out ${r.withInvesting.portfolioOut}`, 'rgba(0,86,184,.7)', 'end');
+  if (r.withoutInvesting.savingsOut !== null) annotations.out0 = marker(r.withoutInvesting.savingsOut, `Without: until ${r.withoutInvesting.savingsOut}`, C.t3, 'end');
+  const pts = r.withInvesting.points;
   mkChart('wn-port', {
     type: 'line',
     data: {
       labels: ages,
       datasets: [
-        { label: 'Invested corpus', data: pts.map(x => Math.round(x.corpus)), borderColor: 'rgba(0,86,184,.5)', backgroundColor: 'rgba(0,86,184,.06)', fill: 'origin', borderWidth: 1, pointRadius: 0 },
-        { label: 'Money pot, with investment', data: line(r.portfolio), borderColor: C.build, borderWidth: 2, pointRadius: 0 },
-        { label: 'Money pot, without', data: line(r.portfolio0), borderColor: C.t3, borderDash: [5, 4], borderWidth: 1.5, pointRadius: 0 },
+        { label: 'Portfolio', data: pts.map(x => Math.round(x.portfolio)), borderColor: 'rgba(0,86,184,.5)', backgroundColor: 'rgba(0,86,184,.06)', fill: 'origin', borderWidth: 1, pointRadius: 0 },
+        { label: 'Savings, with investment', data: line(r.withInvesting), borderColor: C.build, borderWidth: 2, pointRadius: 0 },
+        { label: 'Savings, without', data: line(r.withoutInvesting), borderColor: C.t3, borderDash: [5, 4], borderWidth: 1.5, pointRadius: 0 },
       ],
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        title: { display: true, text: `Corpus at ${p.ret} ${fmtK(r.value)}  ·  monthly available at ${p.ret} ${fmt(r.atRet.monthly)}`, align: 'start', color: C.t3, font: { family: C.mono, size: 10, weight: '600' }, padding: { top: 0, bottom: 2 } },
+        title: { display: true, text: `Portfolio at ${p.ret} ${fmtK(r.value)}  ·  monthly available at ${p.ret} ${fmt(r.atRet.monthly)}`, align: 'start', color: C.t3, font: { family: C.mono, size: 10, weight: '600' }, padding: { top: 0, bottom: 2 } },
         legend: { position: 'top', align: 'end', labels: { usePointStyle: true, pointStyle: 'line', boxWidth: 18, padding: 8, font: { size: 10 } } },
         tooltip: { callbacks: {
           title: i => 'Age ' + i[0].label,
@@ -138,9 +138,9 @@ function render(p, r) {
     '<tr class="total"><td>Available</td>' + r.byAge.map(c => cell(c, `<span title="${c.age >= p.ret ? pct(c.share) + ' of the need' : 'working'}">${fmt(c.monthly)}</span>`, !c.off && c.age >= p.ret && c.share >= 1 ? 'ok' : '')).join('') + '</tr>',
     '<tr class="need"><td>Need</td>' + r.byAge.map(c => cell(c, c.age >= p.ret ? fmt(c.need) : '—')).join('') + '</tr>',
     '<tr><td>Investing</td>' + r.byAge.map(c => cell(c, fmt(c.income))).join('') + '</tr>',
-    '<tr><td>From pot</td>' + r.byAge.map(c => cell(c, fmt(c.fromPot))).join('') + '</tr>',
-    '<tr><td>In pot</td>' + r.byAge.map(c => cell(c, fmtK(c.pot))).join('') + '</tr>',
-    '<tr><td>Corpus</td>' + r.byAge.map(c => cell(c, fmtK(c.corpus))).join('') + '</tr>',
+    '<tr><td>From savings</td>' + r.byAge.map(c => cell(c, fmt(c.fromSavings))).join('') + '</tr>',
+    '<tr><td>Savings</td>' + r.byAge.map(c => cell(c, fmtK(c.savings))).join('') + '</tr>',
+    '<tr><td>Portfolio</td>' + r.byAge.map(c => cell(c, fmtK(c.portfolio))).join('') + '</tr>',
   ].join('');
 
   // Row 2 — investments
@@ -187,24 +187,24 @@ function render(p, r) {
   // Feedback under Mortgage: how close the monthly available is to the need
   const fb = document.getElementById('wn-h-fb');
   const c0 = r.atRet;
-  fb.innerHTML = `Monthly available at ${c0.age}: <b>${fmt(c0.monthly)}</b> of ${fmt(c0.need)} needed (<b>${pct(c0.share)}</b>) · ${outcome(p, r.portfolio)} · ${corpusOutcome(r.portfolio, r.maxAge)}`;
+  fb.innerHTML = `Monthly available at ${c0.age}: <b>${fmt(c0.monthly)}</b> of ${fmt(c0.need)} needed (<b>${pct(c0.share)}</b>) · ${outcome(p, r.withInvesting)} · ${portfolioOutcome(r.withInvesting, r.maxAge)}`;
   fb.className = 'wn-fb' + (c0.share >= 1 ? ' ok' : '');
 
   // Without vs with investment in one chart — same plan, house and one time events in both
-  set('wn-c1-badge', `With: ${outcome(p, r.portfolio)}`);
-  set('wn-c0-badge', `Without: ${outcome(p, r.portfolio0)}`);
+  set('wn-c1-badge', `With: ${outcome(p, r.withInvesting)}`);
+  set('wn-c0-badge', `Without: ${outcome(p, r.withoutInvesting)}`);
   renderCompare(p, r);
 
-  // Year table — plain-sum need next to the money pot with and without investment
-  const at = port => Object.fromEntries(port.points.map(x => [x.age, port.runOut === null || x.age < port.runOut ? x.pot : 0]));
-  const p0 = at(r.portfolio0), p1 = at(r.portfolio);
+  // Year table — plain-sum need next to savings with and without investment
+  const at = port => Object.fromEntries(port.points.map(x => [x.age, port.savingsOut === null || x.age < port.savingsOut ? x.savings : 0]));
+  const p0 = at(r.withoutInvesting), p1 = at(r.withInvesting);
   document.getElementById('wn-year-body').innerHTML = r.years.map(y =>
     `<tr><td>${y.age}</td><td>${y.year}</td><td class="num">${fmt(y.monthly)}</td><td class="num">${fmt(y.cum)}</td>` +
     `<td class="num">${p0[y.age] > 0 ? fmt(p0[y.age]) : '—'}</td><td class="num">${p1[y.age] > 0 ? fmt(p1[y.age]) : '—'}</td></tr>`).join('');
 
-  // Pot chart — what you put in, plus growth per asset
-  set('wn-pot-title', `Your investment pot, age ${p.now} → ${p.end}`);
-  const ages = r.pot.map(x => x.age);
+  // Portfolio growth chart — what you put in, plus growth per asset
+  set('wn-pot-title', `Your investment portfolio, age ${p.now} → ${p.end}`);
+  const ages = r.portfolioGrowth.map(x => x.age);
   const marker = (age, text, color) => ({
     type: 'line', xMin: ages.indexOf(age), xMax: ages.indexOf(age), borderColor: color, borderWidth: 1.5, borderDash: [4, 4],
     label: { display: true, content: text, position: 'start', backgroundColor: color, font: { family: C.mono, size: 9 } },
@@ -216,8 +216,8 @@ function render(p, r) {
     data: {
       labels: ages,
       datasets: [
-        { label: 'You put in', data: r.pot.map(x => Math.round(x.put)), backgroundColor: 'rgba(184,178,166,.9)', stack: 'pot' },
-        ...ASSETS.map(a => ({ label: `${a.name} growth`, data: r.pot.map(x => Math.round(x[a.key])), backgroundColor: a.color, stack: 'pot' })),
+        { label: 'You put in', data: r.portfolioGrowth.map(x => Math.round(x.put)), backgroundColor: 'rgba(184,178,166,.9)', stack: 'pot' },
+        ...ASSETS.map(a => ({ label: `${a.name} growth`, data: r.portfolioGrowth.map(x => Math.round(x[a.key])), backgroundColor: a.color, stack: 'pot' })),
         { type: 'line', label: 'Still needed', data: ages.map(() => Math.round(r.target)), borderColor: C.warn, borderDash: [6, 4], borderWidth: 1.5, pointRadius: 0, stack: 'target' },
       ],
     },

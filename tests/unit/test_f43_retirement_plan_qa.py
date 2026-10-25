@@ -172,7 +172,7 @@ def test_property_partial_up_byage_retirement_cell_income_up():
 def test_property_same_house_no_release_no_event_and_target():
     r = _calc(_inp(h2Mode="same"))
     assert r.house_release == 0.0
-    assert all(e.kind != "house" for x in r.portfolio.points + r.portfolio0.points for e in x.events)
+    assert all(e.kind != "house" for x in r.with_investing.points + r.without_investing.points for e in x.events)
     assert r.target == pytest.approx(max(0.0, r.total + r.big_expenses - r.savings))
     # house value / tax are still reported for the KPI cards
     assert r.h_value_at > 400_000 and r.h_net > 0
@@ -217,9 +217,9 @@ def test_property_c2_regression_present():
     assert validate_plan(raw) == "Inflation must be between −50% and 100%"
 
 
-def test_property_all_monthly_zero_corpus_never_out():
+def test_property_all_monthly_zero_portfolio_never_out():
     r = _calc(_inp(idxMonthly=0, eqMonthly=0, comMonthly=0, altMonthly=0))
-    assert r.portfolio.corpus_out is None and r.portfolio0.corpus_out is None
+    assert r.with_investing.portfolio_out is None and r.without_investing.portfolio_out is None
     assert r.value == 0.0 and all(a.withdrawn_net == 0.0 for a in r.assets)
 
 

@@ -74,16 +74,16 @@ def test_headline_numbers_defaults():
     r = _result(DEFAULTS)
     assert r["byAge"][0]["age"] == 55 and abs(r["byAge"][0]["monthly"] - 1987.518) < 0.01
     assert r["byAge"][3]["age"] == 70 and abs(r["byAge"][3]["monthly"] - 7703.30) < 0.01
-    assert abs(r["byAge"][3]["corpus"] - 1733258.3) < 0.1
-    assert r["portfolio"]["runOut"] == 55
-    assert r["portfolio0"]["runOut"] == 59
-    assert r["portfolio"]["corpusOut"] == 119
-    assert r["portfolio0"]["corpusOut"] is None
+    assert abs(r["byAge"][3]["portfolio"] - 1733258.3) < 0.1
+    assert r["withInvesting"]["savingsOut"] == 55
+    assert r["withoutInvesting"]["savingsOut"] == 59
+    assert r["withInvesting"]["portfolioOut"] == 119
+    assert r["withoutInvesting"]["portfolioOut"] is None
 
 
 def test_events_order_and_kinds():
     r = _result(DEFAULTS)
-    by_age = {x["age"]: x["events"] for x in r["portfolio"]["points"]}
+    by_age = {x["age"]: x["events"] for x in r["withInvesting"]["points"]}
     assert [e["kind"] for e in by_age[50]] == ["saving"]
     assert [e["kind"] for e in by_age[55]] == ["saving", "expense"]
     assert [e["kind"] for e in by_age[60]] == ["house", "saving", "expense"]
@@ -95,12 +95,12 @@ def test_same_house_has_no_house_event():
     inp = {**DEFAULTS, "h2Mode": "same"}
     r = _result(inp)
     assert r["houseRelease"] == 0.0
-    assert all(e["kind"] != "house" for x in r["portfolio"]["points"] for e in x["events"])
+    assert all(e["kind"] != "house" for x in r["withInvesting"]["points"] for e in x["events"])
 
 
-def test_no_invest_corpus_never_runs_out():
+def test_no_invest_portfolio_never_runs_out():
     r = _result(GOLDEN["scenarios"]["no_invest"]["input"])
-    assert r["portfolio"]["corpusOut"] is None
+    assert r["withInvesting"]["portfolioOut"] is None
 
 
 def test_end_70_panels_off():
@@ -109,7 +109,7 @@ def test_end_70_panels_off():
     assert off == {55: False, 60: False, 65: False, 70: False, 75: True, 80: True, 85: True}
     cell = r["byAge"][4]
     assert cell["monthly"] is None and cell["share"] is None
-    assert r["portfolio"]["corpusOut"] is not None
+    assert r["withInvesting"]["portfolioOut"] is not None
 
 
 def test_start_year_only_labels_years():
@@ -125,11 +125,11 @@ def test_fv_factor_zero_rate_is_k():
     assert fv_factor(0.07, 12) == pytest.approx(12.0 * (1 + 0.07 / 2), rel=0.01)
 
 
-def test_simulate_invest_false_has_no_corpus():
+def test_simulate_invest_false_has_no_portfolio():
     p = to_params(RetirementPlanInputs.model_validate(DEFAULTS).model_dump())
     s = simulate(p, p.assets, 0.0, invest=False)
-    assert s.corpus_out is None
-    assert all(x.corpus == 0.0 for x in s.points)
+    assert s.portfolio_out is None
+    assert all(x.portfolio == 0.0 for x in s.points)
     assert s.points[-1].age == p.end
 
 

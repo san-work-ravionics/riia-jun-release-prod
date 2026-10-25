@@ -16,28 +16,30 @@ class UserRetirementPlanRepo:
     def __init__(self, db: Session) -> None:
         self._db = db
 
-    def find_by_user_id(self, user_id: str) -> UserRetirementPlanModel | None:
-        """Return the user's saved plan row, or None."""
+    def find_by_user_location(self, user_id: str, location: str) -> UserRetirementPlanModel | None:
+        """Return the saved plan for (user, location), or None."""
         return (
             self._db.query(UserRetirementPlanModel)
-            .filter(UserRetirementPlanModel.user_id == user_id)
+            .filter(
+                UserRetirementPlanModel.user_id == user_id,
+                UserRetirementPlanModel.location == location,
+            )
             .first()
         )
 
     def upsert(
         self, user_id: str, inputs: dict[str, Any], schema_version: int, location: str,
     ) -> UserRetirementPlanModel:
-        """Insert or replace the user's single plan row.  Flushes; caller commits."""
-        row = self.find_by_user_id(user_id)
+        """Insert or replace the (user, location) plan row.  Flushes; caller commits."""
+        row = self.find_by_user_location(user_id, location)
         if row is None:
             row = UserRetirementPlanModel(
-                user_id=user_id, inputs=inputs, schema_version=schema_version, location=location,
+                user_id=user_id, location=location, inputs=inputs, schema_version=schema_version,
             )
             self._db.add(row)
         else:
             row.inputs = inputs
             row.schema_version = schema_version
-            row.location = location
             row.updated_at = func.now()
         self._db.flush()  # SessionLocal has autoflush off; make the row visible, no commit
         return row

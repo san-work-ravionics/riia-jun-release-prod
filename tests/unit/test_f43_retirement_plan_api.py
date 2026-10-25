@@ -67,11 +67,11 @@ def test_calculate_defaults_200_headline(client):
     assert d["startYear"] == date.today().year
     assert abs(d["byAge"][0]["monthly"] - 1987.518) < 0.01
     assert abs(d["byAge"][3]["monthly"] - 7703.30) < 0.01
-    assert d["portfolio"]["runOut"] == 55 and d["portfolio0"]["runOut"] == 59
-    assert d["portfolio"]["corpusOut"] == 119
-    assert d["portfolio0"]["corpusOut"] is None
+    assert d["withInvesting"]["savingsOut"] == 55 and d["withoutInvesting"]["savingsOut"] == 59
+    assert d["withInvesting"]["portfolioOut"] == 119
+    assert d["withoutInvesting"]["portfolioOut"] is None
     # events present on points, JS formats the copy
-    assert {e["kind"] for x in d["portfolio"]["points"] for e in x["events"]} == {"house", "saving", "expense"}
+    assert {e["kind"] for x in d["withInvesting"]["points"] for e in x["events"]} == {"house", "saving", "expense"}
 
 
 def test_calculate_years_use_server_year(client):
