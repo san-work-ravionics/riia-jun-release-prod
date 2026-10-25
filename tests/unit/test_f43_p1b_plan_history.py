@@ -62,7 +62,7 @@ def test_result_no_user_is_defaults_with_calculated_result(client):
     assert d["saved"] is False
     assert d["inputs"]["need"] == DEFAULTS["need"]
     assert d["result"]["atRet"]["monthly"] == pytest.approx(DEFAULT_OUT["atRet"]["monthly"], abs=1e-6)
-    assert d["result"]["portfolio"]["corpusOut"] == 119
+    assert d["result"]["withInvesting"]["portfolioOut"] == 119
 
 
 def test_result_is_not_shadowed_by_game_result_route(client):
@@ -125,8 +125,8 @@ def test_each_save_appends_history_with_key_figures(client, db_session):
     assert first.user_id == "u1" and first.retire_age == 55 and first.plan_until == 85
     assert first.monthly_at_retire == pytest.approx(DEFAULT_OUT["atRet"]["monthly"], abs=1e-6)
     assert first.need_at_retire == pytest.approx(DEFAULT_OUT["atRet"]["need"], abs=1e-6)
-    assert first.corpus_at_retire == pytest.approx(DEFAULT_OUT["value"], abs=1e-6)
-    assert first.sustainable_until == 55 and first.corpus_out_age == 119
+    assert first.portfolio_at_retire == pytest.approx(DEFAULT_OUT["value"], abs=1e-6)
+    assert first.sustainable_until == 55 and first.portfolio_out_age == 119
     assert first.schema_version == 1 and first.app_version
 
 
@@ -170,7 +170,7 @@ def test_history_newest_first_and_per_user(client):
     assert items[0]["savedAt"] >= items[1]["savedAt"]
     keys = set(items[0])
     assert {"historyId", "savedAt", "retireAge", "planUntil", "needAtRetire", "monthlyAtRetire",
-            "corpusAtRetire", "sustainableUntil", "corpusOutAge"} <= keys
+            "portfolioAtRetire", "sustainableUntil", "portfolioOutAge"} <= keys
     assert client.get(HISTORY, params={"limit": 1}).json()["items"][0]["historyId"] == items[0]["historyId"]
 
 
@@ -214,7 +214,7 @@ def test_history_entry_with_unreadable_inputs_is_404_not_500(client, db_session)
     db_session.add(UserRetirementPlanHistoryModel(
         history_id="bad-1", user_id="u1", saved_at=datetime.now(timezone.utc), inputs={"need": "x"},
         location="europe", retire_age=55, plan_until=85, need_at_retire=1.0, monthly_at_retire=1.0,
-        corpus_at_retire=1.0, schema_version=1, app_version="t",
+        portfolio_at_retire=1.0, schema_version=1, app_version="t",
     ))
     db_session.commit()
     _as("u1")

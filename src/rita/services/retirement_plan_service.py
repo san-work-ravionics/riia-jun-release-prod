@@ -85,21 +85,18 @@ class RetirementPlanService:
         self._history = UserRetirementPlanHistoryRepo(db)
 
     def load(self, user_id: str | None, location: str | None = None) -> RetirementPlanOut:
-        """Saved plan for the user, else preset defaults. Never writes.
-
-        With ``location``: the saved plan only if it is for that location, else its preset.
-        """
+        """Saved plan for the user+location, else preset defaults. Never writes."""
         check_location(location)
         if user_id is None:
             return default_plan(location)
-        row = self._plans.find_by_user_id(user_id)
-        if row is None or (location is not None and row.location != location):
+        key, currency, _ = _preset(location)
+        row = self._plans.find_by_user_location(user_id, key)
+        if row is None:
             return default_plan(location)
         try:
             if row.schema_version != SCHEMA_VERSION:
                 raise ValueError(f"unsupported schema_version {row.schema_version}")
             inputs = RetirementPlanInputs.model_validate(row.inputs)
-            key, currency, _ = _preset(row.location)
         except (ValidationError, ValueError, TypeError) as exc:
             log.warning("retirement_plan.saved_plan_unreadable", user_id=user_id, error=str(exc))
             return default_plan(location)
@@ -164,9 +161,9 @@ class RetirementPlanService:
                 plan_until=int(inputs.end),
                 need_at_retire=at_ret.need,
                 monthly_at_retire=at_ret.monthly,
-                corpus_at_retire=result.value,
-                sustainable_until=result.portfolio.run_out,
-                corpus_out_age=result.portfolio.corpus_out,
+                portfolio_at_retire=result.value,
+                sustainable_until=result.with_investing.savings_out,
+                portfolio_out_age=result.with_investing.portfolio_out,
                 schema_version=SCHEMA_VERSION,
                 app_version=get_settings().app.version,
             ))

@@ -18,9 +18,9 @@ retire_age         Retirement age in the plan
 plan_until         Plan-until age
 need_at_retire     Monthly need at retirement (EUR)
 monthly_at_retire  Monthly available at retirement (EUR)
-corpus_at_retire   Invested corpus value at retirement (EUR)
-sustainable_until  First age the money pot falls short (null = beyond plan-until)
-corpus_out_age     Age the invested corpus is used up (null = never, up to 120)
+portfolio_at_retire  Portfolio value at retirement (EUR)
+sustainable_until    First age the savings fall short (null = beyond plan-until)
+portfolio_out_age    Age the portfolio is fully sold (null = never, up to 120)
 schema_version     Inputs schema version (1)
 app_version        Application version at save time
 """
@@ -41,9 +41,9 @@ class UserRetirementPlanHistoryModel(Base):
     plan_until = Column(Integer, nullable=False)
     need_at_retire = Column(Float, nullable=False)
     monthly_at_retire = Column(Float, nullable=False)
-    corpus_at_retire = Column(Float, nullable=False)
+    portfolio_at_retire = Column(Float, nullable=False)
     sustainable_until = Column(Integer, nullable=True)
-    corpus_out_age = Column(Integer, nullable=True)
+    portfolio_out_age = Column(Integer, nullable=True)
     schema_version = Column(Integer, nullable=False, default=1)
     app_version = Column(String, nullable=False, default="")
 

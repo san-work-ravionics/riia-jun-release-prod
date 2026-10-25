@@ -19,7 +19,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
-MAX_AGE = 120  # corpus run-out is followed past plan-until up to this age
+MAX_AGE = 120  # portfolio run-out is followed past plan-until up to this age
 AGE_PANELS: tuple[int, ...] = (55, 60, 65, 70, 75, 80, 85)
 ASSET_KEYS: tuple[str, ...] = ("idx", "eq", "com", "alt")
 MAX_AMOUNT = 1_000_000_000.0
@@ -87,8 +87,8 @@ class SimEvent:
 @dataclass(slots=True)
 class SimPoint:
     age: int
-    pot: float
-    corpus: float
+    savings: float
+    portfolio: float
     put_in: float
     income: float
     need: float
@@ -101,8 +101,8 @@ class SimPoint:
 @dataclass(slots=True)
 class SimResult:
     points: list[SimPoint]
-    run_out: int | None
-    corpus_out: int | None
+    savings_out: int | None
+    portfolio_out: int | None
 
 
 @dataclass(slots=True)
@@ -141,9 +141,9 @@ class AgeCell:
     off: bool = False
     monthly: float | None = None
     income: float | None = None
-    from_pot: float | None = None
-    pot: float | None = None
-    corpus: float | None = None
+    from_savings: float | None = None
+    savings: float | None = None
+    portfolio: float | None = None
     need: float | None = None
     share: float | None = None
 
@@ -158,9 +158,9 @@ class PlanResult:
     monthly: float
     put: float
     value: float
-    pot: list[PotRow]
-    portfolio: SimResult
-    portfolio0: SimResult
+    portfolio_growth: list[PotRow]
+    with_investing: SimResult
+    without_investing: SimResult
     h_value_at: float
     h_gain: float
     h_tax_amt: float
@@ -282,23 +282,23 @@ def simulate(
     monthly = [a.monthly for a in assets]
     bal = [0.0] * n
     basis = [0.0] * n
-    state = {"pot": 0.0, "corpus_out": None}
-    run_out: int | None = None
+    state = {"savings": 0.0, "portfolio_out": None}
+    savings_out: int | None = None
     points: list[SimPoint] = []
 
-    def sell_corpus(age: int) -> float:
+    def sell_portfolio(age: int) -> float:
         b = _jsum(bal)
-        if not invest or age < p.exit or state["pot"] >= 0 or b <= 0:
+        if not invest or age < p.exit or state["savings"] >= 0 or b <= 0:
             return 0.0
         net = 1.0 - p.tax * max(0.0, b - _jsum(basis)) / b if b > 0 else 0.0
-        gross = min(b, -state["pot"] / net)
+        gross = min(b, -state["savings"] / net)
         keep = 1.0 - gross / b
         for i in range(n):
             bal[i] *= keep
             basis[i] *= keep
-        state["pot"] = state["pot"] + gross * net
-        if state["corpus_out"] is None and _jsum(bal) < 1:
-            state["corpus_out"] = age
+        state["savings"] = state["savings"] + gross * net
+        if state["portfolio_out"] is None and _jsum(bal) < 1:
+            state["portfolio_out"] = age
         return gross * net
 
     def share(age: int) -> float:
@@ -314,32 +314,32 @@ def simulate(
 
     for age in range(p.now, MAX_AGE + 1):
         past = age > p.end
-        if past and (not invest or state["corpus_out"] is not None):
+        if past and (not invest or state["portfolio_out"] is not None):
             break
         events: list[SimEvent] = []
         if age == p.h_sell and p.h2_mode != "same":
-            state["pot"] = state["pot"] + house_release
+            state["savings"] = state["savings"] + house_release
             events.append(SimEvent("house", house_release))
         sv_in = 0.0
         for x in p.sv:
             sv_in = sv_in + (x.amt if (x.amt > 0 and x.age == age) else 0.0)
         if sv_in > 0:
-            state["pot"] = state["pot"] + sv_in
+            state["savings"] = state["savings"] + sv_in
             events.append(SimEvent("saving", sv_in))
         bx_out = 0.0
         for x in p.bx:
             bx_out = bx_out + (x.amt if (x.amt > 0 and x.age == age) else 0.0)
         if bx_out > 0:
-            state["pot"] = state["pot"] - bx_out
+            state["savings"] = state["savings"] - bx_out
             events.append(SimEvent("expense", bx_out))
-        sell_corpus(age)
-        if run_out is None and not past and state["pot"] < -0.5:
-            run_out = age
+        sell_portfolio(age)
+        if savings_out is None and not past and state["savings"] < -0.5:
+            savings_out = age
         income = income_now(age)
         need = p.need * (1.0 + p.infl) ** (age - p.now) if age >= p.ret else 0.0
         if not past:
             points.append(SimPoint(
-                age=age, pot=state["pot"], corpus=_jsum(bal), put_in=_jsum(basis),
+                age=age, savings=state["savings"], portfolio=_jsum(bal), put_in=_jsum(basis),
                 income=income, need=need, sold=0.0, bal=list(bal), basis=list(basis), events=events,
             ))
         sold_year = 0.0
@@ -350,7 +350,7 @@ def simulate(
                         bal[i] = bal[i] * (1.0 + m_rate[i]) + monthly[i]
                         basis[i] = basis[i] + monthly[i]
                     else:
-                        state["pot"] = state["pot"] + monthly[i]
+                        state["savings"] = state["savings"] + monthly[i]
                 continue
             withdrawn = 0.0
             if invest:
@@ -362,13 +362,13 @@ def simulate(
                 for i in range(n):
                     s = split[i]
                     bal[i] = bal[i] + (profits[i] * (1.0 - sh) if s is None else kept * s)
-            state["pot"] = state["pot"] + (withdrawn * (1.0 - p.tax) - need)
-            sold_year = sold_year + sell_corpus(age)
-            if run_out is None and age < p.end and state["pot"] < -0.5:
-                run_out = age
+            state["savings"] = state["savings"] + (withdrawn * (1.0 - p.tax) - need)
+            sold_year = sold_year + sell_portfolio(age)
+            if savings_out is None and age < p.end and state["savings"] < -0.5:
+                savings_out = age
         if not past:
             points[-1].sold = sold_year
-    return SimResult(points=points, run_out=run_out, corpus_out=state["corpus_out"])
+    return SimResult(points=points, savings_out=savings_out, portfolio_out=state["portfolio_out"])
 
 
 def calc(p: PlanParams, start_year: int) -> PlanResult:
@@ -406,35 +406,35 @@ def calc(p: PlanParams, start_year: int) -> PlanResult:
     put_sum = _jsum(a.put for a in assets)
     value_sum = _jsum(a.value for a in assets)
 
-    portfolio = simulate(p, assets, house_release)
-    portfolio0 = simulate(p, assets, house_release, invest=False)
-    pot = [
+    with_investing = simulate(p, assets, house_release)
+    without_investing = simulate(p, assets, house_release, invest=False)
+    portfolio_growth = [
         PotRow(age=x.age, put=x.put_in, **{a.key: x.bal[i] - x.basis[i] for i, a in enumerate(assets)})
-        for x in portfolio.points
+        for x in with_investing.points
     ]
     need_all = total + big_expenses
     need_ret = years[0].monthly
-    by_point = {x.age: x for x in portfolio.points}
+    by_point = {x.age: x for x in with_investing.points}
 
     def at(age: int) -> AgeCell:
         x = by_point[age]
         months = 0.0
         for a in range(age, max(p.end, age + 1)):
             months = months + 12 * (1.0 + p.infl) ** (a - age)
-        from_pot = x.pot / months
+        from_savings = x.savings / months
         need = p.need * (1.0 + p.infl) ** (age - p.now)
         income = x.income + x.sold / 12
-        monthly = max(0.0, income + from_pot)
+        monthly = max(0.0, income + from_savings)
         return AgeCell(
-            age=age, off=False, monthly=monthly, income=income, from_pot=from_pot,
-            pot=x.pot, corpus=x.corpus, need=need, share=monthly / need,
+            age=age, off=False, monthly=monthly, income=income, from_savings=from_savings,
+            savings=x.savings, portfolio=x.portfolio, need=need, share=monthly / need,
         )
 
     by_age = [at(age) if p.now <= age <= p.end else AgeCell(age=age, off=True) for age in AGE_PANELS]
     return PlanResult(
         start_year=start_year, max_age=MAX_AGE, years=years, total=total, assets=assets,
-        monthly=monthly_sum, put=put_sum, value=value_sum, pot=pot,
-        portfolio=portfolio, portfolio0=portfolio0,
+        monthly=monthly_sum, put=put_sum, value=value_sum, portfolio_growth=portfolio_growth,
+        with_investing=with_investing, without_investing=without_investing,
         h_value_at=h_value_at, h_gain=h_gain, h_tax_amt=h_tax_amt, h_net=h_net, h2_at=h2_at,
         house_release=house_release, big_expenses=big_expenses, savings=savings, target=target,
         need_all=need_all, need_ret=need_ret, by_age=by_age, at_ret=at(p.ret),
