@@ -8,7 +8,7 @@
 // This module only reads the form, renders the result and formats the copy (D7).
 import { mkChart, C } from '../shared/charts.js';
 import { api, apiFetch, apiBase } from './api.js';
-import { isLocalDev } from '../shared/dev-auth.js';
+import { isLocalDev, ensureDevToken } from '../shared/dev-auth.js';
 
 const CALC_PATH = '/api/experience/invest-game/retirement-plan/calculate';
 const PLAN_PATH = '/api/experience/invest-game/retirement-plan';
@@ -302,8 +302,12 @@ function flash(cls, text, ms = 1600) {
   status.textContent = text;
   if (ms) _flash = setTimeout(() => { _flash = null; status.className = 'badge neu'; status.textContent = statusText(); }, ms);
 }
-function signInToSave(body) {
-  if (isLocalDev()) { flash('neu', 'Sign in to save', 2400); return; }
+async function signInToSave(body) {
+  if (isLocalDev()) {
+    const ok = await ensureDevToken();
+    if (ok) { savePlan(); return; }
+    flash('neu', 'Dev token error — check /auth/token', 2400); return;
+  }
   sessionStorage.removeItem('auth_token');
   sessionStorage.setItem(PENDING_KEY, JSON.stringify({ location: _loc, inputs: JSON.parse(body) }));
   sessionStorage.setItem('post_login_redirect', window.location.href);

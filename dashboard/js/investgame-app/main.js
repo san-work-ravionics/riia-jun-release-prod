@@ -5,7 +5,7 @@ import { loadCrispDm, switchCrispTab } from './crisp-dm.js';
 import { loadAgentPerformance, setAgentPerfPeriod, loadAgentPerfTimeline } from './agent-performance.js';
 import { loadAgentBuilds, submitTokenEstimate, toggleEstimateWidget, closeChartModal } from './agent-builds.js';
 import { loadAgentPanel, agentPanelStep, resetAgentPanel, approveAgentProposal, rejectAgentProposal } from './agent-panel.js';
-import { loadWhatINeed, hasPendingSave } from './what-i-need.js?v=60';
+import { loadWhatINeed, hasPendingSave } from './what-i-need.js?v=61';
 import { ensureDevToken } from '../shared/dev-auth.js';
 
 // ── Register section loaders ─────────────────────────────────────────────────
