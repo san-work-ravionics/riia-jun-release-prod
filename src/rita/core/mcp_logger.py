@@ -1,11 +1,12 @@
 """
 RITA Core — MCP Call Logger
 
-Writes one DB row per MCP tool invocation made via rita_mcp_server.
-Reads are served by GET /api/v1/mcp-calls via MCPCallRepository.
+Writes one DB row per MCP tool call, from the one tool dispatch in interfaces/mcp_tools.py — every
+transport (memory / http / stdio / sse).  Reads are served by GET /api/v1/mcp-calls.
 
-The MCP server is a separate process — it opens its own SessionLocal()
-per write, following the same pattern as background threads (Spec_DB §5).
+Opens its own SessionLocal() per write, following the same pattern as background threads
+(Spec_DB §5) — the stdio server is a separate process, and a tool never borrows a request session.
+Callers must pass summaries that hold no personal_* data or message text (ADR-007 §7).
 """
 from __future__ import annotations
 
@@ -19,15 +20,21 @@ def log_mcp_call(
     result_summary: str,
     duration_ms: float,
     status: str = "ok",
-) -> None:
-    """Insert one MCP tool-call row into the mcp_calls table."""
+    *,
+    transport: str | None = None,
+    caller: str | None = None,
+    user_id: str | None = None,
+    call_id: str | None = None,
+) -> str:
+    """Insert one MCP tool-call row into the mcp_calls table; returns its ``call_id``."""
     from rita.database import SessionLocal
     from rita.models.mcp_call import MCPCallModel
     from rita.repositories.mcp_call import MCPCallRepository
 
     now = datetime.now(timezone.utc)
+    call_id = call_id or str(uuid.uuid4())
     record = MCPCallModel(
-        call_id        = str(uuid.uuid4()),
+        call_id        = call_id,
         timestamp      = now,
         tool_name      = tool_name,
         status         = status,
@@ -35,12 +42,16 @@ def log_mcp_call(
         args_summary   = args_summary[:300],
         result_summary = result_summary[:200],
         recorded_at    = now,
+        transport      = transport,
+        caller         = caller,
+        user_id        = user_id,
     )
     db = SessionLocal()
     try:
         MCPCallRepository(db).create(record)
     finally:
         db.close()
+    return call_id
 
 
 def get_mcp_calls(limit: int = 100) -> list[dict]:
@@ -60,6 +71,9 @@ def get_mcp_calls(limit: int = 100) -> list[dict]:
                 "duration_ms":    r.duration_ms,
                 "args_summary":   r.args_summary or "",
                 "result_summary": r.result_summary or "",
+                "transport":      r.transport,
+                "caller":         r.caller,
+                "user_id":        r.user_id,
             }
             for r in rows
         ]

@@ -5,6 +5,7 @@ GET /api/v1/mcp-calls?limit=100
 
 Returns the most recent MCP tool invocations stored in the mcp_calls table.
 Consumed by mcp.js → loadMcp() in the RITA dashboard.
+F44 P1: rows also carry transport, caller, user_id (nullable).
 """
 from __future__ import annotations
 
@@ -24,7 +25,8 @@ def list_mcp_calls(
 ) -> list:
     sql = text("""
         SELECT call_id, timestamp, tool_name, status,
-               duration_ms, args_summary, result_summary
+               duration_ms, args_summary, result_summary,
+               transport, caller, user_id
         FROM mcp_calls
         ORDER BY timestamp DESC
         LIMIT :limit
@@ -39,6 +41,9 @@ def list_mcp_calls(
             "duration_ms":    r.duration_ms,
             "args_summary":   r.args_summary or "",
             "result_summary": r.result_summary or "",
+            "transport":      r.transport,   # F44 P1 — null for rows before P1
+            "caller":         r.caller,
+            "user_id":        r.user_id,
         }
         for r in rows
     ]
