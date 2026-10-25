@@ -22,9 +22,11 @@ import {
   computeNShares, estimateEquityHedgeMargin, estRisk,
 } from './hedge-calc.js';
 import { hwMarkDirty, authHeaders, TAB_LABELS, STRATEGY_LABELS } from './hedge-workflow-save.js';
+import { CCY_SYMBOL, pSym, getPortfolioCurrency } from '../shared/portfolio-currency.js';
+import { fxForRegion } from '../shared/fx.js';
 
 const _COVERAGE_REFETCH_MS = 300;
-const _CCY_SYMBOL = { EUR: '€', INR: '₹', USD: '$' };
+const _CCY_SYMBOL = CCY_SYMBOL;   // per-instrument symbols
 
 let _wiToken = 0;
 let _covTimer = null;
@@ -37,7 +39,7 @@ function _esc(v) {
 
 function _fmtCcy(v, currency) {
   if (v == null || Number.isNaN(Number(v))) return '—';
-  const sym = _CCY_SYMBOL[currency] || '€';
+  const sym = _CCY_SYMBOL[currency] || _CCY_SYMBOL.EUR;
   return sym + Number(v).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
@@ -58,7 +60,7 @@ function _holding(id) {
 
 function _nSharesFor(id) {
   const h = _holding(id);
-  return h ? computeNShares(h, _hw().instruments[id], _hw().totalValueEur) : null;
+  return h ? computeNShares(h, _hw().instruments[id], _hw().totalValueEur, fxForRegion(getPortfolioCurrency(), _hw().instruments[id]?.region)) : null;
 }
 
 // Chosen strategy; falls back to the Recommendation-step default rule when the user
@@ -83,8 +85,8 @@ function _rows() {
 async function _fetchPortfolioHedge(coverage) {
   const hw = _hw();
   let url = `/api/v1/experience/fno/portfolio-hedge?coverage=${coverage}`;
-  if (hw.totalValueEur != null) url += `&total_value_eur=${hw.totalValueEur}`;
-  return apiFetch(url, { headers: authHeaders() });
+  if (hw.totalValueEur != null) url += `&total_value=${hw.totalValueEur}&total_value_eur=${hw.totalValueEur}`;
+  return api(url).catch(() => null);
 }
 
 async function _fetchEquityScenarios(id) {
@@ -220,7 +222,7 @@ function _renderAggregatesAndTables() {
     .map((r) => {
       const a = apiMap[r.id];
       if (!a) return `<tr><td>${_esc(r.id)}</td><td colspan="5">—</td></tr>`;
-      const eur = (v) => (v == null ? '—' : '€' + Number(v).toLocaleString('en-US', { maximumFractionDigits: 0 }));
+      const eur = (v) => (v == null ? '—' : pSym() + Number(v).toLocaleString('en-US', { maximumFractionDigits: 0 }));
       const pct = (v) => (v == null ? '—' : Number(v).toFixed(1) + '%');
       return `<tr><td>${_esc(r.id)}</td><td>${eur(a.var_95_eur)}</td><td>${pct(a.quarterly_var_pct)}</td><td>${eur(a.quarterly_var_eur)}</td><td>${pct(a.hist_breach_prob_pct)}</td><td>${pct(a.ann_vol_pct)}</td></tr>`;
     })

@@ -1,6 +1,7 @@
 // ── FnO App Initialisation ────────────────────────────────────────────────────
 
-import { apiBase, RITA_API_KEY } from './api.js';
+import { api, apiFetch, apiBase } from './api.js';
+import { holdingCash, portfolioCurrency, setPortfolioCurrency } from '../shared/portfolio-currency.js';
 import { state } from './state.js';
 import { buildExpiryPills } from './nav.js';
 import { renderGreeksCards, updateRiskSections } from './greeks.js';
@@ -43,57 +44,32 @@ document.addEventListener('risk-filter-change', () => {
 export async function initApp(mode = 'mock') {
   state.analyticsMode = mode;
 
-  const url = apiBase() + '/api/v1/experience/fno/portfolio-analytics?mode=' + mode;
-  const headers = RITA_API_KEY ? { 'X-API-Key': RITA_API_KEY } : {};
+  // Fire portfolio + geography fetches in parallel with the main analytics call.
+  // F44 P2: authenticated reads go through api() (401 → ensureDevToken(true) → retry once on
+  // localhost; production → Google sign-in) — no raw fetch.
+  const _portPromise = api('/api/v1/experience/user-portfolio').catch(() => null);
+  const _geoPromise = apiFetch('/api/v1/experience/rita/geography-overview');
 
-  const token = sessionStorage.getItem('auth_token');
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-
-  // Fire portfolio + geography fetches in parallel with the main analytics call
-  const _token = sessionStorage.getItem('auth_token');
-  const _portHeaders = { ...(RITA_API_KEY ? { 'X-API-Key': RITA_API_KEY } : {}), ...(_token ? { Authorization: `Bearer ${_token}` } : {}) };
-  const _portPromise = fetch(apiBase() + '/api/v1/experience/user-portfolio', { headers: _portHeaders })
-    .then(r => r.ok ? r.json() : null).catch(() => null);
-  const _geoPromise = fetch(apiBase() + '/api/v1/experience/rita/geography-overview')
-    .then(r => r.ok ? r.json() : null).catch(() => null);
-
-  let rawResp = null;
+  let data;
   try {
-    rawResp = await fetch(url, { headers });
+    data = await api('/api/v1/experience/fno/portfolio-analytics?mode=' + mode);
   } catch (e) {
-    console.error('Portfolio analytics fetch failed:', e);
-    document.getElementById('sidebar-as-of').textContent = 'API error — check server';
-    _renderAll();
-    return;
-  }
-
-  if (!rawResp.ok) {
-    const errEl = document.getElementById('analytics-mode-error');
-    if (rawResp.status === 401) {
-      window.location.href = '/';
-      return;
-    } else if (rawResp.status === 404) {
+    const msg = String(e?.message || '');
+    if (/^No (active )?portfolio/i.test(msg)) {   // 404 detail from the analytics route
+      const errEl = document.getElementById('analytics-mode-error');
       if (errEl) { errEl.textContent = 'No portfolio configured — set one in Portfolio Builder'; errEl.style.display = ''; }
     } else {
-      console.error('Portfolio analytics API error:', rawResp.status);
+      console.error('Portfolio analytics API error:', e);
       document.getElementById('sidebar-as-of').textContent = 'API error — check server';
     }
     _renderAll();
     return;
   }
-
-  let data;
-  try {
-    data = await rawResp.json();
-  } catch (e) {
-    console.error('Portfolio analytics JSON parse error:', e);
-    document.getElementById('sidebar-as-of').textContent = 'API error — check server';
-    _renderAll();
-    return;
-  }
+  if (!data) { _renderAll(); return; }   // production 401: api() is redirecting to sign-in
 
   // Map all 13 response fields to state
   state.portfolioMeta    = data.portfolio_meta    || {};
+  setPortfolioCurrency(portfolioCurrency(state.portfolioMeta));   // F44 P2
   state.marketData       = data.market            || {};
   state.positions        = data.positions         || [];
   state.greeksData       = data.greeks            || [];
@@ -151,7 +127,7 @@ function _buildPortfolioGeoInstruments(portData, geoData) {
         region:         geo.region || 'Other',
         allocation_pct: h.allocation_pct,
         shares:         h.shares   ?? null,   // integer share count from portfolio builder
-        cash_eur:       h.cash_eur ?? null,   // leftover cash from portfolio builder
+        cash:           holdingCash(h),       // leftover cash (portfolio currency; cash ?? cash_eur)
         close:          geo.close  ?? null,   // current market price
       };
     });

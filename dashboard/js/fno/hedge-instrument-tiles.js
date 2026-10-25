@@ -5,10 +5,11 @@
 // /api/v1/instrument/select. Step modules import this; it imports no shell.
 
 import { setEl } from '../shared/utils.js';
+import { CCY_SYMBOL, pSym } from '../shared/portfolio-currency.js';
 
 const REGION_ORDER = ['India', 'US', 'EU', 'Other'];
 const REGION_LABELS = { India: 'India', US: 'United States', EU: 'Europe', Other: 'Other' };
-const REGION_CUR = { India: '₹', US: '$', EU: '€', Other: '' };
+const REGION_CUR = { India: CCY_SYMBOL.INR, US: CCY_SYMBOL.USD, EU: CCY_SYMBOL.EUR, Other: '' };
 
 function _esc(v) {
   return String(v ?? '')
@@ -94,6 +95,6 @@ export function renderInstrumentTiles(elId, hw, withPortfolio = false) {
   if (!withPortfolio) { setEl(elId, buildInstrumentTilesHtml(known, hw.instruments, hw.instrumentId)); return; }
   const scope = hw.exposureScope || 'PORTFOLIO';
   const tv = hw.totalValueEur;
-  const portfolio = { active: scope === 'PORTFOLIO', value: tv != null ? '€' + Number(tv).toLocaleString('en-US', { maximumFractionDigits: 0 }) : '—' };
+  const portfolio = { active: scope === 'PORTFOLIO', value: tv != null ? pSym() + Number(tv).toLocaleString('en-US', { maximumFractionDigits: 0 }) : '—' };
   setEl(elId, buildInstrumentTilesHtml(known, hw.instruments, scope === 'PORTFOLIO' ? null : scope, portfolio));
 }

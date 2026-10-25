@@ -128,17 +128,19 @@ export function hedgedPL(m, tab, avgStrike, totalCost) {
 }
 
 // Whole-number shares: pre-computed integer shares from the portfolio builder, else
-// floor(allocation value / price). holding = {shares, allocation_pct}; inst = {close}.
-// Returns 10 when allocation/price cannot be derived (same as old Equity Hedge).
-export function computeNShares(holding, inst, totalValueEur) {
+// floor(allocation value in the instrument currency / price). holding = {shares, allocation_pct};
+// inst = {close}; totalValue in the portfolio currency; fx = instrument-currency units per 1
+// portfolio-currency unit (F44 P2: was an EUR amount divided by a native price).
+// Returns 10 when allocation/price/FX cannot be derived (same as old Equity Hedge).
+export function computeNShares(holding, inst, totalValue, fx = 1) {
   if (holding?.shares != null && holding.shares > 0) return holding.shares;
-  const total    = parseFloat(totalValueEur || 0);
+  const total    = parseFloat(totalValue || 0);
   const allocPct = parseFloat(holding?.allocation_pct || 0);
   if (!total || !allocPct) return 10;
-  const allocEur = total * allocPct / 100;
+  const alloc    = total * allocPct / 100;
   const price    = parseFloat(inst?.close || 0);
-  if (!price) return 10;
-  return Math.floor(allocEur / price) || 1;
+  if (!price || !fx) return 10;
+  return Math.floor((alloc * fx) / price) || 1;
 }
 
 // Covered-call margin split. Moved verbatim from equity_hedge.js injectAsmlToState
@@ -219,7 +221,7 @@ export function buildVolMap(positions, greeks, apiHedge) {
 
 // Chosen hedge's before/after at monthly -1σ/-2σ/-3σ (plus flat). m = move in % of the
 // hedged exposure; hedged P&L = hedgedPL(m, ...) (unchanged pricing, % of exposure);
-// protected = hedged − unhedged. exposureEur (optional) converts % to €.
+// protected = hedged − unhedged. exposureEur (optional) converts % to an amount in the portfolio currency.
 export function hedgeImpact(rows, apiHedge, tab, volPct, exposureEur) {
   if (!rows || !rows.length) return null;
   const agg = aggregates(rows, apiHedge);

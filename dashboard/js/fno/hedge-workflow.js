@@ -28,6 +28,8 @@
 
 import { api, apiFetch } from './api.js';
 import { setEl } from '../shared/utils.js';
+import { CCY_SYMBOL, REGION_CCY, pSym, portfolioCurrency, portfolioTotal, holdingCash, setPortfolioCurrency, getPortfolioCurrency } from '../shared/portfolio-currency.js';
+import { preloadFx, fxForRegion } from '../shared/fx.js';
 import { state } from './state.js';
 import { renderInstrumentTiles } from './hedge-instrument-tiles.js';
 import { computeNShares, monthlySigma, sigmaLevels, portfolioVolPct, buildVolMap } from './hedge-calc.js';
@@ -199,7 +201,7 @@ function _renderGreeksKpis() {
 // ── Exposure step — current challenge (monthly σ tiles, summary, charts) ───
 // Monthly σ = ann_vol_pct / 100 / sqrt(12) (hedge-calc.js monthlySigma). The Risk page's
 // std-dev table is untouched; this is the monthly counterpart for the selected instrument.
-const _CCY_SYMBOL = { EUR: '€', INR: '₹', USD: '$' };
+const _CCY_SYMBOL = CCY_SYMBOL;   // per-instrument symbols
 let _candleChart = null;
 let _changeChart = null;
 let _histToken = 0;
@@ -227,8 +229,9 @@ function _fmtNum(v, d = 2) {
   return v == null || Number.isNaN(Number(v)) ? '—' : Number(v).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
 }
 
+// Portfolio-level amount in the portfolio currency (F44 P2)
 function _eur(v) {
-  return v == null || Number.isNaN(Number(v)) ? '—' : '€' + Number(v).toLocaleString('en-US', { maximumFractionDigits: 0 });
+  return v == null || Number.isNaN(Number(v)) ? '—' : pSym() + Number(v).toLocaleString('en-US', { maximumFractionDigits: 0 });
 }
 
 function _volFor(id) {
@@ -259,7 +262,7 @@ function _renderSigmaKpis() {
 }
 
 // Latest Price View panels (same .kpi tile style as the Greeks / σ tiles): last price,
-// portfolio € monthly 1σ/2σ/3σ and quarterly VaR (only when portfolio-hedge is loaded).
+// portfolio monthly 1σ/2σ/3σ amounts (portfolio currency) and quarterly VaR (only when portfolio-hedge is loaded).
 function _tile(label, value, sub, cls = '') {
   return `<div class="kpi"><div class="kpi-label">${label}</div><div class="kpi-value ${cls}">${value}</div><div class="kpi-sub">${sub}</div></div>`;
 }
@@ -301,7 +304,7 @@ async function _fetchHistory(id) {
   const hw = state.hedgeWorkflow;
   if (hw.priceHistory[id]) return hw.priceHistory[id];
   const h = (hw.portfolioHoldings || []).find((x) => x.instrument_id === id);
-  const nShares = h ? computeNShares(h, hw.instruments[id], hw.totalValueEur) : 1;
+  const nShares = h ? computeNShares(h, hw.instruments[id], hw.totalValueEur, fxForRegion(getPortfolioCurrency(), hw.instruments[id]?.region)) : 1;
   const { start, end } = _rollingDateRange();
   const volPos = (hw.positions || []).find((p) => p.und === id && p.ann_vol_pct != null);
   const body = { instrument: id, n_shares: nShares, start_date: start, end_date: end };
@@ -448,7 +451,7 @@ async function _loadExposure() {
   state.hedgeWorkflow.positionValue = {}; // full reload: drop cached position-value items
 
   const [portfolioRes, analyticsRes, geoRes] = await Promise.allSettled([
-    apiFetch('/api/v1/experience/user-portfolio', { headers }),
+    api('/api/v1/experience/user-portfolio').catch(() => null),
     apiFetch('/api/v1/experience/fno/portfolio-analytics?mode=real', { headers }),
     apiFetch('/api/v1/experience/rita/geography-overview', {}),
   ]);
@@ -469,7 +472,10 @@ async function _loadExposure() {
   }
 
   const equityHoldings = portfolio?.holdings || [];
-  const totalValueEur = portfolio?.total_value_eur ?? null;
+  // F44 P2: total + cash in the portfolio currency (legacy rows: the EUR fields)
+  const totalValueEur = portfolioTotal(portfolio);
+  setPortfolioCurrency(portfolioCurrency(portfolio));
+  await preloadFx(getPortfolioCurrency(), Object.values(REGION_CCY));
 
   const optionPositions = analytics?.positions || [];
   const greeksList = analytics?.greeks || [];
@@ -479,7 +485,7 @@ async function _loadExposure() {
   state.hedgeWorkflow.totalValueEur = totalValueEur;
   state.hedgeWorkflow.greeks = greeksList;
   state.hedgeWorkflow.positions = optionPositions;
-  state.hedgeWorkflow.cashEur = equityHoldings.reduce((s, h) => s + (h.cash_eur || 0), 0) || null;
+  state.hedgeWorkflow.cashEur = equityHoldings.reduce((s, h) => s + (holdingCash(h) || 0), 0) || null;
 
   state.hedgeWorkflow.knownInstruments = [
     ...new Set([

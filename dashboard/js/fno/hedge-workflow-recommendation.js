@@ -6,13 +6,15 @@
 // Refresh strategy: on step entry only (no polling). The advisor is re-fetched only
 // when its cache key `${instrumentId}|${nShares}` changes, or on "Re-run".
 
-import { apiFetch } from './api.js';
+import { api, apiFetch } from './api.js';
 import { setEl } from '../shared/utils.js';
 import { state } from './state.js';
 import { haShowReasoning, haShowLoading, haShowError, haClear } from './hedge-reasoning.js';
 import { renderInstrumentTiles } from './hedge-instrument-tiles.js';
 import { computeNShares, hedgeLabel, hedgeType, estRisk } from './hedge-calc.js';
 import { hwMarkDirty, authHeaders, STRATEGY_LABELS } from './hedge-workflow-save.js';
+import { CCY_SYMBOL, pSym, getPortfolioCurrency } from '../shared/portfolio-currency.js';
+import { fxForRegion } from '../shared/fx.js';
 
 let _recToken = 0;
 
@@ -30,7 +32,7 @@ function _holding(id) {
 function _nSharesFor(id) {
   const h = _holding(id);
   if (!h) return null;
-  return computeNShares(h, _hw().instruments[id], _hw().totalValueEur);
+  return computeNShares(h, _hw().instruments[id], _hw().totalValueEur, fxForRegion(getPortfolioCurrency(), _hw().instruments[id]?.region));
 }
 
 function _cta() {
@@ -44,8 +46,8 @@ function _cta() {
 async function _fetchPortfolioHedge() {
   const hw = _hw();
   let url = `/api/v1/experience/fno/portfolio-hedge?coverage=${hw.coverage}`;
-  if (hw.totalValueEur != null) url += `&total_value_eur=${hw.totalValueEur}`;
-  return apiFetch(url, { headers: authHeaders() });
+  if (hw.totalValueEur != null) url += `&total_value=${hw.totalValueEur}&total_value_eur=${hw.totalValueEur}`;
+  return api(url).catch(() => null);
 }
 
 // Default strategy per holding (same rule as the old Portfolio Hedge page);
@@ -95,10 +97,11 @@ function _renderAdvisor(instant = false) {
   const hs = steps.find((s) => s.agent === 'HEDGE_ADVISOR') || steps[steps.length - 1];
   const hd = hs?.data || {};
   const id = _hw().instrumentId;
-  const sym = { EUR: '€', INR: '₹', USD: '$' }[_hw().instruments[id]?.currency] || '';
+  const sym = CCY_SYMBOL[_hw().instruments[id]?.currency] || '';
   const tile = (label, value, sub, cls = '') =>
     `<div class="kpi" style="flex:1 1 120px;"><div class="kpi-label">${label}</div><div class="kpi-value ${cls}" style="font-size:16px;">${value}</div><div class="kpi-sub">${sub}</div></div>`;
-  const eur = (n) => (n == null ? '—' : (n >= 0 ? '+' : '−') + '€' + Math.abs(n).toLocaleString('en-EU', { maximumFractionDigits: 0 }));
+  // Advisor premium = spot × shares × premium % → the instrument's currency (F44 P2: was a fixed symbol)
+  const eur = (n) => (n == null ? '—' : (n >= 0 ? '+' : '−') + sym + Math.abs(n).toLocaleString('en-EU', { maximumFractionDigits: 0 }));
   const primary = hd.primary_recommendation || d.recommendation;
   const leg = (name, key, o) => {
     const ok = o && o.strike_label && o.strike_label !== 'n/a';
@@ -124,7 +127,7 @@ function _renderAdvisor(instant = false) {
   );
   // The long advisor narrative is the typewriter panel (#ha-step-6); only the
   // no-holding caveat goes in the note line.
-  setEl('hw-rec-note', _nSharesFor(id) == null ? `<span style="opacity:.7">No equity holding for this instrument — EUR amounts are illustrative.</span>` : '');
+  setEl('hw-rec-note', _nSharesFor(id) == null ? `<span style="opacity:.7">No equity holding for this instrument — amounts are illustrative.</span>` : '');
 }
 
 function _renderSelectionTable() {
@@ -146,7 +149,7 @@ function _renderSelectionTable() {
         ? hedgeLabel(a.hedge_type)
         : hedgeLabel(hedgeType(id, hw.instruments[id]?.region, h.allocation_pct));
       const cost = a
-        ? `${_esc(a.strike_label)} &middot; ${Number(a.cost_pct).toFixed(2)}%${a.put_cost_eur != null ? ` (EUR ${Number(a.put_cost_eur).toFixed(0)})` : ''}`
+        ? `${_esc(a.strike_label)} &middot; ${Number(a.cost_pct).toFixed(2)}%${a.put_cost_eur != null ? ` (${pSym()}${Number(a.put_cost_eur).toFixed(0)})` : ''}`
         : '—';
       const sel = hw.selections[id] || 'put_buy';
       const opts = Object.entries(STRATEGY_LABELS)

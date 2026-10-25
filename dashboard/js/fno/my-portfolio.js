@@ -4,7 +4,8 @@ function _utcIso(s) { return typeof s === 'string' && !/(Z|[+-]\d\d:?\d\d)$/.tes
 // ── FnO My Portfolio — Phase 3 Overview redesign ──────────────────────────────
 // 3-source parallel fetch: portfolio + geography-overview + hedge-plan
 // KPI strip · allocation doughnut · hedge status card · 6-column holdings table
-import { apiFetch } from './api.js';
+import { api, apiFetch } from './api.js';
+import { pSym, portfolioTotal, portfolioCurrency, setPortfolioCurrency } from '../shared/portfolio-currency.js';
 import { mkChart, C } from '../shared/charts.js';
 import { setEl } from '../shared/utils.js';
 import { _sectionLoaders } from './nav.js';
@@ -15,12 +16,12 @@ const _fmt2   = v => (v == null ? '—' : parseFloat(v).toFixed(2));
 const _fmtPct = v => (v == null ? '—' : parseFloat(v).toFixed(2) + '%');
 const _fmtEur = v => (v == null || v === 0
   ? '—'
-  : '€' + parseFloat(v).toLocaleString('en-EU', { maximumFractionDigits: 0 }));
+  : pSym() + parseFloat(v).toLocaleString('en-EU', { maximumFractionDigits: 0 }));   // portfolio currency
 
 // ── KPI strip ────────────────────────────────────────────────────────────────
 function _renderKpis(portfolio, instMap, hedgePlan) {
   const holdings   = portfolio.holdings || [];
-  const totalValue = portfolio.total_value_eur;
+  const totalValue = portfolioTotal(portfolio);
 
   // KPI 1 — Portfolio Value
   if (totalValue == null || totalValue === 0) {
@@ -203,7 +204,7 @@ export async function loadFnoMyPortfolio() {
 
   // ── 3-source parallel fetch ───────────────────────────────────────────────
   const [portfolioRes, geoRes, hedgeRes] = await Promise.allSettled([
-    apiFetch('/api/v1/experience/user-portfolio',       { headers: authHeaders }),
+    api('/api/v1/experience/user-portfolio').catch(() => null),
     apiFetch('/api/v1/experience/rita/geography-overview', {}),
     apiFetch('/api/v1/experience/fno/hedge-plan',       { headers: authHeaders })
   ]);
@@ -217,6 +218,8 @@ export async function loadFnoMyPortfolio() {
     if (emptyEl) emptyEl.style.display = '';
     return;
   }
+
+  setPortfolioCurrency(portfolioCurrency(portfolio));   // F44 P2
 
   // Populate meta strip
   setEl('fno-mp-name',    portfolio.name      || '—');
@@ -254,7 +257,7 @@ export async function loadFnoMyPortfolio() {
   _renderKpis(portfolio, instMap, hedgePlan);
   _renderAllocChart(holdings, instMap);
   _renderHedgeCard(hedgePlan, holdings);
-  _renderHoldingsTable(holdings, instMap, hedgePlan, portfolio.total_value_eur);
+  _renderHoldingsTable(holdings, instMap, hedgePlan, portfolioTotal(portfolio));
 }
 
 window.loadFnoMyPortfolio = loadFnoMyPortfolio;

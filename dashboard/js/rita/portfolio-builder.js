@@ -6,6 +6,14 @@
 
 import { api, apiFetch } from './api.js';
 import { ensureDevToken, isLocalDev } from '../shared/dev-auth.js';
+import { ccySymbol, regionCurrency, sharesAndCash, REGION_CCY } from '../shared/portfolio-currency.js';
+import { preloadFx, fxRateSync } from '../shared/fx.js';
+
+// F44 P2 (D2): Portfolio Builder keeps the cross-geography view and saves without a location,
+// i.e. a legacy EUR portfolio. Amounts typed here are EUR; instrument prices are in their own
+// currency, so shares use the cached FX rate (GET /api/v1/experience/rita/fx).
+const _PB_CURRENCY = 'EUR';
+const _pbSym = () => ccySymbol(_PB_CURRENCY);
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const _basket = new Set();
@@ -78,13 +86,18 @@ function _totalEurInput() {
   return isNaN(v) || v <= 0 ? 0 : v;
 }
 
-function _sharesAndCash(totalEur, allocPct, price) {
-  if (!totalEur || !allocPct || !price) return null;
-  const allocEur = totalEur * allocPct / 100;
-  const shares   = Math.floor(allocEur / price);
-  const actual   = shares * price;
-  const cash     = allocEur - actual;
-  return { allocEur, shares, actual, cash };
+function _ccyForId(id) {
+  if (!_geoCache) return null;
+  for (const r of (_geoCache.regions || [])) {
+    if ((r.instruments || []).some(i => i.id === id)) return regionCurrency(r.region);
+  }
+  return null;
+}
+
+// F44 P2 fix: the EUR amount is converted into the instrument's currency before dividing by its
+// native price (was floor(allocEur / price) — India share counts ~91x too low). No FX rate → null.
+function _sharesAndCash(totalEur, allocPct, price, id) {
+  return sharesAndCash(totalEur, allocPct, price, fxRateSync(_PB_CURRENCY, _ccyForId(id)));
 }
 
 function _regionDisplay(apiRegion) {
@@ -163,14 +176,14 @@ function _renderRegionSummary() {
   if (totalEurForCash > 0) {
     for (const id of _basket) {
       const p = _priceForId(id);
-      const sc = p ? _sharesAndCash(totalEurForCash, _allocationPct.get(id) ?? 0, p) : null;
+      const sc = p ? _sharesAndCash(totalEurForCash, _allocationPct.get(id) ?? 0, p, id) : null;
       if (sc) { totalCash += sc.cash; hasPrices = true; }
     }
   }
   const cashRow = hasPrices
     ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:12px;margin-top:2px">
         <span style="color:var(--t2)">Cash balance</span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;color:#16a34a">€${totalCash.toFixed(0)}</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;color:#16a34a">${_pbSym()}${totalCash.toFixed(0)}</span>
        </div>`
     : '';
 
@@ -270,11 +283,11 @@ function _renderBasket() {
       listEl.innerHTML = [..._basket].map(id => {
         const pct   = _allocationPct.get(id) ?? 0;
         const price = _priceForId(id);
-        const sc    = totalEur > 0 && price ? _sharesAndCash(totalEur, pct, price) : null;
+        const sc    = totalEur > 0 && price ? _sharesAndCash(totalEur, pct, price, id) : null;
         const scHtml = sc
           ? `<div id="pb-chip-sc-${id}" style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px;font-family:'IBM Plex Mono',monospace">
                <span style="color:#16a34a;font-weight:700">${sc.shares} shares</span>
-               <span style="color:#64748b">€${sc.cash.toFixed(0)} cash</span>
+               <span style="color:#64748b">${_pbSym()}${sc.cash.toFixed(0)} cash</span>
              </div>`
           : `<div id="pb-chip-sc-${id}"></div>`;
         return `<div style="border-radius:8px;background:rgba(190,24,93,.06);border:1px solid rgba(190,24,93,.2);padding:6px 8px">
@@ -761,14 +774,14 @@ export async function loadPortfolioBuilder() {
       return;
     }
     _geoCache = geo;
+    // F44 P2: EUR → INR / USD rates for whole-share counts (null when not cached)
+    await preloadFx(_PB_CURRENCY, Object.values(REGION_CCY));
 
-    // Pre-fill basket from saved portfolio (silent on 401/404)
+    // Pre-fill basket from saved portfolio (silent on 404; api() handles a stale token)
     try {
       const token = sessionStorage.getItem('auth_token');
       if (token) {
-        const up = await apiFetch('/api/v1/experience/user-portfolio', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const up = await api('/api/v1/experience/user-portfolio').catch(() => null);
         if (up && Array.isArray(up.holdings)) {
           for (const h of up.holdings) {
             if (h.instrument_id) _basket.add(h.instrument_id.toUpperCase());
@@ -784,7 +797,7 @@ export async function loadPortfolioBuilder() {
     _renderMap(geo);
     _applyPreset('short_term', geo);
 
-    // Re-render basket chips whenever total EUR changes (shares/cash recalculation)
+    // Re-render basket chips whenever the total changes (shares/cash recalculation)
     const eurInput = document.getElementById('pb-total-eur');
     if (eurInput) eurInput.addEventListener('input', () => _renderBasket());
 
@@ -890,14 +903,14 @@ export function pbSetAlloc(id, pct) {
   if (scEl) {
     const totalEur = _totalEurInput();
     const price    = _priceForId(id);
-    const sc       = totalEur > 0 && price ? _sharesAndCash(totalEur, _allocationPct.get(id) ?? 0, price) : null;
+    const sc       = totalEur > 0 && price ? _sharesAndCash(totalEur, _allocationPct.get(id) ?? 0, price, id) : null;
     scEl.style.display = sc ? 'flex' : 'none';
     scEl.style.justifyContent = 'space-between';
     scEl.style.marginTop = '4px';
     scEl.style.fontSize = '10px';
     scEl.style.fontFamily = "'IBM Plex Mono',monospace";
     scEl.innerHTML = sc
-      ? `<span style="color:#16a34a;font-weight:700">${sc.shares} shares</span><span style="color:#64748b">€${sc.cash.toFixed(0)} cash</span>`
+      ? `<span style="color:#16a34a;font-weight:700">${sc.shares} shares</span><span style="color:#64748b">${_pbSym()}${sc.cash.toFixed(0)} cash</span>`
       : '';
   }
 }
@@ -935,8 +948,10 @@ export async function pbBuildPortfolio() {
   // Enrich each holding with whole-share count and cash remainder
   const holdings = baseHoldings.map(h => {
     const price = _priceForId(h.instrument_id);
-    const sc    = totalValueEur && price ? _sharesAndCash(totalValueEur, h.allocation_pct, price) : null;
-    return { ...h, shares: sc ? sc.shares : null, cash_eur: sc ? parseFloat(sc.cash.toFixed(2)) : null };
+    const sc    = totalValueEur && price ? _sharesAndCash(totalValueEur, h.allocation_pct, price, h.instrument_id) : null;
+    const cash  = sc ? parseFloat(sc.cash.toFixed(2)) : null;
+    // F44 P2: `cash` in the portfolio currency (EUR here) + legacy `cash_eur` for one release
+    return { ...h, shares: sc ? sc.shares : null, cash, cash_eur: cash };
   });
 
   const buildBtn      = document.getElementById('pb-basket-build-btn');
@@ -945,7 +960,8 @@ export async function pbBuildPortfolio() {
   _hide('pb-status-msg');
 
   try {
-    await api('/api/v1/user-portfolio/', 'POST', { name, holdings, total_value_eur: totalValueEur });
+    // No location (D2) → the server stores a legacy EUR portfolio; total_value_eur kept for one release
+    await api('/api/v1/user-portfolio/', 'POST', { name, holdings, total_value: totalValueEur, total_value_eur: totalValueEur });
     const msg = document.getElementById('pb-status-msg');
     if (msg) { msg.textContent = `Portfolio "${name}" saved with ${_basket.size} instruments.`; msg.style.color = '#16a34a'; msg.style.display = ''; }
   } catch (e) {

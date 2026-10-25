@@ -3,6 +3,7 @@ import { state, activePositions } from './state.js';
 import { fmtPnl, pnlClass } from './utils.js';
 import { loadHistory } from './rr.js';
 import { t } from '../shared/i18n.js';
+import { CCY_SYMBOL, pSym, portfolioTotal } from '../shared/portfolio-currency.js';
 
 export function renderDashKpis() {
   const filtered   = activePositions();
@@ -23,9 +24,9 @@ export function renderDashKpis() {
   const closedCnt = state.closedPositions.filter(p => state.currentUnd === 'ALL' || p.underlying === state.currentUnd).length;
 
   // Portfolio Value from meta
-  const totalVal = state.portfolioMeta?.total_value_eur;
+  const totalVal = portfolioTotal(state.portfolioMeta);   // F44 P2: portfolio currency
   const valStr = totalVal != null
-    ? '€' + parseFloat(totalVal).toLocaleString('en-EU', { maximumFractionDigits: 0 })
+    ? pSym() + parseFloat(totalVal).toLocaleString('en-EU', { maximumFractionDigits: 0 })
     : '—';
   const pnlSign = totalPnl >= 0 ? '+' : '';
   const pnlStr  = pnlSign + totalPnl.toLocaleString('en-EU', { maximumFractionDigits: 0 });
@@ -41,8 +42,9 @@ export function renderDashKpis() {
   `;
 }
 
-function _fmtEur(v) {
-  return '€' + Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// Per-instrument price (legacy equity card): the instrument currency, EUR when unknown
+function _fmtEur(v, ccy) {
+  return (CCY_SYMBOL[ccy] || CCY_SYMBOL.EUR) + Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function _renderEquityCard(u, d) {
@@ -50,10 +52,10 @@ function _renderEquityCard(u, d) {
   const retClass = retChg >= 0 ? 'pos' : 'neg';
   return `<div class="kpi" style="border-left:3px solid var(--p03)">
     <div class="kpi-label">${u} · Equity · ${d.date}</div>
-    <div class="kpi-value ${retClass}" style="font-size:18px">${_fmtEur(d.close)}</div>
-    <div class="kpi-delta ${retClass}">${retChg >= 0 ? '▲ +' : '▼ '}${Math.abs(retChg).toFixed(2)}% · from ${_fmtEur(d.prevClose)}</div>
+    <div class="kpi-value ${retClass}" style="font-size:18px">${_fmtEur(d.close, d.currency)}</div>
+    <div class="kpi-delta ${retClass}">${retChg >= 0 ? '▲ +' : '▼ '}${Math.abs(retChg).toFixed(2)}% · from ${_fmtEur(d.prevClose, d.currency)}</div>
     <div class="kpi-sub" style="margin-top:5px;line-height:1.6">
-      H ${_fmtEur(d.high)} · L ${_fmtEur(d.low)}<br>
+      H ${_fmtEur(d.high, d.currency)} · L ${_fmtEur(d.low, d.currency)}<br>
       Vol 30d: ${d.vol_30d != null ? d.vol_30d.toFixed(1) + '%' : '—'} · ${d.shares}
     </div>
   </div>`;

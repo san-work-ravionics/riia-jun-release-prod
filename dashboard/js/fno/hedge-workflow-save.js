@@ -13,6 +13,7 @@ import { setEl } from '../shared/utils.js';
 import { mkChart } from '../shared/charts.js';
 import { state } from './state.js';
 import { buildRows, hedgeImpact, buildVolMap, portfolioVolPct } from './hedge-calc.js';
+import { pSym } from '../shared/portfolio-currency.js';
 
 const _SAVE_DEBOUNCE_MS = 400;
 let _saveTimer = null;
@@ -229,12 +230,12 @@ function _renderHistoryTable() {
 // Before/after of the chosen hedge (coverage + payoff view + hedged set) at monthly
 // -1σ/-2σ/-3σ and flat. Same pure calc as the What-if step (hedgedPL / aggregates /
 // buildRows); only the move inputs are σ-scaled. % are of total portfolio value, as in
-// the What-if scenario table; € uses total_value_eur when known.
+// the What-if scenario table; amounts use the portfolio total (portfolio currency) when known.
 function _pct(v, d = 1) {
   return v == null || Number.isNaN(Number(v)) ? '—' : `${Number(v) > 0 ? '+' : ''}${Number(v).toFixed(d)}%`;
 }
 function _eur(v) {
-  return v == null || Number.isNaN(Number(v)) ? '—' : (v < 0 ? '−' : '') + '€' + Math.abs(Number(v)).toLocaleString('en-US', { maximumFractionDigits: 0 });
+  return v == null || Number.isNaN(Number(v)) ? '—' : (v < 0 ? '−' : '') + pSym() + Math.abs(Number(v)).toLocaleString('en-US', { maximumFractionDigits: 0 });
 }
 
 // Rows of the merged table by key ('PORTFOLIO' or instrument id) so a row click can redraw
@@ -301,7 +302,7 @@ function _renderImpact() {
   );
   // One merged table, one line per row: Portfolio first, then each hedged instrument.
   // Instrument rows reuse the same pure calc on that single row at weight 100 (its own
-  // strike/cost/vol), with € on the instrument's position value; the Portfolio row is
+  // strike/cost/vol), with amounts on the instrument's position value; the Portfolio row is
   // the aggregate above. Each monthly move has an Unhedged and a Hedged column.
   const one = (pct, eur) => `${_pct(pct)}${eur != null ? ` <span class="kpi-sub">(${_eur(eur)})</span>` : ''}`;
   const scenCells = (scenarios) => scenarios.map((sc) =>
@@ -336,8 +337,8 @@ function _renderImpact() {
     `<div class="kpi-sub" style="margin-bottom:8px;line-height:1.5">
        What a typical bad month would do to your money, with and without the hedge. One row for the whole portfolio and one per hedged instrument.
        <strong>Monthly −1σ / −2σ / −3σ</strong> are a normal, a bad and a very bad month (about 1 in 6, 1 in 40 and 1 in 700 months).
-       <strong>Unhedged</strong> is the P&amp;L (% of position, € in brackets) if you do nothing; <strong>Hedged</strong> is the P&amp;L with the ${TAB_LABELS[hw.scenarioTab] || 'hedge'}, including the monthly premium.
-       <strong>Premium</strong> is the monthly cost of the hedge. <strong>Exposure</strong> is the position value the € figures apply to.
+       <strong>Unhedged</strong> is the P&amp;L (% of position, ${pSym()} in brackets) if you do nothing; <strong>Hedged</strong> is the P&amp;L with the ${TAB_LABELS[hw.scenarioTab] || 'hedge'}, including the monthly premium.
+       <strong>Premium</strong> is the monthly cost of the hedge. <strong>Exposure</strong> is the position value the ${pSym()} figures apply to.
      </div>
      <div style="overflow-x:auto"><table style="width:100%;font-family:var(--fm);font-size:12px;border-collapse:collapse;">
        <thead>
@@ -369,8 +370,8 @@ export async function loadSaveStep() {
     // the impact view uses the same server rows as the What-if step.
     if (!hw.apiHedge) {
       let u = `/api/v1/experience/fno/portfolio-hedge?coverage=${hw.coverage}`;
-      if (hw.totalValueEur != null) u += `&total_value_eur=${hw.totalValueEur}`;
-      const ph = await apiFetch(u, { headers: authHeaders() });
+      if (hw.totalValueEur != null) u += `&total_value=${hw.totalValueEur}&total_value_eur=${hw.totalValueEur}`;
+      const ph = await api(u).catch(() => null);
       if (ph && token === _saveToken) { hw.apiHedge = ph; _renderImpact(); }
     }
     const plan = await apiFetch('/api/v1/experience/fno/hedge-plan', { headers: authHeaders() });

@@ -63,9 +63,9 @@ export const state = {
     marginImpact: null,           // {amount, currency, source:'kite'|'estimated', instrumentId, strategy}
     hedgedIds: [],
     // ── Phase 3 additions ────────────────────────────────────────────────────
-    portfolioHoldings: [],        // user-portfolio holdings (instrument_id, allocation_pct, shares, cash_eur)
+    portfolioHoldings: [],        // user-portfolio holdings (instrument_id, allocation_pct, shares, cash ?? cash_eur)
     instruments: {},              // id -> geography-overview instrument + region
-    totalValueEur: null,
+    totalValueEur: null,          // F44 P2: portfolio total in the portfolio currency (total_value ?? total_value_eur)
     apiHedge: null,               // GET portfolio-hedge response
     advisor: { key: null, data: null, error: null },  // key = `${instrumentId}|${nShares}`
     eqScenarios: {},              // `${id}|${nShares}` -> equity-hedge-scenarios response

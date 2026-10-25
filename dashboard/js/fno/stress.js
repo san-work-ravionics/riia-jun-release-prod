@@ -2,6 +2,7 @@
 import { t } from '../shared/i18n.js';
 import { state } from './state.js';
 import { fmtPnl, pnlClass } from './utils.js';
+import { CCY_SYMBOL, pSym, portfolioTotal, getPortfolioCurrency } from '../shared/portfolio-currency.js';
 
 export function computeFilteredStress() {
   const sel = state.riskSelectedInstrument;
@@ -78,13 +79,13 @@ export function renderStdDevTable() {
     const vol   = p.ann_vol_pct != null ? parseFloat(p.ann_vol_pct) / 100 : null;
     if (price == null || vol == null) continue;
     const cur = d?.currency ?? p.currency ?? 'INR';
-    const sym = { EUR: '€', USD: '$', INR: '₹' }[cur] || '₹';
+    const sym = CCY_SYMBOL[cur] || CCY_SYMBOL.INR;
     instruments.push({ id: p.und, full: p.full || p.und, price, vol, sym });
   }
 
-  // Portfolio summary row — allocation-weighted vol, total EUR value as price
+  // Portfolio summary row — allocation-weighted vol, portfolio total (portfolio currency) as price
   let portfolioInst = null;
-  const portEur = state.portfolioMeta?.total_value_eur ?? null;
+  const portEur = portfolioTotal(state.portfolioMeta);
   if (portEur && greeks.length) {
     let wSum = 0, aSum = 0;
     for (const g of greeks) {
@@ -94,7 +95,7 @@ export function renderStdDevTable() {
       }
     }
     if (aSum > 0) {
-      portfolioInst = { id: 'Portfolio', full: 'Portfolio', price: portEur, vol: wSum / aSum / 100, sym: '€' };
+      portfolioInst = { id: 'Portfolio', full: 'Portfolio', price: portEur, vol: wSum / aSum / 100, sym: pSym() };
     }
   }
 
@@ -142,7 +143,7 @@ export function renderStdDevTable() {
   el.innerHTML = `
     <div class="card-hdr">
       <span class="card-title">Standard Deviation Price Ranges</span>
-      <span class="card-sub">Click a row to filter Risk &amp; Greeks · Portfolio row uses allocation-weighted vol in EUR</span>
+      <span class="card-sub">Click a row to filter Risk &amp; Greeks · Portfolio row uses allocation-weighted vol in ${getPortfolioCurrency()}</span>
     </div>
     <div class="card-body" style="padding:0">
       <div class="tbl-wrap">

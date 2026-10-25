@@ -1,6 +1,7 @@
 // ── Risk page: Instrument + Portfolio performance charts ──────────────────────
 import { state } from './state.js';
 import { apiBase } from './api.js';
+import { pSym, portfolioTotal } from '../shared/portfolio-currency.js';
 
 let _instChart   = null;
 let _portChart   = null;
@@ -93,8 +94,8 @@ function _buildCharts() {
     return v;
   });
 
-  // Convert portfolio ratios to absolute EUR using current total_value_eur as anchor
-  const totalEur = state.portfolioMeta?.total_value_eur ?? null;
+  // Convert portfolio ratios to absolute amounts (portfolio currency) using the current total as anchor
+  const totalEur = portfolioTotal(state.portfolioMeta);
   const lastRatio = portRatios[portRatios.length - 1] || 1;
   const portValues = totalEur != null
     ? portRatios.map(r => parseFloat(((r / lastRatio) * totalEur).toFixed(0)))
@@ -162,7 +163,7 @@ function _fmtAbs(v, decimals = 0) {
 
 function _opts(showLegend, isPortEur = false) {
   const yFmt = isPortEur
-    ? v => `€${_fmtAbs(v)}`
+    ? v => `${pSym()}${_fmtAbs(v)}`
     : v => _fmtAbs(v, 2);
   return {
     responsive: true,
@@ -173,7 +174,7 @@ function _opts(showLegend, isPortEur = false) {
         : { display: false },
       tooltip: {
         mode: 'index', intersect: false,
-        callbacks: { label: ctx => `${ctx.dataset.label}: ${isPortEur ? '€' : ''}${_fmtAbs(ctx.raw, isPortEur ? 0 : 2)}` },
+        callbacks: { label: ctx => `${ctx.dataset.label}: ${isPortEur ? pSym() : ''}${_fmtAbs(ctx.raw, isPortEur ? 0 : 2)}` },
       },
     },
     scales: {

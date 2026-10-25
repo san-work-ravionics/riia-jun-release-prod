@@ -6,6 +6,8 @@
 import { api, apiFetch } from './api.js';
 import { isLocalDev, ensureDevToken } from '../shared/dev-auth.js';
 import { estRisk as _estRisk, buildRows, aggregates, hedgedPL, PAYOFF_MOVES, SCENARIO_MOVES } from './hedge-calc.js';
+import { REGION_CCY, pSym, portfolioTotal, portfolioCurrency, holdingCash, setPortfolioCurrency, getPortfolioCurrency } from '../shared/portfolio-currency.js';
+import { preloadFx, fxForRegion } from '../shared/fx.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const _DURATION_MONTHS = { '1m': 1, '3m': 3, '1y': 12 };
@@ -47,9 +49,10 @@ function _fmtPct(v) {
   return `<span style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:${c}">${v >= 0 ? '+' : ''}${v.toFixed(1)}%</span>`;
 }
 
+// Portfolio-level amount in the portfolio currency (F44 P2)
 function _fmtEur(v) {
   if (v == null) return '—';
-  return '€' + v.toLocaleString('en-EU', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  return pSym() + v.toLocaleString('en-EU', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
 function _currentQuarterLabel() {
@@ -69,18 +72,23 @@ function _riskOf(id) {
 function _renderTopKpis() {
   _setText('ph-kpi-portfolio-val', _state.totalValueEur != null ? _fmtEur(_state.totalValueEur) : '—');
 
-  // Value Today: shares × latest close + cash
+  // Value Today: shares × latest close (converted from the instrument currency into the
+  // portfolio currency with the cached FX rate — F44 P2) + cash. A missing rate hides the value.
   let liveValue = 0;
   let hasLive = false;
+  let fxMissing = false;
   for (const h of _state.holdings) {
     const inst = _state.instruments[h.instrument_id];
     if (h.shares != null && inst?.close != null) {
-      liveValue += h.shares * inst.close;
-      hasLive = true;
+      const fx = fxForRegion(getPortfolioCurrency(), inst.region);
+      if (fx) { liveValue += h.shares * inst.close / fx; hasLive = true; } else { fxMissing = true; }
     }
-    liveValue += (h.cash_eur ?? 0);
+    liveValue += (holdingCash(h) ?? 0);
   }
+  if (fxMissing) hasLive = false;
   _setText('ph-kpi-value-today', hasLive ? _fmtEur(liveValue) : '—');
+  const vtEl = document.getElementById('ph-kpi-value-today');
+  if (vtEl) vtEl.title = fxMissing ? 'FX rate unavailable' : '';
   const changeEl = document.getElementById('ph-kpi-value-change');
   if (changeEl) {
     if (hasLive && _state.totalValueEur > 0) {
@@ -153,7 +161,7 @@ function _renderDiscoverTotals() {
   const totalSaving   = totalDrop - totalCost;
   const totalPosition = checked.reduce((s, h) => s + (hedgeMap[h.instrument_id].position_eur ?? 0), 0);
   const hasEur        = checked.some(h => hedgeMap[h.instrument_id].position_eur != null);
-  const totalCash     = _state.holdings.reduce((s, h) => s + (h.cash_eur ?? 0), 0);
+  const totalCash     = _state.holdings.reduce((s, h) => s + (holdingCash(h) ?? 0), 0);
   const cashTdVal     = totalCash > 0 ? _fmtEur(totalCash) : '—';
 
   // Weighted average breach probability
@@ -186,7 +194,7 @@ function _renderDiscover() {
   _setText('ph-discover-portfolio-name', _state._portfolioName || '—');
   _setText('ph-holdings-sub', `sorted by risk · ${_currentQuarterLabel()} · check to include in hedge`);
 
-  // Show portfolio EUR value (read-only from saved portfolio)
+  // Show the portfolio total in its currency (read-only from saved portfolio)
   const eurDisp = document.getElementById('ph-eur-display');
   if (eurDisp) eurDisp.textContent = _state.totalValueEur != null ? _fmtEur(_state.totalValueEur) : '—';
   const eurHint = document.getElementById('ph-eur-hint');
@@ -233,7 +241,7 @@ function _renderDiscover() {
     }
 
     const sharesVal = h.shares != null ? h.shares.toLocaleString('en-US') : '—';
-    const cashVal   = h.cash_eur != null ? _fmtEur(h.cash_eur) : '—';
+    const cashVal   = holdingCash(h) != null ? _fmtEur(holdingCash(h)) : '—';
     return `<tr style="border-bottom:1px solid rgba(0,0,0,.05)">
       <td style="padding:9px 10px;white-space:nowrap">
         <span style="font-weight:700;font-family:'IBM Plex Mono',monospace;font-size:13px">${h.instrument_id}</span>
@@ -430,8 +438,8 @@ function _debouncedSave() {
 async function _fetchHedge(token) {
   try {
     let url = `/api/v1/experience/fno/portfolio-hedge?coverage=${_state.coverage}&duration=${_state.duration}`;
-    if (_state.totalValueEur != null) url += `&total_value_eur=${_state.totalValueEur}`;
-    return await apiFetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (_state.totalValueEur != null) url += `&total_value=${_state.totalValueEur}&total_value_eur=${_state.totalValueEur}`;
+    return await api(url).catch(() => null);
   } catch (_) {
     return null;
   }
@@ -459,7 +467,7 @@ export async function loadPortfolioHedge() {
 
   try {
     const [portfolio, geo] = await Promise.all([
-      apiFetch('/api/v1/experience/user-portfolio', { headers: { Authorization: `Bearer ${token}` } }),
+      api('/api/v1/experience/user-portfolio').catch(() => null),
       apiFetch('/api/v1/experience/rita/geography-overview'),
     ]);
 
@@ -479,7 +487,9 @@ export async function loadPortfolioHedge() {
 
     _state.holdings       = portfolio.holdings;
     _state._portfolioName = portfolio.name || '';
-    _state.totalValueEur  = portfolio.total_value_eur ?? null;
+    _state.totalValueEur  = portfolioTotal(portfolio);   // F44 P2: portfolio currency
+    setPortfolioCurrency(portfolioCurrency(portfolio));
+    await preloadFx(getPortfolioCurrency(), Object.values(REGION_CCY));
     _state.instruments    = {};
 
     if (geo && geo.regions) {
