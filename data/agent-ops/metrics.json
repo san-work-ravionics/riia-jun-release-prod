@@ -1,53 +1,54 @@
 {
-  "generated_at": "2026-10-25T06:44:27",
-  "total_runs": 26,
+  "generated_at": "2026-10-25T17:33:57",
+  "total_runs": 28,
   "status_counts": {
-    "pass_with_warnings": 14,
-    "pass": 12
+    "pass_with_warnings": 15,
+    "pass": 13
   },
   "app_counts": {
     "rl": 2,
-    "rita": 7,
+    "rita": 8,
     "ops": 1,
-    "fno": 16
+    "fno": 16,
+    "core": 1
   },
-  "total_estimated_tokens": 6254800,
-  "total_actual_tokens": 8711406,
-  "total_duration_minutes": 2309,
-  "avg_duration_minutes": 88.8,
+  "total_estimated_tokens": 6707800,
+  "total_actual_tokens": 9167082,
+  "total_duration_minutes": 2772,
+  "avg_duration_minutes": 99.0,
   "per_agent": {
     "pm": {
-      "runs": 19,
+      "runs": 20,
       "avg_adherence": 1.0,
-      "total_estimated_tokens": 600000,
+      "total_estimated_tokens": 635000,
       "total_actual_tokens": 505356,
-      "token_overrun_ratio": 0.84,
+      "token_overrun_ratio": 0.8,
       "top_failure_modes": {}
     },
     "architect": {
-      "runs": 19,
-      "avg_adherence": 1.0,
-      "total_estimated_tokens": 530000,
+      "runs": 21,
+      "avg_adherence": 0.99,
+      "total_estimated_tokens": 620000,
       "total_actual_tokens": 614355,
-      "token_overrun_ratio": 1.16,
+      "token_overrun_ratio": 0.99,
       "top_failure_modes": {}
     },
     "design_reviewer": {
-      "runs": 19,
+      "runs": 20,
       "avg_adherence": 1.0,
-      "total_estimated_tokens": 504000,
+      "total_estimated_tokens": 534000,
       "total_actual_tokens": 501980,
-      "token_overrun_ratio": 1.0,
+      "token_overrun_ratio": 0.94,
       "top_failure_modes": {
         "DR-001": 1
       }
     },
     "engineer": {
-      "runs": 24,
-      "avg_adherence": 0.985,
-      "total_estimated_tokens": 1543000,
-      "total_actual_tokens": 1699976,
-      "token_overrun_ratio": 1.1,
+      "runs": 25,
+      "avg_adherence": 0.978,
+      "total_estimated_tokens": 1633000,
+      "total_actual_tokens": 1870900,
+      "token_overrun_ratio": 1.15,
       "top_failure_modes": {
         "FC-LINT: unused import shipped, caught by CI ruff gate": 1,
         "FC-COV: new 538-line module shipped without coverage omit entry": 1,
@@ -57,47 +58,46 @@
       }
     },
     "code_reviewer": {
-      "runs": 17,
-      "avg_adherence": 0.985,
-      "total_estimated_tokens": 996000,
+      "runs": 18,
+      "avg_adherence": 0.986,
+      "total_estimated_tokens": 1066000,
       "total_actual_tokens": 941766,
-      "token_overrun_ratio": 0.95,
+      "token_overrun_ratio": 0.88,
       "top_failure_modes": {
         "CR-WORKTREE-FALSE-POSITIVE: spec blocking findings overridden \u2014 specs confirmed present in worktree branch": 1
       }
     },
     "qa": {
-      "runs": 17,
-      "avg_adherence": 0.971,
-      "total_estimated_tokens": 1225000,
-      "total_actual_tokens": 1233851,
-      "token_overrun_ratio": 1.01,
+      "runs": 18,
+      "avg_adherence": 0.972,
+      "total_estimated_tokens": 1300000,
+      "total_actual_tokens": 1385912,
+      "token_overrun_ratio": 1.07,
       "top_failure_modes": {
         "FC-004": 2,
         "No unit tests \u2014 no RITA backend code to test (external middleware)": 1
       }
     },
     "techwriter": {
-      "runs": 17,
-      "avg_adherence": 0.825,
-      "total_estimated_tokens": 850000,
-      "total_actual_tokens": 609167,
-      "token_overrun_ratio": 0.72,
+      "runs": 18,
+      "avg_adherence": 0.835,
+      "total_estimated_tokens": 905000,
+      "total_actual_tokens": 741858,
+      "token_overrun_ratio": 0.82,
       "top_failure_modes": {
         "Confluence key not present in aug workspace": 1
       }
     },
     "ops": {
-      "runs": 2,
+      "runs": 3,
       "avg_adherence": 1.0,
-      "total_estimated_tokens": 6800,
+      "total_estimated_tokens": 14800,
       "total_actual_tokens": 0,
       "token_overrun_ratio": 0.0,
       "top_failure_modes": {}
     }
   },
   "alerts": [
-    "[ALERT] techwriter adherence 0.67 < 0.7 in run 20261005-1939",
     "[ALERT] techwriter adherence 0.67 < 0.7 in run 20261005-2005"
   ],
   "skill_version_history": [
