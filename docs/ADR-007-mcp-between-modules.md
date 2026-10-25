@@ -2,17 +2,17 @@
 
 | Field | Value |
 |---|---|
-| **Status** | Proposed (P0 — Design Review 2026-10-25; Accepted on user go-ahead for P1) |
+| **Status** | Accepted 2026-10-25 (Design Review passed; user go-ahead for P1). Module renamed Assistant → **Jarvis** the same day |
 | **Date** | 2026-10-25 |
-| **Feature** | 44 — RITA Assistant: one conversation from goal to tracked portfolio |
+| **Feature** | 44 — Jarvis: one conversation from goal to tracked portfolio |
 | **Supersedes** | The unauthenticated SSE transport (`interfaces/mcp_sse_app.py`, `main.py:395-396`) |
-| **Related** | ADR-001 (three-tier API), ADR-002 (repository pattern), ADR-008 (Assistant chat model); `Spec_MCP_Server.md`; F44 `REQUIREMENTS.md` § "MCP between modules" |
+| **Related** | ADR-001 (three-tier API), ADR-002 (repository pattern), ADR-008 (Jarvis chat model); `Spec_MCP_Server.md`; F44 `REQUIREMENTS.md` § "MCP between modules" |
 
 ---
 
 ## Context
 
-F44 adds an Assistant that walks a user from the expected return on What I Need to a tracked, hedged
+F44 adds Jarvis, an assistant module that walks a user from the expected return on What I Need to a tracked, hedged
 portfolio. To do that it has to read from four modules (What I Need, Portfolio, FnO, Market). The user
 agreed (2026-10-25) that **modules talk to each other through MCP tools**, not through direct imports or
 REST calls, and that MCP is secured with the same JWT as the dashboards.
@@ -50,7 +50,7 @@ Current state (verified in code 2026-10-25):
   | `portfolio.*` | Portfolio Builder | `services/user_portfolio_service.py`, `core/portfolio_optimizer.py`, portfolio analytics (after extraction, §6) |
   | `fno.*` | FnO | `services/position_value_service.py`, `services/hedge_plan_service.py`, `services/kite_middleware_client.py` |
   | `market.*` | Market data / RITA analysis | `core/technical_analyzer.py`, `core/classifier.py`, market-data reads, `services/data_refresh.py` |
-  | `journey.*` | Assistant (new, P4) | new journey service (ADR-008) |
+  | `journey.*` | Jarvis (new, P4) | new journey service (ADR-008) |
 
 - The full tool list with inputs, outputs and mapped services is in `Spec_MCP_Server.md` § "F44 tool
   catalogue" (added in P0). It is the contract P1–P6 build against.
@@ -78,12 +78,12 @@ Current state (verified in code 2026-10-25):
 
 | Caller | Transport | Auth |
 |---|---|---|
-| Another RITA module, the Assistant (same process) | **In-memory** client ↔ server streams (MCP SDK) — no network, no extra process, no extra RAM | Identity of the already-authenticated HTTP request is passed through (§5) |
+| Another RITA module, Jarvis (same process) | **In-memory** client ↔ server streams (MCP SDK) — no network, no extra process, no extra RAM | Identity of the already-authenticated HTTP request is passed through (§5) |
 | Claude Desktop / external MCP clients (prod or local) | **Streamable HTTP at `/mcp`**, stateless, JSON responses (no long-lived streams, so no nginx buffering change) | `Authorization: Bearer <RITA JWT>` — same token as the dashboards |
 | Claude Desktop, local stdio | stdio (`rita_mcp_server.py`, unchanged process) | None (local process) — **exposes only tools that need no user** (Auth `none` in the catalogue, plus the legacy aliases as today) |
 
 - **Cross-module calls go through the in-memory client** (Portfolio → `whatineed.get_goal`, FnO →
-  `portfolio.get_holdings`, the Assistant → everything). Calls *inside* one module stay direct function
+  `portfolio.get_holdings`, Jarvis → everything). Calls *inside* one module stay direct function
   calls — MCP is the boundary between modules, not inside them.
 - Synchronous service code must be able to make an in-process MCP call (services and SQLAlchemy sessions
   are synchronous; the MCP client is async) — the mechanism is in the P1 task brief.
@@ -103,7 +103,7 @@ Current state (verified in code 2026-10-25):
 - In-memory calls carry the identity of the HTTP request that started them; a background job (P6 EOD)
   runs with an explicit system identity that can only call the tools whose Auth includes `system` in the
   catalogue.
-- Local dev follows the existing pattern: the dashboard / Assistant gets its JWT via `shared/api.js` +
+- Local dev follows the existing pattern: the dashboard / Jarvis gets its JWT via `shared/api.js` +
   `shared/dev-auth.js` (401 → `ensureDevToken(true)` → retry once). Claude Desktop against localhost
   uses a dev token in the `mcp-remote` `Authorization` header.
 
@@ -118,13 +118,13 @@ Current state (verified in code 2026-10-25):
 
 - Every call — in-memory, HTTP, stdio, SSE — goes through the one dispatch path that writes `mcp_calls`
   via `mcp_logger`, and stays visible in `GET /api/v1/mcp-calls` and the RITA "MCP Calls" section.
-- `mcp_calls` gains `transport` (`memory` / `http` / `stdio` / `sse`), `caller` (`assistant`,
+- `mcp_calls` gains `transport` (`memory` / `http` / `stdio` / `sse`), `caller` (`jarvis`,
   `module:<name>`, `external`, `system`) and `user_id` (nullable). Args/result summaries stay truncated
   and **never include `personal_*` table data or message text** (counts and ids only).
 
 ### 8. Read-only
 
-- Tools return data and proposals. The **only** write any tool performs is saving the Assistant's
+- Tools return data and proposals. The **only** write any tool performs is saving Jarvis's
   journey record (`journey.save`, ADR-008). Nothing places orders, edits What I Need or saves a
   portfolio on the user's behalf.
 
@@ -145,7 +145,7 @@ instrument master through fno-margin-fetch).
 
 **Easier**
 - One place to see every cross-module call (who, which tool, how long, ok/error) — the MCP Calls view.
-- The Assistant and Claude Desktop use the *same* tools with the *same* auth; the Claude option (ADR-008
+- Jarvis and Claude Desktop use the *same* tools with the *same* auth; the Claude option (ADR-008
   P5) needs no extra integration — it gets the tool definitions as they are.
 - Structured results make ADR-008's rule "every number in a reply comes from a tool result" checkable.
 - The open `/mcp/sse` hole is closed in the first P1 commit.

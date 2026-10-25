@@ -1,10 +1,10 @@
-# ADR-008: Assistant Chat Model + Claude Option (Feature 44 P0)
+# ADR-008: Jarvis Chat Model + Claude Option (Feature 44 P0)
 
 | Field | Value |
 |---|---|
-| **Status** | Proposed (P0 — Design Review 2026-10-25; Accepted on user go-ahead for P1) |
+| **Status** | Accepted 2026-10-25 (Design Review passed; user go-ahead for P1). Module renamed Assistant → **Jarvis** the same day |
 | **Date** | 2026-10-25 |
-| **Feature** | 44 — RITA Assistant |
+| **Feature** | 44 — Jarvis |
 | **Supersedes** | — |
 | **Related** | ADR-007 (MCP between modules); `Spec_Chat_Feature.md`; `core/classifier.py`; F44 `REQUIREMENTS.md` § "Chat model" |
 
@@ -12,7 +12,7 @@
 
 ## Context
 
-The Assistant is a conversation: take the goal from What I Need → build a selection that meets it →
+Jarvis is a conversation: take the goal from What I Need → build a selection that meets it →
 explain the pick → track it in FnO → react when a stop loss is hit. The user agreed (2026-10-25):
 
 - the chat runs on the **local MiniLM model RITA already has** (`core/classifier.py`, all-MiniLM-L6-v2,
@@ -25,7 +25,7 @@ seed phrases (threshold 0.42) and `dispatch()` runs a deterministic handler that
 no notion of conversation state, slots, or a journey. A provider-switch pattern exists in
 `~/work/voice-to-summary/llm_provider.py` (explicit arg > env > default; `claude` = Anthropic SDK).
 
-Because every number the Assistant shows (goal return, CAGR, MDD, SL, r′) comes from a calculation, a
+Because every number Jarvis shows (goal return, CAGR, MDD, SL, r′) comes from a calculation, a
 generative model is not needed to *produce* answers — only to *understand* the message.
 
 ---
@@ -34,7 +34,7 @@ generative model is not needed to *produce* answers — only to *understand* the
 
 ### 1. Understanding: MiniLM journey intents + rule-based slots
 
-- A **separate journey intent set** for the Assistant, classified with the same MiniLM model and the
+- A **separate journey intent set** for Jarvis, classified with the same MiniLM model and the
   same cosine method, with its own seed phrases. The existing 20 RITA intents and `/api/v1/chat` are
   unchanged (no regression on the RITA chat, its golden tests or `agent_performance`).
 - Journey intents (P4 seeds; names indicative):
@@ -48,7 +48,7 @@ generative model is not needed to *produce* answers — only to *understand* the
   | `track` | Track it / show my levels / how is it doing |
   | `what_if_sl` | What if a stop loss hits |
   | `show_hedge` | How do I protect it / hedge suggestions |
-  | `change_goal` | Set my return to X% — answered with "change it on What I Need" (the Assistant never edits the plan) |
+  | `change_goal` | Set my return to X% — answered with "change it on What I Need" (Jarvis never edits the plan) |
   | `help` | What can you do / greeting |
 
 - **Slots** (numbers, %, amounts with currency, years / ages, instrument names, location) are parsed by
@@ -57,7 +57,7 @@ generative model is not needed to *produce* answers — only to *understand* the
 - **Journey state machine** (persisted in `user_journeys.state`, Spec_DB): `no_goal → goal_loaded →
   selected | cant_reach → tracking → reselect_proposed → tracking …`, and `→ back_to_plan` when the
   stop-loss guard trips (2 re-selections used, or *r′* capped at the best historical CAGR): from there
-  the Assistant only points back to What I Need until a newer plan is saved. Each state lists the intents it
+  Jarvis only points back to What I Need until a newer plan is saved. Each state lists the intents it
   accepts; an intent that does not fit the state gets the state's next-step prompt instead.
 - **Low confidence** (below the threshold, tuned on the P4 golden set; starts at 0.42): reply with the
   top suggestions for the current state as chips — never guess. With the Claude option on, hand the
@@ -71,19 +71,19 @@ generative model is not needed to *produce* answers — only to *understand* the
 - Templates are filled **only** from the structured results of the tool calls made for that message.
   Money is formatted in the result's `currency`; rates as %, with the `as_of` date where market data
   is involved.
-- The reply carries the ids of the tool calls it used (stored in `assistant_messages.tool_calls`), so
+- The reply carries the ids of the tool calls it used (stored in `jarvis_messages.tool_calls`), so
   every number on screen can be traced to a logged MCP call.
-- The Assistant page renders the structured results with the existing module renders (plan view,
+- Jarvis page renders the structured results with the existing module renders (plan view,
   holdings table, σ bands) — the template text is the short explanation around them.
 
 ### 3. Claude option: provider switch, off by default
 
-- Config `assistant.llm.provider`: `off` (default, every environment) | `claude`. Same precedence as the
+- Config `jarvis.llm.provider`: `off` (default, every environment) | `claude`. Same precedence as the
   existing pattern: config / env override, nothing hardcoded. Model name in config (default the Haiku
   tier, `claude-haiku-5-5`).
 - On only when the provider is `claude` **and** `ANTHROPIC_API_KEY` is present in the environment
   (`SecretStr`, prod secrets only, never in YAML). Otherwise `/health` reports `claude_option: off` and
-  the Assistant behaves exactly as with `off`.
+  Jarvis behaves exactly as with `off`.
 - **When used:** only for messages MiniLM cannot map (low confidence) or explicit free-text questions.
   The journey intents above never go to Claude.
 - **What Claude gets:** the message, a short journey-state summary (state, location, currency, goal
@@ -93,7 +93,7 @@ generative model is not needed to *produce* answers — only to *understand* the
   other users' data, message history beyond the current session.
 - **Number check:** every number in Claude's reply must appear in a tool result of that turn; if not,
   the reply is dropped and the templated "couldn't answer — try one of these" reply is shown.
-- **Cost guard:** per-user daily token cap (config) counted in `assistant_sessions`; over the cap → the
+- **Cost guard:** per-user daily token cap (config) counted in `jarvis_sessions`; over the cap → the
   provider is treated as `off` for that user until the next day.
 - **Streaming:** SSE from FastAPI only on the Claude path (nginx `proxy_buffering off` on that one
   location). The MiniLM path returns one JSON reply.
