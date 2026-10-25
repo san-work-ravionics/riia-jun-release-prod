@@ -135,8 +135,8 @@ function render(p, r) {
   document.getElementById('wn-age-head').innerHTML = '<tr><th>Age</th>' + r.byAge.map(c =>
     `<th class="${cls(c)}" title="${c.off ? 'outside plan' : c.age === p.ret ? 'retirement age' : c.age > p.ret ? 'retired' : 'working'}">${c.age}</th>`).join('') + '</tr>';
   document.getElementById('wn-age-body').innerHTML = [
-    '<tr class="total"><td>Available</td>' + r.byAge.map(c => cell(c, `<span title="${c.age >= p.ret ? pct(c.share) + ' of the need' : 'working'}">${fmt(c.monthly)}</span>`, !c.off && c.age >= p.ret && c.share >= 1 ? 'ok' : '')).join('') + '</tr>',
-    '<tr class="need"><td>Need</td>' + r.byAge.map(c => cell(c, c.age >= p.ret ? fmt(c.need) : '—')).join('') + '</tr>',
+    '<tr class="total"><td>Available</td>' + r.byAge.map(c => cell(c, `<span title="${pct(c.share)} of the need${c.age < p.ret ? ' (working: if you stopped now)' : ''}">${fmt(c.monthly)}</span>`, !c.off && c.share >= 1 ? 'ok' : '')).join('') + '</tr>',
+    '<tr class="need"><td>Need</td>' + r.byAge.map(c => cell(c, fmt(c.need))).join('') + '</tr>',
     '<tr><td>Investing</td>' + r.byAge.map(c => cell(c, fmt(c.income))).join('') + '</tr>',
     '<tr><td>From savings</td>' + r.byAge.map(c => cell(c, fmt(c.fromSavings))).join('') + '</tr>',
     '<tr><td>Savings</td>' + r.byAge.map(c => cell(c, fmtK(c.savings))).join('') + '</tr>',
