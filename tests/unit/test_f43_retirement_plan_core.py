@@ -72,7 +72,7 @@ def test_fixture_has_twelve_scenarios_and_constants():
 
 def test_headline_numbers_defaults():
     r = _result(DEFAULTS)
-    assert r["byAge"][0]["age"] == 55 and abs(r["byAge"][0]["monthly"] - 1987.518) < 0.01
+    assert r["byAge"][0]["age"] == 55 and abs(r["byAge"][0]["monthly"] - 2556.959) < 0.01
     assert r["byAge"][3]["age"] == 70 and abs(r["byAge"][3]["monthly"] - 7703.30) < 0.01
     assert abs(r["byAge"][3]["portfolio"] - 1733258.3) < 0.1
     assert r["withInvesting"]["savingsOut"] == 55

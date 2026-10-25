@@ -144,11 +144,23 @@ def test_hand_calc_house_and_target():
 
 
 def test_hand_calc_from_savings_at_retirement():
-    # from_savings = savings_balance_at_retirement / months_of_retirement
+    # from_savings = the shortfall (need − investing), paid from savings up to a twelfth of the balance
     r = _calc(DEFAULTS)
-    months = 12 * (1.025 ** 30 - 1) / 0.025
+    c = r.at_ret
     savings55 = next(x for x in r.with_investing.points if x.age == 55).savings
-    assert abs(r.at_ret.from_savings - savings55 / months) < EUR
+    want = min(max(0.0, c.need - c.income), max(0.0, savings55) / 12)
+    assert abs(c.from_savings - want) < EUR
+    assert abs(c.monthly - (c.income + want)) < EUR
+
+
+def test_saved_europe_plan_savings_cover_need_at_55():
+    # reported defect: 100K at 47/50/55 − 200K at 55 → 100K savings at 55, yet available was 480 of 2,437
+    raw = {**DEFAULTS, "need": 2000, "infl": 0.025, "now": 47, "ret": 55, "end": 85, "tax": 0.3,
+           "sv": [{"age": 47, "amt": 100_000}, {"age": 50, "amt": 100_000}, {"age": 55, "amt": 100_000}],
+           "bx": [{"age": 55, "amt": 200_000}, {"age": 60, "amt": 100_000}, {"age": 65, "amt": 50_000}]}
+    c = _calc(raw).at_ret
+    assert abs(c.savings - 100_000) < EUR
+    assert c.share >= 1 - 1e-9          # 100K savings ≥ a year of the shortfall → need fully met
 
 
 # ── Properties ───────────────────────────────────────────────────────────────

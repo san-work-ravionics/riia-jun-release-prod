@@ -418,13 +418,13 @@ def calc(p: PlanParams, start_year: int) -> PlanResult:
 
     def at(age: int) -> AgeCell:
         x = by_point[age]
-        months = 0.0
-        for a in range(age, max(p.end, age + 1)):
-            months = months + 12 * (1.0 + p.infl) ** (a - age)
-        from_savings = x.savings / months
         need = p.need * (1.0 + p.infl) ** (age - p.now)
         income = x.income + x.sold / 12
-        monthly = max(0.0, income + from_savings)
+        # savings pay the shortfall (need − investing) first, as in simulate(); at most a twelfth
+        # of the balance a month (that year's draw); a balance at or below zero pays nothing
+        shortfall = max(0.0, need - income) if age >= p.ret else 0.0
+        from_savings = min(shortfall, max(0.0, x.savings) / 12)
+        monthly = income + from_savings
         return AgeCell(
             age=age, off=False, monthly=monthly, income=income, from_savings=from_savings,
             savings=x.savings, portfolio=x.portfolio, need=need, share=monthly / need,

@@ -65,7 +65,7 @@ def test_calculate_defaults_200_headline(client):
     d = r.json()
     assert d["maxAge"] == 120
     assert d["startYear"] == date.today().year
-    assert abs(d["byAge"][0]["monthly"] - 1987.518) < 0.01
+    assert abs(d["byAge"][0]["monthly"] - 2556.959) < 0.01
     assert abs(d["byAge"][3]["monthly"] - 7703.30) < 0.01
     assert d["withInvesting"]["savingsOut"] == 55 and d["withoutInvesting"]["savingsOut"] == 59
     assert d["withInvesting"]["portfolioOut"] == 119

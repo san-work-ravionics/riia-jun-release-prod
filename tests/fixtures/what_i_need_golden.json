@@ -2862,84 +2862,92 @@
         "byAge": [
           {
             "age": 55,
-            "monthly": 1987.5181255798693,
+            "off": false,
+            "monthly": 2556.959143984282,
             "income": 2556.959143984282,
-            "fromSavings": -569.4410184044126,
-            "savings": -300000,
+            "fromSavings": 0.0,
+            "savings": -300000.0,
             "portfolio": 1125764.7684073483,
             "need": 3277.2328805807883,
-            "share": 0.6064622802233215
+            "share": 0.7802189338253984
           },
           {
             "age": 60,
-            "monthly": 2696.189046247967,
+            "off": false,
+            "monthly": 3075.929762923691,
             "income": 3075.929762923691,
-            "fromSavings": -379.7407166757244,
+            "fromSavings": 0.0,
             "savings": -155653.12507097295,
             "portfolio": 1366119.1809071887,
             "need": 3707.8881966443037,
-            "share": 0.7271494994611919
+            "share": 0.8295637839639974
           },
           {
             "age": 65,
-            "monthly": 3089.7486680716597,
+            "off": false,
+            "monthly": 3700.232727104519,
             "income": 3700.232727104519,
-            "fromSavings": -610.4840590328594,
+            "fromSavings": 0.0,
             "savings": -187135.27518412654,
             "portfolio": 1655256.8829301829,
             "need": 4195.135158163572,
-            "share": 0.7365075382754064
+            "share": 0.8820294430571584
           },
           {
             "age": 70,
+            "off": false,
             "monthly": 7703.30062278789,
             "income": 7703.30062278789,
-            "fromSavings": 0,
-            "savings": 0,
+            "fromSavings": 0.0,
+            "savings": 0.0,
             "portfolio": 1733258.3074022834,
             "need": 4746.410372132475,
             "share": 1.6229739990490832
           },
           {
             "age": 75,
-            "monthly": 8914.346645246142,
+            "off": false,
+            "monthly": 7703.30062278789,
             "income": 7703.30062278789,
-            "fromSavings": 1211.0460224582525,
+            "fromSavings": 0.0,
             "savings": 162813.7311364952,
             "portfolio": 1733258.3074022834,
             "need": 5370.127676779926,
-            "share": 1.6599878404737343
+            "share": 1.434472527738297
           },
           {
             "age": 80,
-            "monthly": 12242.050195052525,
+            "off": false,
+            "monthly": 7703.30062278789,
             "income": 7703.30062278789,
-            "fromSavings": 4538.749572264635,
+            "fromSavings": 0.0,
             "savings": 286285.9056237044,
             "portfolio": 1733258.3074022834,
             "need": 6075.806557780059,
-            "share": 2.0148847858522756
+            "share": 1.2678646940995557
           },
           {
             "age": 85,
-            "monthly": 38140.52727362197,
+            "off": false,
+            "monthly": 7703.30062278789,
             "income": 7703.30062278789,
-            "fromSavings": 30437.226650834084,
+            "fromSavings": 0.0,
             "savings": 365246.719810009,
             "portfolio": 1733258.3074022834,
             "need": 6874.217439407073,
-            "share": 5.548344609377345
+            "share": 1.1206076459886216
           }
         ],
         "atRet": {
           "age": 55,
-          "monthly": 1987.5181255798693,
+          "off": false,
+          "monthly": 2556.959143984282,
           "income": 2556.959143984282,
-          "fromSavings": -569.4410184044126,
-          "savings": -300000,
+          "fromSavings": 0.0,
+          "savings": -300000.0,
           "portfolio": 1125764.7684073483,
           "need": 3277.2328805807883,
-          "share": 0.6064622802233215
+          "share": 0.7802189338253984
         }
       }
     },
@@ -5803,84 +5811,92 @@
         "byAge": [
           {
             "age": 55,
-            "monthly": 1987.5181255798693,
+            "off": false,
+            "monthly": 2556.959143984282,
             "income": 2556.959143984282,
-            "fromSavings": -569.4410184044126,
-            "savings": -300000,
+            "fromSavings": 0.0,
+            "savings": -300000.0,
             "portfolio": 1125764.7684073483,
             "need": 3277.2328805807883,
-            "share": 0.6064622802233215
+            "share": 0.7802189338253984
           },
           {
             "age": 60,
-            "monthly": 2250.1866424000905,
+            "off": false,
+            "monthly": 3075.929762923691,
             "income": 3075.929762923691,
-            "fromSavings": -825.7431205236009,
+            "fromSavings": 0.0,
             "savings": -338466.4629605994,
             "portfolio": 1366119.1809071887,
             "need": 3707.8881966443037,
-            "share": 0.6068647497075409
+            "share": 0.8295637839639974
           },
           {
             "age": 65,
-            "monthly": 2493.3638953429772,
+            "off": false,
+            "monthly": 3700.232727104519,
             "income": 3700.232727104519,
-            "fromSavings": -1206.8688317615417,
+            "fromSavings": 0.0,
             "savings": -369948.6130737529,
             "portfolio": 1655256.8829301829,
             "need": 4195.135158163572,
-            "share": 0.5943464992995486
+            "share": 0.8820294430571584
           },
           {
             "age": 70,
+            "off": false,
             "monthly": 6650.693265058421,
             "income": 6650.693265058421,
-            "fromSavings": 0,
-            "savings": 0,
+            "fromSavings": 0.0,
+            "savings": 0.0,
             "portfolio": 1496419.511079015,
             "need": 4746.410372132475,
             "share": 1.4012048566441986
           },
           {
             "age": 75,
-            "monthly": 7391.9671332062235,
+            "off": false,
+            "monthly": 6650.693265058421,
             "income": 6650.693265058421,
-            "fromSavings": 741.2738681478022,
+            "fromSavings": 0.0,
             "savings": 99657.2896727271,
             "portfolio": 1496419.511079015,
             "need": 5370.127676779926,
-            "share": 1.3764974648868398
+            "share": 1.238460920364254
           },
           {
             "age": 80,
-            "monthly": 9186.890381553818,
+            "off": false,
+            "monthly": 6650.693265058421,
             "income": 6650.693265058421,
-            "fromSavings": 2536.1971164953966,
+            "fromSavings": 0.0,
             "savings": 159973.0226961678,
             "portfolio": 1496419.511079015,
             "need": 6075.806557780059,
-            "share": 1.512044581108334
+            "share": 1.0946189945007747
           },
           {
             "age": 85,
-            "monthly": 21298.809549950493,
+            "off": false,
+            "monthly": 6874.217439407073,
             "income": 6650.693265058421,
-            "fromSavings": 14648.11628489207,
+            "fromSavings": 223.5241743486513,
             "savings": 175777.39541870484,
             "portfolio": 1496419.511079015,
             "need": 6874.217439407073,
-            "share": 3.0983613389726576
+            "share": 1.0
           }
         ],
         "atRet": {
           "age": 55,
-          "monthly": 1987.5181255798693,
+          "off": false,
+          "monthly": 2556.959143984282,
           "income": 2556.959143984282,
-          "fromSavings": -569.4410184044126,
-          "savings": -300000,
+          "fromSavings": 0.0,
+          "savings": -300000.0,
           "portfolio": 1125764.7684073483,
           "need": 3277.2328805807883,
-          "share": 0.6064622802233215
+          "share": 0.7802189338253984
         }
       }
     },
@@ -8744,84 +8760,92 @@
         "byAge": [
           {
             "age": 55,
-            "monthly": 0,
-            "income": 0,
-            "fromSavings": -569.4410184044126,
-            "savings": -300000,
+            "off": false,
+            "monthly": 0.0,
+            "income": 0.0,
+            "fromSavings": 0.0,
+            "savings": -300000.0,
             "portfolio": 1125764.7684073483,
             "need": 3277.2328805807883,
-            "share": 0
+            "share": 0.0
           },
           {
             "age": 60,
-            "monthly": 0,
-            "income": 0,
-            "fromSavings": -790.2088635379928,
+            "off": false,
+            "monthly": 0.0,
+            "income": 0.0,
+            "fromSavings": 0.0,
             "savings": -323901.21382086043,
             "portfolio": 1654284.8552063347,
             "need": 3707.8881966443037,
-            "share": 0
+            "share": 0.0
           },
           {
             "age": 65,
-            "monthly": 0,
-            "income": 0,
-            "fromSavings": -1819.6229906812055,
+            "off": false,
+            "monthly": 0.0,
+            "income": 0.0,
+            "fromSavings": 0.0,
             "savings": -557779.7553501105,
             "portfolio": 2418684.268145356,
             "need": 4195.135158163572,
-            "share": 0
+            "share": 0.0
           },
           {
             "age": 70,
+            "off": false,
             "monthly": 10598.295220468832,
             "income": 10598.295220468832,
-            "fromSavings": 0,
-            "savings": 0,
+            "fromSavings": 0.0,
+            "savings": 0.0,
             "portfolio": 2414185.896601935,
             "need": 4746.410372132475,
             "share": 2.2329074794489827
           },
           {
             "age": 75,
-            "monthly": 13101.359428894604,
+            "off": false,
+            "monthly": 10598.295220468832,
             "income": 10598.295220468832,
-            "fromSavings": 2503.0642084257715,
+            "fromSavings": 0.0,
             "savings": 336513.40699735156,
             "portfolio": 2414185.896601935,
             "need": 5370.127676779926,
-            "share": 2.439673731696177
+            "share": 1.9735648495463438
           },
           {
             "age": 80,
-            "monthly": 20644.681138283893,
+            "off": false,
+            "monthly": 10598.295220468832,
             "income": 10598.295220468832,
-            "fromSavings": 10046.38591781506,
+            "fromSavings": 0.0,
             "savings": 633685.2573454167,
             "portfolio": 2414185.896601935,
             "need": 6075.806557780059,
-            "share": 3.3978503005248606
+            "share": 1.7443437541469675
           },
           {
             "age": 85,
-            "monthly": 84460.44083651701,
+            "off": false,
+            "monthly": 10598.295220468832,
             "income": 10598.295220468832,
-            "fromSavings": 73862.14561604818,
+            "fromSavings": 0.0,
             "savings": 886345.7473925782,
             "portfolio": 2414185.896601935,
             "need": 6874.217439407073,
-            "share": 12.28655357224226
+            "share": 1.5417457061676791
           }
         ],
         "atRet": {
           "age": 55,
-          "monthly": 0,
-          "income": 0,
-          "fromSavings": -569.4410184044126,
-          "savings": -300000,
+          "off": false,
+          "monthly": 0.0,
+          "income": 0.0,
+          "fromSavings": 0.0,
+          "savings": -300000.0,
           "portfolio": 1125764.7684073483,
           "need": 3277.2328805807883,
-          "share": 0
+          "share": 0.0
         }
       }
     },
@@ -11685,70 +11709,77 @@
         "byAge": [
           {
             "age": 55,
-            "monthly": 4544.477269564151,
+            "off": false,
+            "monthly": 5113.918287968564,
             "income": 5113.918287968564,
-            "fromSavings": -569.4410184044126,
-            "savings": -300000,
+            "fromSavings": 0.0,
+            "savings": -300000.0,
             "portfolio": 1125764.7684073483,
             "need": 3277.2328805807883,
-            "share": 1.38668121404872
+            "share": 1.5604378676507968
           },
           {
             "age": 60,
-            "monthly": 5072.282764596584,
+            "off": false,
+            "monthly": 5113.918287968564,
             "income": 5113.918287968564,
-            "fromSavings": -41.63552337198042,
+            "fromSavings": 0.0,
             "savings": -17066.116542747273,
             "portfolio": 1125764.7684073483,
             "need": 3707.8881966443037,
-            "share": 1.3679707951245883
+            "share": 1.3791996998714091
           },
           {
             "age": 65,
-            "monthly": 5296.247472854246,
+            "off": false,
+            "monthly": 5113.918287968564,
             "income": 5113.918287968564,
-            "fromSavings": 182.3291848856815,
+            "fromSavings": 0.0,
             "savings": 55890.43920611688,
             "portfolio": 1125764.7684073483,
             "need": 4195.135158163572,
-            "share": 1.2624736207957332
+            "share": 1.2190115682011045
           },
           {
             "age": 70,
-            "monthly": 5569.871495711097,
+            "off": false,
+            "monthly": 5113.918287968564,
             "income": 5113.918287968564,
-            "fromSavings": 455.953207742533,
+            "fromSavings": 0.0,
             "savings": 98113.43377915677,
             "portfolio": 1125764.7684073483,
             "need": 4746.410372132475,
-            "share": 1.173491345883912
+            "share": 1.0774286012001475
           },
           {
             "age": 75,
-            "monthly": 5899.129299949088,
+            "off": false,
+            "monthly": 5370.127676779926,
             "income": 5113.918287968564,
-            "fromSavings": 785.2110119805238,
+            "fromSavings": 256.20938881136226,
             "savings": 105564.22482649237,
             "portfolio": 1125764.7684073483,
             "need": 5370.127676779926,
-            "share": 1.0985082022270214
+            "share": 1.0
           },
           {
             "age": 80,
-            "monthly": 6281.930317111779,
+            "off": false,
+            "monthly": 6075.806557780059,
             "income": 5113.918287968564,
-            "fromSavings": 1168.0120291432147,
+            "fromSavings": 961.8882698114949,
             "savings": 73673.45922454196,
             "portfolio": 1125764.7684073483,
             "need": 6075.806557780059,
-            "share": 1.0339253327721205
+            "share": 1.0
           },
           {
             "age": 85,
+            "off": false,
             "monthly": 6928.7838597149785,
             "income": 6928.7838597149785,
-            "fromSavings": 0,
-            "savings": 0,
+            "fromSavings": 0.0,
+            "savings": 0.0,
             "portfolio": 1122461.4023076475,
             "need": 6874.217439407073,
             "share": 1.0079378374031491
@@ -11756,13 +11787,14 @@
         ],
         "atRet": {
           "age": 55,
-          "monthly": 4544.477269564151,
+          "off": false,
+          "monthly": 5113.918287968564,
           "income": 5113.918287968564,
-          "fromSavings": -569.4410184044126,
-          "savings": -300000,
+          "fromSavings": 0.0,
+          "savings": -300000.0,
           "portfolio": 1125764.7684073483,
           "need": 3277.2328805807883,
-          "share": 1.38668121404872
+          "share": 1.5604378676507968
         }
       }
     },
@@ -14626,70 +14658,77 @@
         "byAge": [
           {
             "age": 55,
+            "off": false,
             "monthly": 3467.8696629542756,
             "income": 3467.8696629542756,
-            "fromSavings": 0,
-            "savings": 0,
+            "fromSavings": 0.0,
+            "savings": 0.0,
             "portfolio": 763407.8739911589,
             "need": 3277.2328805807883,
             "share": 1.058170044461321
           },
           {
             "age": 60,
-            "monthly": 3917.1842178098414,
+            "off": false,
+            "monthly": 3707.8881966443037,
             "income": 3467.8696629542756,
-            "fromSavings": 449.31455485556586,
+            "fromSavings": 240.0185336900281,
             "savings": 184170.96595639514,
             "portfolio": 763407.8739911589,
             "need": 3707.8881966443037,
-            "share": 1.0564461521129342
+            "share": 1.0
           },
           {
             "age": 65,
-            "monthly": 3984.496291935428,
+            "off": false,
+            "monthly": 4195.135158163572,
             "income": 3467.8696629542756,
-            "fromSavings": 516.6266289811524,
+            "fromSavings": 727.2654952092962,
             "savings": 158364.60420440207,
             "portfolio": 763407.8739911589,
             "need": 4195.135158163572,
-            "share": 0.9497897306554597
+            "share": 1.0
           },
           {
             "age": 70,
-            "monthly": 3941.0697974019486,
+            "off": false,
+            "monthly": 4746.410372132475,
             "income": 3467.8696629542756,
-            "fromSavings": 473.2001344476728,
+            "fromSavings": 1278.540709178199,
             "savings": 101824.68127658468,
             "portfolio": 763407.8739911589,
             "need": 4746.410372132475,
-            "share": 0.8303263916118779
+            "share": 1.0
           },
           {
             "age": 75,
-            "monthly": 4587.924743032155,
+            "off": false,
+            "monthly": 5370.127676779926,
             "income": 4509.7299395872815,
-            "fromSavings": 78.19480344487367,
+            "fromSavings": 860.3977371926449,
             "savings": 10512.554823062987,
             "portfolio": 763407.8739911589,
             "need": 5370.127676779926,
-            "share": 0.8543418367630318
+            "share": 1.0
           },
           {
             "age": 80,
+            "off": false,
             "monthly": 6179.339278559279,
             "income": 6179.339278559279,
-            "fromSavings": 0,
-            "savings": 0,
+            "fromSavings": 0.0,
+            "savings": 0.0,
             "portfolio": 595998.9282502414,
             "need": 6075.806557780059,
             "share": 1.0170401608073987
           },
           {
             "age": 85,
+            "off": false,
             "monthly": 7045.999024468174,
             "income": 7045.999024468174,
-            "fromSavings": 0,
-            "savings": 0,
+            "fromSavings": 0.0,
+            "savings": 0.0,
             "portfolio": 282952.69985462487,
             "need": 6874.217439407073,
             "share": 1.0249892568245438
@@ -14697,10 +14736,11 @@
         ],
         "atRet": {
           "age": 55,
+          "off": false,
           "monthly": 3467.8696629542756,
           "income": 3467.8696629542756,
-          "fromSavings": 0,
-          "savings": 0,
+          "fromSavings": 0.0,
+          "savings": 0.0,
           "portfolio": 763407.8739911589,
           "need": 3277.2328805807883,
           "share": 1.058170044461321
@@ -17537,84 +17577,92 @@
         "byAge": [
           {
             "age": 55,
-            "monthly": 0,
-            "income": 0,
-            "fromSavings": -569.4410184044126,
-            "savings": -300000,
+            "off": false,
+            "monthly": 0.0,
+            "income": 0.0,
+            "fromSavings": 0.0,
+            "savings": -300000.0,
             "portfolio": 1125764.7684073483,
             "need": 3277.2328805807883,
-            "share": 0
+            "share": 0.0
           },
           {
             "age": 60,
-            "monthly": 3885.9487996765515,
+            "off": false,
+            "monthly": 4171.844421973491,
             "income": 4171.844421973491,
-            "fromSavings": -285.89562229693973,
+            "fromSavings": 0.0,
             "savings": -117186.66211037355,
             "portfolio": 1810556.706751501,
             "need": 3707.8881966443037,
-            "share": 1.0480221068136293
+            "share": 1.1251268109294867
           },
           {
             "age": 65,
-            "monthly": 4768.827898718874,
+            "off": false,
+            "monthly": 5018.5785932582485,
             "income": 5018.5785932582485,
-            "fromSavings": -249.75069453937425,
+            "fromSavings": 0.0,
             "savings": -76557.55176325889,
             "portfolio": 2202710.495146308,
             "need": 4195.135158163572,
-            "share": 1.1367519088005826
+            "share": 1.1962853171708396
           },
           {
             "age": 70,
+            "off": false,
             "monthly": 12009.929228150331,
             "income": 12009.929228150331,
-            "fromSavings": 0,
-            "savings": 0,
+            "fromSavings": 0.0,
+            "savings": 0.0,
             "portfolio": 2660190.7465746133,
             "need": 4746.410372132475,
             "share": 2.5303183430290903
           },
           {
             "age": 75,
-            "monthly": 15142.99696449831,
+            "off": false,
+            "monthly": 12009.929228150331,
             "income": 12009.929228150331,
-            "fromSavings": 3133.067736347978,
+            "fromSavings": 0.0,
             "savings": 421211.44745824207,
             "portfolio": 2660190.7465746133,
             "need": 5370.127676779926,
-            "share": 2.8198579020710475
+            "share": 2.236432716503271
           },
           {
             "age": 80,
-            "monthly": 24741.90453309231,
+            "off": false,
+            "monthly": 12009.929228150331,
             "income": 12009.929228150331,
-            "fromSavings": 12731.97530494198,
+            "fromSavings": 0.0,
             "savings": 803081.3382671978,
             "portfolio": 2660190.7465746133,
             "need": 6075.806557780059,
-            "share": 4.072200834210291
+            "share": 1.976680645431616
           },
           {
             "age": 85,
-            "monthly": 107046.58495942128,
+            "off": false,
+            "monthly": 12009.929228150331,
             "income": 12009.929228150331,
-            "fromSavings": 95036.65573127095,
+            "fromSavings": 0.0,
             "savings": 1140439.8687752513,
             "portfolio": 2660190.7465746133,
             "need": 6874.217439407073,
-            "share": 15.572184892751146
+            "share": 1.747097663699482
           }
         ],
         "atRet": {
           "age": 60,
-          "monthly": 3885.9487996765515,
+          "off": false,
+          "monthly": 4171.844421973491,
           "income": 4171.844421973491,
-          "fromSavings": -285.89562229693973,
+          "fromSavings": 0.0,
           "savings": -117186.66211037355,
           "portfolio": 1810556.706751501,
           "need": 3707.8881966443037,
-          "share": 1.0480221068136293
+          "share": 1.1251268109294867
         }
       }
     },
@@ -20478,84 +20526,92 @@
         "byAge": [
           {
             "age": 55,
-            "monthly": 0,
-            "income": 0,
-            "fromSavings": -569.4410184044126,
-            "savings": -300000,
-            "portfolio": 0,
+            "off": false,
+            "monthly": 0.0,
+            "income": 0.0,
+            "fromSavings": 0.0,
+            "savings": -300000.0,
+            "portfolio": 0.0,
             "need": 3277.2328805807883,
-            "share": 0
+            "share": 0.0
           },
           {
             "age": 60,
-            "monthly": 0,
-            "income": 0,
-            "fromSavings": -790.2088635379928,
+            "off": false,
+            "monthly": 0.0,
+            "income": 0.0,
+            "fromSavings": 0.0,
             "savings": -323901.21382086043,
-            "portfolio": 0,
+            "portfolio": 0.0,
             "need": 3707.8881966443037,
-            "share": 0
+            "share": 0.0
           },
           {
             "age": 65,
-            "monthly": 0,
-            "income": 0,
-            "fromSavings": -1819.6229906812055,
+            "off": false,
+            "monthly": 0.0,
+            "income": 0.0,
+            "fromSavings": 0.0,
             "savings": -557779.7553501105,
-            "portfolio": 0,
+            "portfolio": 0.0,
             "need": 4195.135158163572,
-            "share": 0
+            "share": 0.0
           },
           {
             "age": 70,
-            "monthly": 0,
-            "income": 0,
-            "fromSavings": -3821.823284114459,
+            "off": false,
+            "monthly": 0.0,
+            "income": 0.0,
+            "fromSavings": 0.0,
             "savings": -822391.858055185,
-            "portfolio": 0,
+            "portfolio": 0.0,
             "need": 4746.410372132475,
-            "share": 0
+            "share": 0.0
           },
           {
             "age": 75,
-            "monthly": 0,
-            "income": 0,
-            "fromSavings": -8344.02941548015,
+            "off": false,
+            "monthly": 0.0,
+            "income": 0.0,
+            "fromSavings": 0.0,
             "savings": -1121776.1642859643,
-            "portfolio": 0,
+            "portfolio": 0.0,
             "need": 5370.127676779926,
-            "share": 0
+            "share": 0.0
           },
           {
             "age": 80,
-            "monthly": 0,
-            "income": 0,
-            "fromSavings": -23154.660501535276,
+            "off": false,
+            "monthly": 0.0,
+            "income": 0.0,
+            "fromSavings": 0.0,
             "savings": -1460502.0271660285,
-            "portfolio": 0,
+            "portfolio": 0.0,
             "need": 6075.806557780059,
-            "share": 0
+            "share": 0.0
           },
           {
             "age": 85,
-            "monthly": 0,
-            "income": 0,
-            "fromSavings": -153644.9375289165,
+            "off": false,
+            "monthly": 0.0,
+            "income": 0.0,
+            "fromSavings": 0.0,
             "savings": -1843739.2503469978,
-            "portfolio": 0,
+            "portfolio": 0.0,
             "need": 6874.217439407073,
-            "share": 0
+            "share": 0.0
           }
         ],
         "atRet": {
           "age": 55,
-          "monthly": 0,
-          "income": 0,
-          "fromSavings": -569.4410184044126,
-          "savings": -300000,
-          "portfolio": 0,
+          "off": false,
+          "monthly": 0.0,
+          "income": 0.0,
+          "fromSavings": 0.0,
+          "savings": -300000.0,
+          "portfolio": 0.0,
           "need": 3277.2328805807883,
-          "share": 0
+          "share": 0.0
         }
       }
     },
@@ -23419,81 +23475,89 @@
         "byAge": [
           {
             "age": 55,
+            "off": false,
             "monthly": 2556.959143984282,
             "income": 2556.959143984282,
-            "fromSavings": 0,
-            "savings": 0,
+            "fromSavings": 0.0,
+            "savings": 0.0,
             "portfolio": 1125764.7684073483,
             "need": 3277.2328805807883,
             "share": 0.7802189338253984
           },
           {
             "age": 60,
-            "monthly": 3428.0870723927837,
+            "off": false,
+            "monthly": 3707.8881966443037,
             "income": 3075.929762923691,
-            "fromSavings": 352.1573094690923,
+            "fromSavings": 631.9584337206124,
             "savings": 144346.87492902722,
             "portfolio": 1366119.1809071887,
             "need": 3707.8881966443037,
-            "share": 0.9245389533307007
+            "share": 1.0
           },
           {
             "age": 65,
-            "monthly": 4068.426886433523,
+            "off": false,
+            "monthly": 4195.135158163572,
             "income": 3700.232727104519,
-            "fromSavings": 368.1941593290038,
+            "fromSavings": 494.90243105905256,
             "savings": 112864.72481587368,
             "portfolio": 1655256.8829301829,
             "need": 4195.135158163572,
-            "share": 0.9697963791503882
+            "share": 1.0
           },
           {
             "age": 70,
-            "monthly": 9328.77309967681,
+            "off": false,
+            "monthly": 8902.493418264057,
             "income": 8902.493418264057,
-            "fromSavings": 426.2796814127525,
+            "fromSavings": 0.0,
             "savings": 91728.19180451323,
             "portfolio": 2003079.1253497738,
             "need": 4746.410372132475,
-            "share": 1.9654375345310826
+            "share": 1.8756265725637902
           },
           {
             "age": 75,
-            "monthly": 11331.027181810205,
+            "off": false,
+            "monthly": 8902.493418264057,
             "income": 8902.493418264057,
-            "fromSavings": 2428.533763546148,
+            "fromSavings": 0.0,
             "savings": 326493.4906695782,
             "portfolio": 2003079.1253497738,
             "need": 5370.127676779926,
-            "share": 2.1100107602291858
+            "share": 1.6577805881148495
           },
           {
             "age": 80,
-            "monthly": 17176.919685792538,
+            "off": false,
+            "monthly": 8902.493418264057,
             "income": 8902.493418264057,
-            "fromSavings": 8274.42626752848,
+            "fromSavings": 0.0,
             "savings": 521917.2328853578,
             "portfolio": 2003079.1253497738,
             "need": 6075.806557780059,
-            "share": 2.827101146562595
+            "share": 1.4652364807211367
           },
           {
             "age": 85,
-            "monthly": 64971.6279849502,
+            "off": false,
+            "monthly": 8902.493418264057,
             "income": 8902.493418264057,
-            "fromSavings": 56069.134566686145,
+            "fromSavings": 0.0,
             "savings": 672829.6148002337,
             "portfolio": 2003079.1253497738,
             "need": 6874.217439407073,
-            "share": 9.451494451207562
+            "share": 1.2950555458472566
           }
         ],
         "atRet": {
           "age": 55,
+          "off": false,
           "monthly": 2556.959143984282,
           "income": 2556.959143984282,
-          "fromSavings": 0,
-          "savings": 0,
+          "fromSavings": 0.0,
+          "savings": 0.0,
           "portfolio": 1125764.7684073483,
           "need": 3277.2328805807883,
           "share": 0.7802189338253984
@@ -26360,84 +26424,92 @@
         "byAge": [
           {
             "age": 55,
-            "monthly": 3083.3577587159907,
+            "off": false,
+            "monthly": 3652.7987771204034,
             "income": 3652.7987771204034,
-            "fromSavings": -569.4410184044126,
-            "savings": -300000,
+            "fromSavings": 0.0,
+            "savings": -300000.0,
             "portfolio": 1125764.7684073483,
             "need": 3277.2328805807883,
-            "share": 0.9408418232913496
+            "share": 1.1145984768934265
           },
           {
             "age": 60,
-            "monthly": 4510.573142115254,
+            "off": false,
+            "monthly": 4394.185375605273,
             "income": 4394.185375605273,
-            "fromSavings": 116.38776650998037,
+            "fromSavings": 0.0,
             "savings": 47706.55023748544,
             "portfolio": 1366119.1809071887,
             "need": 3707.8881966443037,
-            "share": 1.2164803529398196
+            "share": 1.1850911199485679
           },
           {
             "age": 65,
-            "monthly": 5621.9477474424675,
+            "off": false,
+            "monthly": 5286.046753006456,
             "income": 5286.046753006456,
-            "fromSavings": 335.9009944360112,
+            "fromSavings": 0.0,
             "savings": 102965.71073123028,
             "portfolio": 1655256.8829301829,
             "need": 4195.135158163572,
-            "share": 1.3401112325314175
+            "share": 1.2600420615102264
           },
           {
             "age": 70,
-            "monthly": 13583.045022188864,
+            "off": false,
+            "monthly": 12717.847740377227,
             "income": 12717.847740377227,
-            "fromSavings": 865.197281811637,
+            "fromSavings": 0.0,
             "savings": 186175.8504457471,
             "portfolio": 2003079.1253497738,
             "need": 4746.410372132475,
-            "share": 2.8617510828686
+            "share": 2.6794665322339863
           },
           {
             "age": 75,
-            "monthly": 17551.67397623638,
+            "off": false,
+            "monthly": 12717.847740377227,
             "income": 12717.847740377227,
-            "fromSavings": 4833.826235859152,
+            "fromSavings": 0.0,
             "savings": 649862.4086376028,
             "portfolio": 2003079.1253497738,
             "need": 5370.127676779926,
-            "share": 3.2683904429551363
+            "share": 2.368257983021214
           },
           {
             "age": 80,
-            "monthly": 29748.230052970757,
+            "off": false,
+            "monthly": 12717.847740377227,
             "income": 12717.847740377227,
-            "fromSavings": 17030.38231259353,
+            "fromSavings": 0.0,
             "savings": 1074207.410180172,
             "portfolio": 2003079.1253497738,
             "need": 6075.806557780059,
-            "share": 4.896177942807973
+            "share": 2.093194972458767
           },
           {
             "age": 85,
-            "monthly": 133887.93535886373,
+            "off": false,
+            "monthly": 12717.847740377227,
             "income": 12717.847740377227,
-            "fromSavings": 121170.08761848649,
+            "fromSavings": 0.0,
             "savings": 1454041.0514218379,
             "portfolio": 2003079.1253497738,
             "need": 6874.217439407073,
-            "share": 19.476825768026924
+            "share": 1.850079351210367
           }
         ],
         "atRet": {
           "age": 55,
-          "monthly": 3083.3577587159907,
+          "off": false,
+          "monthly": 3652.7987771204034,
           "income": 3652.7987771204034,
-          "fromSavings": -569.4410184044126,
-          "savings": -300000,
+          "fromSavings": 0.0,
+          "savings": -300000.0,
           "portfolio": 1125764.7684073483,
           "need": 3277.2328805807883,
-          "share": 0.9408418232913496
+          "share": 1.1145984768934265
         }
       }
     },
@@ -29301,84 +29373,92 @@
         "byAge": [
           {
             "age": 55,
-            "monthly": 1723.6258106509486,
+            "off": false,
+            "monthly": 2556.959143984282,
             "income": 2556.959143984282,
-            "fromSavings": -833.3333333333334,
-            "savings": -300000,
+            "fromSavings": 0.0,
+            "savings": -300000.0,
             "portfolio": 1125764.7684073483,
-            "need": 2000,
-            "share": 0.8618129053254743
+            "need": 2000.0,
+            "share": 1.2784795719921411
           },
           {
             "age": 60,
-            "monthly": 2846.134518388741,
+            "off": false,
+            "monthly": 3075.929762923691,
             "income": 3075.929762923691,
-            "fromSavings": -229.7952445349501,
+            "fromSavings": 0.0,
             "savings": -68938.57336048502,
             "portfolio": 1366119.1809071887,
-            "need": 2000,
-            "share": 1.4230672591943705
+            "need": 2000.0,
+            "share": 1.5379648814618456
           },
           {
             "age": 65,
-            "monthly": 3756.3069690028988,
+            "off": false,
+            "monthly": 3700.232727104519,
             "income": 3700.232727104519,
-            "fromSavings": 56.07424189837972,
+            "fromSavings": 0.0,
             "savings": 13457.818055611133,
             "portfolio": 1655256.8829301829,
-            "need": 2000,
-            "share": 1.8781534845014494
+            "need": 2000.0,
+            "share": 1.8501163635522595
           },
           {
             "age": 70,
-            "monthly": 9663.234461315862,
+            "off": false,
+            "monthly": 8902.493418264057,
             "income": 8902.493418264057,
-            "fromSavings": 760.741043051804,
+            "fromSavings": 0.0,
             "savings": 136933.38774932473,
             "portfolio": 2003079.1253497738,
-            "need": 2000,
-            "share": 4.8316172306579315
+            "need": 2000.0,
+            "share": 4.451246709132029
           },
           {
             "age": 75,
-            "monthly": 13494.851691973803,
+            "off": false,
+            "monthly": 8902.493418264057,
             "income": 8902.493418264057,
-            "fromSavings": 4592.358273709745,
+            "fromSavings": 0.0,
             "savings": 551082.9928451694,
             "portfolio": 2003079.1253497738,
-            "need": 2000,
-            "share": 6.747425845986902
+            "need": 2000.0,
+            "share": 4.451246709132029
           },
           {
             "age": 80,
-            "monthly": 24989.703383947635,
+            "off": false,
+            "monthly": 8902.493418264057,
             "income": 8902.493418264057,
-            "fromSavings": 16087.209965683576,
+            "fromSavings": 0.0,
             "savings": 965232.5979410146,
             "portfolio": 2003079.1253497738,
-            "need": 2000,
-            "share": 12.494851691973818
+            "need": 2000.0,
+            "share": 4.451246709132029
           },
           {
             "age": 85,
-            "monthly": 123851.01033800191,
+            "off": false,
+            "monthly": 8902.493418264057,
             "income": 8902.493418264057,
-            "fromSavings": 114948.51691973786,
+            "fromSavings": 0.0,
             "savings": 1379382.2030368543,
             "portfolio": 2003079.1253497738,
-            "need": 2000,
-            "share": 61.92550516900096
+            "need": 2000.0,
+            "share": 4.451246709132029
           }
         ],
         "atRet": {
           "age": 55,
-          "monthly": 1723.6258106509486,
+          "off": false,
+          "monthly": 2556.959143984282,
           "income": 2556.959143984282,
-          "fromSavings": -833.3333333333334,
-          "savings": -300000,
+          "fromSavings": 0.0,
+          "savings": -300000.0,
           "portfolio": 1125764.7684073483,
-          "need": 2000,
-          "share": 0.8618129053254743
+          "need": 2000.0,
+          "share": 1.2784795719921411
         }
       }
     },
@@ -31402,66 +31482,92 @@
         "byAge": [
           {
             "age": 55,
-            "monthly": 1162.7977426959426,
+            "off": false,
+            "monthly": 2556.959143984282,
             "income": 2556.959143984282,
-            "fromSavings": -1394.1614012883394,
-            "savings": -300000,
+            "fromSavings": 0.0,
+            "savings": -300000.0,
             "portfolio": 1125764.7684073483,
             "need": 3277.2328805807883,
-            "share": 0.3548108373945866
+            "share": 0.7802189338253984
           },
           {
             "age": 60,
-            "monthly": 1918.1459772160424,
+            "off": false,
+            "monthly": 3075.929762923691,
             "income": 3075.929762923691,
-            "fromSavings": -1157.7837857076488,
+            "fromSavings": 0.0,
             "savings": -155653.12507097295,
             "portfolio": 1366119.1809071887,
             "need": 3707.8881966443037,
-            "share": 0.5173149446501635
+            "share": 0.8295637839639974
           },
           {
             "age": 65,
-            "monthly": 733.4078380232445,
+            "off": false,
+            "monthly": 3700.232727104519,
             "income": 3700.232727104519,
-            "fromSavings": -2966.8248890812747,
+            "fromSavings": 0.0,
             "savings": -187135.27518412654,
             "portfolio": 1655256.8829301829,
             "need": 4195.135158163572,
-            "share": 0.17482341101598622
+            "share": 0.8820294430571584
           },
           {
             "age": 70,
+            "off": false,
             "monthly": 7703.30062278789,
             "income": 7703.30062278789,
-            "fromSavings": 0,
-            "savings": 0,
+            "fromSavings": 0.0,
+            "savings": 0.0,
             "portfolio": 1733258.3074022834,
             "need": 4746.410372132475,
             "share": 1.6229739990490832
           },
           {
             "age": 75,
-            "off": true
+            "off": true,
+            "monthly": null,
+            "income": null,
+            "fromSavings": null,
+            "savings": null,
+            "portfolio": null,
+            "need": null,
+            "share": null
           },
           {
             "age": 80,
-            "off": true
+            "off": true,
+            "monthly": null,
+            "income": null,
+            "fromSavings": null,
+            "savings": null,
+            "portfolio": null,
+            "need": null,
+            "share": null
           },
           {
             "age": 85,
-            "off": true
+            "off": true,
+            "monthly": null,
+            "income": null,
+            "fromSavings": null,
+            "savings": null,
+            "portfolio": null,
+            "need": null,
+            "share": null
           }
         ],
         "atRet": {
           "age": 55,
-          "monthly": 1162.7977426959426,
+          "off": false,
+          "monthly": 2556.959143984282,
           "income": 2556.959143984282,
-          "fromSavings": -1394.1614012883394,
-          "savings": -300000,
+          "fromSavings": 0.0,
+          "savings": -300000.0,
           "portfolio": 1125764.7684073483,
           "need": 3277.2328805807883,
-          "share": 0.3548108373945866
+          "share": 0.7802189338253984
         }
       }
     },
@@ -33575,84 +33681,92 @@
         "byAge": [
           {
             "age": 55,
-            "monthly": 0,
+            "off": false,
+            "monthly": 316.3471151522509,
             "income": 316.3471151522509,
-            "fromSavings": -569.4410184044126,
-            "savings": -300000,
+            "fromSavings": 0.0,
+            "savings": -300000.0,
             "portfolio": 144887.63303178354,
             "need": 2262.8164257812487,
-            "share": 0
+            "share": 0.13980237705010937
           },
           {
             "age": 60,
-            "monthly": 0,
+            "off": false,
+            "monthly": 380.55418648403656,
             "income": 380.55418648403656,
-            "fromSavings": -638.2056241111417,
+            "fromSavings": 0.0,
             "savings": -261596.12458834413,
             "portfolio": 174624.29315297716,
             "need": 2560.169088392713,
-            "share": 0
+            "share": 0.14864416112568188
           },
           {
             "age": 65,
-            "monthly": 0,
+            "off": false,
+            "monthly": 457.7929809185317,
             "income": 457.7929809185317,
-            "fromSavings": -1298.5125768922114,
+            "fromSavings": 0.0,
             "savings": -398040.71017306263,
             "portfolio": 210396.4243314986,
             "need": 2896.596332996219,
-            "share": 0
+            "share": 0.1580451427434467
           },
           {
             "age": 70,
-            "monthly": 0,
-            "income": 0,
-            "fromSavings": -1567.1449341051327,
+            "off": false,
+            "monthly": 0.0,
+            "income": 0.0,
+            "fromSavings": 0.0,
             "savings": -337223.13628614444,
-            "portfolio": 0,
+            "portfolio": 0.0,
             "need": 3277.2328805807883,
-            "share": 0
+            "share": 0.0
           },
           {
             "age": 75,
-            "monthly": 0,
-            "income": 0,
-            "fromSavings": -4045.9337730010493,
+            "off": false,
+            "monthly": 0.0,
+            "income": 0.0,
+            "fromSavings": 0.0,
             "savings": -543937.6879966314,
-            "portfolio": 0,
+            "portfolio": 0.0,
             "need": 3707.8881966443037,
-            "share": 0
+            "share": 0.0
           },
           {
             "age": 80,
-            "monthly": 0,
-            "income": 0,
-            "fromSavings": -12331.424669230273,
+            "off": false,
+            "monthly": 0.0,
+            "income": 0.0,
+            "fromSavings": 0.0,
             "savings": -777816.2295258798,
-            "portfolio": 0,
+            "portfolio": 0.0,
             "need": 4195.135158163572,
-            "share": 0
+            "share": 0.0
           },
           {
             "age": 85,
-            "monthly": 0,
-            "income": 0,
-            "fromSavings": -86869.02768591286,
+            "off": false,
+            "monthly": 0.0,
+            "income": 0.0,
+            "fromSavings": 0.0,
             "savings": -1042428.3322309543,
-            "portfolio": 0,
+            "portfolio": 0.0,
             "need": 4746.410372132475,
-            "share": 0
+            "share": 0.0
           }
         ],
         "atRet": {
           "age": 55,
-          "monthly": 0,
+          "off": false,
+          "monthly": 316.3471151522509,
           "income": 316.3471151522509,
-          "fromSavings": -569.4410184044126,
-          "savings": -300000,
+          "fromSavings": 0.0,
+          "savings": -300000.0,
           "portfolio": 144887.63303178354,
           "need": 2262.8164257812487,
-          "share": 0
+          "share": 0.13980237705010937
         }
       }
     }
