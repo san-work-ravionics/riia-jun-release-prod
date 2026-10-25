@@ -2,6 +2,14 @@ import { api } from './api.js';
 import { DS_C, mkTbl } from './utils.js';
 import { mkChart } from '../shared/charts.js';
 
+// Review #10: every mcp-calls field is escaped before it goes into innerHTML (stored XSS guard).
+function _esc(v) {
+  return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function _escRow(r) {
+  return Object.fromEntries(Object.entries(r).map(([k, v]) => [k, v == null ? v : _esc(v)]));
+}
+
 const C = DS_C;
 
 export async function loadModelMcp() {
@@ -68,7 +76,7 @@ export async function loadModelMcp() {
       }
     });
 
-    document.getElementById('mmcp-table-wrap').innerHTML = mkTbl(rows.slice(0, 50), [
+    document.getElementById('mmcp-table-wrap').innerHTML = mkTbl(rows.slice(0, 50).map(_escRow), [
       { key: 'timestamp', label: 'Timestamp', mono: true },
       { key: 'tool_name', label: 'Tool' },
       { key: 'status', label: 'Status', badge: true },

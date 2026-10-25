@@ -2,6 +2,11 @@
 import { api, apiFetch } from './api.js';
 import { fmt, badge } from './utils.js';
 
+// Review #10: every mcp-calls field is escaped before it goes into innerHTML (stored XSS guard).
+function _esc(v) {
+  return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 export async function loadObservability() {
   const [drift, mcp, health] = await Promise.all([
     apiFetch('/api/experience/ops/drift'),
@@ -79,10 +84,10 @@ export async function loadObservability() {
     mcpEl.innerHTML = `<table>
       <thead><tr><th>Tool</th><th>Duration (ms)</th><th>Status</th><th>Called At</th></tr></thead>
       <tbody>${mcp.slice().reverse().slice(0, 50).map(r => `<tr>
-        <td style="font-family:var(--fm)">${r.tool_name ?? '—'}</td>
+        <td style="font-family:var(--fm)">${_esc(r.tool_name ?? '—')}</td>
         <td style="font-family:var(--fm)">${r.duration_ms != null ? Number(r.duration_ms).toFixed(0) : '—'}</td>
-        <td>${badge(r.status ?? 'ok', r.status === 'ok' ? 'ok' : 'danger')}</td>
-        <td style="font-family:var(--fm);color:var(--t3)">${(r.called_at || '').slice(0, 16)}</td>
+        <td>${badge(_esc(r.status ?? 'ok'), r.status === 'ok' ? 'ok' : 'danger')}</td>
+        <td style="font-family:var(--fm);color:var(--t3)">${_esc((r.called_at || '').slice(0, 16))}</td>
       </tr>`).join('')}</tbody>
     </table>`;
   } else {

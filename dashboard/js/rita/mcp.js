@@ -3,6 +3,11 @@ import { api } from './api.js';
 import { badge, fmtMs, setEl } from './utils.js';
 import { mkChart, C } from './charts.js';
 
+// Review #10: every mcp-calls field is escaped before it goes into innerHTML (stored XSS guard).
+function _esc(v) {
+  return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 export async function loadMcp() {
   try {
     const rows = await api('/api/v1/mcp-calls?limit=100');
@@ -74,12 +79,12 @@ export async function loadMcp() {
         <thead><tr><th>Timestamp</th><th>Tool</th><th>Status</th><th>Duration</th><th>Args</th><th>Result</th></tr></thead>
         <tbody>${rows.slice(0, 50).map(r => `
           <tr>
-            <td class="td-mono" style="font-size:11px">${r.timestamp || '—'}</td>
-            <td style="font-weight:500">${r.tool_name || '—'}</td>
-            <td>${badge(r.status)}</td>
-            <td class="td-mono">${fmtMs(r.duration_ms)}</td>
-            <td style="font-size:11px;color:var(--t3);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.args_summary || '—'}</td>
-            <td style="font-size:11px;color:var(--t3);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.result_summary || '—'}</td>
+            <td class="td-mono" style="font-size:11px">${_esc(r.timestamp || '—')}</td>
+            <td style="font-weight:500">${_esc(r.tool_name || '—')}</td>
+            <td>${badge(_esc(r.status))}</td>
+            <td class="td-mono">${_esc(fmtMs(r.duration_ms))}</td>
+            <td style="font-size:11px;color:var(--t3);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_esc(r.args_summary || '—')}</td>
+            <td style="font-size:11px;color:var(--t3);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_esc(r.result_summary || '—')}</td>
           </tr>`).join('')}
         </tbody>
       </table>`);

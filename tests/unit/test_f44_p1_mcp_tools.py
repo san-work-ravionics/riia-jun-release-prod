@@ -321,6 +321,27 @@ def test_unknown_tool_not_found():
     assert res.isError and res.structuredContent["error"]["code"] == "not_found"
 
 
+def test_unknown_tool_name_is_never_logged(calls):
+    """Review #10: a client-sent unknown name (HTML / script, 500+ chars) is logged as the fixed
+    ``unknown`` with only its length; the caller still gets the coded not_found."""
+    evil = "<img src=x onerror=alert(1)><script>alert(2)</script>" + "A" * 500
+    res = _run(_raw(identity_for(None, "jarvis"), evil, {"q": "<b>x</b>"}))
+    assert res.isError and res.structuredContent["error"]["code"] == "not_found"
+    assert len(calls) == 1
+    row = calls[0]
+    assert row["tool_name"] == mt.UNKNOWN_TOOL == "unknown"
+    assert row["args_summary"] == f"name_len={len(evil)}"
+    assert row["result_summary"] == "not_found: unknown tool"
+    assert row["status"] == "error" and res.meta["mcp_call_id"] == row["call_id"]
+    assert all("<" not in str(v) and "A" * 50 not in str(v) for v in row.values())
+
+
+def test_registered_and_legacy_names_are_logged_as_is(calls):
+    for name in ("market.overview", "rita_market_overview"):
+        _run(_raw(identity_for(None, "jarvis"), name, {"instrument": "NOPE_XYZ"}))
+    assert [c["tool_name"] for c in calls] == ["market.overview", "rita_market_overview"]
+
+
 def test_tool_exception_is_unavailable_not_a_crash(tool_db, calls):
     with patch("rita.services.hedge_plan_service.HedgePlanService.get_for_user",
                side_effect=RuntimeError("db down")):

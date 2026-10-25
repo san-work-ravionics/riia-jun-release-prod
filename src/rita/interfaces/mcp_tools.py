@@ -150,6 +150,9 @@ def _write_log(**kw) -> None:
         log.warning("mcp.log_failed", tool=kw.get("tool_name"), error=type(exc).__name__)
 
 
+UNKNOWN_TOOL = "unknown"  # mcp_calls.tool_name for a call to a tool that is not registered
+
+
 async def dispatch(name: str, arguments: dict[str, Any] | None) -> CallToolResult:
     """Run one tool call for the current caller identity (all transports come through here)."""
     identity = _call_identity()
@@ -199,9 +202,15 @@ async def dispatch(name: str, arguments: dict[str, Any] | None) -> CallToolResul
             result = _error_result("unavailable", f"{name} failed: {type(exc).__name__}")
 
     duration_ms = round((time.perf_counter() - t0) * 1_000, 1)
+    if spec is None:
+        # Review #10: only registered names reach the log (shown to every viewer of /api/v1/mcp-calls).
+        # A client-sent unknown name is never stored — only its length; the caller still gets not_found.
+        logged_name, logged_args, summary = UNKNOWN_TOOL, f"name_len={len(name or '')}", "not_found: unknown tool"
+    else:
+        logged_name, logged_args = name, _summarise_args(arguments)
     await anyio.to_thread.run_sync(lambda: _write_log(
-        tool_name=name,
-        args_summary=_summarise_args(arguments),
+        tool_name=logged_name,
+        args_summary=logged_args,
         result_summary=summary[:200],
         duration_ms=duration_ms,
         status=status,

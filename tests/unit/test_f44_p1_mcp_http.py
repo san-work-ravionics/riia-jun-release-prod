@@ -300,6 +300,33 @@ def test_mcp_calls_js_consumers_send_the_jwt():
     assert "window.downloadJSON" in (js / "rita" / "main.js").read_text(encoding="utf-8")
 
 
+def test_mcp_calls_renderers_escape_every_row_field():
+    """Review #10: every renderer that puts mcp-calls row fields into innerHTML escapes them;
+    count-only consumers use textContent."""
+    js = _ROOT / "dashboard" / "js"
+    esc_def = "function _esc(v) {\n  return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')"
+    rita = (js / "rita" / "mcp.js").read_text(encoding="utf-8")
+    assert esc_def in rita
+    for field in ("r.timestamp", "r.tool_name", "r.args_summary", "r.result_summary"):
+        assert f"${{_esc({field} || '—')}}" in rita, field
+    assert "${badge(_esc(r.status))}" in rita and "${_esc(fmtMs(r.duration_ms))}" in rita
+    obs = (js / "ops" / "observability.js").read_text(encoding="utf-8")
+    assert esc_def in obs
+    assert "${_esc(r.tool_name ?? '—')}" in obs and "badge(_esc(r.status ?? 'ok')" in obs
+    assert "${_esc((r.called_at || '').slice(0, 16))}" in obs
+    for rel, expr in (("ds/mcp.js", "calls.slice(0, 100).map(_escRow)"), ("ds/model-mcp.js", "rows.slice(0, 50).map(_escRow)")):
+        src = (js / rel).read_text(encoding="utf-8")
+        assert esc_def in src and "function _escRow(r)" in src and f"mkTbl({expr}," in src, rel
+    # no un-escaped row field interpolation left in the table renderers
+    import re
+    for rel in ("rita/mcp.js", "ops/observability.js"):
+        src = (js / rel).read_text(encoding="utf-8")
+        assert not re.search(r"\$\{r\.(tool_name|args_summary|result_summary|timestamp|status|caller|user_id)", src), rel
+    assert "getElementById('kpi-mcp').textContent = mcp ? mcp.length" in (js / "ops" / "overview.js").read_text(encoding="utf-8")
+    mobile = (_ROOT / "mobileapp" / "ops.html").read_text(encoding="utf-8")
+    assert "getElementById('s0-mcp').textContent = mcp ? mcp.length" in mobile
+
+
 def test_ops_pages_require_login_at_page_load():
     """User 2026-10-25: Ops requires login. Desktop + mobile Ops gate on auth_token at load (the
     ds.html gate: production → Google sign-in via post_login_redirect; localhost → ensureDevToken)."""
