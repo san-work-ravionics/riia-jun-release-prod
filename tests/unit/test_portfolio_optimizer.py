@@ -290,8 +290,8 @@ class TestMddConstraint:
 class TestEndpoint200:
     """GET /api/v1/experience/rita/optimal-allocation with valid horizon returns 200."""
 
-    @patch("rita.api.experience.optimal_allocation.optimize_allocation")
-    @patch("rita.api.experience.optimal_allocation.InstrumentRepository")
+    @patch("rita.services.optimal_allocation_service.optimize_allocation")
+    @patch("rita.services.optimal_allocation_service.InstrumentRepository")
     def test_endpoint_200(self, mock_repo_cls, mock_optimize, client):
         """Valid request -> 200 with correct response structure."""
         mock_repo = MagicMock()

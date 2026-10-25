@@ -124,8 +124,8 @@ def _single_instrument_response():
 class TestOptimalHappyPath:
     """Endpoint returns OPTIMAL solver_status with valid allocations."""
 
-    @patch("rita.api.experience.optimal_allocation.optimize_allocation")
-    @patch("rita.api.experience.optimal_allocation.InstrumentRepository")
+    @patch("rita.services.optimal_allocation_service.optimize_allocation")
+    @patch("rita.services.optimal_allocation_service.InstrumentRepository")
     def test_optimal_response_shape(self, mock_repo_cls, mock_optimize, client):
         """200 response has all top-level and per-allocation fields the JS expects."""
         mock_repo = MagicMock()
@@ -152,8 +152,8 @@ class TestOptimalHappyPath:
         assert isinstance(body["allocations"], list)
         assert len(body["allocations"]) == 3
 
-    @patch("rita.api.experience.optimal_allocation.optimize_allocation")
-    @patch("rita.api.experience.optimal_allocation.InstrumentRepository")
+    @patch("rita.services.optimal_allocation_service.optimize_allocation")
+    @patch("rita.services.optimal_allocation_service.InstrumentRepository")
     def test_allocation_item_fields(self, mock_repo_cls, mock_optimize, client):
         """Each allocation item has all 6 fields the JS reads."""
         mock_repo = MagicMock()
@@ -181,8 +181,8 @@ class TestOptimalHappyPath:
             assert isinstance(alloc["mdd_pct"], (int, float))
             assert alloc["metric_source"] in ("model", "proxy")
 
-    @patch("rita.api.experience.optimal_allocation.optimize_allocation")
-    @patch("rita.api.experience.optimal_allocation.InstrumentRepository")
+    @patch("rita.services.optimal_allocation_service.optimize_allocation")
+    @patch("rita.services.optimal_allocation_service.InstrumentRepository")
     def test_allocations_sum_to_100(self, mock_repo_cls, mock_optimize, client):
         """Optimal allocations sum to exactly 100%."""
         mock_repo = MagicMock()
@@ -204,8 +204,8 @@ class TestOptimalHappyPath:
 class TestInfeasibleStatus:
     """Endpoint returns INFEASIBLE when solver cannot find a valid allocation."""
 
-    @patch("rita.api.experience.optimal_allocation.optimize_allocation")
-    @patch("rita.api.experience.optimal_allocation.InstrumentRepository")
+    @patch("rita.services.optimal_allocation_service.optimize_allocation")
+    @patch("rita.services.optimal_allocation_service.InstrumentRepository")
     def test_infeasible_response(self, mock_repo_cls, mock_optimize, client):
         """INFEASIBLE: valid 200 response with empty allocations array."""
         mock_repo = MagicMock()
@@ -234,8 +234,8 @@ class TestInfeasibleStatus:
 class TestNoInstrumentsStatus:
     """Endpoint returns NO_INSTRUMENTS when no instruments are available."""
 
-    @patch("rita.api.experience.optimal_allocation.optimize_allocation")
-    @patch("rita.api.experience.optimal_allocation.InstrumentRepository")
+    @patch("rita.services.optimal_allocation_service.optimize_allocation")
+    @patch("rita.services.optimal_allocation_service.InstrumentRepository")
     def test_no_instruments_response(self, mock_repo_cls, mock_optimize, client):
         """NO_INSTRUMENTS: valid 200 with zero instrument_count and empty allocations."""
         mock_repo = MagicMock()
@@ -253,8 +253,8 @@ class TestNoInstrumentsStatus:
         assert body["estimated_sharpe"] == 0.0
         assert body["estimated_mdd_pct"] == 0.0
 
-    @patch("rita.api.experience.optimal_allocation.optimize_allocation")
-    @patch("rita.api.experience.optimal_allocation.InstrumentRepository")
+    @patch("rita.services.optimal_allocation_service.optimize_allocation")
+    @patch("rita.services.optimal_allocation_service.InstrumentRepository")
     def test_no_instruments_all_unavailable(self, mock_repo_cls, mock_optimize, client):
         """All instruments have is_available=False -> filtered out -> NO_INSTRUMENTS."""
         mock_repo = MagicMock()
@@ -282,8 +282,8 @@ class TestNoInstrumentsStatus:
 class TestSingleInstrumentStatus:
     """Endpoint returns SINGLE_INSTRUMENT when only one instrument qualifies."""
 
-    @patch("rita.api.experience.optimal_allocation.optimize_allocation")
-    @patch("rita.api.experience.optimal_allocation.InstrumentRepository")
+    @patch("rita.services.optimal_allocation_service.optimize_allocation")
+    @patch("rita.services.optimal_allocation_service.InstrumentRepository")
     def test_single_instrument_response(self, mock_repo_cls, mock_optimize, client):
         """SINGLE_INSTRUMENT: valid 200 with one allocation at 100%."""
         mock_repo = MagicMock()
@@ -313,8 +313,8 @@ class TestSingleInstrumentStatus:
 class TestErrorFallback:
     """Endpoint returns ERROR when an unhandled exception occurs in the handler."""
 
-    @patch("rita.api.experience.optimal_allocation.optimize_allocation")
-    @patch("rita.api.experience.optimal_allocation.InstrumentRepository")
+    @patch("rita.services.optimal_allocation_service.optimize_allocation")
+    @patch("rita.services.optimal_allocation_service.InstrumentRepository")
     def test_error_on_exception(self, mock_repo_cls, mock_optimize, client):
         """Exception in optimize_allocation -> 200 with solver_status ERROR."""
         mock_repo = MagicMock()
@@ -330,7 +330,7 @@ class TestErrorFallback:
         assert body["instrument_count"] == 0
         assert body["allocations"] == []
 
-    @patch("rita.api.experience.optimal_allocation.InstrumentRepository")
+    @patch("rita.services.optimal_allocation_service.InstrumentRepository")
     def test_error_on_repo_exception(self, mock_repo_cls, client):
         """Exception in InstrumentRepository -> 200 with solver_status ERROR."""
         mock_repo_cls.side_effect = RuntimeError("DB connection failed")
@@ -350,8 +350,8 @@ class TestErrorFallback:
 class TestApiFrontendContract:
     """Verify every field portfolio-builder.js reads is present in the response."""
 
-    @patch("rita.api.experience.optimal_allocation.optimize_allocation")
-    @patch("rita.api.experience.optimal_allocation.InstrumentRepository")
+    @patch("rita.services.optimal_allocation_service.optimize_allocation")
+    @patch("rita.services.optimal_allocation_service.InstrumentRepository")
     def test_js_top_level_field_access(self, mock_repo_cls, mock_optimize, client):
         """JS reads: solver_status, estimated_sharpe, estimated_mdd_pct, allocations."""
         mock_repo = MagicMock()
@@ -372,8 +372,8 @@ class TestApiFrontendContract:
         for field in js_top_level_fields:
             assert field in body, f"JS reads '{field}' but it is missing from the response"
 
-    @patch("rita.api.experience.optimal_allocation.optimize_allocation")
-    @patch("rita.api.experience.optimal_allocation.InstrumentRepository")
+    @patch("rita.services.optimal_allocation_service.optimize_allocation")
+    @patch("rita.services.optimal_allocation_service.InstrumentRepository")
     def test_js_allocation_item_field_access(self, mock_repo_cls, mock_optimize, client):
         """JS reads: ticker, allocation_pct, sharpe, mdd_pct, metric_source per allocation."""
         mock_repo = MagicMock()

@@ -57,6 +57,20 @@ class HedgePlanService:
         self._portfolios = UserPortfolioRepo(db)
         self._market = MarketDataCacheRepository(db)
 
+    # ── read ────────────────────────────────────────────────────────────────
+    def get_for_user(self, user: UserModel) -> HedgePlanOut | None:
+        """The user's saved plan, or None (no portfolio key / no plan). Read-only, no commit.
+
+        Moved from the GET route (F44 P1) so the route and ``fno.get_hedge_plan`` share it.
+        """
+        key = self._keys.find_by_user_id(user.id)
+        if key is None:
+            return None
+        plan = self._plans.find_by_key_id(key.key_id)
+        if plan is None:
+            return None
+        return HedgePlanOut.model_validate(plan)
+
     # ── save ────────────────────────────────────────────────────────────────
     def save(self, user: UserModel, body: HedgePlanCreate) -> HedgePlanOut:
         key = self._keys.find_by_user_id(user.id)

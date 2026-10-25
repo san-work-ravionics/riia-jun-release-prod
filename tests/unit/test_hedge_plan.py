@@ -39,8 +39,8 @@ import pytest
 # Exact patch paths — derived from imports in fno_hedge_plan.py
 # ---------------------------------------------------------------------------
 
-_PATCH_KEY_REPO   = "rita.api.experience.fno_hedge_plan.UserPortfolioKeyRepo"
-_PATCH_HEDGE_REPO = "rita.api.experience.fno_hedge_plan.UserHedgePlanRepo"
+_PATCH_KEY_REPO   = "rita.services.hedge_plan_service.UserPortfolioKeyRepo"  # F44 P1: GET logic moved to HedgePlanService
+_PATCH_HEDGE_REPO = "rita.services.hedge_plan_service.UserHedgePlanRepo"  # F44 P1: GET logic moved to HedgePlanService
 # F40: PUT logic lives in HedgePlanService — patch the repos where the service imports them
 _PATCH_SVC_KEY_REPO = "rita.services.hedge_plan_service.UserPortfolioKeyRepo"
 _PATCH_SVC_HEDGE_REPO = "rita.services.hedge_plan_service.UserHedgePlanRepo"

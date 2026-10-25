@@ -20,8 +20,6 @@ from sqlalchemy.orm import Session
 from rita.auth import get_current_user
 from rita.database import get_db
 from rita.models.user import UserModel
-from rita.repositories.user_hedge_plan import UserHedgePlanRepo
-from rita.repositories.user_portfolio_key import UserPortfolioKeyRepo
 from rita.schemas.user_hedge_plan import (
     HedgePlanCreate,
     HedgePlanHistoryList,
@@ -43,16 +41,9 @@ def get_hedge_plan(
     Returns null (HTTP 200) when no portfolio key or hedge plan has been saved yet —
     this is a normal first-visit state, not an error.
     Does NOT auto-create a default row — read-only, no db.commit().
+    Thin route over HedgePlanService.get_for_user (F44 P1; shared with fno.get_hedge_plan).
     """
-    key = UserPortfolioKeyRepo(db).find_by_user_id(current_user.id)
-    if key is None:
-        return None
-
-    plan = UserHedgePlanRepo(db).find_by_key_id(key.key_id)
-    if plan is None:
-        return None
-
-    return HedgePlanOut.model_validate(plan)
+    return HedgePlanService(db).get_for_user(current_user)
 
 
 @router.get("/hedge-plan/history", response_model=HedgePlanHistoryList)

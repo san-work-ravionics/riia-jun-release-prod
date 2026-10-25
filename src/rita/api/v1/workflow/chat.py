@@ -10,10 +10,7 @@ Model path is read from settings.chat.embed_model_path.
 """
 from __future__ import annotations
 
-import os
 import time as _time
-from pathlib import Path
-from typing import Any
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException
@@ -23,54 +20,15 @@ from sqlalchemy.orm import Session
 from rita.config import get_settings
 from rita.database import get_db
 from rita.logging_config import log_event
+from rita.services.market_analysis_service import get_indicator_df
 
 log = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/api/v1/chat", tags=["Chat"])
 
-# ── Market signals cache — keyed by instrument id ─────────────────────────────
-# { "NIFTY": {"df": ..., "mtime_key": (p, m)}, "NVIDIA": {...}, ... }
-_market_signals_cache: dict[str, dict[str, Any]] = {}
-
-
-def _get_df(instrument: str):
-    """Load and cache the indicators DataFrame for the given instrument.
-
-    Uses find_instrument_csv() for the primary file and appends the manual
-    daily supplement (data/input/DAILY-DATA/{instrument}_manual.csv) when
-    present (NIFTY and BANKNIFTY maintain one; others typically do not).
-    Recomputes only when any source file's mtime changes.
-    """
-    import pandas as pd
-    from rita.core.data_loader import load_ohlcv_csv
-    from rita.core.data_understanding import find_instrument_csv
-    from rita.core.technical_analyzer import calculate_indicators
-
-    inst = instrument.upper()
-    settings = get_settings()
-
-    primary_path = str(find_instrument_csv(inst))
-    manual_path  = Path(settings.data.input_dir) / "DAILY-DATA" / f"{inst.lower()}_manual.csv"
-
-    mtime_primary = os.path.getmtime(primary_path)
-    mtime_manual  = os.path.getmtime(str(manual_path)) if manual_path.exists() else 0.0
-    mtime_key = (mtime_primary, mtime_manual)
-
-    cached = _market_signals_cache.get(inst)
-    if cached is not None and cached["mtime_key"] == mtime_key:
-        return cached["df"]
-
-    raw = load_ohlcv_csv(primary_path)
-    if manual_path.exists():
-        manual = load_ohlcv_csv(str(manual_path))
-        raw = pd.concat([raw, manual])
-        raw = raw[~raw.index.duplicated(keep="last")].sort_index()
-
-    df = calculate_indicators(raw)
-    _market_signals_cache[inst] = {"df": df, "mtime_key": mtime_key}
-    log.info("chat.csv_reloaded", instrument=inst, primary=primary_path,
-             rows=len(df), latest=str(df.index[-1].date()))
-    return df
+# ── Indicators DataFrame loader — moved to services/market_analysis_service.py (F44 P1) ──
+# Re-exported as ``_get_df`` so this route and commentary.py keep calling the same function.
+_get_df = get_indicator_df
 
 
 # ── Request schema ─────────────────────────────────────────────────────────────

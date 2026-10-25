@@ -8,8 +8,8 @@
 - ``RetirementPlanService(db).save(user_id, inputs, location=None)`` — validate, upsert, append a
   history row with the key figures, single commit (rollback on any failure).  Invalid plans are
   never stored.  One current plan per user: saving another location replaces it.
-- ``RetirementPlanService(db).load_with_result(user_id)`` — read-only: ``load`` plus the
-  result calculated from those inputs (what later screens read for the user).
+- ``RetirementPlanService(db).load_with_result(user_id, location=None)`` — read-only: ``load`` plus
+  the result calculated from those inputs (what later screens and ``whatineed.get_plan`` read).
 - ``RetirementPlanService(db).history(user_id)`` / ``.history_entry(user_id, history_id)`` —
   read-only: the user's saved plans, newest first; one entry with its result recalculated.
 
@@ -104,9 +104,11 @@ class RetirementPlanService:
             saved=True, updated_at=row.updated_at, location=key, currency=currency, inputs=inputs,
         )
 
-    def load_with_result(self, user_id: str | None) -> RetirementPlanWithResult:
-        """The user's plan (or preset defaults) with its result calculated now. Never writes."""
-        plan = self.load(user_id)
+    def load_with_result(self, user_id: str | None, location: str | None = None) -> RetirementPlanWithResult:
+        """The user's plan for ``location`` (None = default location, as before) or the preset
+        defaults, with its result calculated now. Never writes. Unknown location →
+        ``PlanValidationError``."""
+        plan = self.load(user_id, location)
         try:
             result = calculate(plan.inputs)
         except PlanValidationError as exc:

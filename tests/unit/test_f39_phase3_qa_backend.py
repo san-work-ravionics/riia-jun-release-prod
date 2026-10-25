@@ -14,8 +14,8 @@ from rita.services.kite_middleware_client import fetch_kite_quote
 
 _HTTP = "rita.services.kite_middleware_client.httpx.request"
 _ROUTE_CLIENT = "rita.api.experience.fno_kite_live.fetch_kite_quote"
-_KEY_REPO = "rita.api.experience.fno_hedge_plan.UserPortfolioKeyRepo"
-_PLAN_REPO = "rita.api.experience.fno_hedge_plan.UserHedgePlanRepo"
+_KEY_REPO = "rita.services.hedge_plan_service.UserPortfolioKeyRepo"  # F44 P1: GET logic moved to HedgePlanService
+_PLAN_REPO = "rita.services.hedge_plan_service.UserHedgePlanRepo"  # F44 P1: GET logic moved to HedgePlanService
 # F40: PUT logic lives in HedgePlanService
 _SVC_KEY_REPO = "rita.services.hedge_plan_service.UserPortfolioKeyRepo"
 _SVC_PLAN_REPO = "rita.services.hedge_plan_service.UserHedgePlanRepo"
