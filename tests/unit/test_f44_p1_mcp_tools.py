@@ -274,7 +274,7 @@ def test_market_overview_structured_and_not_found():
     assert set(r.structured["signals"]) == {"trend", "macd", "rsi", "bollinger", "volatility"}
     with pytest.raises(McpCallError) as e:
         _run(_call(identity_for(None, "jarvis"), "market.overview", {"instrument": "NOPE_XYZ"}))
-    assert e.value.code == "not_found"
+    assert e.value.code == "invalid_input"  # well-formed but not a known instrument
 
 
 def test_market_ask_structured(calls):
@@ -363,18 +363,112 @@ def test_call_result_carries_mcp_call_id(calls):
 
 
 def test_logger_writes_new_columns(tmp_path):
+    from rita.core import mcp_logger
     from rita.core.mcp_logger import get_mcp_calls, log_mcp_call
 
     engine = create_engine(f"sqlite:///{tmp_path / 'log.db'}")
     Base.metadata.create_all(engine)
     maker = sessionmaker(bind=engine)
-    with patch("rita.database.SessionLocal", maker):
+    before = mcp_logger._session_factory[0]
+    mcp_logger.set_session_factory(maker)
+    try:
         cid = log_mcp_call("whatineed.get_plan", "location=europe", "saved=True", 3.2, "ok",
                            transport="memory", caller="jarvis", user_id="alice")
         rows = get_mcp_calls(5)
+    finally:
+        mcp_logger._session_factory[0] = before
     assert rows[0]["call_id"] == cid
     assert (rows[0]["transport"], rows[0]["caller"], rows[0]["user_id"]) == ("memory", "jarvis", "alice")
     engine.dispose()
+
+
+def test_tests_never_log_into_the_dev_db(tool_db):
+    """conftest points the logger at a temp DB; a tool fixture's reset restores that, not SessionLocal."""
+    from rita.core import mcp_logger
+
+    assert mcp_logger._session_factory[0] is not mcp_logger._default_session
+    assert mcp_logger._session_factory[0] is tool_db  # tools + logger share the test DB
+    set_session_factory(None)
+    assert mcp_logger._session_factory[0] is not mcp_logger._default_session
+    set_session_factory(tool_db)  # fixture teardown resets again
+
+
+def test_dispatch_writes_real_log_row_to_test_db(tool_db):
+    from rita.models.mcp_call import MCPCallModel
+
+    with patch("rita.services.optimal_allocation_service.optimize_allocation", side_effect=RuntimeError("x")):
+        r = _run(_call(identity_for(_user("alice"), "module:portfolio"), "portfolio.optimal_allocation",
+                       {"horizon": "short_term"}))
+    db = tool_db()
+    try:
+        row = db.get(MCPCallModel, r.call_id)
+        assert (row.transport, row.caller, row.user_id, row.args_summary) == (
+            "memory", "module:portfolio", "alice", "horizon=short_term")
+    finally:
+        db.close()
+
+
+# ── review advisories: args allow-list, instrument ids, gate fails closed ──────
+
+def test_args_summary_allow_list():
+    out = mt._summarise_args({
+        "query": "Should I sell everything, I owe 40k?", "instrument": "NIFTY", "location": "india",
+        "portfolio_value": 2_500_000, "portfolio_inr": 1_000_000, "target_return": 0.12,
+        "target_return_pct": 12.0, "value_now": 50_000, "goal_value": 900_000, "horizon": "long_term",
+        "months": 6, "note": "free text", "ann_vol_pct": 18.5, "currency": "INR", "skip": None,
+    })
+    parts = out.split(", ")
+    assert "query_len=36" in parts and "note_len=9" in parts
+    for safe in ("instrument=NIFTY", "location=india", "horizon=long_term", "months=6", "currency=INR"):
+        assert safe in parts
+    for amount in ("portfolio_value", "portfolio_inr", "target_return", "target_return_pct", "value_now",
+                   "goal_value", "ann_vol_pct"):
+        assert amount in parts  # key only
+    for leaked in ("2500000", "1000000", "0.12", "50000", "900000", "18.5", "owe", "free text", "skip"):
+        assert leaked not in out
+
+
+@pytest.mark.parametrize("bad", ["../NIFTY", "..", "NIFTY/../../etc", "NI FTY", "a" * 33, "%2e%2e"])
+def test_instrument_path_like_ids_are_invalid_input(bad):
+    for name in ("market.overview", "market.ask"):
+        args = {"instrument": bad} if name == "market.overview" else {"instrument": bad, "query": "hi"}
+        res = _run(_raw(identity_for(None, "jarvis"), name, args))
+        assert res.isError and res.structuredContent["error"]["code"] == "invalid_input", (name, bad)
+
+
+def test_loader_refuses_unknown_or_path_ids():
+    from rita.services.market_analysis_service import get_indicator_df, is_known_instrument
+
+    assert not is_known_instrument("../NIFTY") and not is_known_instrument("")
+    with pytest.raises(FileNotFoundError):
+        get_indicator_df("../NIFTY")
+    with patch("rita.core.data_understanding.find_instrument_csv") as find:
+        with pytest.raises(FileNotFoundError):
+            get_indicator_df("NOT_A_REAL_TICKER")
+    find.assert_not_called()
+
+
+def test_jwt_gate_fails_closed_for_non_http_scopes():
+    from rita.interfaces.mcp_auth import McpJwtGate
+
+    seen, sent = [], []
+
+    async def inner(scope, receive, send):
+        seen.append(scope["type"])
+
+    async def receive():
+        return {"type": "websocket.connect"}
+
+    async def send(msg):
+        sent.append(msg)
+
+    gate = McpJwtGate(inner, transport="http")
+    asyncio.run(gate({"type": "websocket", "headers": [(b"authorization", b"Bearer x")]}, receive, send))
+    assert seen == [] and sent == [{"type": "websocket.close", "code": 1008}]
+    asyncio.run(gate({"type": "something-else"}, receive, send))
+    assert seen == []
+    asyncio.run(gate({"type": "lifespan"}, receive, send))
+    assert seen == ["lifespan"]
 
 
 # ── stdio surface ──────────────────────────────────────────────────────────────

@@ -150,8 +150,14 @@ class McpJwtGate:
         self.transport = transport
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope["type"] != "http":
+        if scope["type"] == "lifespan":
             await self.app(scope, receive, send)
+            return
+        if scope["type"] != "http":
+            # Fail closed (F44 P1 review): websocket or any other scope never reaches MCP.
+            log.warning("mcp.gate_rejected_scope", scope_type=scope["type"], transport=self.transport)
+            if scope["type"] == "websocket":
+                await send({"type": "websocket.close", "code": 1008})
             return
         result = await _identity_from_headers(Headers(scope=scope), self.transport)
         if isinstance(result, JSONResponse):

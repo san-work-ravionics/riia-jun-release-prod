@@ -93,3 +93,26 @@ def client(db_session):
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.pop(get_db, None)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _mcp_call_log_to_temp_db(tmp_path_factory):
+    """F44 P1 review — the MCP call logger never writes into the real dev rita.db during tests.
+
+    The one exception to "no autouse fixtures" above: it only redirects
+    ``rita.core.mcp_logger`` (tool calls made by any test are logged to a throwaway SQLite DB)
+    and touches no DI override, so it cannot interfere with other tests.
+    """
+    from rita.core import mcp_logger
+
+    engine = create_engine(
+        f"sqlite:///{tmp_path_factory.mktemp('mcp_log') / 'mcp_calls.db'}",
+        connect_args={"check_same_thread": False},
+    )
+    Base.metadata.create_all(engine)
+    mcp_logger.set_session_factory(sessionmaker(bind=engine))
+    try:
+        yield
+    finally:
+        mcp_logger.set_session_factory(None)
+        engine.dispose()

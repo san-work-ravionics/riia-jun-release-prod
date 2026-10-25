@@ -29,9 +29,12 @@ LOW_CONFIDENCE_TEXT = (
 
 
 def load_df(instrument: str):
-    """Indicators DataFrame for ``instrument``; ``not_found`` if it has no price data."""
-    from rita.services.market_analysis_service import get_indicator_df
+    """Indicators DataFrame for ``instrument``: ``invalid_input`` if the id is not a known instrument
+    (strict pattern + known set — no paths), ``not_found`` if it has no price data."""
+    from rita.services.market_analysis_service import get_indicator_df, is_known_instrument
 
+    if not is_known_instrument(instrument):
+        raise ToolError("invalid_input", f"unknown instrument {instrument[:40]!r}")
     try:
         return get_indicator_df(instrument)
     except FileNotFoundError as exc:

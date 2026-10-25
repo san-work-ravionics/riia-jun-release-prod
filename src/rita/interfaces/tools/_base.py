@@ -40,8 +40,23 @@ def _default_session():
 _session_factory: list[Callable[[], Any]] = [_default_session]
 
 
+# The logger's factory before the tools override it, restored on reset (so a test fixture's reset
+# returns the logger to whatever conftest pointed it at — never silently to the dev DB).
+_saved_logger_factory: list[Callable[[], Any]] = []
+
+
 def set_session_factory(factory: Callable[[], Any] | None) -> None:
-    """Override the DB session factory used by tools (None restores ``SessionLocal``)."""
+    """Override the DB session factory used by tools **and** the mcp_calls logger.
+
+    ``None`` restores ``SessionLocal`` for tools and the logger's previous factory."""
+    from rita.core import mcp_logger
+
+    if factory is not None:
+        if not _saved_logger_factory:
+            _saved_logger_factory.append(mcp_logger._session_factory[0])
+        mcp_logger._session_factory[0] = factory
+    elif _saved_logger_factory:
+        mcp_logger._session_factory[0] = _saved_logger_factory.pop()
     _session_factory[0] = factory or _default_session
 
 

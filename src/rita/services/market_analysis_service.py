@@ -12,6 +12,7 @@ source file's mtime changes.
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,26 @@ log = structlog.get_logger(__name__)
 
 # { "NIFTY": {"df": ..., "mtime_key": (p, m)}, "NVIDIA": {...}, ... }
 _market_signals_cache: dict[str, dict[str, Any]] = {}
+
+# Instrument ids are plain tickers — never a path (F44 P1 review: ``../`` must not reach the
+# glob in core/data_understanding.find_instrument_csv).
+INSTRUMENT_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
+
+
+def known_instruments() -> set[str]:
+    """Instrument ids that have a price folder under the configured raw / input data dirs."""
+    settings = get_settings()
+    found: set[str] = set()
+    for base in (settings.data.raw_dir, settings.data.input_dir):
+        root = Path(base)
+        if root.is_dir():
+            found.update(p.name.upper() for p in root.iterdir() if p.is_dir())
+    return found
+
+
+def is_known_instrument(instrument: str) -> bool:
+    """True for a well-formed id (``INSTRUMENT_ID_RE``) that is in ``known_instruments()``."""
+    return bool(INSTRUMENT_ID_RE.match(instrument or "")) and instrument.upper() in known_instruments()
 
 
 def get_indicator_df(instrument: str):
@@ -38,6 +59,9 @@ def get_indicator_df(instrument: str):
     from rita.core.data_understanding import find_instrument_csv
     from rita.core.technical_analyzer import calculate_indicators
 
+    if not is_known_instrument(instrument):
+        # Same failure type the chat route already maps to 503 for a missing CSV.
+        raise FileNotFoundError(f"unknown instrument {instrument!r}")
     inst = instrument.upper()
     settings = get_settings()
 

@@ -80,15 +80,20 @@ class OptimalAllocationIn(_In):
 # ── fno.* ───────────────────────────────────────────────────────────────────────
 
 class PositionValueIn(_In):
-    instrument: str | None = Field(None, description="Instrument id (case-insensitive); omit for all holdings")
+    instrument: str | None = Field(None, pattern=r"^[A-Za-z0-9_-]{1,32}$", description="Instrument id (case-insensitive); omit for all holdings")
     months: int = Field(12, ge=1, le=36)
     ann_vol_pct: float | None = Field(None, gt=0, description="Annualised vol % override for the ±1σ bands")
 
 
 # ── market.* ────────────────────────────────────────────────────────────────────
 
+# Plain ticker id — never a path (the loader also checks it against the known instrument set).
+_INSTRUMENT_PATTERN = r"^[A-Za-z0-9_-]{1,32}$"
+
+
 class InstrumentIn(_In):
-    instrument: str = Field("NIFTY", description="Instrument id, e.g. NIFTY, BANKNIFTY, ASML, NVIDIA")
+    instrument: str = Field("NIFTY", pattern=_INSTRUMENT_PATTERN,
+                            description="Instrument id, e.g. NIFTY, BANKNIFTY, ASML, NVIDIA")
 
 
 class SignalOut(BaseModel):
@@ -114,7 +119,8 @@ class MarketOverviewOut(BaseModel):
 
 class MarketAskIn(_In):
     query: str = Field(..., min_length=1, description="Natural-language investment question")
-    instrument: str = Field("NIFTY", description="Instrument id, e.g. NIFTY, BANKNIFTY, ASML, NVIDIA")
+    instrument: str = Field("NIFTY", pattern=_INSTRUMENT_PATTERN,
+                            description="Instrument id, e.g. NIFTY, BANKNIFTY, ASML, NVIDIA")
     portfolio_value: float | None = Field(
         None, gt=0, description="Portfolio size for stress / allocation answers (default 1,000,000)",
     )

@@ -11,7 +11,24 @@ Callers must pass summaries that hold no personal_* data or message text (ADR-00
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
 from datetime import datetime, timezone
+from typing import Any
+
+
+def _default_session():
+    from rita.database import SessionLocal
+
+    return SessionLocal()
+
+
+# Injectable so tests never write into the real dev rita.db (F44 P1 review).
+_session_factory: list[Callable[[], Any]] = [_default_session]
+
+
+def set_session_factory(factory: Callable[[], Any] | None) -> None:
+    """Point the call log at another DB session factory (None restores ``SessionLocal``)."""
+    _session_factory[0] = factory or _default_session
 
 
 def log_mcp_call(
@@ -27,7 +44,6 @@ def log_mcp_call(
     call_id: str | None = None,
 ) -> str:
     """Insert one MCP tool-call row into the mcp_calls table; returns its ``call_id``."""
-    from rita.database import SessionLocal
     from rita.models.mcp_call import MCPCallModel
     from rita.repositories.mcp_call import MCPCallRepository
 
@@ -46,7 +62,7 @@ def log_mcp_call(
         caller         = caller,
         user_id        = user_id,
     )
-    db = SessionLocal()
+    db = _session_factory[0]()
     try:
         MCPCallRepository(db).create(record)
     finally:
@@ -56,10 +72,9 @@ def log_mcp_call(
 
 def get_mcp_calls(limit: int = 100) -> list[dict]:
     """Return the most recent MCP call rows as dicts, newest first."""
-    from rita.database import SessionLocal
     from rita.repositories.mcp_call import MCPCallRepository
 
-    db = SessionLocal()
+    db = _session_factory[0]()
     try:
         rows = MCPCallRepository(db).get_recent(limit)
         return [

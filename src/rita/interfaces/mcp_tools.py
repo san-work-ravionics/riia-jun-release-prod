@@ -117,16 +117,29 @@ def _error_result(code: str, message: str) -> CallToolResult:
     )
 
 
+# Allow-list (F44 P1 review): only these keys are logged with their value — instrument / location
+# ids, enums and small counts.  Any other string (free text: query, message, …) is logged as
+# ``<key>_len=N``; anything else (amounts and rates: portfolio_value, portfolio_inr, target_return,
+# value_now, goal_value, …) as the bare key, never the value.
+SAFE_ARG_KEYS = frozenset({
+    "instrument", "instrument_id", "instruments", "location", "limit", "horizon", "months",
+    "horizon_days", "time_horizon_days", "years", "currency", "base", "quote", "as_of", "mode",
+    "state", "id",
+})
+
+
 def _summarise_args(arguments: dict[str, Any]) -> str:
-    """Key args for mcp_calls.args_summary — never message text (``query`` → its length)."""
+    """Key args for mcp_calls.args_summary — allow-listed values only; no text, no amounts."""
     parts = []
     for key, value in (arguments or {}).items():
         if value is None:
             continue
-        if key == "query":
-            parts.append(f"query_len={len(str(value))}")
-        else:
+        if key in SAFE_ARG_KEYS:
             parts.append(f"{key}={str(value)[:40]}")
+        elif isinstance(value, str):
+            parts.append(f"{key}_len={len(value)}")
+        else:
+            parts.append(str(key)[:40])
     return ", ".join(parts)[:300]
 
 
