@@ -15,7 +15,7 @@ import { switchMsTab, loadMarketSignals, loadGoalHint } from './market-signals.j
 import { loadPerformance } from './performance.js';
 import { loadExplain } from './explainability.js';
 import { loadRisk } from './risk.js';
-import { loadExport, runGoal, runMarket, runStrategy, runFullPipeline, doReset } from './export.js';
+import { loadExport, runGoal, runMarket, runStrategy, runFullPipeline, doReset, downloadJSON } from './export.js';
 import { loadTrades, downloadTradeJournal } from './trades.js';
 import { loadScenarios, runScenarioBacktest, setScenarioPeriod } from './scenarios.js';
 import { loadAgentPanel, agentPanelStep, resetAgentPanel, approveAgentProposal, rejectAgentProposal } from './agent-panel.js';
@@ -62,6 +62,7 @@ window.runGoal            = runGoal;
 window.runMarket          = runMarket;
 window.runStrategy        = runStrategy;
 window.runFullPipeline    = runFullPipeline;
+window.downloadJSON       = downloadJSON;
 window.doReset            = doReset;
 window.downloadTradeJournal = downloadTradeJournal;
 window.setScenarioPeriod  = setScenarioPeriod;

@@ -1,11 +1,12 @@
 // ── Observability ─────────────────────────────────────────────────────────────
-import { apiFetch } from './api.js';
+import { api, apiFetch } from './api.js';
 import { fmt, badge } from './utils.js';
 
 export async function loadObservability() {
   const [drift, mcp, health] = await Promise.all([
     apiFetch('/api/experience/ops/drift'),
-    apiFetch('/api/v1/mcp-calls'),
+    // Needs the JWT (F44 P1 review) — api() sends it; null on failure like apiFetch.
+    api('/api/v1/mcp-calls').catch(() => null),
     apiFetch('/health'),
   ]);
 

@@ -126,3 +126,16 @@ export async function doReset() {
   await api('/reset', 'POST');
   await window._ritaRefresh();
 }
+
+// Download an authenticated JSON endpoint (F44 P1 review: /api/v1/mcp-calls needs the JWT, a plain
+// <a href download> sends none). Through api(): 401 → ensureDevToken(true) → retry once on localhost.
+export async function downloadJSON(path, filename) {
+  try {
+    const data = await api(path);
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  } catch (e) { alert('Download failed: ' + e.message); }
+}

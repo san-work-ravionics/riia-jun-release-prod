@@ -172,21 +172,80 @@ def test_health_mcp_block(client):
                            "transports": ["http", "memory", "sse"], "sse": "deprecated"}
 
 
-def test_mcp_calls_rows_carry_new_fields(client, db_session):
+def _seed_calls(db_session):
     now = datetime.now(timezone.utc)
-    db_session.add(MCPCallModel(call_id="c-new", timestamp=now, tool_name="whatineed.get_plan", status="ok",
-                                duration_ms=2.0, args_summary="", result_summary="saved=True", recorded_at=now,
-                                transport="memory", caller="jarvis", user_id="alice"))
+    rows = [
+        ("c-alice", "alice", now), ("c-bob", "bob@example.com", now - timedelta(minutes=1)),
+        ("c-anon", None, now - timedelta(minutes=2)),
+    ]
+    for cid, uid, ts in rows:
+        db_session.add(MCPCallModel(call_id=cid, timestamp=ts, tool_name="whatineed.get_plan", status="ok",
+                                    duration_ms=2.0, args_summary="", result_summary="saved=True",
+                                    recorded_at=ts, transport="memory" if uid else "stdio",
+                                    caller="jarvis" if uid else "external", user_id=uid))
     db_session.add(MCPCallModel(call_id="c-old", timestamp=now - timedelta(days=1), tool_name="ask_rita",
-                                status="ok", duration_ms=1.0, recorded_at=now))
+                                status="ok", duration_ms=1.0, recorded_at=now))  # pre-P1 row: no user
     db_session.commit()
+
+
+@pytest.fixture
+def as_user():
+    from rita.auth import get_current_user
+    from rita.main import app
+
+    def _set(uid: str, ops: bool = False):
+        app.dependency_overrides[get_current_user] = lambda: UserModel(id=uid, can_access_ops=ops)
+    yield _set
+    app.dependency_overrides.pop(get_current_user, None)
+
+
+def test_mcp_calls_requires_auth(client, db_session):
+    _seed_calls(db_session)
+    resp = client.get("/api/v1/mcp-calls")
+    assert resp.status_code in (401, 403)  # HTTPBearer: no credentials
+    assert client.get("/api/v1/mcp-calls", headers={"Authorization": f"Bearer {_expired()}"}).status_code == 401
+
+
+def test_mcp_calls_non_ops_sees_own_and_userless_rows(client, db_session, as_user):
+    _seed_calls(db_session)
+    as_user("alice")
+    rows = client.get("/api/v1/mcp-calls?limit=10").json()
+    assert {r["call_id"] for r in rows} == {"c-alice", "c-anon", "c-old"}
+    assert all(r["user_id"] in (None, "alice") for r in rows)
+    assert "bob@example.com" not in json.dumps(rows)
+
+
+def test_mcp_calls_ops_sees_all_rows_with_new_fields(client, db_session, as_user):
+    _seed_calls(db_session)
+    as_user("ops-admin", ops=True)
     rows = client.get("/api/v1/mcp-calls?limit=10").json()
     by_id = {r["call_id"]: r for r in rows}
-    assert (by_id["c-new"]["transport"], by_id["c-new"]["caller"], by_id["c-new"]["user_id"]) == (
+    assert set(by_id) == {"c-alice", "c-bob", "c-anon", "c-old"}
+    assert [r["call_id"] for r in rows] == ["c-alice", "c-bob", "c-anon", "c-old"]  # newest first
+    assert (by_id["c-alice"]["transport"], by_id["c-alice"]["caller"], by_id["c-alice"]["user_id"]) == (
         "memory", "jarvis", "alice")
     assert by_id["c-old"]["transport"] is None and by_id["c-old"]["user_id"] is None
     for key in ("call_id", "timestamp", "tool_name", "status", "duration_ms", "args_summary", "result_summary"):
         assert key in by_id["c-old"]
+    assert len(client.get("/api/v1/mcp-calls?limit=2").json()) == 2
+
+
+def test_mcp_calls_js_consumers_send_the_jwt():
+    """Every dashboard consumer goes through shared/api.js api() (401 → ensureDevToken(true) →
+    retry once on localhost) — no raw fetch / plain link without a token (project.md §9)."""
+    js = _ROOT / "dashboard" / "js"
+    for rel in ("rita/mcp.js", "ds/mcp.js", "ds/model-mcp.js", "ops/overview.js", "ops/observability.js"):
+        src = (js / rel).read_text(encoding="utf-8")
+        line = next(ln for ln in src.splitlines() if "/api/v1/mcp-calls" in ln)
+        assert "api('/api/v1/mcp-calls" in line and "apiFetch(" not in line, rel
+    for rel in ("rita/api.js", "ds/api.js", "ops/api.js"):
+        assert "from '../shared/api.js'" in (js / rel).read_text(encoding="utf-8"), rel
+    ds_export = (js / "ds" / "export.js").read_text(encoding="utf-8")
+    assert "const data=await api(path);" in ds_export and "await fetch(path)" not in ds_export
+    rita_html = (_ROOT / "dashboard" / "rita.html").read_text(encoding="utf-8")
+    assert 'href="/api/v1/mcp-calls"' not in rita_html
+    assert "downloadJSON('/api/v1/mcp-calls','mcp_calls.json')" in rita_html
+    assert "window.downloadJSON" in (js / "rita" / "main.js").read_text(encoding="utf-8")
 
 
 # ── the real stdio process ─────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 // ── Overview ──────────────────────────────────────────────────────────────────
-import { apiFetch } from './api.js';
+import { api, apiFetch } from './api.js';
 import { fmt, badge, setEl } from './utils.js';
 import { t } from '../shared/i18n.js';
 
@@ -38,7 +38,8 @@ export async function loadOverview() {
     document.getElementById('kpi-pipeline').textContent = metrics.pipeline.completed_steps ?? '—';
   }
 
-  const mcp = await apiFetch('/api/v1/mcp-calls');
+  // Needs the JWT (F44 P1 review) — api() sends it; null on failure like apiFetch.
+  const mcp = await api('/api/v1/mcp-calls').catch(() => null);
   document.getElementById('kpi-mcp').textContent = mcp ? mcp.length : '—';
 
   if (progress && progress.steps) {

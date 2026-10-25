@@ -35,7 +35,9 @@ export async function pingAPI() {
 
 export async function dlJSON(path, filename) {
   try {
-    const r=await fetch(path); const blob=await r.blob();
+    // Through api(): sends the JWT; 401 → ensureDevToken(true) → retry once on localhost (F44 P1 review).
+    const data=await api(path);
+    const blob=new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
     const url=URL.createObjectURL(blob); const a=document.createElement('a');
     a.href=url; a.download=filename; a.click(); URL.revokeObjectURL(url);
   } catch(e){ alert('Download failed: '+e.message); }

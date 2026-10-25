@@ -1111,7 +1111,7 @@ tr:hover td{background:var(--surface2);}
         <a class="btn btn-ghost btn-sm" href="/api/v1/backtest-daily" download="backtest_daily.json">↓ Backtest Daily (JSON)</a>
         <a class="btn btn-ghost btn-sm" href="/api/v1/performance-summary" download="performance_summary.json">↓ Performance Summary (JSON)</a>
         <a class="btn btn-ghost btn-sm" href="/api/v1/training-history" download="training_history.json">↓ Training History (JSON)</a>
-        <a class="btn btn-ghost btn-sm" href="/api/v1/mcp-calls" download="mcp_calls.json">↓ MCP Call Log (JSON)</a>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="downloadJSON('/api/v1/mcp-calls','mcp_calls.json')">↓ MCP Call Log (JSON)</button>
         <a class="btn btn-ghost btn-sm" href="/api/v1/shap" download="shap_importance.json">↓ SHAP Importance (JSON)</a>
         <a class="btn btn-ghost btn-sm" href="/api/v1/risk-timeline" download="risk_timeline.json">↓ Risk Timeline (JSON)</a>
       </div>
