@@ -566,7 +566,7 @@ def get_agent_builds(
                 token_forecast=_run_json.get("token_forecast"),
                 total_tokens_estimated=_run_json.get("total_tokens_estimated"),
                 hitl_events=_run_json.get("hitl_events"),
-                human_score_csat=_run_json.get("human_score", {}).get("csat"),
+                human_score_csat=(_run_json.get("human_score") or {}).get("csat"),
             )
         )
 
