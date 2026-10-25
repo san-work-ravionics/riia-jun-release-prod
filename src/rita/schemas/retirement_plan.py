@@ -1,7 +1,7 @@
 """Pydantic contracts for the F43 "What I Need" retirement plan (Phase 1, D2/D10).
 
 JSON is camelCase (``alias_generator=to_camel``); Python attributes are snake_case.
-Money is EUR, rates are fractions — identical to the mock's ``readInputs()`` shape.
+Money is in the location's currency (EUR / INR / USD), rates are fractions — identical to the mock's ``readInputs()`` shape.
 The backend never rounds; formatting and all user-facing copy stay in JS (D7).
 
 RetirementPlanInputs      — request body (calculate / save) and the persisted plan JSON

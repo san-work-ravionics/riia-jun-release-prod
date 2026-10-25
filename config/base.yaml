@@ -126,3 +126,72 @@ retirement_plan:
         comRate: 0.04
         altMonthly: 150
         altRate: 0.05
+    # India: INR; ~6% inflation, 12.5% LTCG (equity and property), Nifty ~12% / equity 14% /
+    # gold 8% / debt-alternates 7%, property appreciation 6%. House 1 Cr, new house 60 L.
+    india:
+      currency: INR
+      defaults:
+        need: 75000
+        infl: 0.06
+        now: 35
+        ret: 55
+        end: 85
+        tax: 0.125
+        partial: 0.5
+        exit: 70
+        hValue: 10000000
+        hAppr: 0.06
+        hSell: 60
+        hTax: 0.125
+        h2Price: 6000000
+        h2Mode: new
+        sv:
+          - {age: 50, amt: 1000000}
+          - {age: 55, amt: 1000000}
+          - {age: 60, amt: 1000000}
+        bx:
+          - {age: 55, amt: 4000000}
+          - {age: 60, amt: 1000000}
+          - {age: 65, amt: 0}
+        idxMonthly: 25000
+        idxRate: 0.12
+        eqMonthly: 15000
+        eqRate: 0.14
+        comMonthly: 5000
+        comRate: 0.08
+        altMonthly: 5000
+        altRate: 0.07
+    # US: USD; 3% inflation, 15% long-term capital gains, S&P 500 ~7% (as Europe), property 4%.
+    us:
+      currency: USD
+      defaults:
+        need: 4000
+        infl: 0.03
+        now: 35
+        ret: 55
+        end: 85
+        tax: 0.15
+        partial: 0.5
+        exit: 70
+        hValue: 450000
+        hAppr: 0.04
+        hSell: 60
+        hTax: 0.15
+        h2Price: 300000
+        h2Mode: new
+        sv:
+          - {age: 50, amt: 100000}
+          - {age: 55, amt: 100000}
+          - {age: 60, amt: 100000}
+        bx:
+          - {age: 55, amt: 200000}
+          - {age: 60, amt: 50000}
+          - {age: 65, amt: 0}
+        idxMonthly: 1500
+        idxRate: 0.07
+        eqMonthly: 700
+        eqRate: 0.10
+        comMonthly: 150
+        comRate: 0.04
+        altMonthly: 150
+        altRate: 0.05
