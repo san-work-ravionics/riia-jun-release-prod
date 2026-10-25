@@ -6,8 +6,10 @@ from pydantic import BaseModel
 
 class PortfolioMetaSchema(BaseModel):
     name: str
-    total_value_eur: float
+    total_value_eur: float | None = None   # deprecated (F44 P2): EUR value; None if no FX rate
     updated_at: str
+    total_value: float | None = None       # F44 P2: in ``currency`` — every amount in the payload is
+    currency: str = "EUR"                  # in the portfolio currency
 
 
 class MarketEntrySchema(BaseModel):

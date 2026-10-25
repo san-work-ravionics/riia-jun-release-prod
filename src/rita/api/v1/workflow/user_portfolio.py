@@ -7,13 +7,13 @@ experience-tier endpoint must be kept in sync manually.
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from rita.auth import get_current_user
 from rita.database import get_db
 from rita.models.user import UserModel
-from rita.schemas.user_portfolio import UserPortfolioCreate, UserPortfolioOut
+from rita.schemas.user_portfolio import Location, UserPortfolioCreate, UserPortfolioOut
 from rita.services.user_portfolio_service import UserPortfolioService
 
 router = APIRouter(prefix="/api/v1/user-portfolio", tags=["workflow:user-portfolio"])
@@ -25,9 +25,16 @@ def save_portfolio(
     current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> UserPortfolioOut:
-    """Save (replace) the active portfolio for the authenticated user."""
+    """Save (replace) the active portfolio for the authenticated user and ``body.location``.
+
+    F44 P2: currency is derived from ``location`` server-side; with a location every holding
+    must be in it (422 ``instrument X is not in location Y``).
+    """
     try:
-        return UserPortfolioService(db).save(current_user.id, body.holdings, body.name, body.total_value_eur)
+        return UserPortfolioService(db).save(
+            current_user.id, body.holdings, body.name, body.total_value_eur,
+            location=body.location, total_value=body.total_value,
+        )
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -37,11 +44,12 @@ def save_portfolio(
 
 @router.get("/", response_model=UserPortfolioOut)
 def get_portfolio(
+    location: Location | None = Query(default=None, description="europe | india | us; omit = most recent"),
     current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> UserPortfolioOut:
-    """Return the active portfolio for the authenticated user."""
-    result = UserPortfolioService(db).get(current_user.id)
+    """Return the active portfolio for the authenticated user (and ``location`` when given)."""
+    result = UserPortfolioService(db).get(current_user.id, location)
     if result is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

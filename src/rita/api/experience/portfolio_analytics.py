@@ -54,6 +54,7 @@ from rita.schemas.portfolio_analytics import (
     StressEventSchema,
 )
 from rita.schemas.user_portfolio import HoldingItem
+from rita.services.user_portfolio_service import portfolio_currency, portfolio_total
 
 log = structlog.get_logger()
 
@@ -101,6 +102,8 @@ MOCK_PORTFOLIO: dict = {
         "name": "Demo Portfolio",
         "total_value_eur": 50000,
         "updated_at": "2026-01-01T00:00:00",
+        "total_value": 50000,
+        "currency": "EUR",
     },
     "market": {
         "NIFTY": {
@@ -590,17 +593,25 @@ def get_portfolio_analytics(
         HoldingItem(**h) if isinstance(h, dict) else h
         for h in (portfolio.holdings or [])
     ]
-    total_value_eur: float = float(portfolio.total_value_eur or 0.0)
+    # F44 P2: amounts are in the portfolio currency (legacy rows: EUR, total_value_eur).
+    currency = portfolio_currency(portfolio)
+    total_value: float = float(portfolio_total(portfolio) or 0.0)
+    meta_eur: float | None = (
+        total_value if currency == "EUR"
+        else (float(portfolio.total_value_eur) if isinstance(portfolio.total_value_eur, (int, float)) else None)
+    )
 
     # E7: empty holdings
     if not holdings:
-        empty_payoff = _build_payoff(total_value_eur, 0.0, 50)
+        empty_payoff = _build_payoff(total_value, 0.0, 50)
         return PortfolioAnalyticsResponse(
             mode="real",
             portfolio_meta=PortfolioMetaSchema(
                 name=portfolio.name or "My Portfolio",
-                total_value_eur=total_value_eur,
+                total_value_eur=meta_eur,
                 updated_at=str(portfolio.updated_at),
+                total_value=total_value,
+                currency=currency,
             ),
             market={},
             positions=[],
@@ -609,7 +620,7 @@ def get_portfolio_analytics(
             net_delta={},
             scenario_levels={},
             payoff=empty_payoff,
-            stress=_build_stress(total_value_eur, 0.0, 50),
+            stress=_build_stress(total_value, 0.0, 50),
             hedge_quality=HedgeQualitySchema(positions=[]),
             closed_positions=[],
             realized_pnl=0.0,
@@ -648,7 +659,7 @@ def get_portfolio_analytics(
     for h in holdings:
         inst = h.instrument_id.upper()
         alloc = float(h.allocation_pct)
-        pos_eur = round(alloc / 100.0 * total_value_eur, 2)
+        pos_eur = round(alloc / 100.0 * total_value, 2)
         ltp = spot_map.get(inst, 0.0)
         meta = _INSTRUMENT_META.get(inst, {})
         chg_pct = 0.0
@@ -680,7 +691,7 @@ def get_portfolio_analytics(
     for h in holdings:
         inst = h.instrument_id.upper()
         alloc = float(h.allocation_pct)
-        pos_eur = round(alloc / 100.0 * total_value_eur, 2)
+        pos_eur = round(alloc / 100.0 * total_value, 2)
         ann_vol = vol_map.get(inst, _FALLBACK_VOL_PCT)
         ltp = spot_map.get(inst, 0.0)
         hedged = inst in hedged_ids
@@ -715,16 +726,16 @@ def get_portfolio_analytics(
     )
 
     # ── Scenario levels ───────────────────────────────────────────────────────
-    scenario_levels = _build_scenarios(holdings, vol_map, spot_map, total_value_eur)
+    scenario_levels = _build_scenarios(holdings, vol_map, spot_map, total_value)
 
     # ── Payoff + stress ───────────────────────────────────────────────────────
     hedged_alloc_eur = sum(
-        float(h.allocation_pct) / 100.0 * total_value_eur
+        float(h.allocation_pct) / 100.0 * total_value
         for h in holdings
         if h.instrument_id.upper() in hedged_ids
     )
-    payoff = _build_payoff(total_value_eur, hedged_alloc_eur, coverage_pct)
-    stress = _build_stress(total_value_eur, hedged_alloc_eur, coverage_pct)
+    payoff = _build_payoff(total_value, hedged_alloc_eur, coverage_pct)
+    stress = _build_stress(total_value, hedged_alloc_eur, coverage_pct)
 
     # ── Hedge Quality ─────────────────────────────────────────────────────────
     hq_positions: list[HedgeQualityPositionSchema] = []
@@ -770,15 +781,18 @@ def get_portfolio_analytics(
         user=current_user.id,
         holdings=len(holdings),
         hedged=len(hedged_ids),
-        total_eur=total_value_eur,
+        total_value=total_value,
+        currency=currency,
     )
 
     return PortfolioAnalyticsResponse(
         mode="real",
         portfolio_meta=PortfolioMetaSchema(
             name=portfolio.name or "My Portfolio",
-            total_value_eur=total_value_eur,
+            total_value_eur=meta_eur,
             updated_at=str(portfolio.updated_at),
+            total_value=total_value,
+            currency=currency,
         ),
         market=market,
         positions=positions,

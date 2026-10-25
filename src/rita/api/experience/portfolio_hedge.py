@@ -22,6 +22,7 @@ from rita.models.user import UserModel
 from rita.repositories.market_data import MarketDataCacheRepository
 from rita.repositories.user_portfolio import UserPortfolioRepo
 from rita.repositories.user_portfolio_key import UserPortfolioKeyRepo
+from rita.services.user_portfolio_service import portfolio_currency, portfolio_total
 from rita.schemas.user_portfolio import HoldingItem
 from rita.services.kite_middleware_client import fetch_put_premium, put_premium_from_csv
 
@@ -78,6 +79,7 @@ class PortfolioHedgeResponse(BaseModel):
     aggregate: HedgeAggregate
     coverage: int
     duration: str
+    currency: str = "EUR"   # F44 P2: the *_eur amounts are in this (portfolio) currency
 
 
 # ── Black-Scholes helpers ──────────────────────────────────────────────────────
@@ -207,7 +209,8 @@ def _quarterly_stats(closes: list[float]) -> tuple[float | None, float | None]:
 @router.get("/portfolio-hedge", response_model=PortfolioHedgeResponse)
 def get_portfolio_hedge(
     coverage: int = Query(default=50, ge=0, le=100, description="Coverage level 0–100 %"),
-    total_value_eur: float | None = Query(default=None, description="Portfolio total EUR value override (frontend-supplied)"),
+    total_value_eur: float | None = Query(default=None, description="Legacy: portfolio total override (frontend-supplied)"),
+    total_value: float | None = Query(default=None, description="F44 P2: portfolio total override in the portfolio currency"),
     current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> PortfolioHedgeResponse:
@@ -235,7 +238,14 @@ def get_portfolio_hedge(
     if not holdings_raw:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio has no holdings")
 
-    total_eur: float | None = total_value_eur if total_value_eur is not None else portfolio.total_value_eur
+    # F44 P2: the total is in the portfolio currency (legacy rows: total_value_eur, EUR).
+    if total_value is not None:
+        total_eur: float | None = total_value
+    elif total_value_eur is not None:
+        total_eur = total_value_eur
+    else:
+        total_eur = portfolio_total(portfolio)
+    currency = portfolio_currency(portfolio)
 
     all_records = MarketDataCacheRepository(db).read_all()
     from collections import defaultdict
@@ -352,4 +362,5 @@ def get_portfolio_hedge(
         ),
         coverage=coverage,
         duration="1y",
+        currency=currency,
     )

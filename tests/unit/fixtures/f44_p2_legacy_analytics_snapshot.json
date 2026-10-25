@@ -1,0 +1,278 @@
+{
+ "closed_positions": [],
+ "greeks": [
+  {
+   "allocation_pct": 60.0,
+   "ann_vol_pct": 20.95,
+   "call_income_eur": null,
+   "delta": 1.0,
+   "exp": "EQUITY",
+   "gamma": 0.0,
+   "hedge_type": "protective_put",
+   "net_theta_eur_day": 0.0,
+   "put_cost_eur": null,
+   "sigma_eur": 6285.0,
+   "theta": 0.0,
+   "und": "NIFTY",
+   "vega": 0.0
+  },
+  {
+   "allocation_pct": 40.0,
+   "ann_vol_pct": 20.95,
+   "call_income_eur": null,
+   "delta": 1.0,
+   "exp": "EQUITY",
+   "gamma": 0.0,
+   "hedge_type": "ndx_proxy",
+   "net_theta_eur_day": 0.0,
+   "put_cost_eur": null,
+   "sigma_eur": 4190.0,
+   "theta": 0.0,
+   "und": "ASML",
+   "vega": 0.0
+  }
+ ],
+ "hedge_quality": {
+  "positions": [
+   {
+    "coverage_pct": null,
+    "hedged": false,
+    "hqs": 60,
+    "hqs_tier": "yellow",
+    "instrument": "NIFTY",
+    "note": "No hedge assigned",
+    "strategy": null
+   },
+   {
+    "coverage_pct": null,
+    "hedged": false,
+    "hqs": 60,
+    "hqs_tier": "yellow",
+    "instrument": "ASML",
+    "note": "No hedge assigned",
+    "strategy": null
+   }
+  ]
+ },
+ "margin": {},
+ "market": {
+  "ASML": {
+   "chgFromOpen": 0.0,
+   "chgFromPrev": 1.1,
+   "close": 749.1835,
+   "currency": "EUR",
+   "date": "2026-08-29",
+   "high": 756.675335,
+   "low": 741.691665,
+   "open": 749.1835,
+   "prevClose": 741.0322,
+   "shares": "\u2014",
+   "turnover": null
+  },
+  "NIFTY": {
+   "chgFromOpen": 0.0,
+   "chgFromPrev": 1.1,
+   "close": 27662.1615,
+   "currency": "INR",
+   "date": "2026-08-29",
+   "high": 27938.783115,
+   "low": 27385.539885,
+   "open": 27662.1615,
+   "prevClose": 27361.1884,
+   "shares": "\u2014",
+   "turnover": null
+  }
+ },
+ "mode": "real",
+ "net_delta": {
+  "ASML": 1.0,
+  "NIFTY": 1.0
+ },
+ "net_greeks": {
+  "delta": 1.0,
+  "theta": 0.0,
+  "vega": 0.0
+ },
+ "payoff": {
+  "hedged": {
+   "data": [
+    -15000.0,
+    -13500.0,
+    -12000.0,
+    -10500.0,
+    -9000.0,
+    -7500.0,
+    -6000.0,
+    -4500.0,
+    -3000.0,
+    -1500.0,
+    0.0,
+    1500.0,
+    3000.0,
+    4500.0,
+    6000.0,
+    7500.0,
+    9000.0,
+    10500.0,
+    12000.0,
+    13500.0,
+    15000.0
+   ],
+   "labels": [
+    -30.0,
+    -27.0,
+    -24.0,
+    -21.0,
+    -18.0,
+    -15.0,
+    -12.0,
+    -9.0,
+    -6.0,
+    -3.0,
+    0.0,
+    3.0,
+    6.0,
+    9.0,
+    12.0,
+    15.0,
+    18.0,
+    21.0,
+    24.0,
+    27.0,
+    30.0
+   ]
+  },
+  "portfolio": {
+   "data": [
+    -15000.0,
+    -13500.0,
+    -12000.0,
+    -10500.0,
+    -9000.0,
+    -7500.0,
+    -6000.0,
+    -4500.0,
+    -3000.0,
+    -1500.0,
+    0.0,
+    1500.0,
+    3000.0,
+    4500.0,
+    6000.0,
+    7500.0,
+    9000.0,
+    10500.0,
+    12000.0,
+    13500.0,
+    15000.0
+   ],
+   "labels": [
+    -30.0,
+    -27.0,
+    -24.0,
+    -21.0,
+    -18.0,
+    -15.0,
+    -12.0,
+    -9.0,
+    -6.0,
+    -3.0,
+    0.0,
+    3.0,
+    6.0,
+    9.0,
+    12.0,
+    15.0,
+    18.0,
+    21.0,
+    24.0,
+    27.0,
+    30.0
+   ]
+  }
+ },
+ "portfolio_meta": {
+  "name": "Legacy EUR",
+  "total_value_eur": 50000.0,
+  "updated_at": "2026-10-01 12:00:00"
+ },
+ "positions": [
+  {
+   "allocation_pct": 60.0,
+   "ann_vol_pct": 20.95,
+   "avg": 27662.1615,
+   "chg": 1.1,
+   "currency": "INR",
+   "exp": "EQUITY",
+   "full": "Nifty 50 Index",
+   "ltp": 27662.1615,
+   "pnl": 0.0,
+   "position_eur": 30000.0,
+   "qty": 1,
+   "region": "India",
+   "side": "Long",
+   "type": "EQ",
+   "und": "NIFTY"
+  },
+  {
+   "allocation_pct": 40.0,
+   "ann_vol_pct": 20.95,
+   "avg": 749.1835,
+   "chg": 1.1,
+   "currency": "EUR",
+   "exp": "EQUITY",
+   "full": "ASML Holding N.V.",
+   "ltp": 749.1835,
+   "pnl": 0.0,
+   "position_eur": 20000.0,
+   "qty": 1,
+   "region": "EU",
+   "side": "Long",
+   "type": "EQ",
+   "und": "ASML"
+  }
+ ],
+ "realized_pnl": 0.0,
+ "scenario_levels": {
+  "ASML": {
+   "sl": 435.28,
+   "target": 906.14
+  },
+  "NIFTY": {
+   "sl": 16071.72,
+   "target": 33457.38
+  }
+ },
+ "stress": [
+  {
+   "hedged_pnl_eur": -25000,
+   "label": "2008 Crisis",
+   "move_pct": -50,
+   "portfolio_pnl_eur": -25000
+  },
+  {
+   "hedged_pnl_eur": -17500,
+   "label": "COVID-2020",
+   "move_pct": -35,
+   "portfolio_pnl_eur": -17500
+  },
+  {
+   "hedged_pnl_eur": -10000,
+   "label": "Rate Hike 2022",
+   "move_pct": -20,
+   "portfolio_pnl_eur": -10000
+  },
+  {
+   "hedged_pnl_eur": 12500,
+   "label": "Tech Rally",
+   "move_pct": 25,
+   "portfolio_pnl_eur": 12500
+  },
+  {
+   "hedged_pnl_eur": -7500,
+   "label": "India Slowdown",
+   "move_pct": -15,
+   "portfolio_pnl_eur": -7500
+  }
+ ]
+}

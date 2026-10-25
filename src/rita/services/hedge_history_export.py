@@ -13,13 +13,14 @@ HEADER_COLUMNS = [
     "history_id", "saved_at", "user_id", "key_id", "trigger", "source", "last_step",
     "scenario_tab", "coverage", "duration", "schema_version", "app_version",
     "total_value_eur", "cash_eur", "n_holdings",
+    "portfolio_currency", "total_value", "cash",
     "instrument_id", "hedged", "strategy", "shares", "allocation_pct", "currency",
     "spot", "spot_date", "position_value", "ann_vol_pct",
     "strike_pct", "strike_label", "premium_pct", "cost_source", "hedge_type",
     "risk_score", "protected_pct",
 ]
 
-_INSTRUMENT_COLUMNS = HEADER_COLUMNS[15:]
+_INSTRUMENT_COLUMNS = HEADER_COLUMNS[18:]
 
 
 def flatten_rows(rows: Iterable[Any]) -> list[dict[str, Any]]:
@@ -36,6 +37,8 @@ def flatten_rows(rows: Iterable[Any]) -> list[dict[str, Any]]:
             "schema_version": r.schema_version, "app_version": r.app_version,
             "total_value_eur": pf.get("total_value_eur"), "cash_eur": pf.get("cash_eur"),
             "n_holdings": pf.get("n_holdings"),
+            "portfolio_currency": pf.get("currency"), "total_value": pf.get("total_value"),
+            "cash": pf.get("cash"),
         }
         insts = r.instruments or []
         if not insts:

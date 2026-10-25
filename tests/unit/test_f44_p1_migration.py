@@ -50,18 +50,21 @@ def _indexes(db: Path) -> set[str]:
 
 
 def test_single_head(tmp_path):
+    # P2 (20261026_f44p2_user_portfolio_currency) builds on this revision; still one head.
     out = _ok(_alembic(tmp_path / "h.db", "heads"))
     heads = [ln for ln in out.splitlines() if "(head)" in ln]
-    assert len(heads) == 1 and heads[0].startswith(_HEAD), out
+    assert len(heads) == 1, out
+    hist = _ok(_alembic(tmp_path / "h.db", "history"))
+    assert f"{_PRIOR} -> {_HEAD}" in hist, hist
 
 
 def test_fresh_db_without_mcp_calls_round_trip(tmp_path):
     db = tmp_path / "fresh.db"
-    _ok(_alembic(db, "upgrade", "head"))
+    _ok(_alembic(db, "upgrade", _HEAD))
     tables = {r[0] for r in _q(db, "select name from sqlite_master where type='table'")}
     assert "users" not in tables and "mcp_calls" not in tables
-    _ok(_alembic(db, "downgrade", "-1"))
-    _ok(_alembic(db, "upgrade", "head"))
+    _ok(_alembic(db, "downgrade", _PRIOR))
+    _ok(_alembic(db, "upgrade", _HEAD))
     assert _q(db, "select version_num from alembic_version") == [(_HEAD,)]
 
 
@@ -86,18 +89,18 @@ def test_upgrade_downgrade_upgrade_with_existing_table(prior_db_with_mcp_calls):
     db = prior_db_with_mcp_calls
     assert not (_NEW & _cols(db))
 
-    out = _ok(_alembic(db, "upgrade", "head"))
+    out = _ok(_alembic(db, "upgrade", _HEAD))
     assert f"Running upgrade {_PRIOR} -> {_HEAD}" in out
     assert _NEW <= _cols(db)
     assert "ix_mcp_calls_user_id" in _indexes(db)
     assert _q(db, "select call_id, transport, caller, user_id from mcp_calls") == [("c1", None, None, None)]
 
-    _ok(_alembic(db, "downgrade", "-1"))
+    _ok(_alembic(db, "downgrade", _PRIOR))
     assert not (_NEW & _cols(db))
     assert "ix_mcp_calls_user_id" not in _indexes(db)
     assert _q(db, "select call_id, tool_name from mcp_calls") == [("c1", "ask_rita")]
 
-    _ok(_alembic(db, "upgrade", "head"))
+    _ok(_alembic(db, "upgrade", _HEAD))
     assert _NEW <= _cols(db)
     assert _q(db, "select count(*) from mcp_calls") == [(1,)]
 

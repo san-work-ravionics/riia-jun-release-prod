@@ -146,6 +146,10 @@ class HistoryPortfolio(BaseModel):
     total_value_eur: float | None = None
     cash_eur: float | None = None
     n_holdings: int = 0
+    # F44 P2 — in the portfolio currency (None on rows saved before P2)
+    currency: str | None = None
+    total_value: float | None = None
+    cash: float | None = None
 
 
 class HedgePlanHistoryOut(BaseModel):

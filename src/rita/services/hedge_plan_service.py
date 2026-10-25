@@ -30,6 +30,7 @@ from rita.repositories.user_hedge_plan import UserHedgePlanRepo
 from rita.repositories.user_hedge_plan_history import UserHedgePlanHistoryRepo
 from rita.repositories.user_portfolio import UserPortfolioRepo
 from rita.repositories.user_portfolio_key import UserPortfolioKeyRepo
+from rita.services.user_portfolio_service import holding_cash, portfolio_currency, portfolio_total
 from rita.schemas.user_hedge_plan import (
     MAX_CONTEXT_INSTRUMENTS,
     HedgeContext,
@@ -126,7 +127,7 @@ class HedgePlanService:
             if not iid:
                 continue
             seen.add(iid)
-            cash_total += float(h.get("cash_eur") or 0.0)
+            cash_total += holding_cash(h) or 0.0  # F44 P2: cash ?? cash_eur
             instruments.append(
                 self._instrument_block(
                     iid, h, iid in hedged, selections.get(iid), ctx_by_id.get(iid), explicit
@@ -152,15 +153,30 @@ class HedgePlanService:
             hedged_ids=list(stored.hedged_ids or []),
             selections=dict(stored.selections) if stored.selections else None,
             instruments=instruments,
-            portfolio={
-                "total_value_eur": portfolio.total_value_eur if portfolio is not None else None,
-                "cash_eur": round(cash_total, 2) if portfolio is not None else None,
-                "n_holdings": len(holdings),
-            },
+            portfolio=self._portfolio_block(portfolio, cash_total, len(holdings)),
             margin=ctx.margin,
             schema_version=1,
             app_version=get_settings().app.version,
         )
+
+    @staticmethod
+    def _portfolio_block(portfolio: Any, cash_total: float, n_holdings: int) -> dict[str, Any]:
+        """History ``portfolio`` block.  F44 P2: ``currency`` / ``total_value`` / ``cash`` in the
+        portfolio currency; the legacy ``total_value_eur`` / ``cash_eur`` stay (``cash_eur`` only
+        for an EUR portfolio)."""
+        if portfolio is None:
+            return {"total_value_eur": None, "cash_eur": None, "n_holdings": n_holdings,
+                    "currency": None, "total_value": None, "cash": None}
+        currency = portfolio_currency(portfolio)
+        cash = round(cash_total, 2)
+        return {
+            "total_value_eur": portfolio.total_value_eur,
+            "cash_eur": cash if currency == "EUR" else None,
+            "n_holdings": n_holdings,
+            "currency": currency,
+            "total_value": portfolio_total(portfolio),
+            "cash": cash,
+        }
 
     def _instrument_block(
         self,

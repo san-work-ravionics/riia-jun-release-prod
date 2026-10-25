@@ -32,6 +32,7 @@ EXPECTED_CSV_COLUMNS = [
     "history_id", "saved_at", "user_id", "key_id", "trigger", "source", "last_step",
     "scenario_tab", "coverage", "duration", "schema_version", "app_version",
     "total_value_eur", "cash_eur", "n_holdings",
+    "portfolio_currency", "total_value", "cash",  # F44 P2
     "instrument_id", "hedged", "strategy", "shares", "allocation_pct", "currency",
     "spot", "spot_date", "position_value", "ann_vol_pct",
     "strike_pct", "strike_label", "premium_pct", "cost_source", "hedge_type",
@@ -171,7 +172,8 @@ class TestHistoryAppend:
         assert (a["strike_pct"], a["cost_source"], a["protected_pct"]) == (95.0, "kite", 5.0)
         m = by_id["MYSTERY"]  # unmapped currency: no default, save still succeeds
         assert m["currency"] is None and m["position_value"] is None and m["hedged"] is False
-        assert row.portfolio == {"total_value_eur": 10000.0, "cash_eur": 13.5, "n_holdings": 2}
+        assert row.portfolio == {"total_value_eur": 10000.0, "cash_eur": 13.5, "n_holdings": 2,
+                                 "currency": "EUR", "total_value": 10000.0, "cash": 13.5}  # F44 P2
         assert row.margin == {"required": 1234}
 
     def test_autosave_skips_ann_vol(self, client, db_session):
