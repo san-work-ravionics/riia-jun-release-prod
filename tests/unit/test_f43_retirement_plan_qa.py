@@ -110,7 +110,7 @@ def test_hand_calc_index_fund_future_value_month_by_month():
     assert abs(idx.profit_m - bal * m) < EUR
     assert abs(idx.withdrawn_net - bal * m * 0.5 * 0.7) < EUR
     # the year-by-year simulation reaches the same index balance at retirement
-    p55 = next(x for x in r.portfolio.points if x.age == 55)
+    p55 = next(x for x in r.with_investing.points if x.age == 55)
     assert abs(p55.bal[0] - bal) < EUR and p55.basis[0] == pytest.approx(240_000)
 
 
@@ -143,12 +143,12 @@ def test_hand_calc_house_and_target():
     assert abs(r.target - max(0.0, total + 600_000 - 300_000 - release)) < EUR
 
 
-def test_hand_calc_from_pot_at_retirement():
-    # fromPot = pot / sum_{a=55}^{84} 12 * 1.025**(a-55)
+def test_hand_calc_from_savings_at_retirement():
+    # from_savings = savings_balance_at_retirement / months_of_retirement
     r = _calc(DEFAULTS)
     months = 12 * (1.025 ** 30 - 1) / 0.025
-    pot55 = next(x for x in r.portfolio.points if x.age == 55).pot
-    assert abs(r.at_ret.from_pot - pot55 / months) < EUR
+    savings55 = next(x for x in r.with_investing.points if x.age == 55).savings
+    assert abs(r.at_ret.from_savings - savings55 / months) < EUR
 
 
 # ── Properties ───────────────────────────────────────────────────────────────
@@ -208,7 +208,7 @@ def test_property_panels_before_current_age_are_off(now, ret, h_sell, ev_ages, o
             assert c.monthly is None and c.share is None and c.need is None
         else:
             assert c.monthly is not None and c.monthly >= 0
-    assert r.portfolio.points[0].age == now
+    assert r.with_investing.points[0].age == now
 
 
 def test_property_c2_regression_present():

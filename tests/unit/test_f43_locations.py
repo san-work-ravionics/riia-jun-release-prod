@@ -88,10 +88,12 @@ def test_save_india_round_trip(client, db_session):
     r = client.put(SAVE, params={"location": "india"}, json=inp)
     assert r.status_code == 200, r.text
     assert r.json()["location"] == "india" and r.json()["currency"] == "INR"
-    d = client.get(LOAD).json()                          # no location → the saved plan
-    assert d["saved"] is True and d["location"] == "india" and d["inputs"]["need"] == 90000
+    # no location → default (europe) → no europe plan → preset, saved=False
+    d = client.get(LOAD).json()
+    assert d["saved"] is False and d["location"] == "europe"
+    # with ?location=india → the saved india plan
     d = client.get(LOAD, params={"location": "india"}).json()
-    assert d["saved"] is True and d["inputs"]["need"] == 90000
+    assert d["saved"] is True and d["location"] == "india" and d["inputs"]["need"] == 90000
     row = db_session.query(UserRetirementPlanModel).one()
     assert row.location == "india"
     hist = db_session.query(UserRetirementPlanHistoryModel).one()
@@ -108,15 +110,18 @@ def test_saved_plan_for_other_location_not_returned(client):
     assert d["saved"] is True and d["inputs"]["need"] == 2500
 
 
-def test_saving_other_location_replaces_current_plan_history_keeps_both(client, db_session):
+def test_saving_per_location_independent_history_keeps_both(client, db_session):
     _as("u1")
     client.put(SAVE, json=_preset("europe"))
     client.put(SAVE, params={"location": "us"}, json=_preset("us"))
-    assert [r.location for r in db_session.query(UserRetirementPlanModel).all()] == ["us"]
+    # per-location PK: both rows kept independently
+    locs_db = sorted(r.location for r in db_session.query(UserRetirementPlanModel).all())
+    assert locs_db == ["europe", "us"]
     locs = sorted(h.location for h in db_session.query(UserRetirementPlanHistoryModel).all())
     assert locs == ["europe", "us"]
+    # RESULT with no location → default (europe) → saved europe plan
     d = client.get(RESULT).json()
-    assert d["location"] == "us" and d["currency"] == "USD"
+    assert d["location"] == "europe" and d["currency"] == "EUR"
 
 
 def test_save_unknown_location_422_nothing_stored(client, db_session):
