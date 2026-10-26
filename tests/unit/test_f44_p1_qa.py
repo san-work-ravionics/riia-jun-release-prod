@@ -66,6 +66,11 @@ CONTRACT_AUTH = {
     "market.ask":                   ({"none"}, None),
     "market.monitor":               ({"user"}, "can_access_ops"),
     "market.fx_rate":               ({"none"}, None),  # F44 P2
+    # F44 P3 (model-based design 2): user + system, JWT, not on stdio
+    "whatineed.get_goal":           ({"user", "system"}, None),
+    "portfolio.select_for_goal":    ({"user", "system"}, None),
+    "portfolio.required_return":    ({"user", "system"}, None),
+    "portfolio.model_runs":         ({"user", "system"}, None),
     # legacy aliases (rita_monitor needs ops over the network — recorded Engineer deviation)
     "ask_rita":                     ({"none"}, None),
     "rita_market_overview":         ({"none"}, None),
