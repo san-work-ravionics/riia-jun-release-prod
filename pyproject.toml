@@ -55,6 +55,9 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 addopts = "--output=playwright-artifacts"
+markers = [
+    "slow: real-model / long-running tests (skipped when the model zips are absent)",
+]
 
 [tool.coverage.run]
 omit = [
