@@ -2,10 +2,21 @@
 
 F44 P2 (D1): one active portfolio per (key_id, location); ``location`` NULL is the legacy
 cross-geography portfolio and counts as its own bucket.
+
+"Latest" is deterministic (review #8): ``updated_at`` desc, then ``created_at`` desc, then
+``portfolio_id`` desc as the final tie-break.  ``UserPortfolioService.save`` writes the
+timestamps with microseconds, so two saves in the same second still order by save time; the
+``portfolio_id`` tie-break (portable — no SQLite ``rowid``) only decides exact timestamp ties.
 """
 from sqlalchemy.orm import Session
 
 from rita.models.user_portfolio import UserPortfolioModel
+
+_LATEST_FIRST = (
+    UserPortfolioModel.updated_at.desc(),
+    UserPortfolioModel.created_at.desc(),
+    UserPortfolioModel.portfolio_id.desc(),
+)
 
 
 class UserPortfolioRepo:
@@ -20,7 +31,7 @@ class UserPortfolioRepo:
                 UserPortfolioModel.key_id == key_id,
                 UserPortfolioModel.is_active.is_(True),
             )
-            .order_by(UserPortfolioModel.updated_at.desc(), UserPortfolioModel.created_at.desc())
+            .order_by(*_LATEST_FIRST)
             .first()
         )
 
@@ -37,7 +48,7 @@ class UserPortfolioRepo:
                 UserPortfolioModel.is_active.is_(True),
                 loc_filter,
             )
-            .order_by(UserPortfolioModel.updated_at.desc(), UserPortfolioModel.created_at.desc())
+            .order_by(*_LATEST_FIRST)
             .first()
         )
 

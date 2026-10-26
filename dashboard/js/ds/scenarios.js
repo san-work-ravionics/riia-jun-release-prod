@@ -3,6 +3,18 @@ import { DS_C } from './utils.js';
 
 const C = DS_C;
 
+function _esc(v) {
+  return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// F44 P2 review #3: the backtest skips whole-share sizing for an instrument whose currency has no
+// cached FX rate (fx_unavailable) — say so instead of showing a silently fully-invested result.
+export function fxUnavailableNotice(d) {
+  const ccys = Array.isArray(d?.fx_unavailable) ? d.fx_unavailable.filter(Boolean) : [];
+  if (!ccys.length) return '';
+  return `<div id="sc-fx-unavailable" class="kpi-delta" style="margin-bottom:10px;color:var(--warn)">FX rate unavailable (${ccys.map(_esc).join(', ')}) — whole-share sizing skipped; those instruments are shown fully invested.</div>`;
+}
+
 export function loadScenariosPage() { /* section is ready on show — nothing to auto-load */ }
 
 function scToggleInst(id) {
@@ -96,6 +108,7 @@ function renderPortfolioScenarioResults(d, from, to, selected) {
     <span class="card-title">Portfolio Results — ${from} → ${to}</span>
     <span class="badge ds" style="margin-left:8px">${d.instruments_count ?? selected?.length ?? ''} instruments · €${(d.total_eur_allocated??1000).toLocaleString()}</span>
   </div>
+  ${fxUnavailableNotice(d)}
   <div class="kpi-row kpi-row-4" style="margin-bottom:14px">
     <div class="kpi"><div class="kpi-label">Portfolio Sharpe</div><div class="kpi-value ${sharpe!==null?(sharpe>=1?'pos':sharpe>=0?'neu':'neg'):''}">${sharpe!==null?sharpe.toFixed(3):'—'}</div><div class="kpi-delta">target ≥ 1.0</div></div>
     <div class="kpi"><div class="kpi-label">Max Drawdown</div><div class="kpi-value ${mdd!==null?(Math.abs(mdd)<=10?'pos':'warn'):''}">${mdd!==null?mdd.toFixed(2)+'%':'—'}</div><div class="kpi-delta">target &lt; 10%</div></div>

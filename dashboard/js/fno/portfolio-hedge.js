@@ -401,10 +401,8 @@ function _renderHedgeWidgets() {
 // ── Hedge-plan persistence helpers ───────────────────────────────────────────
 
 async function loadHedgePlan() {
-  const token = sessionStorage.getItem('auth_token');
-  const plan = await apiFetch('/api/v1/experience/fno/hedge-plan', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  // api(): 401 → ensureDevToken(true) → retry once (F44 P2 review #7); 404 → null (no plan)
+  const plan = await api('/api/v1/experience/fno/hedge-plan').catch(() => null);
   if (plan) {
     _state.coverage     = plan.coverage;
     _state.hedgeChecked = new Set(plan.hedged_ids);

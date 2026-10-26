@@ -29,7 +29,7 @@
 import { api, apiFetch } from './api.js';
 import { setEl } from '../shared/utils.js';
 import { CCY_SYMBOL, REGION_CCY, pSym, portfolioCurrency, portfolioTotal, holdingCash, setPortfolioCurrency, getPortfolioCurrency } from '../shared/portfolio-currency.js';
-import { preloadFx, fxForRegion } from '../shared/fx.js';
+import { preloadFx, fxForInstrument, fxQuotesFor } from '../shared/fx.js';
 import { state } from './state.js';
 import { renderInstrumentTiles } from './hedge-instrument-tiles.js';
 import { computeNShares, monthlySigma, sigmaLevels, portfolioVolPct, buildVolMap } from './hedge-calc.js';
@@ -304,7 +304,9 @@ async function _fetchHistory(id) {
   const hw = state.hedgeWorkflow;
   if (hw.priceHistory[id]) return hw.priceHistory[id];
   const h = (hw.portfolioHoldings || []).find((x) => x.instrument_id === id);
-  const nShares = h ? computeNShares(h, hw.instruments[id], hw.totalValueEur, fxForRegion(getPortfolioCurrency(), hw.instruments[id]?.region)) : 1;
+  // A holding whose share count cannot be derived (FX rate missing) still passes 1: only the
+  // price series is read here, and no share count is shown (review #2: no invented count).
+  const nShares = (h ? computeNShares(h, hw.instruments[id], hw.totalValueEur, fxForInstrument(getPortfolioCurrency(), hw.instruments[id])) : null) ?? 1;
   const { start, end } = _rollingDateRange();
   const volPos = (hw.positions || []).find((p) => p.und === id && p.ann_vol_pct != null);
   const body = { instrument: id, n_shares: nShares, start_date: start, end_date: end };
@@ -475,7 +477,7 @@ async function _loadExposure() {
   // F44 P2: total + cash in the portfolio currency (legacy rows: the EUR fields)
   const totalValueEur = portfolioTotal(portfolio);
   setPortfolioCurrency(portfolioCurrency(portfolio));
-  await preloadFx(getPortfolioCurrency(), Object.values(REGION_CCY));
+  await preloadFx(getPortfolioCurrency(), fxQuotesFor(Object.values(instMap), Object.values(REGION_CCY)));
 
   const optionPositions = analytics?.positions || [];
   const greeksList = analytics?.greeks || [];
@@ -529,9 +531,10 @@ export async function loadHedgeWorkflow(stepOverride) {
   const hw = state.hedgeWorkflow;
   let step = 'exposure';
   try {
-    // hedge-plan GET returns null with HTTP 200 when no plan exists (or null on 404
-    // via apiFetch) — both mean "no saved plan": default silently.
-    const plan = await apiFetch('/api/v1/experience/fno/hedge-plan', { headers: _authHeaders() });
+    // hedge-plan GET returns null with HTTP 200 when no plan exists (or a 404, caught to
+    // null) — both mean "no saved plan": default silently. api(): 401 → ensureDevToken(true)
+    // → retry once (F44 P2 review #7).
+    const plan = await api('/api/v1/experience/fno/hedge-plan').catch(() => null);
     if (plan && !hw.dirty) {
       hw.savedPlan = plan;
       hw.coverage = plan.coverage ?? 50;

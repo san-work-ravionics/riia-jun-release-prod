@@ -16,6 +16,7 @@ class GeoInstrument(BaseModel):
     risk_score: int | None = None         # Phase 2: annualised-vol bucket 1–5
     sector: str | None = None             # Phase 2: static lookup (no DB column yet)
     horizons: list[str] = []              # Phase 3: horizon keys from investment_horizons.py
+    currency: str | None = None           # F44 P2 review #4: instruments.currency (trading ccy, may be null)
 
 
 class GeoRegion(BaseModel):

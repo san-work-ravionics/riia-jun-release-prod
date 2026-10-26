@@ -164,8 +164,9 @@ console.log(JSON.stringify({{n: rows.length, empty: calc.aggregates([], null)}})
         ({"shares": None, "allocation_pct": 50}, {"close": 100}, 10000, 50),  # floor(5000/100)
         ({"shares": None, "allocation_pct": 50}, {"close": 3000}, 10000, 1),  # floor(1.66)=1
         ({"shares": None, "allocation_pct": 0.01}, {"close": 3000}, 10000, 1),  # floor 0 -> 1
-        ({"shares": None, "allocation_pct": 50}, {"close": None}, 10000, 10),  # no price
-        ({"shares": None, "allocation_pct": 50}, {"close": 100}, None, 10),  # no total
+        # F44 P2 review #2: no silent 10-share placeholder — an underivable count is null
+        ({"shares": None, "allocation_pct": 50}, {"close": None}, 10000, None),  # no price
+        ({"shares": None, "allocation_pct": 50}, {"close": 100}, None, None),  # no total
     ],
 )
 def test_compute_n_shares(tmp_path: Path, holding, inst, total, expected) -> None:

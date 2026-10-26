@@ -18,11 +18,13 @@ currency EUR when unset).
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy.orm import Session
 
 from rita.config import get_settings
+from rita.core.geography import country_to_location
 from rita.models.user_portfolio import UserPortfolioModel
 from rita.repositories.instrument import InstrumentRepository
 from rita.repositories.user_portfolio import UserPortfolioRepo
@@ -32,15 +34,8 @@ from rita.services.fx_service import FxService
 
 LEGACY_CURRENCY = "EUR"
 
-# Instrument → location: country code / name from the instruments table (same buckets as the
-# RITA geography overview), else the instrument's trading currency.
-_INDIA = frozenset({"IN", "INDIA"})
-_US = frozenset({"US", "USA", "UNITED STATES", "UNITED STATES OF AMERICA"})
-_EUROPE = frozenset({
-    "NL", "DE", "FR", "GB", "BE", "CH", "SE", "ES", "IT", "AT", "FI", "DK", "IE", "PL", "PT",
-    "NETHERLANDS", "GERMANY", "FRANCE", "UNITED KINGDOM", "BELGIUM", "SWITZERLAND", "SWEDEN",
-    "SPAIN", "ITALY", "AUSTRIA", "FINLAND", "DENMARK", "IRELAND", "POLAND", "PORTUGAL",
-})
+# Instrument → location: the instrument's country through the shared geography rule
+# (rita.core.geography — the same buckets as the RITA geography overview), else its currency.
 _CCY_LOCATION = {"INR": "india", "USD": "us", "EUR": "europe"}
 
 
@@ -90,14 +85,8 @@ def location_currency(location: str) -> str:
 
 
 def location_for_country(country: str | None) -> str | None:
-    cc = (country or "").strip().upper()
-    if cc in _INDIA:
-        return "india"
-    if cc in _US:
-        return "us"
-    if cc in _EUROPE:
-        return "europe"
-    return None
+    """Portfolio location for a country code / name (``None`` for the geography "Other" bucket)."""
+    return country_to_location(country)
 
 
 class UserPortfolioService:
@@ -163,8 +152,13 @@ class UserPortfolioService:
         repo = UserPortfolioRepo(self._db)
         repo.deactivate_for_key_and_location(key.key_id, location)
 
+        # Python timestamp with microseconds (naive UTC, like CURRENT_TIMESTAMP): func.now() has
+        # 1-second resolution on SQLite, so same-second saves tied (review #8).
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         new_row = UserPortfolioModel(
             portfolio_id=str(uuid.uuid4()),
+            created_at=now,
+            updated_at=now,
             key_id=key.key_id,
             name=resolved_name,
             holdings=stored,

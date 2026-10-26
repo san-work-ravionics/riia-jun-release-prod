@@ -8,7 +8,7 @@ DoD items covered here:
   ``total_value ?? total_value_eur`` / ``cash ?? cash_eur`` through the shared helpers
 - portfolio save + load go through ``api()`` (401 → ``ensureDevToken(true)`` → retry once) — no
   raw fetch / token-header ``apiFetch`` for the user portfolio (project.md §9)
-- ``?v=`` cache-bust bumped where the page already has one (``portfolio-builder.js?v=5``)
+- ``?v=`` cache-bust bumped where the page already has one (``portfolio-builder.js?v=6`` after the review fixes)
 
 The pure JS runs under node (same approach as the F39/F40 JS tests); the rest is static.
 """
@@ -90,14 +90,14 @@ console.log(JSON.stringify([
   c.computeNShares({shares: null, allocation_pct: 50}, {close: 250}, 10000, null),
   c.computeNShares({shares: 7, allocation_pct: 50}, {close: 250}, 10000, 91),
 ]));""")
-    assert r == [1820, 20, 10, 7]   # fx; default fx=1 (same currency); no rate → 10 fallback; saved shares win
+    assert r == [1820, 20, None, 7]   # fx; omitted fx = same currency; no rate → null (review #2); saved shares win
 
 
 def test_portfolio_builder_uses_fx_before_dividing():
     s = _src("rita/portfolio-builder.js")
     assert "Math.floor(allocEur / price)" not in s
     assert "sharesAndCash(totalEur, allocPct, price, fxRateSync(_PB_CURRENCY, _ccyForId(id)))" in s
-    assert "await preloadFx(_PB_CURRENCY, Object.values(REGION_CCY));" in s
+    assert "await preloadFx(_PB_CURRENCY, fxQuotesFor(_allInstruments(geo), Object.values(REGION_CCY)));" in s
     # every call site passes the instrument id (for its currency)
     calls = re.findall(r"_sharesAndCash\(([^)]*)\)", s)
     assert calls and all(c.rstrip().endswith(("id", "h.instrument_id")) for c in calls), calls
@@ -168,11 +168,60 @@ def test_portfolio_loaders_set_currency_and_use_fallbacks(rel):
         assert "portfolioTotal(portfolio)" in s, rel
 
 
+# Value Today behaviour (review #9c — was a source-string assertion): run the real
+# loadPortfolioHedge() under node with a stub DOM + fetch and read the rendered KPI.
+_VALUE_TODAY = """
+import { pathToFileURL } from 'node:url';
+const els = {};
+const mkEl = (id) => ({ id, style: {}, textContent: '', innerHTML: '', title: '', value: '', disabled: false,
+  classList: { add() {}, remove() {}, toggle() {}, contains() { return false; } },
+  setAttribute() {}, getAttribute() { return null; }, addEventListener() {}, querySelectorAll() { return []; },
+  querySelector() { return null; }, getContext() { return {}; }, appendChild() {} });
+globalThis.window = globalThis;
+globalThis.document = { getElementById: (id) => (els[id] ??= mkEl(id)), querySelectorAll: () => [],
+  querySelector: () => null, createElement: () => mkEl('x') };
+globalThis.Chart = class { destroy() {} update() {} };
+const store = { auth_token: 'tok' };
+globalThis.sessionStorage = { getItem: k => store[k] ?? null, setItem: (k, v) => { store[k] = String(v); },
+  removeItem: k => { delete store[k]; } };
+globalThis.location = { hostname: 'example.test', href: 'https://example.test/' };
+const jr = (body, status = 200) => ({ ok: status < 400, status, statusText: 'x', json: async () => body });
+const FX = __FX__;
+globalThis.fetch = async (url) => {
+  if (url.startsWith('/api/v1/experience/rita/fx')) {
+    const q = new URL('http://x' + url).searchParams.get('quote');
+    return FX[q] ? jr({ rate: FX[q] }) : jr({ detail: 'no fx rate' }, 404);
+  }
+  if (url === '/api/v1/experience/user-portfolio') return jr({ name: 'P', currency: 'EUR', total_value: 10000,
+    holdings: [{ instrument_id: 'NVIDIA', allocation_pct: 50, shares: 4, cash: 100 },
+               { instrument_id: 'ASML', allocation_pct: 50, shares: 5, cash_eur: 50 }] });
+  if (url === '/api/v1/experience/rita/geography-overview') return jr({ regions: [
+    { region: 'US', instruments: [{ id: 'NVIDIA', close: 220 }] }, { region: 'EU', instruments: [{ id: 'ASML', close: 900 }] }] });
+  return jr(null, 404);
+};
+const base = pathToFileURL(process.cwd() + '/').href;
+const ph = await import(base + 'fno/portfolio-hedge.js');
+await ph.loadPortfolioHedge();
+const vt = els['ph-kpi-value-today'];
+console.log(JSON.stringify({ vt: vt.textContent, title: vt.title, change: els['ph-kpi-value-change'].textContent,
+  err: els['ph-error-msg']?.textContent ?? '' }));
+"""
+
+
 def test_value_today_converts_instrument_prices():
-    s = _src("fno/portfolio-hedge.js")
-    assert "liveValue += h.shares * inst.close / fx" in s
-    assert "'FX rate unavailable'" in s
-    assert "liveValue += (holdingCash(h) ?? 0);" in s
+    """shares × close ÷ fx (instrument ccy per portfolio ccy) + cash (cash ?? cash_eur)."""
+    r = _node(_VALUE_TODAY.replace("__FX__", json.dumps({"USD": 1.1})))
+    assert r["err"] == ""
+    # NVIDIA 4 × $220 ÷ 1.1 = €800; ASML 5 × €900 = €4,500; cash 100 + 50 → €5,450
+    assert r["vt"] == "€5,450" and r["title"] == ""
+    assert r["change"] == "-45.5% vs saved"
+
+
+def test_value_today_hidden_when_fx_rate_missing():
+    """No cached EURUSD → Value Today '—' with 'FX rate unavailable', never a static rate."""
+    r = _node(_VALUE_TODAY.replace("__FX__", "{}"))
+    assert r["err"] == ""
+    assert (r["vt"], r["title"], r["change"]) == ("—", "FX rate unavailable", "vs saved")
 
 
 def test_analytics_meta_consumers_use_portfolio_total():
@@ -280,7 +329,7 @@ def test_node_check(rel):
 
 def test_cache_bust_bumped():
     s = _src("rita/main.js")
-    assert "./portfolio-builder.js?v=5'" in s and "?v=4'" not in s
+    assert "./portfolio-builder.js?v=6'" in s and "?v=5'" not in s   # bumped again for the review fixes
 
 
 def test_fno_portfolio_builder_untouched_and_unloaded():

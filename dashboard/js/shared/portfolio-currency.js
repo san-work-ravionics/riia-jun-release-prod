@@ -14,6 +14,11 @@ export function holdingCash(h) { return h ? (h.cash ?? h.cash_eur ?? null) : nul
 export function portfolioCurrency(p) { return (p && p.currency) || 'EUR'; }
 export function ccySymbol(ccy) { return CCY_SYMBOL[ccy] ?? ''; }
 export function regionCurrency(region) { return REGION_CCY[region] ?? null; }
+// Trading currency of a geography-overview instrument: its region's currency, else (an 'Other'
+// region instrument) the instrument's own `currency` from the instruments table, else null.
+export function instrumentCurrency(inst, region = inst?.region) {
+  return regionCurrency(region) ?? ((inst && typeof inst.currency === 'string' && inst.currency) || null);
+}
 
 // Current portfolio currency for the page (set by whichever loader read the saved portfolio).
 let _currency = 'EUR';

@@ -8,7 +8,7 @@
 // appended server-side to the user_hedge_plan_history dataset (no JS consumer). The
 // per-instrument strategy (state.hedgeWorkflow.selections) is persisted with the plan.
 
-import { api, apiFetch } from './api.js';
+import { api } from './api.js';
 import { setEl } from '../shared/utils.js';
 import { mkChart } from '../shared/charts.js';
 import { state } from './state.js';
@@ -169,7 +169,7 @@ function _renderSummary() {
   const heldN = known.size;
   const m = hw.marginImpact;
   const marginTxt = m
-    ? `${m.currency || ''} ${Number(m.amount).toLocaleString('en-US', { maximumFractionDigits: 0 })} (${m.source === 'kite' ? 'Live' : 'Estimated'}, ${m.instrumentId})`
+    ? `${_esc(m.currency || '')} ${Number(m.amount).toLocaleString('en-US', { maximumFractionDigits: 0 })} (${m.source === 'kite' ? 'Live' : 'Estimated'}, ${_esc(m.instrumentId)})`
     : '—';
   setEl(
     'hw-save-summary',
@@ -374,7 +374,8 @@ export async function loadSaveStep() {
       const ph = await api(u).catch(() => null);
       if (ph && token === _saveToken) { hw.apiHedge = ph; _renderImpact(); }
     }
-    const plan = await apiFetch('/api/v1/experience/fno/hedge-plan', { headers: authHeaders() });
+    // api(): 401 → ensureDevToken(true) → retry once (F44 P2 review #7); 404 → null (no plan)
+    const plan = await api('/api/v1/experience/fno/hedge-plan').catch(() => null);
     if (token !== _saveToken) return; // stale — user moved on
     // A pending/failed autosave must not be clobbered by an older server copy.
     if (plan && !hw.dirty) hw.savedPlan = plan;

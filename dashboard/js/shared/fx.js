@@ -3,7 +3,7 @@
 // Goes through api() (401 → ensureDevToken(true) → retry once on localhost). A missing rate
 // (404 "no fx rate") resolves to null — callers show "FX rate unavailable", never a static rate.
 import { api } from './api.js';
-import { regionCurrency } from './portfolio-currency.js';
+import { regionCurrency, instrumentCurrency } from './portfolio-currency.js';
 
 const _pending = new Map();   // 'EURINR' → Promise<number|null>
 const _known   = new Map();   // 'EURINR' → number|null (resolved)
@@ -13,7 +13,7 @@ export function fxRate(base, quote) {
   if (base === quote) return Promise.resolve(1);
   const k = base + quote;
   if (!_pending.has(k)) {
-    _pending.set(k, api(`/api/v1/experience/rita/fx?base=${base}&quote=${quote}`)
+    _pending.set(k, api(`/api/v1/experience/rita/fx?base=${encodeURIComponent(base)}&quote=${encodeURIComponent(quote)}`)
       .then(r => (r && typeof r.rate === 'number' ? r.rate : null))
       .catch(() => null)
       .then(rate => { _known.set(k, rate); return rate; }));
@@ -37,4 +37,15 @@ export function preloadFx(base, quotes) {
 // geography-overview `region` (null when the region's currency or the rate is unknown).
 export function fxForRegion(portfolioCcy, region) {
   return fxRateSync(portfolioCcy, regionCurrency(region));
+}
+
+// Same for one geography-overview instrument ({region, currency}): region currency first, then the
+// instrument's own currency ('Other' region). Same currency as the portfolio → 1 (no FX needed).
+export function fxForInstrument(portfolioCcy, inst) {
+  return fxRateSync(portfolioCcy, instrumentCurrency(inst));
+}
+
+// Currencies to preload for a set of geography-overview instruments (plus every region currency).
+export function fxQuotesFor(instruments, regionCcys = []) {
+  return [...new Set([...regionCcys, ...(instruments || []).map(i => instrumentCurrency(i)).filter(Boolean)])];
 }

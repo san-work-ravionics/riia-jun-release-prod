@@ -31,7 +31,7 @@ import { ensureDevToken } from '../shared/dev-auth.js';
 import { loadMyPortfolio, savePortfolio } from './my-portfolio.js';
 import { loadAgentPerformance, setAgentPerfPeriod, loadAgentPerfTimeline, loadRLScorecards } from './agent-performance.js';
 import { loadModelEval, meSelectInstrument, meSelectRow, meSortTable } from './model-eval.js';
-import { loadPortfolioBuilder, pbToggleInstrument, pbSelectAllRegion, pbClearAllRegion, pbSortTable, pbApplyGoalPreset, pbToggleDraftItem, pbBuildFromDraft, pbClearBasket, pbBuildPortfolio, pbSetAlloc } from './portfolio-builder.js?v=5';
+import { loadPortfolioBuilder, pbToggleInstrument, pbSelectAllRegion, pbClearAllRegion, pbSortTable, pbApplyGoalPreset, pbToggleDraftItem, pbBuildFromDraft, pbClearBasket, pbBuildPortfolio, pbSetAlloc } from './portfolio-builder.js?v=6';
 
 // ── Populate section loaders map ───────────────────────────
 _sectionLoaders.market            = async () => { refreshChatChips(); clearChat(); runMarket(); const data = await warmupChat(); if (data) { updateChips(data.chips); showAlerts(data.alerts); } };

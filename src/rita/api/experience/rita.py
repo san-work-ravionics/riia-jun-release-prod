@@ -30,6 +30,7 @@ from rita.core.performance import (
     simulate_stress_scenarios,
 )
 from rita.schemas.geography import GeographyOverviewResponse, GeoInstrument, GeoRegion
+from rita.core.geography import country_to_region
 from rita.core.investment_horizons import INVESTMENT_HORIZONS as _INVESTMENT_HORIZONS
 from rita.schemas.strategy_comparison import (
     StrategyComparisonResponse,
@@ -1147,9 +1148,7 @@ def _risk_score_from_vol(annualized_vol_pct: float) -> int:
         return 4
     return 5
 
-_EU_COUNTRY_CODES = frozenset({"NL", "DE", "FR", "GB", "BE", "CH", "SE", "ES", "IT", "AT", "FI", "DK", "IE", "PL", "PT"})
-_EU_COUNTRY_NAMES = frozenset({"netherlands", "germany", "france", "united kingdom", "belgium", "switzerland", "sweden", "spain", "italy", "austria", "finland", "denmark", "ireland", "poland", "portugal"})
-
+# Country → bucket rule lives in rita.core.geography (shared with the portfolio location rule)
 _REGION_FLAGS = {
     "US":    "\U0001f1fa\U0001f1f8",
     "EU":    "\U0001f1ea\U0001f1fa",
@@ -1159,21 +1158,8 @@ _REGION_FLAGS = {
 
 
 def _country_to_region(country_code: str) -> str:
-    """Map a country_code string to a geography bucket.
-
-    Accepts both ISO-2 codes ('US', 'IN') and full names ('United States',
-    'India') because yfinance returns full names which get stored as-is.
-    """
-    raw = (country_code or "").strip()
-    cc = raw.upper()
-    name = raw.lower()
-    if cc in ("IN",) or name == "india":
-        return "India"
-    if cc in ("US", "USA") or name in ("united states", "united states of america"):
-        return "US"
-    if cc in _EU_COUNTRY_CODES or name in _EU_COUNTRY_NAMES:
-        return "EU"
-    return "Other"
+    """Map a country_code string to a geography bucket (see ``rita.core.geography``)."""
+    return country_to_region(country_code)
 
 
 @router.get(
@@ -1342,6 +1328,7 @@ def geography_overview(db: Session = Depends(get_db)) -> GeographyOverviewRespon
                     risk_score=risk_score,
                     sector=_SECTOR_MAP.get(inst_id),
                     horizons=horizons,
+                    currency=(inst.currency or None) if isinstance(getattr(inst, "currency", None), str) else None,
                 )
             )
         regions.append(

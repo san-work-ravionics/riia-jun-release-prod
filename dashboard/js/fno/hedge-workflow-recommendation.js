@@ -11,10 +11,10 @@ import { setEl } from '../shared/utils.js';
 import { state } from './state.js';
 import { haShowReasoning, haShowLoading, haShowError, haClear } from './hedge-reasoning.js';
 import { renderInstrumentTiles } from './hedge-instrument-tiles.js';
-import { computeNShares, hedgeLabel, hedgeType, estRisk } from './hedge-calc.js';
-import { hwMarkDirty, authHeaders, STRATEGY_LABELS } from './hedge-workflow-save.js';
+import { nSharesInfo, sharesNotice, hedgeLabel, hedgeType, estRisk } from './hedge-calc.js';
+import { hwMarkDirty, STRATEGY_LABELS } from './hedge-workflow-save.js';
 import { CCY_SYMBOL, pSym, getPortfolioCurrency } from '../shared/portfolio-currency.js';
-import { fxForRegion } from '../shared/fx.js';
+import { fxForInstrument } from '../shared/fx.js';
 
 let _recToken = 0;
 
@@ -28,11 +28,25 @@ function _holding(id) {
   return (_hw().portfolioHoldings || []).find((h) => h.instrument_id === id) || null;
 }
 
-// nShares for the advisor request: the user's real holding, never invented.
-function _nSharesFor(id) {
+// {shares, reason} for a held instrument (null when not held). shares null + reason 'fx' →
+// "FX rate unavailable" (F44 P2 review #2: never an invented count).
+function _sharesInfoFor(id) {
   const h = _holding(id);
   if (!h) return null;
-  return computeNShares(h, _hw().instruments[id], _hw().totalValueEur, fxForRegion(getPortfolioCurrency(), _hw().instruments[id]?.region));
+  return nSharesInfo(h, _hw().instruments[id], _hw().totalValueEur, fxForInstrument(getPortfolioCurrency(), _hw().instruments[id]));
+}
+
+// nShares for the advisor request: the user's real holding, never invented.
+function _nSharesFor(id) {
+  return _sharesInfoFor(id)?.shares ?? null;
+}
+
+// Caveat line under the advisor: no holding, or a holding whose share count cannot be derived.
+function _recNote(id) {
+  const info = _sharesInfoFor(id);
+  if (!info) return `<span style="opacity:.7">No equity holding for this instrument — amounts are illustrative.</span>`;
+  const notice = sharesNotice(info);
+  return notice ? `<span style="opacity:.7">${_esc(notice)} — amounts are illustrative.</span>` : '';
 }
 
 function _cta() {
@@ -127,7 +141,7 @@ function _renderAdvisor(instant = false) {
   );
   // The long advisor narrative is the typewriter panel (#ha-step-6); only the
   // no-holding caveat goes in the note line.
-  setEl('hw-rec-note', _nSharesFor(id) == null ? `<span style="opacity:.7">No equity holding for this instrument — amounts are illustrative.</span>` : '');
+  setEl('hw-rec-note', _recNote(id));
 }
 
 function _renderSelectionTable() {

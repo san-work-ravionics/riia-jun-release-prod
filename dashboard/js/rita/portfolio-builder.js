@@ -6,8 +6,8 @@
 
 import { api, apiFetch } from './api.js';
 import { ensureDevToken, isLocalDev } from '../shared/dev-auth.js';
-import { ccySymbol, regionCurrency, sharesAndCash, REGION_CCY } from '../shared/portfolio-currency.js';
-import { preloadFx, fxRateSync } from '../shared/fx.js';
+import { ccySymbol, instrumentCurrency, sharesAndCash, REGION_CCY } from '../shared/portfolio-currency.js';
+import { preloadFx, fxRateSync, fxQuotesFor } from '../shared/fx.js';
 
 // F44 P2 (D2): Portfolio Builder keeps the cross-geography view and saves without a location,
 // i.e. a legacy EUR portfolio. Amounts typed here are EUR; instrument prices are in their own
@@ -86,18 +86,32 @@ function _totalEurInput() {
   return isNaN(v) || v <= 0 ? 0 : v;
 }
 
+// Instrument trading currency: its region's currency, else ('Other' region) the instrument's own
+// `currency` from geography-overview, else null (unknown → FX rate unavailable).
 function _ccyForId(id) {
   if (!_geoCache) return null;
   for (const r of (_geoCache.regions || [])) {
-    if ((r.instruments || []).some(i => i.id === id)) return regionCurrency(r.region);
+    const inst = (r.instruments || []).find(i => i.id === id);
+    if (inst) return instrumentCurrency(inst, r.region);
   }
   return null;
 }
 
 // F44 P2 fix: the EUR amount is converted into the instrument's currency before dividing by its
 // native price (was floor(allocEur / price) — India share counts ~91x too low). No FX rate → null.
+// Same currency as the portfolio (e.g. an 'Other' instrument quoted in EUR) → fx 1, no rate needed.
 function _sharesAndCash(totalEur, allocPct, price, id) {
   return sharesAndCash(totalEur, allocPct, price, fxRateSync(_PB_CURRENCY, _ccyForId(id)));
+}
+
+// Review #4: true when an instrument's share count cannot be computed only because the FX rate
+// (or its currency) is unknown — the UI then says "FX rate unavailable", never a static rate.
+const _FX_UNAVAILABLE = 'FX rate unavailable';
+function _fxMissing(id) {
+  return fxRateSync(_PB_CURRENCY, _ccyForId(id)) == null;
+}
+function _fxNoticeHtml(id) {
+  return `<div id="pb-chip-sc-${id}" class="pb-fx-unavailable" style="margin-top:4px;font-size:10px;color:#b45309">${_FX_UNAVAILABLE}</div>`;
 }
 
 function _regionDisplay(apiRegion) {
@@ -173,11 +187,12 @@ function _renderRegionSummary() {
   const totalEurForCash = _totalEurInput();
   let totalCash = 0;
   let hasPrices = false;
+  const fxMissingIds = [];
   if (totalEurForCash > 0) {
     for (const id of _basket) {
       const p = _priceForId(id);
       const sc = p ? _sharesAndCash(totalEurForCash, _allocationPct.get(id) ?? 0, p, id) : null;
-      if (sc) { totalCash += sc.cash; hasPrices = true; }
+      if (sc) { totalCash += sc.cash; hasPrices = true; } else if (p && _fxMissing(id)) { fxMissingIds.push(id); }
     }
   }
   const cashRow = hasPrices
@@ -187,7 +202,12 @@ function _renderRegionSummary() {
        </div>`
     : '';
 
-  el.innerHTML = rows.join('') + cashRow;
+  // Review #4: the cash total leaves out instruments without an FX rate — say so
+  const fxRow = fxMissingIds.length
+    ? `<div id="pb-fx-unavailable" style="padding:4px 0;font-size:11px;color:#b45309">${_FX_UNAVAILABLE} for ${fxMissingIds.join(', ')} — no share count or cash shown</div>`
+    : '';
+
+  el.innerHTML = rows.join('') + cashRow + fxRow;
   _updateSummaryStats(allocSum, retCount > 0 ? totalRet / retCount : null);
 }
 
@@ -289,7 +309,7 @@ function _renderBasket() {
                <span style="color:#16a34a;font-weight:700">${sc.shares} shares</span>
                <span style="color:#64748b">${_pbSym()}${sc.cash.toFixed(0)} cash</span>
              </div>`
-          : `<div id="pb-chip-sc-${id}"></div>`;
+          : (totalEur > 0 && price && _fxMissing(id) ? _fxNoticeHtml(id) : `<div id="pb-chip-sc-${id}"></div>`);
         return `<div style="border-radius:8px;background:rgba(190,24,93,.06);border:1px solid rgba(190,24,93,.2);padding:6px 8px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
             <span style="font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:#BE185D;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px">${id}</span>
@@ -775,7 +795,7 @@ export async function loadPortfolioBuilder() {
     }
     _geoCache = geo;
     // F44 P2: EUR → INR / USD rates for whole-share counts (null when not cached)
-    await preloadFx(_PB_CURRENCY, Object.values(REGION_CCY));
+    await preloadFx(_PB_CURRENCY, fxQuotesFor(_allInstruments(geo), Object.values(REGION_CCY)));
 
     // Pre-fill basket from saved portfolio (silent on 404; api() handles a stale token)
     try {
@@ -904,14 +924,15 @@ export function pbSetAlloc(id, pct) {
     const totalEur = _totalEurInput();
     const price    = _priceForId(id);
     const sc       = totalEur > 0 && price ? _sharesAndCash(totalEur, _allocationPct.get(id) ?? 0, price, id) : null;
-    scEl.style.display = sc ? 'flex' : 'none';
+    const fxMissing = !sc && totalEur > 0 && price && _fxMissing(id);
+    scEl.style.display = sc || fxMissing ? 'flex' : 'none';
     scEl.style.justifyContent = 'space-between';
     scEl.style.marginTop = '4px';
     scEl.style.fontSize = '10px';
     scEl.style.fontFamily = "'IBM Plex Mono',monospace";
     scEl.innerHTML = sc
       ? `<span style="color:#16a34a;font-weight:700">${sc.shares} shares</span><span style="color:#64748b">${_pbSym()}${sc.cash.toFixed(0)} cash</span>`
-      : '';
+      : (fxMissing ? `<span style="color:#b45309">${_FX_UNAVAILABLE}</span>` : '');
   }
 }
 
@@ -945,11 +966,13 @@ export async function pbBuildPortfolio() {
     const rem = 100 - eq * _basket.size;
     if (rem > 0) baseHoldings[0].allocation_pct += rem;
   }
-  // Enrich each holding with whole-share count and cash remainder
+  // Enrich each holding with whole-share count and cash remainder (no FX rate → shares null, noted)
+  const fxMissingSave = [];
   const holdings = baseHoldings.map(h => {
     const price = _priceForId(h.instrument_id);
     const sc    = totalValueEur && price ? _sharesAndCash(totalValueEur, h.allocation_pct, price, h.instrument_id) : null;
     const cash  = sc ? parseFloat(sc.cash.toFixed(2)) : null;
+    if (!sc && totalValueEur && price && _fxMissing(h.instrument_id)) fxMissingSave.push(h.instrument_id);
     // F44 P2: `cash` in the portfolio currency (EUR here) + legacy `cash_eur` for one release
     return { ...h, shares: sc ? sc.shares : null, cash, cash_eur: cash };
   });
@@ -963,7 +986,8 @@ export async function pbBuildPortfolio() {
     // No location (D2) → the server stores a legacy EUR portfolio; total_value_eur kept for one release
     await api('/api/v1/user-portfolio/', 'POST', { name, holdings, total_value: totalValueEur, total_value_eur: totalValueEur });
     const msg = document.getElementById('pb-status-msg');
-    if (msg) { msg.textContent = `Portfolio "${name}" saved with ${_basket.size} instruments.`; msg.style.color = '#16a34a'; msg.style.display = ''; }
+    const fxNote = fxMissingSave.length ? ` ${_FX_UNAVAILABLE} for ${fxMissingSave.join(', ')} — saved without a share count.` : '';
+    if (msg) { msg.textContent = `Portfolio "${name}" saved with ${_basket.size} instruments.${fxNote}`; msg.style.color = fxNote ? '#b45309' : '#16a34a'; msg.style.display = ''; }
   } catch (e) {
     const msg = document.getElementById('pb-status-msg');
     if (msg) { msg.textContent = `Save failed: ${e.message || 'Unknown error'}`; msg.style.color = '#dc2626'; msg.style.display = ''; }

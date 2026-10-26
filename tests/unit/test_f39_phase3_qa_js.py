@@ -132,7 +132,7 @@ console.log(JSON.stringify([
  calc.computeNShares({shares:null,allocation_pct:10},{close:0},1000),
  calc.computeNShares({shares:null,allocation_pct:0.01},{close:1e9},1000),
  calc.computeNShares({shares:7},{},null)]));""")
-    assert r == [10, 1, 10, 1, 7]
+    assert r == [None, 1, None, 1, 7]   # F44 P2 review #2: null, not the old 10-share placeholder
 
 
 def test_estimate_margin_null_and_missing_legs(jsroot):

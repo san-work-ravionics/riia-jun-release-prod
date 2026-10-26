@@ -4,6 +4,11 @@ import { state } from './state.js';
 import { fmtPnl, pnlClass } from './utils.js';
 import { CCY_SYMBOL, pSym, portfolioTotal, getPortfolioCurrency } from '../shared/portfolio-currency.js';
 
+// Server strings (currency, instrument ids/names) are escaped before they go into innerHTML.
+function _esc(v) {
+  return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 export function computeFilteredStress() {
   const sel = state.riskSelectedInstrument;
   const filtered = state.greeksData.filter(g =>
@@ -44,7 +49,7 @@ export function renderStressScenarios() {
   if (rowEl) {
     const body = scenarios.map(s => {
       const isFlat = s.move_pct === 0;
-      const instLbl = s.nifty_level ? `${s.ref_label} ~${s.nifty_level.toLocaleString('en-IN')}` : '—';
+      const instLbl = s.nifty_level ? `${_esc(s.ref_label)} ~${s.nifty_level.toLocaleString('en-IN')}` : '—';
       return `<tr class="rk-stress-row${isFlat ? ' flat' : ''}">
         <td class="rk-stress-move">${isFlat ? t('stress.flat') : s.move_label}</td>
         <td class="num rk-stress-lvl">${instLbl}</td>
@@ -122,8 +127,8 @@ export function renderStdDevTable() {
     const selStyle = isSelected
       ? 'background:color-mix(in srgb,var(--p02) 12%,transparent);outline:1px solid color-mix(in srgb,var(--p02) 30%,transparent);'
       : '';
-    return `<tr style="cursor:pointer;${selStyle}" data-inst="${inst.id}" class="stddev-row">
-      <td style="font-size:12px;font-weight:${isPortfolio ? '700' : '600'};${isPortfolio ? 'color:var(--p02)' : ''}">${inst.full}</td>
+    return `<tr style="cursor:pointer;${selStyle}" data-inst="${_esc(inst.id)}" class="stddev-row">
+      <td style="font-size:12px;font-weight:${isPortfolio ? '700' : '600'};${isPortfolio ? 'color:var(--p02)' : ''}">${_esc(inst.full)}</td>
       <td style="font-size:11px;color:var(--t3);font-family:'IBM Plex Mono',monospace">${(inst.vol * 100).toFixed(1)}%</td>
       ${tdNeg(fmtPrice(inst.price * (1 - m3), inst.sym, isPortfolio), 'rk-sd-x')}
       ${tdNeg(fmtPrice(inst.price * (1 - m2), inst.sym, isPortfolio))}
@@ -143,7 +148,7 @@ export function renderStdDevTable() {
   el.innerHTML = `
     <div class="card-hdr">
       <span class="card-title">Standard Deviation Price Ranges</span>
-      <span class="card-sub">Click a row to filter Risk &amp; Greeks · Portfolio row uses allocation-weighted vol in ${getPortfolioCurrency()}</span>
+      <span class="card-sub">Click a row to filter Risk &amp; Greeks · Portfolio row uses allocation-weighted vol in ${_esc(getPortfolioCurrency())}</span>
     </div>
     <div class="card-body" style="padding:0">
       <div class="tbl-wrap">

@@ -131,16 +131,34 @@ export function hedgedPL(m, tab, avgStrike, totalCost) {
 // floor(allocation value in the instrument currency / price). holding = {shares, allocation_pct};
 // inst = {close}; totalValue in the portfolio currency; fx = instrument-currency units per 1
 // portfolio-currency unit (F44 P2: was an EUR amount divided by a native price).
-// Returns 10 when allocation/price/FX cannot be derived (same as old Equity Hedge).
-export function computeNShares(holding, inst, totalValue, fx = 1) {
-  if (holding?.shares != null && holding.shares > 0) return holding.shares;
+// An omitted fx means the same currency (1); an explicit null/0 means the FX rate is missing.
+// F44 P2 review #2: no silent placeholder (was 10 shares). When the count cannot be derived the
+// result is { shares: null, reason }, reason 'fx' (FX rate missing) or 'inputs' (no total /
+// allocation / price); callers show sharesNotice(info) instead of sizing on an invented count.
+export const FX_UNAVAILABLE = 'FX rate unavailable';
+
+export function nSharesInfo(holding, inst, totalValue, fx = 1) {
+  if (holding?.shares != null && holding.shares > 0) return { shares: holding.shares, reason: null };
   const total    = parseFloat(totalValue || 0);
   const allocPct = parseFloat(holding?.allocation_pct || 0);
-  if (!total || !allocPct) return 10;
-  const alloc    = total * allocPct / 100;
   const price    = parseFloat(inst?.close || 0);
-  if (!price || !fx) return 10;
-  return Math.floor((alloc * fx) / price) || 1;
+  if (!total || !allocPct || !price) return { shares: null, reason: 'inputs' };
+  if (!fx) return { shares: null, reason: 'fx' };
+  const alloc    = total * allocPct / 100;
+  return { shares: Math.floor((alloc * fx) / price) || 1, reason: null };
+}
+
+// Whole shares, or null when they cannot be derived (see nSharesInfo for the reason).
+export function computeNShares(holding, inst, totalValue, fx = 1) {
+  return nSharesInfo(holding, inst, totalValue, fx).shares;
+}
+
+// User-facing notice for an underivable share count (null when the count is known).
+export function sharesNotice(info) {
+  if (!info || info.shares != null) return null;
+  return info.reason === 'fx'
+    ? `${FX_UNAVAILABLE} — share count not computed`
+    : 'Share count unavailable (no allocation or price)';
 }
 
 // Covered-call margin split. Moved verbatim from equity_hedge.js injectAsmlToState

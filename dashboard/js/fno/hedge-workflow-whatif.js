@@ -19,11 +19,11 @@ import { mkChart } from '../shared/charts.js';
 import { state } from './state.js';
 import {
   buildRows, aggregates, hedgedPL, PAYOFF_MOVES, SCENARIO_MOVES,
-  computeNShares, estimateEquityHedgeMargin, estRisk,
+  nSharesInfo, sharesNotice, estimateEquityHedgeMargin, estRisk,
 } from './hedge-calc.js';
 import { hwMarkDirty, authHeaders, TAB_LABELS, STRATEGY_LABELS } from './hedge-workflow-save.js';
 import { CCY_SYMBOL, pSym, getPortfolioCurrency } from '../shared/portfolio-currency.js';
-import { fxForRegion } from '../shared/fx.js';
+import { fxForInstrument } from '../shared/fx.js';
 
 const _COVERAGE_REFETCH_MS = 300;
 const _CCY_SYMBOL = CCY_SYMBOL;   // per-instrument symbols
@@ -58,9 +58,15 @@ function _holding(id) {
   return (_hw().portfolioHoldings || []).find((h) => h.instrument_id === id) || null;
 }
 
-function _nSharesFor(id) {
+// {shares, reason} for a held instrument (null when not held). shares is null when it cannot be
+// derived — reason 'fx' = FX rate unavailable (F44 P2 review #2: never an invented count).
+function _sharesInfoFor(id) {
   const h = _holding(id);
-  return h ? computeNShares(h, _hw().instruments[id], _hw().totalValueEur, fxForRegion(getPortfolioCurrency(), _hw().instruments[id]?.region)) : null;
+  return h ? nSharesInfo(h, _hw().instruments[id], _hw().totalValueEur, fxForInstrument(getPortfolioCurrency(), _hw().instruments[id])) : null;
+}
+
+function _nSharesFor(id) {
+  return _sharesInfoFor(id)?.shares ?? null;
 }
 
 // Chosen strategy; falls back to the Recommendation-step default rule when the user
@@ -266,6 +272,12 @@ function _renderEquityLeg() {
   }
   if (!_holding(id)) {
     setEl('hw-wi-equity-leg', `<div class="kpi-sub">No equity holding for ${_esc(id)} — equity-leg scenarios n/a.</div>`);
+    mkChart('hw-wi-equity-payoff-chart', { type: 'line', data: { labels: [], datasets: [] } });
+    return;
+  }
+  const notice = sharesNotice(_sharesInfoFor(id));
+  if (notice) {
+    setEl('hw-wi-equity-leg', `<div class="kpi-sub">Equity-leg scenarios for ${_esc(id)} — ${_esc(notice)}.</div>`);
     mkChart('hw-wi-equity-payoff-chart', { type: 'line', data: { labels: [], datasets: [] } });
     return;
   }
