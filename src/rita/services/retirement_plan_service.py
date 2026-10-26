@@ -10,6 +10,8 @@
   never stored.  One current plan per user: saving another location replaces it.
 - ``RetirementPlanService(db).load_with_result(user_id, location=None)`` — read-only: ``load`` plus
   the result calculated from those inputs (what later screens and ``whatineed.get_plan`` read).
+- ``RetirementPlanService(db).goal(user_id, location=None)`` — F44 P3, read-only: the saved plan's
+  blended expected return, horizon and goal value (``GoalOut``); no saved plan → nulls.
 - ``RetirementPlanService(db).history(user_id)`` / ``.history_entry(user_id, history_id)`` —
   read-only: the user's saved plans, newest first; one entry with its result recalculated.
 
@@ -25,10 +27,12 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from rita.config import get_settings
+from rita.core.goal_targets import ASSET_CLASSES, blend_goal_return
 from rita.core.retirement_plan import calc, to_params, validate_plan
 from rita.models.user_retirement_plan_history import UserRetirementPlanHistoryModel
 from rita.repositories.user_retirement_plan import UserRetirementPlanRepo
 from rita.repositories.user_retirement_plan_history import UserRetirementPlanHistoryRepo
+from rita.schemas.goal_selection import AssetRateOut, GoalOut
 from rita.schemas.retirement_plan import (
     RetirementPlanHistoryDetail,
     RetirementPlanHistoryItem,
@@ -117,6 +121,25 @@ class RetirementPlanService:
             plan = default_plan(plan.location)
             result = calculate(plan.inputs)
         return RetirementPlanWithResult(**plan.model_dump(), result=result)
+
+    def goal(self, user_id: str | None, location: str | None = None) -> GoalOut:
+        """F44 P3: the user's goal for ``location`` from the saved plan — expected return *r* =
+        the asset rates blended by their monthly amounts, horizon = retire age − current age,
+        goal value = the portfolio needed at retirement.  No saved plan → ``saved=False`` and
+        nulls (preset defaults are never the user's goal).  Never writes."""
+        plan = self.load_with_result(user_id, location)
+        out = GoalOut(location=plan.location, currency=plan.currency, saved=plan.saved,
+                      plan_updated_at=plan.updated_at)
+        if not plan.saved:
+            return out
+        inp = plan.inputs
+        pairs = [(c, getattr(inp, f"{c}_monthly"), getattr(inp, f"{c}_rate")) for c in ASSET_CLASSES]
+        out.assets = [AssetRateOut(asset_class=c, monthly=m, rate=r) for c, m, r in pairs]
+        out.goal_return = blend_goal_return((m, r) for _c, m, r in pairs)
+        if inp.ret is not None and inp.now is not None:
+            out.horizon_years = float(inp.ret - inp.now)
+        out.goal_value = plan.result.value
+        return out
 
     def history(self, user_id: str, limit: int = 50) -> RetirementPlanHistoryOut:
         """The user's saved plans, newest first (key figures only). Never writes."""

@@ -195,3 +195,20 @@ retirement_plan:
         comRate: 0.04
         altMonthly: 150
         altRate: 0.05
+
+# F44 P3 goal-driven selection (model-based). Each lineage is a set of per-instrument DDQN v2
+# policies with a recorded train/val/backtest split. The split is AST-parsed from `source` when
+# that script is present (dev); the dates below are the same values for images without scripts/
+# (a unit test pins them to the script). The first lineage in the list is the active one.
+goal_selection:
+  warm_on_startup: true            # background model-run warm-up thread after start-up
+  max_reselections_per_year: 2     # agreed SL guard (REQUIREMENTS Agreed "Stop loss")
+  model_lineages:
+    - name: f34p25
+      engine: ddqn_v2
+      pattern: "rita_ddqn_v2_{inst}_f34p25.zip"
+      source: scripts/train_f34_instrument.py
+      train_end: 2022-12-31
+      val_start: 2023-01-01
+      val_end: 2024-12-31
+      backtest_start: 2025-01-01

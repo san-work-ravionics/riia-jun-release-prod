@@ -425,6 +425,31 @@ class RetirementPlanSettings(BaseSettings):
     locations: dict[str, RetirementLocationPreset] = {}
 
 
+class ModelLineage(BaseSettings):
+    """F44 P3: one registered per-instrument model lineage (``goal_selection.model_lineages``)."""
+
+    model_config = SettingsConfigDict(extra="forbid")
+
+    name: str
+    engine: str = "ddqn_v2"
+    pattern: str                      # zip file name under <model.path>/<INST>/; {inst} = lower id
+    source: str = ""                  # training script (repo-relative) the split is parsed from
+    train_end: date
+    val_start: date
+    val_end: date
+    backtest_start: date
+
+
+class GoalSelectionSettings(BaseSettings):
+    """F44 P3 goal-driven selection (``goal_selection:`` in base.yaml)."""
+
+    model_config = SettingsConfigDict(extra="forbid")
+
+    warm_on_startup: bool = True
+    max_reselections_per_year: int = Field(default=2, ge=0)
+    model_lineages: list[ModelLineage] = []
+
+
 # ---------------------------------------------------------------------------
 # Root Settings
 # ---------------------------------------------------------------------------
@@ -451,6 +476,7 @@ class Settings(BaseSettings):
     integrations: IntegrationsSettings = IntegrationsSettings()
     trade_analysis: TradeAnalysisSettings = TradeAnalysisSettings()
     retirement_plan: RetirementPlanSettings = RetirementPlanSettings()
+    goal_selection: GoalSelectionSettings = GoalSelectionSettings()
 
     # The active environment name (informational — used during construction).
     env: str = "development"
@@ -492,6 +518,10 @@ class Settings(BaseSettings):
             merged.setdefault("chat", {})["embed_model_path"] = v
         if (v := os.environ.get("FNO_MARGIN_FETCH_BASE_URL")):
             merged.setdefault("integrations", {})["fno_margin_fetch_base_url"] = v
+        # F44 P3: RITA_GOAL_WARM_ON_STARTUP=0 turns the model-run warm-up thread off (tests).
+        if (v := os.environ.get("RITA_GOAL_WARM_ON_STARTUP")) is not None:
+            merged.setdefault("goal_selection", {})["warm_on_startup"] = v.strip().lower() in (
+                "1", "true", "yes", "on")
 
         merged["env"] = rita_env
         return merged

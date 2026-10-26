@@ -486,6 +486,10 @@ def run_episode_v2(
     df: pd.DataFrame,
     risk_tolerance: str = "medium",
     env_config: InstrumentEnvConfig | None = None,
+    *,
+    days_denominator: int | None = None,
+    predict_last: bool = False,
+    clip_step_return: bool = False,
 ) -> dict:
     """Run the V2 model deterministically through the full DataFrame.
 
@@ -496,6 +500,17 @@ def run_episode_v2(
     ``env_config`` (Phase 3.6) must be the SAME config used to train ``model``
     for the observation encoding and reward/eval mechanics to line up —
     train/eval consistency.
+
+    F44 P3 keyword-only options (all default to today's behaviour — the default
+    path is byte-identical, pinned by a test):
+
+    * ``days_denominator`` — ``days_remaining = 1 − i/days_denominator`` instead of
+      ``1 − i/len(df)``, so an episode of the training ``episode_length`` sees the
+      same feature as in ``RIIATradingEnvV2`` (``1 − step/episode_length``).
+    * ``predict_last`` — also predict on the LAST row (today) from the end state of
+      the run; the result gains ``last_action`` (int 0..3).
+    * ``clip_step_return`` — clip each step's sleeve return to ±1 exactly like
+      ``RIIATradingEnvV2.step`` does in training.
     """
     cfg = env_config or DEFAULT_ENV_CONFIG
     n_obs = model.observation_space.shape[0]
@@ -509,6 +524,7 @@ def run_episode_v2(
     data = df.dropna(subset=required).copy()
     if len(data) == 0:
         raise ValueError("DataFrame has no valid rows after dropping NaN indicators.")
+    denom = days_denominator or len(data)
 
     tol_feat = _tol_norm(mdd_tol)
     portfolio_value = 1.0
@@ -535,7 +551,7 @@ def run_episode_v2(
             float(np.clip(row["bb_pct_b"], -0.5, 1.5)),
             float(np.clip(row["trend_score"], -1, 1)),
             float(prev_alloc),
-            float(1.0 - i / len(data)),
+            float(1.0 - i / denom),
             float(np.clip(row["atr_14"] / row["Close"] * 100, 0, 3)),
         ]
         if n_obs >= 14 and has_ema:
@@ -559,6 +575,9 @@ def run_episode_v2(
             portfolio_ret = allocation * effective_ret - cfg.hedge_cost_per_day
         else:
             portfolio_ret = allocation * daily_ret
+        if clip_step_return:
+            # Same safety clip as RIIATradingEnvV2.step (training).
+            portfolio_ret = float(np.clip(portfolio_ret, -1.0, 1.0))
         portfolio_value *= (1 + portfolio_ret)
         peak_value = max(peak_value, portfolio_value)
 
@@ -578,6 +597,33 @@ def run_episode_v2(
         prev_alloc = allocation
         prev_hedged = 1.0 if hedged else 0.0
 
+    last_action: int | None = None
+    if predict_last:
+        # Today's action: the same observation the loop would build on the last row,
+        # from the end state of the run (alloc / hedge / drawdown / DSR moments).
+        i = len(data) - 1
+        row = data.iloc[i]
+        current_dd = (portfolio_value - peak_value) / peak_value
+        obs_list = [
+            float(np.clip(row["daily_return"] * 10, -3, 3)),
+            float(np.clip(row["rsi_14"] / 100.0, 0, 1)),
+            float(np.clip((row["macd"] / row["Close"]) * 1000, -3, 3)),
+            float(np.clip(row["bb_pct_b"], -0.5, 1.5)),
+            float(np.clip(row["trend_score"], -1, 1)),
+            float(prev_alloc),
+            float(1.0 - i / denom),
+            float(np.clip(row["atr_14"] / row["Close"] * 100, 0, 3)),
+        ]
+        if n_obs >= 14 and has_ema:
+            obs_list.append(float(np.clip((row["ema_ratio"] - 1.0) * 20, -3, 3)))
+        obs_list.append(float(np.clip(A * 100, -3, 3)))
+        obs_list.append(float(np.clip(B * 1000, 0, 3)))
+        obs_list.append(float(np.clip(current_dd / cfg.hard_mdd_limit, 0, 3)))
+        obs_list.append(float(prev_hedged))
+        obs_list.append(tol_feat)
+        action, _ = model.predict(np.array(obs_list, dtype=np.float32), deterministic=True)
+        last_action = int(action)
+
     port_arr = np.array(portfolio_values)
     bench_arr = np.array(benchmark_values)
     perf = compute_all_metrics(port_arr, bench_arr)
@@ -586,7 +632,7 @@ def run_episode_v2(
     perf["total_trades"] = int((np.abs(np.diff(alloc_arr)) > 0).sum()) if len(alloc_arr) > 1 else 0
 
     hedged_steps = int(sum(hedge_flags))
-    return {
+    result = {
         "portfolio_values": portfolio_values,
         "benchmark_values": benchmark_values,
         "allocations":      allocations,
@@ -598,6 +644,9 @@ def run_episode_v2(
         "close_prices":     close_prices,
         "performance":      perf,
     }
+    if predict_last:
+        result["last_action"] = last_action
+    return result
 
 
 # ── Static-threshold baseline (Phase 3 acceptance gate) ───────────────────────

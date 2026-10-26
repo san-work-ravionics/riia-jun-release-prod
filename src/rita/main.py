@@ -343,6 +343,18 @@ async def lifespan(app: FastAPI):
     except Exception as _exc:
         log.warning("paper_positions.seed_failed", error=str(_exc))
 
+    # ── F44 P3: background warm-up of the goal-selection model replays ─────────
+    # Own SessionLocal in the thread (closed in finally); never blocks or fails start-up.
+    try:
+        from rita.config import get_settings as _gs  # noqa: PLC0415
+
+        if _gs().goal_selection.warm_on_startup:
+            from rita.services.goal_selection_service import start_warm_thread  # noqa: PLC0415
+
+            start_warm_thread()
+    except Exception as _exc:
+        log.warning("goal_selection.warm_start_failed", error=type(_exc).__name__)
+
     # ── F44 P1: MCP streamable HTTP session manager (/mcp) runs with the app ──
     async with mcp_http_app.lifespan():
         yield

@@ -33,11 +33,15 @@ only change one constant.
 
 from __future__ import annotations
 
+import os
 import sys
 import types
 from pathlib import Path
 
 import pytest
+
+# F44 P3: no background model-run warm-up thread when a test starts the app (TestClient lifespan).
+os.environ.setdefault("RITA_GOAL_WARM_ON_STARTUP", "0")
 
 # ---------------------------------------------------------------------------
 # sys.path
