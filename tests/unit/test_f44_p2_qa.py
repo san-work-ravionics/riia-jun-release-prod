@@ -769,7 +769,10 @@ def test_contract_mcp_fx_rate_schema_and_catalogue():
         "whatineed.get_plan", "portfolio.get_holdings", "portfolio.optimal_allocation", "fno.position_value",
         "fno.get_hedge_plan", "market.overview", "market.ask", "market.fx_rate", "market.monitor",
         "ask_rita", "rita_market_overview", "rita_monitor",
+        # F44 P3
+        "whatineed.get_goal", "portfolio.select_for_goal", "portfolio.required_return",
+        "portfolio.model_runs",
     }
-    assert mt.tools_registered() == 12
+    assert mt.tools_registered() == 16
     health = TestClient(app).get("/health").json()
-    assert health["mcp"]["tools_registered"] == 12
+    assert health["mcp"]["tools_registered"] == 16

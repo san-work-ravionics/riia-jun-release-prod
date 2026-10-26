@@ -8,7 +8,7 @@ Input models forbid unknown fields, so a ``user_id`` argument is rejected as ``i
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -172,3 +172,38 @@ class McpToolError(BaseModel):
 
     code: Literal["not_found", "forbidden", "invalid_input", "unavailable"]
     message: str
+
+
+# ── F44 P3 goal-driven selection (outputs in schemas/goal_selection.py) ────────
+
+_Location = Literal["europe", "india", "us"]
+
+
+class GoalIn(_In):
+    location: _Location | None = Field(
+        None, description="Plan location: europe | india | us. Default = the preset default location.",
+    )
+
+
+class SelectForGoalIn(_In):
+    location: _Location = Field(..., description="Location whose instruments are selected from")
+    target_return: float = Field(..., ge=-0.5, le=2.0,
+                                 description="Annual target return as a fraction, e.g. 0.07675")
+    as_of: date | None = Field(
+        None, description="Data date the answer must be for (must equal the cached data date)",
+    )
+
+
+class RequiredReturnIn(_In):
+    location: _Location
+    goal_return: float = Field(..., ge=-0.5, le=2.0, description="Annual goal return r (fraction)")
+    ytd_return: float = Field(..., gt=-1.0, le=100.0,
+                              description="Portfolio return since year_start (fraction)")
+    as_of: date = Field(..., description="Close the ytd return is measured at")
+    year_start: date = Field(..., description="Jan 1, or the first track date in this year")
+    reselections_used: int = Field(0, ge=0, le=100,
+                                   description="Re-selections already spent in this target year")
+
+
+class ModelRunsIn(_In):
+    location: _Location

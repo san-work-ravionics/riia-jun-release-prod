@@ -168,7 +168,7 @@ def test_mcp_tool_error_is_coded_not_500(client, tool_db):
 
 def test_health_mcp_block(client):
     body = client.get("/health").json()
-    assert body["mcp"] == {"tools_registered": 12, "auth": "on",  # 11 P1 + market.fx_rate (P2)
+    assert body["mcp"] == {"tools_registered": 16, "auth": "on",  # 11 P1 + fx_rate (P2) + 4 P3
                            "transports": ["http", "memory", "sse"], "sse": "deprecated"}
 
 

@@ -124,7 +124,7 @@ def _error_result(code: str, message: str) -> CallToolResult:
 SAFE_ARG_KEYS = frozenset({
     "instrument", "instrument_id", "instruments", "location", "limit", "horizon", "months",
     "horizon_days", "time_horizon_days", "years", "currency", "base", "quote", "as_of", "mode",
-    "state", "id",
+    "state", "id", "year_start",
 })
 
 
