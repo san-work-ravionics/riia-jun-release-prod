@@ -240,6 +240,8 @@ class TestRefreshAllYfinanceErrorContinues:
             patch("rita.services.data_refresh.check_gap", side_effect=_mock_check_gap),
             patch("rita.services.data_refresh.fetch_and_write_raw", side_effect=_mock_fetch),
             patch("rita.services.data_refresh.rebuild_input", return_value=Path("/fake/input.csv")),
+            # F44 P3 step 0 runs after a successful append — keep it off the real CSVs / network
+            patch("rita.services.data_refresh.rewrite_history_if_broken", return_value={}),
             patch("rita.services.data_refresh.upsert_cache_delta", return_value=5),
         ):
             results = refresh_all(mock_db)

@@ -8,6 +8,9 @@ Provides five functions:
   refresh_all()        — orchestrate full pipeline for all 11 instruments
   refresh_fx()         — F44 P2: daily FX rates into market_data_cache (skill run only;
                          NOT called by refresh_all(), which a request can reach)
+  rewrite_history_if_broken() — F44 P3 step 0: full-history split-adjusted rewrite of the raw
+                         CSV, ONLY for an instrument that fails the data-integrity check;
+                         every other instrument keeps the append path
 
 Rules:
 - Use structlog — no print() statements
@@ -197,6 +200,95 @@ def fetch_and_write_raw(instrument_id: str, yf_ticker: str, last_date: date | No
     return raw_path, rows_added
 
 
+# ── rewrite_history_if_broken (F44 P3 step 0) ──────────────────────────────────
+
+def _raw_target_path(instrument_id: str) -> Path:
+    """The raw CSV ``fetch_and_write_raw`` writes for this instrument."""
+    cfg = get_settings()
+    raw_dir = Path(cfg.data.raw_dir) / instrument_id
+    if instrument_id in COMPANION_FILE_INSTRUMENTS:
+        return raw_dir / f"{instrument_id.lower()}_yf.csv"
+    existing = sorted(raw_dir.glob("*.csv"), key=lambda p: p.stat().st_size, reverse=True)
+    return existing[0] if existing else raw_dir / f"{instrument_id.lower()}_daily.csv"
+
+
+def _integrity(instrument_id: str) -> list[tuple[str, Any]]:
+    """(lineage name, IntegrityResult) for every registered lineage, on the series the models
+    read (``load_instrument_data``)."""
+    from rita.core.data_integrity import check_window
+    from rita.core.data_loader import load_instrument_data
+
+    close = load_instrument_data(instrument_id)["Close"]
+    return [(lin.name, check_window(close, lin.train_end))
+            for lin in get_settings().goal_selection.model_lineages]
+
+
+def rewrite_history_if_broken(
+    instrument_id: str, yf_ticker: str, downloader: Any = None,
+) -> dict[str, Any]:
+    """F44 P3 step 0 (design rev 1 A6, rev 3 N5, N10).
+
+    Runs the request-time ``data_integrity`` rule (a bar after a lineage's ``train_end`` whose
+    |ln r| exceeds the instrument's own pre-``train_end`` max) on the instrument's series.  Only
+    when it FAILS: re-download the full history split-adjusted (``auto_adjust=True``) from the
+    first stored date, replace the raw CSV, re-check, and write the rewrite marker
+    (``ModelArtifactRepository.write_rewrite_marker``).  The marker invalidates every registered
+    lineage for this instrument (``retrain_needed``) — its models saw the old data — whether or
+    not the rewritten series now passes.  Instruments that pass are not touched.
+
+    Called from ``refresh_all`` (skill / onboarding refresh) and the skill directly; never from
+    request-time selection code.  ``downloader`` defaults to ``yfinance.download`` (tests inject).
+    """
+    from rita.core.data_loader import load_ohlcv_csv
+    from rita.repositories.model_artifact import ModelArtifactRepository
+
+    instrument_id = instrument_id.upper()
+    lineages = get_settings().goal_selection.model_lineages
+    raw_path = _raw_target_path(instrument_id)
+    if not lineages or not raw_path.exists():
+        return {"instrument": instrument_id, "checked": False, "rewritten": False}
+    before = _integrity(instrument_id)
+    if all(res.passed for _n, res in before):
+        return {"instrument": instrument_id, "checked": True, "rewritten": False}
+
+    if downloader is None:
+        import yfinance as yf
+        downloader = yf.download
+    first = load_ohlcv_csv(str(raw_path)).index.min().strftime("%Y-%m-%d")
+    df = downloader(yf_ticker, start=first, interval="1d", auto_adjust=True, progress=False)
+    if df is None or len(df) == 0:
+        raise RuntimeError(f"full-history download for {yf_ticker} returned no rows")
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = [col[0] if isinstance(col, tuple) else col for col in df.columns]
+    df = df.dropna(subset=["Close"])
+    if df.index.tz is not None:
+        df.index = df.index.tz_localize(None)
+    df.index.name = "date"
+    df.to_csv(raw_path)
+
+    after = _integrity(instrument_id)
+    after_passed = all(res.passed for _n, res in after)
+    marker = {
+        "instrument": instrument_id,
+        "ticker": yf_ticker,
+        "rewritten_at": datetime.now(timezone.utc).isoformat(),
+        "reason": "data_integrity",
+        "raw_file": raw_path.name,
+        "rows": int(len(df)),
+        "first_date": str(df.index.min().date()),
+        "last_date": str(df.index.max().date()),
+        "integrity_before": {n: res.detail() for n, res in before if not res.passed},
+        "integrity_after_passed": after_passed,
+        "integrity_after": {n: res.detail() for n, res in after if not res.passed},
+        "lineages_invalidated": [lin.name for lin in lineages],
+    }
+    ModelArtifactRepository.from_settings().write_rewrite_marker(instrument_id, marker)
+    log.info("data_refresh.history_rewritten", instrument=instrument_id, rows=len(df),
+             integrity_after_passed=after_passed)
+    return {"instrument": instrument_id, "checked": True, "rewritten": True,
+            "integrity_after_passed": after_passed, "rows": int(len(df))}
+
+
 # ── rebuild_input ─────────────────────────────────────────────────────────────
 
 def rebuild_input(instrument_id: str) -> Path:
@@ -367,6 +459,13 @@ def refresh_all(db: Session) -> list[dict[str, Any]]:
 
             # Fetch new raw data
             _raw_path, raw_rows_added = fetch_and_write_raw(instrument_id, yf_ticker, last_date)
+
+            # F44 P3 step 0: rewrite the full history only if the stored series is broken
+            try:
+                rewrite_history_if_broken(instrument_id, yf_ticker)
+            except Exception as exc:  # noqa: BLE001 — never aborts the append refresh
+                log.warning("data_refresh.rewrite_failed", instrument=instrument_id,
+                            error=str(exc))
 
             # Rebuild normalized input CSV
             rebuild_input(instrument_id)
