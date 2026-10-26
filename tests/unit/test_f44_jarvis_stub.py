@@ -51,8 +51,8 @@ def test_jarvis_tile_follows_review_portfolio_in_the_protected_zone():
     open_zone = [g for g in p.grids if "open-access" in g["zone"]]
     assert [t["href"] for t in open_zone[0]["tiles"]] == ["investgame-app.html", "rita.html"]
     html = (_DASH / "index.html").read_text(encoding="utf-8")
-    # user 2026-10-26: open-access tiles 15% smaller (zone flex 2 -> 1.7, min-width 440 -> 374)
-    assert 'class="zone open-access" style="flex:1.7; min-width:374px;' in html
+    # user 2026-10-26: open-access tiles 25% smaller in total (15% then 10% more: zone flex 2 -> 1.5, min-width 440 -> 330)
+    assert 'class="zone open-access" style="flex:1.5; min-width:330px;' in html
 
 
 def test_jarvis_page_has_the_login_gate_before_render():
