@@ -69,3 +69,13 @@ def test_jarvis_js_uses_the_shared_auth_pattern():
     assert "await ensureDevToken();" in js
     assert "fetch(" not in js  # every call through api()
     assert "innerHTML" not in js  # server values via textContent only
+
+
+def test_home_tile_descriptions_are_one_liners():
+    """User 2026-10-26: one-line text per tile — short copy, and CSS keeps it on one line."""
+    import re
+    html = (_DASH / "index.html").read_text(encoding="utf-8")
+    descs = re.findall(r'<p class="tile-desc">(.*?)</p>', html)
+    assert len(descs) == 6
+    assert all(len(d.replace("&amp;", "&")) <= 35 for d in descs), descs
+    assert re.search(r"\.tile-desc\{[^}]*white-space:nowrap;overflow:hidden;text-overflow:ellipsis;", html)

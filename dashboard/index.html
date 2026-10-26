@@ -75,7 +75,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
 .tile.ops      .tile-tag{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-bd);}
 
 .tile-title{font-family:var(--fs);font-size:20px;letter-spacing:-.01em;margin-bottom:8px;line-height:1.25;}
-.tile-desc{font-size:12px;color:var(--t2);line-height:1.65;flex:1;}
+.tile-desc{font-size:12px;color:var(--t2);line-height:1.65;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;} /* one line per tile (user 2026-10-26) */
 
 .tile-cta{display:inline-flex;align-items:center;gap:6px;margin-top:22px;font-size:12px;font-weight:600;padding:7px 14px;border-radius:var(--r);border:1.5px solid transparent;transition:opacity .12s;}
 .tile.research .tile-cta{background:var(--build);color:#fff;border-color:var(--build);}
@@ -168,7 +168,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
           </div>
           <span class="tile-tag">Learning</span>
           <div class="tile-title">Invest Game</div>
-          <p class="tile-desc">Learn investment concepts through AI-guided market analysis, CRISP-DM methodology, and performance analytics.</p>
+          <p class="tile-desc">Learn investing by playing.</p>
           <span class="tile-cta">Explore <span class="tile-arrow">→</span></span>
         </a>
 
@@ -183,7 +183,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
           </div>
           <span class="tile-tag">Portfolio Builder</span>
           <div class="tile-title">Create a Portfolio</div>
-          <p class="tile-desc">Train and evaluate the Double DQN model on Nifty 50 data. Run the full pipeline natively using standard session auth.</p>
+          <p class="tile-desc">Build and backtest with RITA.</p>
           <span class="tile-cta">Start Building <span class="tile-arrow">→</span></span>
         </a>
       </div>
@@ -224,7 +224,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
           </div>
           <span class="tile-tag">Portfolio Review</span>
           <div class="tile-title">Review Portfolio</div>
-          <p class="tile-desc">Check live Greeks, P&amp;L, risk exposure, and manoeuvre recommendations. Monitor margin utilisation.</p>
+          <p class="tile-desc">Greeks, P&amp;L, risk and hedges.</p>
           <span class="tile-cta">View Portfolio <span class="tile-arrow">→</span></span>
         </a>
 
@@ -238,7 +238,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
           </div>
           <span class="tile-tag">Assistant</span>
           <div class="tile-title">Jarvis</div>
-          <p class="tile-desc">From your goal to a tracked portfolio: RITA picks, FnO tracks and protects.</p>
+          <p class="tile-desc">Your goal to a tracked portfolio.</p>
           <span class="tile-cta">Open Jarvis <span class="tile-arrow">→</span></span>
         </a>
 
@@ -253,7 +253,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
           </div>
           <span class="tile-tag">Research</span>
           <div class="tile-title">Assist in Research</div>
-          <p class="tile-desc">Explore AI signals, backtests, and market insights to inform your own investment thesis.</p>
+          <p class="tile-desc">AI signals and backtests.</p>
           <span class="tile-cta">Open Research <span class="tile-arrow">→</span></span>
         </a>
 
@@ -267,7 +267,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
           </div>
           <span class="tile-tag">Operations</span>
           <div class="tile-title">Ops Console</div>
-          <p class="tile-desc">Monitor system health, deployment pipelines, CI/CD status, and active users across the platform.</p>
+          <p class="tile-desc">System health and deployments.</p>
           <span class="tile-cta">Open Ops <span class="tile-arrow">→</span></span>
         </a>
       </div>
