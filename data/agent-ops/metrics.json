@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-26T07:28:07",
+  "generated_at": "2026-10-26T07:28:26",
   "total_runs": 29,
   "status_counts": {
     "pass_with_warnings": 15,
@@ -13,7 +13,7 @@
     "core": 2
   },
   "total_estimated_tokens": 7092800,
-  "total_actual_tokens": 9783006,
+  "total_actual_tokens": 9923419,
   "total_duration_minutes": 3592,
   "avg_duration_minutes": 123.9,
   "per_agent": {
@@ -82,8 +82,8 @@
       "runs": 19,
       "avg_adherence": 0.844,
       "total_estimated_tokens": 960000,
-      "total_actual_tokens": 741858,
-      "token_overrun_ratio": 0.77,
+      "total_actual_tokens": 882271,
+      "token_overrun_ratio": 0.92,
       "top_failure_modes": {
         "Confluence key not present in aug workspace": 1
       }

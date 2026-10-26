@@ -1,7 +1,7 @@
 {
   "run_id": "20261025-1801",
   "app": "core",
-  "request": "Feature 44 Phase 2 — multi-currency portfolios (INR / USD / EUR): currency/location/total_value on user_portfolios, D1 one active per (user, location), FX service + /experience/rita/fx, MCP fields + market.fx_rate, currency fix in existing PB/FnO consumers (D2), PB share-count bug",
+  "request": "Feature 44 Phase 2 \u2014 multi-currency portfolios (INR / USD / EUR): currency/location/total_value on user_portfolios, D1 one active per (user, location), FX service + /experience/rita/fx, MCP fields + market.fx_rate, currency fix in existing PB/FnO consumers (D2), PB share-count bug",
   "skill_file": "project-office/skills/skill-add-core-feature.md",
   "agents": [
     {
@@ -12,7 +12,12 @@
       "adherence_score": 1.0,
       "token_estimate": 35000,
       "actual_tokens": null,
-      "grounding_checks": {"plan_status_read": true, "sprint_fit_confirmed": true, "risk_flags_assessed": true, "approved": true},
+      "grounding_checks": {
+        "plan_status_read": true,
+        "sprint_fit_confirmed": true,
+        "risk_flags_assessed": true,
+        "approved": true
+      },
       "failure_modes": [],
       "notes": "P0 brief [PM]; not re-run. User 'P2 go' 2026-10-25."
     },
@@ -24,9 +29,14 @@
       "adherence_score": 1.0,
       "token_estimate": 30000,
       "actual_tokens": null,
-      "grounding_checks": {"approach_present": true, "module_targets_present": true, "files_listed": true, "objective_alignment_stated": true},
+      "grounding_checks": {
+        "approach_present": true,
+        "module_targets_present": true,
+        "files_listed": true,
+        "objective_alignment_stated": true
+      },
       "failure_modes": [],
-      "notes": "P0 brief '[Architect] Design — P2'; frontend scope reduced by user D2 (portfolio page in Jarvis P4, pb-location dropped). Design error found by Engineer: brief said PB share counts ~91x too high; actually ~91x too few."
+      "notes": "P0 brief '[Architect] Design \u2014 P2'; frontend scope reduced by user D2 (portfolio page in Jarvis P4, pb-location dropped). Design error found by Engineer: brief said PB share counts ~91x too high; actually ~91x too few."
     },
     {
       "role": "design_reviewer",
@@ -36,7 +46,14 @@
       "adherence_score": 1.0,
       "token_estimate": 30000,
       "actual_tokens": null,
-      "grounding_checks": {"requirements_coverage": true, "objective_alignment": true, "approach_soundness": true, "golden_frozen_safety": true, "files_to_touch_complete": true, "dod_populated": true},
+      "grounding_checks": {
+        "requirements_coverage": true,
+        "objective_alignment": true,
+        "approach_soundness": true,
+        "golden_frozen_safety": true,
+        "files_to_touch_complete": true,
+        "dod_populated": true
+      },
       "failure_modes": [],
       "notes": "P0: P2 backend PASS after D1; frontend re-check superseded by D2 (scope removal only, not re-reviewed)."
     },
@@ -47,8 +64,17 @@
       "steps_completed": 5,
       "adherence_score": 1.0,
       "token_estimate": 90000,
-      "actual_tokens": {"total_tokens": 278366, "tool_uses": 94},
-      "grounding_checks": {"branch_created": false, "tests_added_passing": true, "ruff_passed": true, "golden_frozen_confirmed": true, "spec_updated": true},
+      "actual_tokens": {
+        "total_tokens": 278366,
+        "tool_uses": 94
+      },
+      "grounding_checks": {
+        "branch_created": false,
+        "tests_added_passing": true,
+        "ruff_passed": true,
+        "golden_frozen_confirmed": true,
+        "spec_updated": true
+      },
       "failure_modes": [],
       "notes": "branch=master by user rule. Commits 2311606 26b14c7 7ae114e 47c9a85 67ea785 + review fixes c168eeb. Migration 20261026_f44p2_user_portfolio_currency applied to dev DB after backup; backfill verified; PATTERN-015 pass. Greeks reference 8 passed before core change. Interrupted once by the session limit and resumed from where it stopped. actual_tokens = resumed run (69242/11) + review-fix run (209124/83); the first run's usage was lost."
     },
@@ -59,8 +85,18 @@
       "steps_completed": 6,
       "adherence_score": 1.0,
       "token_estimate": 70000,
-      "actual_tokens": {"total_tokens": 163227, "tool_uses": 28},
-      "grounding_checks": {"implementation_matches_design": true, "objective_alignment": true, "train_eval_consistency": "na", "golden_frozen": true, "engineer_guardrails_followed": true, "tests_meaningful_spec_updated": true},
+      "actual_tokens": {
+        "total_tokens": 163227,
+        "tool_uses": 28
+      },
+      "grounding_checks": {
+        "implementation_matches_design": true,
+        "objective_alignment": true,
+        "train_eval_consistency": "na",
+        "golden_frozen": true,
+        "engineer_guardrails_followed": true,
+        "tests_meaningful_spec_updated": true
+      },
       "failure_modes": [],
       "notes": "0 blocking, 9 advisories. #1 (legacy portfolios: false Value Today drop) user decision 'Leave as is'. #2-#9 user 'Fix all now' -> c168eeb."
     },
@@ -71,8 +107,16 @@
       "steps_completed": 4,
       "adherence_score": 1.0,
       "token_estimate": 75000,
-      "actual_tokens": {"total_tokens": 174331, "tool_uses": 40},
-      "grounding_checks": {"tests_written": true, "tests_passed": true, "design_contract_done": true, "acceptance_checked": true},
+      "actual_tokens": {
+        "total_tokens": 174331,
+        "tool_uses": 40
+      },
+      "grounding_checks": {
+        "tests_written": true,
+        "tests_passed": true,
+        "design_contract_done": true,
+        "acceptance_checked": true
+      },
       "failure_modes": [],
       "notes": "3ada3ba: test_f44_p2_qa.py 23/23, property tests seeded, 12 mutation checks all caught. Full suite 2860 passed, 1 allowed F42 flake. Dev DB unchanged. Obs: O2 nSharesInfo '|| 1' (pre-existing), O3 back up before a migration rollback, prod needs FX rows at deploy."
     },
@@ -83,18 +127,25 @@
       "steps_completed": 3,
       "adherence_score": 1.0,
       "token_estimate": 55000,
-      "actual_tokens": null,
-      "grounding_checks": {"spec_file_confirmed": true, "design_doc_updated": true, "confluence_updated": true},
+      "actual_tokens": {
+        "total_tokens": 140413,
+        "tool_uses": 50
+      },
+      "grounding_checks": {
+        "spec_file_confirmed": true,
+        "design_doc_updated": true,
+        "confluence_updated": true
+      },
       "failure_modes": [],
       "notes": "Spec gaps fixed in Spec_MCP_Server, Spec_Python_Code, Spec_RITA_App, Spec_DB, Spec_JS_Code; 3 skill dates bumped. Confluence Engineering 76611602 v74 -> v75 (P2 section + deploy checklist). PLAN_STATUS P2 done. Orchestrator updated Jarvis Plan doc."
     }
   ],
   "overall_status": "pass",
   "total_tokens_estimated": 385000,
-  "total_actual_tokens": 615924,
+  "total_actual_tokens": 756337,
   "duration_minutes": 820,
   "branch": "master",
-  "merge_status": "n/a — committed to master (user rule)",
+  "merge_status": "n/a \u2014 committed to master (user rule)",
   "merge_commit": null,
   "notes": "Also in this window on aug master, outside /enhance: Jarvis home tile + stub (9ddb068, 00f66b7, 3340cbf); one-liner tile text 40a7a89 reverted at user request (84073fe, 'No. very poor. Bring back original')."
 }
