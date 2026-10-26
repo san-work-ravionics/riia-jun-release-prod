@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+// Login gate (F44: Jarvis requires login). Same gate as ds.html / ops.html:
+// production without a valid auth_token → Google sign-in, back here via post_login_redirect.
+// Localhost: js/jarvis/main.js calls ensureDevToken() first.
+(function(){
+  if (['localhost', '127.0.0.1', '0.0.0.0'].includes(location.hostname)) return;
+  var t = sessionStorage.getItem('auth_token');
+  var expired = false;
+  if (t) { try { var p = JSON.parse(atob(t.split('.')[1])); expired = p.exp && (Date.now()/1000 > p.exp); } catch(e){} }
+  if (!t || expired) {
+    sessionStorage.removeItem('auth_token');
+    sessionStorage.setItem('post_login_redirect', window.location.href);
+    window.location.href = '/auth/google/login';
+  }
+})();
+</script>
+<title>RIIA — Jarvis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500&family=Epilogue:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F5F3EE;--surface:#FFFFFF;--border:#E4E0D8;
+  --text:#1A1814;--t2:#4A4640;--t3:#8C877A;
+  --run:#0056B8;--run-bg:#EDF4FF;--run-bd:#AECBF5;
+  --build:#1A6B3C;--warn:#92480A;
+  --fd:'Epilogue',sans-serif;--fm:'IBM Plex Mono',monospace;--fs:'Instrument Serif',serif;
+  --r:6px;--sh:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+}
+body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px;line-height:1.5;min-height:100vh;display:flex;flex-direction:column;}
+.topbar{background:var(--surface);border-bottom:1.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:52px;box-shadow:var(--sh);}
+.logo{display:flex;align-items:center;gap:9px;text-decoration:none;color:inherit;font-weight:700;}
+.logo-icon{width:26px;height:26px;background:var(--text);border-radius:5px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;}
+.home-link{font-size:12px;color:var(--t2);text-decoration:none;}
+.home-link:hover{color:var(--run);}
+main{flex:1;max-width:880px;width:100%;margin:0 auto;padding:48px 16px;}
+.tag{font-family:var(--fm);font-size:10px;text-transform:uppercase;letter-spacing:.1em;padding:2px 8px;border-radius:4px;background:var(--run-bg);color:var(--run);border:1px solid var(--run-bd);display:inline-block;margin-bottom:12px;}
+h1{font-family:var(--fs);font-weight:400;font-size:40px;letter-spacing:-.01em;line-height:1.15;margin-bottom:10px;}
+.lead{font-size:14px;color:var(--t2);max-width:640px;margin-bottom:32px;}
+.card{background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:24px;box-shadow:var(--sh);margin-bottom:20px;}
+.card h2{font-size:14px;font-weight:600;margin-bottom:12px;}
+.steps{list-style:none;counter-reset:s;}
+.steps li{counter-increment:s;display:flex;gap:12px;padding:8px 0;border-top:1px solid var(--border);color:var(--t2);}
+.steps li:first-child{border-top:0;}
+.steps li::before{content:counter(s);font-family:var(--fm);font-size:11px;color:var(--run);min-width:18px;}
+.status{display:flex;gap:24px;flex-wrap:wrap;font-family:var(--fm);font-size:12px;color:var(--t2);}
+.status b{color:var(--text);font-weight:500;}
+.ok{color:var(--build);} .warn{color:var(--warn);}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="logo" href="index.html"><span class="logo-icon">R</span>RIIA</a>
+  <a class="home-link" href="index.html">← Home</a>
+</header>
+<main>
+  <span class="tag">Coming in P4</span>
+  <h1>Jarvis</h1>
+  <p class="lead">One conversation from your goal to a tracked portfolio. Jarvis takes the expected return from What I Need, has RITA pick the instruments that meet it, and tracks and protects them with FnO.</p>
+
+  <section class="card">
+    <h2>What Jarvis will do</h2>
+    <ol class="steps">
+      <li>Read your goal and horizon from What I Need, per location (Europe, India, US).</li>
+      <li>Pick the location's instruments with the lowest risk whose history meets the goal.</li>
+      <li>Show your portfolio by geography: P&amp;L over time, return against the target, and each instrument's chart.</li>
+      <li>Show entry, exit and stop loss from each engine (RITA model, FnO levels, ASTA) with the reasons, and how each engine performs.</li>
+      <li>Raise the goal and re-select when a stop loss is hit, within the agreed guard.</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2>Status</h2>
+    <div class="status" id="jv-status">
+      <span>Signed in: <b id="jv-signed-in">checking…</b></span>
+      <span>MCP bus: <b id="jv-mcp">checking…</b></span>
+    </div>
+  </section>
+</main>
+<script type="module" src="./js/jarvis/main.js?v=1"></script>
+</body>
+</html>
