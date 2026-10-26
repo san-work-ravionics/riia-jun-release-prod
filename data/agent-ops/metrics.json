@@ -1,54 +1,54 @@
 {
-  "generated_at": "2026-10-25T17:33:57",
-  "total_runs": 28,
+  "generated_at": "2026-10-26T07:28:07",
+  "total_runs": 29,
   "status_counts": {
     "pass_with_warnings": 15,
-    "pass": 13
+    "pass": 14
   },
   "app_counts": {
     "rl": 2,
     "rita": 8,
     "ops": 1,
     "fno": 16,
-    "core": 1
+    "core": 2
   },
-  "total_estimated_tokens": 6707800,
-  "total_actual_tokens": 9167082,
-  "total_duration_minutes": 2772,
-  "avg_duration_minutes": 99.0,
+  "total_estimated_tokens": 7092800,
+  "total_actual_tokens": 9783006,
+  "total_duration_minutes": 3592,
+  "avg_duration_minutes": 123.9,
   "per_agent": {
     "pm": {
-      "runs": 20,
+      "runs": 21,
       "avg_adherence": 1.0,
-      "total_estimated_tokens": 635000,
+      "total_estimated_tokens": 670000,
       "total_actual_tokens": 505356,
-      "token_overrun_ratio": 0.8,
+      "token_overrun_ratio": 0.75,
       "top_failure_modes": {}
     },
     "architect": {
-      "runs": 21,
-      "avg_adherence": 0.99,
-      "total_estimated_tokens": 620000,
+      "runs": 22,
+      "avg_adherence": 0.991,
+      "total_estimated_tokens": 650000,
       "total_actual_tokens": 614355,
-      "token_overrun_ratio": 0.99,
+      "token_overrun_ratio": 0.95,
       "top_failure_modes": {}
     },
     "design_reviewer": {
-      "runs": 20,
+      "runs": 21,
       "avg_adherence": 1.0,
-      "total_estimated_tokens": 534000,
+      "total_estimated_tokens": 564000,
       "total_actual_tokens": 501980,
-      "token_overrun_ratio": 0.94,
+      "token_overrun_ratio": 0.89,
       "top_failure_modes": {
         "DR-001": 1
       }
     },
     "engineer": {
-      "runs": 25,
-      "avg_adherence": 0.978,
-      "total_estimated_tokens": 1633000,
-      "total_actual_tokens": 1870900,
-      "token_overrun_ratio": 1.15,
+      "runs": 26,
+      "avg_adherence": 0.979,
+      "total_estimated_tokens": 1723000,
+      "total_actual_tokens": 2149266,
+      "token_overrun_ratio": 1.25,
       "top_failure_modes": {
         "FC-LINT: unused import shipped, caught by CI ruff gate": 1,
         "FC-COV: new 538-line module shipped without coverage omit entry": 1,
@@ -58,32 +58,32 @@
       }
     },
     "code_reviewer": {
-      "runs": 18,
-      "avg_adherence": 0.986,
-      "total_estimated_tokens": 1066000,
-      "total_actual_tokens": 941766,
-      "token_overrun_ratio": 0.88,
+      "runs": 19,
+      "avg_adherence": 0.987,
+      "total_estimated_tokens": 1136000,
+      "total_actual_tokens": 1104993,
+      "token_overrun_ratio": 0.97,
       "top_failure_modes": {
         "CR-WORKTREE-FALSE-POSITIVE: spec blocking findings overridden \u2014 specs confirmed present in worktree branch": 1
       }
     },
     "qa": {
-      "runs": 18,
-      "avg_adherence": 0.972,
-      "total_estimated_tokens": 1300000,
-      "total_actual_tokens": 1385912,
-      "token_overrun_ratio": 1.07,
+      "runs": 19,
+      "avg_adherence": 0.974,
+      "total_estimated_tokens": 1375000,
+      "total_actual_tokens": 1560243,
+      "token_overrun_ratio": 1.13,
       "top_failure_modes": {
         "FC-004": 2,
         "No unit tests \u2014 no RITA backend code to test (external middleware)": 1
       }
     },
     "techwriter": {
-      "runs": 18,
-      "avg_adherence": 0.835,
-      "total_estimated_tokens": 905000,
+      "runs": 19,
+      "avg_adherence": 0.844,
+      "total_estimated_tokens": 960000,
       "total_actual_tokens": 741858,
-      "token_overrun_ratio": 0.82,
+      "token_overrun_ratio": 0.77,
       "top_failure_modes": {
         "Confluence key not present in aug workspace": 1
       }
@@ -97,9 +97,7 @@
       "top_failure_modes": {}
     }
   },
-  "alerts": [
-    "[ALERT] techwriter adherence 0.67 < 0.7 in run 20261005-2005"
-  ],
+  "alerts": [],
   "skill_version_history": [
     {
       "skill_file": ".claude/commands/enhance.md",
