@@ -4,7 +4,7 @@
 DoD items covered: 4 tools with output schemas and coded errors; no ``user_id`` input; user +
 system auth, JWT over HTTP, none on stdio; the three portfolio tools never call
 ``ctx.require_user()``; allow-list logging (``year_start`` value; rates / counts bare keys;
-``result_summary`` never carries a return); registry and ``/health`` = 16; no network.
+``result_summary`` never carries a return); registry and ``/health`` = 22 (16 after P3; +6 in P4); no network.
 """
 from __future__ import annotations
 
@@ -97,8 +97,8 @@ def _err(res):
 
 # ── catalogue ──────────────────────────────────────────────────────────────────
 
-def test_registry_has_16_tools_with_schemas_and_no_user_id():
-    assert P3_TOOLS <= set(mt.REGISTRY) and mt.tools_registered() == 16
+def test_registry_has_22_tools_with_schemas_and_no_user_id():
+    assert P3_TOOLS <= set(mt.REGISTRY) and mt.tools_registered() == 22
     for name in P3_TOOLS:
         spec = mt.REGISTRY[name]
         assert spec.output_json_schema() is not None and not spec.stdio
@@ -236,8 +236,8 @@ def test_no_network_on_any_p3_tool(tool_db, fake_models, monkeypatch):
         assert not res.isError, (name, res.structuredContent)
 
 
-def test_health_reports_16_tools(client):
-    assert client.get("/health").json()["mcp"]["tools_registered"] == 16
+def test_health_reports_22_tools(client):
+    assert client.get("/health").json()["mcp"]["tools_registered"] == 22
 
 
 def test_required_return_at_year_start_is_the_goal(tool_db, fake_models):

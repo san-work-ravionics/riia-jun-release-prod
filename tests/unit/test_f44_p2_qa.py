@@ -681,7 +681,7 @@ def test_migration_up_down_up_preserves_legacy_and_p2_rows(tmp_path):
     legacy_before = _q(dbp, "select portfolio_id, key_id, name, holdings, total_value_eur, is_active "
                             "from user_portfolios order by portfolio_id")
 
-    _alembic(dbp, "upgrade", "head")
+    _alembic(dbp, "upgrade", _HEAD)
     schema_1 = _q(dbp, "PRAGMA table_info(user_portfolios)")
     assert _q(dbp, "select portfolio_id, currency, location, total_value from user_portfolios order by portfolio_id") == \
         [("L1", "EUR", None, 5000.0), ("L2", "EUR", None, None), ("L3", "EUR", None, 0.0)]
@@ -692,13 +692,13 @@ def test_migration_up_down_up_preserves_legacy_and_p2_rows(tmp_path):
     all_before = _q(dbp, "select portfolio_id, key_id, name, holdings, total_value_eur, is_active "
                          "from user_portfolios order by portfolio_id")
 
-    _alembic(dbp, "downgrade", "-1")
+    _alembic(dbp, "downgrade", _PRIOR)
     assert not ({"currency", "location", "total_value"} & {r[1] for r in _q(dbp, "PRAGMA table_info(user_portfolios)")})
     # every row (legacy and P2) keeps its pre-P2 columns; only the three P2 columns are dropped
     assert _q(dbp, "select portfolio_id, key_id, name, holdings, total_value_eur, is_active "
                    "from user_portfolios order by portfolio_id") == all_before
 
-    _alembic(dbp, "upgrade", "head")
+    _alembic(dbp, "upgrade", _HEAD)
     assert _q(dbp, "PRAGMA table_info(user_portfolios)") == schema_1
     assert _q(dbp, "select portfolio_id, key_id, name, holdings, total_value_eur, is_active "
                    "from user_portfolios where portfolio_id like 'L%' order by portfolio_id") == legacy_before
@@ -772,7 +772,10 @@ def test_contract_mcp_fx_rate_schema_and_catalogue():
         # F44 P3
         "whatineed.get_goal", "portfolio.select_for_goal", "portfolio.required_return",
         "portfolio.model_runs",
+        # F44 P4 (Jarvis)
+        "journey.get_current", "journey.save", "portfolio.pnl", "portfolio.sleeve_trace",
+        "fno.sigma_levels", "market.asta_trace",
     }
-    assert mt.tools_registered() == 16
+    assert mt.tools_registered() == 22   # F44 P4: +6 Jarvis tools
     health = TestClient(app).get("/health").json()
-    assert health["mcp"]["tools_registered"] == 16
+    assert health["mcp"]["tools_registered"] == 22

@@ -168,8 +168,8 @@ def test_mcp_tool_error_is_coded_not_500(client, tool_db):
 
 def test_health_mcp_block(client):
     body = client.get("/health").json()
-    assert body["mcp"] == {"tools_registered": 16, "auth": "on",  # 11 P1 + fx_rate (P2) + 4 P3
-                           "transports": ["http", "memory", "sse"], "sse": "deprecated"}
+    assert body["mcp"] == {"tools_registered": 22, "auth": "on",  # 11 P1 + fx_rate (P2) + 4 P3 + 6 P4
+                           "transports": ["http", "memory"]}          # F44 P4: SSE removed
 
 
 def _seed_calls(db_session):
@@ -396,6 +396,7 @@ def test_stdio_process_lists_userless_tools_and_answers_alias(tmp_path):
     tools, overview, forbidden = asyncio.run(asyncio.wait_for(go(), timeout=240))
     assert tools == {"portfolio.optimal_allocation", "market.overview", "market.ask",
                      "market.fx_rate",  # F44 P2
+                     "fno.sigma_levels",  # F44 P4
                      "ask_rita", "rita_market_overview", "rita_monitor"}
     assert overview.content[0].text.startswith("**NIFTY — Market Overview**")
     assert forbidden.isError and forbidden.structuredContent["error"]["code"] == "forbidden"

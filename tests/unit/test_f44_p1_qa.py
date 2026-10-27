@@ -71,6 +71,14 @@ CONTRACT_AUTH = {
     "portfolio.select_for_goal":    ({"user", "system"}, None),
     "portfolio.required_return":    ({"user", "system"}, None),
     "portfolio.model_runs":         ({"user", "system"}, None),
+    # F44 P4 (Jarvis): journey + pnl need a user; sleeve/asta traces answer the system identity;
+    # sigma levels are open (stdio)
+    "journey.get_current":          ({"user", "system"}, None),
+    "journey.save":                 ({"user", "system"}, None),
+    "portfolio.pnl":                ({"user", "system"}, None),
+    "portfolio.sleeve_trace":       ({"user", "system"}, None),
+    "fno.sigma_levels":             ({"none"}, None),
+    "market.asta_trace":            ({"user", "system"}, None),
     # legacy aliases (rita_monitor needs ops over the network — recorded Engineer deviation)
     "ask_rita":                     ({"none"}, None),
     "rita_market_overview":         ({"none"}, None),
@@ -455,8 +463,9 @@ def _bad_auth_headers(rng: random.Random) -> list[str | None]:
     return fixed + randoms
 
 
-_GATED = [("POST", "/mcp"), ("GET", "/mcp"), ("DELETE", "/mcp"),
-          ("POST", "/mcp/messages/?session_id=0123456789abcdef0123456789abcdef"), ("GET", "/mcp/sse")]
+# F44 P4: the SSE transport (/mcp/sse, /mcp/messages/) is removed — those paths are 404 now
+# (test_f44_p1_sse_auth.py); /mcp is the only gated network transport.
+_GATED = [("POST", "/mcp"), ("GET", "/mcp"), ("DELETE", "/mcp")]
 
 
 def test_property_mcp_without_valid_jwt_is_401_before_dispatch(client, tool_db, calls):
@@ -513,7 +522,7 @@ def test_contract_tool_set_and_auth_match_catalogue():
         # stdio = Auth "none" tools + the legacy aliases only
         assert spec.stdio == ("none" in auth or spec.legacy), name
     namespaced = {n for n in mt.REGISTRY if "." in n}
-    assert {n.split(".")[0] for n in namespaced} == {"whatineed", "portfolio", "fno", "market"}
+    assert {n.split(".")[0] for n in namespaced} == {"whatineed", "journey", "portfolio", "fno", "market"}
     assert all(mt.REGISTRY[n].output_model is not None for n in namespaced)
 
 
@@ -521,7 +530,7 @@ def test_contract_mcp_calls_columns_and_transports():
     assert set(MCPCallModel.__table__.columns.keys()) == CONTRACT_MCP_CALLS_COLUMNS
     for col in ("transport", "caller", "user_id"):
         assert MCPCallModel.__table__.columns[col].nullable is True
-    assert TRANSPORTS == ("memory", "http", "stdio", "sse")
+    assert TRANSPORTS == ("memory", "http", "stdio")   # F44 P4: sse removed (old rows keep the string)
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
     assert any(ix["column_names"] == ["user_id"] for ix in inspect(engine).get_indexes("mcp_calls"))
@@ -533,8 +542,7 @@ def test_contract_mcp_routes_methods():
 
     mounted = {getattr(r, "path", None): r for r in app.routes}
     assert mounted["/mcp"].methods >= {"GET", "POST", "DELETE"}
-    assert "GET" in mounted["/mcp/sse"].methods
-    assert "/mcp/messages" in mounted  # Mount (JWT-gated ASGI app)
+    assert "/mcp/sse" not in mounted and "/mcp/messages" not in mounted   # F44 P4: SSE removed
 
 
 def test_contract_mcp_calls_response_shape_and_health(client, db_session):
@@ -546,5 +554,4 @@ def test_contract_mcp_calls_response_shape_and_health(client, db_session):
     (row,) = client.get("/api/v1/mcp-calls").json()
     assert set(row) == CONTRACT_MCP_CALLS_RESPONSE_KEYS
     assert client.get("/health").json()["mcp"] == {
-        "tools_registered": len(CONTRACT_AUTH), "auth": "on",
-        "transports": ["http", "memory", "sse"], "sse": "deprecated"}
+        "tools_registered": len(CONTRACT_AUTH), "auth": "on", "transports": ["http", "memory"]}

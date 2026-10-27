@@ -49,23 +49,26 @@ def _cols(db: Path) -> dict[str, tuple]:
 
 
 def test_single_head(tmp_path):
+    # F44 P4 (20261027_f44p4_jarvis_tables) builds on this revision; still one head.
     out = _ok(_alembic(tmp_path / "h.db", "heads"))
     heads = [ln for ln in out.splitlines() if "(head)" in ln]
-    assert len(heads) == 1 and heads[0].startswith(_HEAD), out
+    assert len(heads) == 1, out
+    hist = _ok(_alembic(tmp_path / "h.db", "history"))
+    assert f"{_PRIOR} -> {_HEAD}" in hist, hist
 
 
 def test_fresh_db_round_trip_without_users_table(tmp_path):
     """PATTERN-015: upgrade → downgrade → upgrade on a fresh DB that has no ``users`` table."""
     db = tmp_path / "fresh.db"
-    _ok(_alembic(db, "upgrade", "head"))
+    _ok(_alembic(db, "upgrade", _HEAD))
     tables = {r[0] for r in _q(db, "select name from sqlite_master where type='table'")}
     assert "users" not in tables
     if "user_portfolios" in tables:
         assert _NEW <= set(_cols(db))
-    _ok(_alembic(db, "downgrade", "-1"))
+    _ok(_alembic(db, "downgrade", _PRIOR))
     if "user_portfolios" in tables:
         assert not (_NEW & set(_cols(db)))
-    _ok(_alembic(db, "upgrade", "head"))
+    _ok(_alembic(db, "upgrade", _HEAD))
     assert _q(db, "select version_num from alembic_version") == [(_HEAD,)]
 
 
@@ -95,7 +98,7 @@ def test_upgrade_backfills_then_downgrade_upgrade(prior_db):
     assert not (_NEW & set(_cols(db)))
     before = _q(db, "select portfolio_id, holdings, total_value_eur from user_portfolios order by portfolio_id")
 
-    out = _ok(_alembic(db, "upgrade", "head"))
+    out = _ok(_alembic(db, "upgrade", _HEAD))
     assert f"Running upgrade {_PRIOR} -> {_HEAD}" in out
     cols = _cols(db)
     assert _NEW <= set(cols)
@@ -108,11 +111,11 @@ def test_upgrade_backfills_then_downgrade_upgrade(prior_db):
     assert all(r[3] == r[4] for r in rows)                       # total_value = total_value_eur
     assert [r[5] for r in rows] == [b[1] for b in before]        # holdings JSON untouched
 
-    _ok(_alembic(db, "downgrade", "-1"))
+    _ok(_alembic(db, "downgrade", _PRIOR))
     assert not (_NEW & set(_cols(db)))
     assert _q(db, "select portfolio_id, holdings, total_value_eur from user_portfolios order by portfolio_id") == before
 
-    _ok(_alembic(db, "upgrade", "head"))
+    _ok(_alembic(db, "upgrade", _HEAD))
     assert _q(db, "select count(*) from user_portfolios where currency='EUR' and "
                   "(total_value = total_value_eur or (total_value is null and total_value_eur is null))") == [(3,)]
 

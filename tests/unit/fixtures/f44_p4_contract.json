@@ -1,0 +1,1471 @@
+{
+ "A1_warmup": {
+  "intents": 12,
+  "status": "ready"
+ },
+ "A2_session": {
+  "reused": false,
+  "session_id": "s-1",
+  "started_at": "2026-10-27T09:00:00Z"
+ },
+ "A3_message": {
+  "journey": {
+   "back_to_plan_reason": null,
+   "currency": "EUR",
+   "goal_return": 0.0775,
+   "goal_value": 264804.0,
+   "horizon_years": 13.0,
+   "journey_id": "j-1",
+   "location": "europe",
+   "max_reselections": 2,
+   "plan_updated_at": "2026-10-27T09:00:00Z",
+   "plan_year_start": "2026-03-02",
+   "previous_journey_id": "j-0",
+   "proposal": {
+    "cap_fit": 0.2133,
+    "cap_test": 0.1877,
+    "closest": null,
+    "effective_return": 0.0913,
+    "goal_return": 0.0775,
+    "location": "europe",
+    "max_reselections": 2,
+    "method": {
+     "sleeves": "ddqn_v2 replay",
+     "weights": "min-variance solver over model sleeves, μ ≥ target (not a model)",
+     "window": "lineage fit/test"
+    },
+    "proposal": {
+     "as_of": "2026-06-30",
+     "cap_fit": 0.2133,
+     "cap_test": 0.1877,
+     "closest": null,
+     "currency": "EUR",
+     "engine": "rita_ddqn_v2",
+     "excluded": [],
+     "fallback_checked": false,
+     "fit_mdd": -0.09,
+     "fit_return": 0.0912,
+     "fit_vol": 0.11,
+     "fit_window": {
+      "end": "2024-12-31",
+      "start": "2023-01-01"
+     },
+     "gap": null,
+     "graded": null,
+     "holdings": [
+      {
+       "allocation_pct": 100,
+       "episode_day": 100,
+       "episode_length": 252,
+       "episode_start": "2026-01-02",
+       "instrument_id": "E3",
+       "invested_pct": 100.0,
+       "model_action": "full",
+       "model_derisk": false,
+       "model_exit": false,
+       "model_sha12": "abc123def456",
+       "sl_basis": "sleeve_drawdown_from_episode_peak",
+       "sl_drawdown_limit": -0.1,
+       "tolerance": "medium",
+       "tolerance_mdd": -0.15
+      }
+     ],
+     "ladder": [
+      {
+       "cap_fit": 0.21,
+       "cap_test": 0.18,
+       "feasible": true,
+       "fit_vol": 0.1,
+       "tolerance": "low",
+       "tolerance_mdd": -0.1
+      },
+      {
+       "cap_fit": 0.21,
+       "cap_test": 0.18,
+       "feasible": true,
+       "fit_vol": 0.1,
+       "tolerance": "medium",
+       "tolerance_mdd": -0.15
+      },
+      {
+       "cap_fit": 0.21,
+       "cap_test": 0.18,
+       "feasible": true,
+       "fit_vol": 0.1,
+       "tolerance": "high",
+       "tolerance_mdd": -0.2
+      }
+     ],
+     "lineage": "f34p25",
+     "location": "europe",
+     "meets_goal": true,
+     "method": {
+      "sleeves": "ddqn_v2 replay",
+      "weights": "min-variance solver over model sleeves, μ ≥ target (not a model)",
+      "window": "lineage fit/test"
+     },
+     "rf_annual": 0.02,
+     "solver": null,
+     "target_return": 0.0775,
+     "test_mdd": -0.0874,
+     "test_return": 0.0855,
+     "test_sharpe": 0.8,
+     "test_vol": 0.12,
+     "test_window": {
+      "end": "2026-06-30",
+      "start": "2025-01-01"
+     },
+     "tolerance": "medium",
+     "tolerance_mdd": -0.15,
+     "tolerance_sensitive": true,
+     "window_start": "2023-01-01",
+     "years": []
+    },
+    "reason": "ok",
+    "remaining_fraction": 0.5,
+    "required_return": 0.0913,
+    "reselections_next": 1,
+    "reselections_used": 0,
+    "rest_of_year_return": 0.0447,
+    "status": "reselect_proposed",
+    "year_fraction": 0.5,
+    "ytd_return": -0.041
+   },
+   "reselect_count": 1,
+   "reselect_year": 2026,
+   "reselections": [
+    {
+     "at": "2026-04-01",
+     "event": "proposed",
+     "from_return": 0.0775,
+     "to_return": 0.0913,
+     "trigger": "sl_hit"
+    }
+   ],
+   "segments": [
+    {
+     "cause": "track",
+     "from": "2026-03-02",
+     "holdings": [
+      {
+       "allocation_pct": 60,
+       "instrument_id": "E1",
+       "tolerance": "medium"
+      }
+     ],
+     "to": null
+    }
+   ],
+   "selection": {
+    "as_of": "2026-06-30",
+    "cap_fit": 0.2133,
+    "cap_test": 0.1877,
+    "closest": null,
+    "currency": "EUR",
+    "engine": "rita_ddqn_v2",
+    "excluded": [],
+    "fallback_checked": false,
+    "fit_mdd": -0.09,
+    "fit_return": 0.0912,
+    "fit_vol": 0.11,
+    "fit_window": {
+     "end": "2024-12-31",
+     "start": "2023-01-01"
+    },
+    "gap": null,
+    "graded": null,
+    "holdings": [
+     {
+      "allocation_pct": 60,
+      "episode_day": 100,
+      "episode_length": 252,
+      "episode_start": "2026-01-02",
+      "instrument_id": "E1",
+      "invested_pct": 60.0,
+      "model_action": "full",
+      "model_derisk": false,
+      "model_exit": false,
+      "model_sha12": "abc123def456",
+      "sl_basis": "sleeve_drawdown_from_episode_peak",
+      "sl_drawdown_limit": -0.1,
+      "tolerance": "medium",
+      "tolerance_mdd": -0.15
+     },
+     {
+      "allocation_pct": 40,
+      "episode_day": 100,
+      "episode_length": 252,
+      "episode_start": "2026-01-02",
+      "instrument_id": "E2",
+      "invested_pct": 40.0,
+      "model_action": "full",
+      "model_derisk": false,
+      "model_exit": false,
+      "model_sha12": "abc123def456",
+      "sl_basis": "sleeve_drawdown_from_episode_peak",
+      "sl_drawdown_limit": -0.1,
+      "tolerance": "medium",
+      "tolerance_mdd": -0.15
+     }
+    ],
+    "ladder": [
+     {
+      "cap_fit": 0.21,
+      "cap_test": 0.18,
+      "feasible": true,
+      "fit_vol": 0.1,
+      "tolerance": "low",
+      "tolerance_mdd": -0.1
+     },
+     {
+      "cap_fit": 0.21,
+      "cap_test": 0.18,
+      "feasible": true,
+      "fit_vol": 0.1,
+      "tolerance": "medium",
+      "tolerance_mdd": -0.15
+     },
+     {
+      "cap_fit": 0.21,
+      "cap_test": 0.18,
+      "feasible": true,
+      "fit_vol": 0.1,
+      "tolerance": "high",
+      "tolerance_mdd": -0.2
+     }
+    ],
+    "lineage": "f34p25",
+    "location": "europe",
+    "meets_goal": true,
+    "method": {
+     "sleeves": "ddqn_v2 replay",
+     "weights": "min-variance solver over model sleeves, μ ≥ target (not a model)",
+     "window": "lineage fit/test"
+    },
+    "rf_annual": 0.02,
+    "solver": null,
+    "target_return": 0.0775,
+    "test_mdd": -0.0874,
+    "test_return": 0.0855,
+    "test_sharpe": 0.8,
+    "test_vol": 0.12,
+    "test_window": {
+     "end": "2026-06-30",
+     "start": "2025-01-01"
+    },
+    "tolerance": "medium",
+    "tolerance_mdd": -0.15,
+    "tolerance_sensitive": true,
+    "window_start": "2023-01-01",
+    "years": []
+   },
+   "state": "tracking",
+   "target_return": 0.0775,
+   "tracking": [
+    {
+     "allocation_pct": 60,
+     "entry_close": 123.45,
+     "entry_date": "2026-03-02",
+     "episode_length": 252,
+     "episode_start": "2026-01-02",
+     "instrument_id": "E1",
+     "model_sha12": "abc123def456",
+     "sl_basis": "sleeve_drawdown_from_episode_peak",
+     "sl_drawdown_limit": -0.1,
+     "tolerance": "medium"
+    }
+   ],
+   "updated_at": "2026-10-27T09:00:00Z",
+   "version": 4
+  },
+  "reply": {
+   "cards": [
+    {
+     "data": {
+      "currency": "EUR",
+      "goal_return": 0.0775,
+      "goal_value": 264804.0,
+      "horizon_years": 13.0,
+      "location": "europe",
+      "plan_updated_at": "2026-03-01T10:00:00Z"
+     },
+     "kind": "goal"
+    },
+    {
+     "data": {
+      "currency": "EUR",
+      "fit_return": 0.0912,
+      "gap": null,
+      "holdings": [
+       {
+        "allocation_pct": 60,
+        "instrument_id": "E1",
+        "model_action": "full"
+       },
+       {
+        "allocation_pct": 40,
+        "instrument_id": "E2",
+        "model_action": "full"
+       }
+      ],
+      "location": "europe",
+      "meets_goal": true,
+      "method_weights": "min-variance solver over model sleeves, μ ≥ target (not a model)",
+      "n_tolerances": 3,
+      "target_return": 0.0775,
+      "test_mdd": -0.0874,
+      "test_return": 0.0855,
+      "test_window": {
+       "end": "2026-06-30",
+       "start": "2025-01-01"
+      },
+      "tolerance": "medium"
+     },
+     "kind": "selection"
+    },
+    {
+     "data": {
+      "cap_fit": 0.0612,
+      "cap_test": 0.0534,
+      "fit_return": 0.0612,
+      "gap": 0.0241,
+      "holdings": [
+       {
+        "allocation_pct": 100,
+        "instrument_id": "E1",
+        "model_action": "full"
+       }
+      ],
+      "target_return": 0.0775,
+      "test_return": 0.0534
+     },
+     "kind": "closest"
+    },
+    {
+     "data": {
+      "excluded": [
+       {
+        "instrument_id": "ATO",
+        "reason": "retrain_needed"
+       }
+      ],
+      "n_tolerances": 3,
+      "rows": [
+       {
+        "allocation_pct": 60,
+        "fit_return": 0.1012,
+        "instrument_id": "E1",
+        "test_mdd": -0.1043,
+        "test_return": 0.0856,
+        "today_action": "full"
+       }
+      ],
+      "tolerance": "medium"
+     },
+     "kind": "why"
+    },
+    {
+     "data": {
+      "entry_date": "2026-10-23",
+      "holdings": [
+       {
+        "entry_close": 123.45,
+        "instrument_id": "E1",
+        "today_action": "full"
+       }
+      ],
+      "next_reset": "2026-12-18",
+      "sl_drawdown_limit": -0.1
+     },
+     "kind": "tracking"
+    },
+    {
+     "data": {
+      "as_of": "2026-10-23",
+      "reason": "on_track",
+      "required_return": 0.0913,
+      "source": "saved",
+      "status": "on_track",
+      "target_to_date": 0.0412,
+      "year_start": "2026-03-02",
+      "ytd_return": 0.031
+     },
+     "kind": "progress"
+    },
+    {
+     "data": {
+      "effective_return": 0.0913,
+      "holdings": [
+       {
+        "allocation_pct": 100,
+        "instrument_id": "E3",
+        "model_action": "full"
+       }
+      ],
+      "max_reselections": 2,
+      "required_return": 0.0913,
+      "reselections_next": 1,
+      "test_return": 0.0855
+     },
+     "kind": "proposal"
+    },
+    {
+     "data": {
+      "reason": "on_track",
+      "required_return": 0.12,
+      "rows": [
+       {
+        "instrument_id": "E1",
+        "sl_distance": -0.0747
+       }
+      ],
+      "status": "on_track",
+      "ytd_return": -0.04
+     },
+     "kind": "what_if"
+    },
+    {
+     "data": {
+      "coverage": 50,
+      "n_hedged": 2,
+      "updated_at": "2026-10-27T09:00:00Z"
+     },
+     "kind": "hedge"
+    },
+    {
+     "data": {
+      "rows": [
+       {
+        "instrument_id": "ATO",
+        "reason": "retrain_needed"
+       }
+      ]
+     },
+     "kind": "excluded"
+    }
+   ],
+   "chips": [
+    {
+     "label": "How am I doing?",
+     "text": "how am I doing"
+    }
+   ],
+   "confidence": 0.93,
+   "intent": "track",
+   "low_confidence": false,
+   "template_id": "track.started.v1",
+   "text": "…",
+   "tool_calls": [
+    {
+     "mcp_call_id": "c-1",
+     "status": "ok",
+     "tool": "journey.save"
+    }
+   ]
+  },
+  "session_id": "s-1"
+ },
+ "A4_state": {
+  "chat_model": "ready",
+  "chips": [
+   {
+    "label": "How am I doing?",
+    "text": "how am I doing"
+   }
+  ],
+  "currency": "EUR",
+  "goal": {
+   "assets": [],
+   "currency": "EUR",
+   "goal_return": 0.0775,
+   "goal_value": 264804.0,
+   "horizon_years": 13.0,
+   "location": "europe",
+   "plan_updated_at": "2026-03-01T10:00:00Z",
+   "saved": true
+  },
+  "journey": {
+   "back_to_plan_reason": null,
+   "currency": "EUR",
+   "goal_return": 0.0775,
+   "goal_value": 264804.0,
+   "horizon_years": 13.0,
+   "journey_id": "j-1",
+   "location": "europe",
+   "max_reselections": 2,
+   "plan_updated_at": "2026-10-27T09:00:00Z",
+   "plan_year_start": "2026-03-02",
+   "previous_journey_id": "j-0",
+   "proposal": {
+    "cap_fit": 0.2133,
+    "cap_test": 0.1877,
+    "closest": null,
+    "effective_return": 0.0913,
+    "goal_return": 0.0775,
+    "location": "europe",
+    "max_reselections": 2,
+    "method": {
+     "sleeves": "ddqn_v2 replay",
+     "weights": "min-variance solver over model sleeves, μ ≥ target (not a model)",
+     "window": "lineage fit/test"
+    },
+    "proposal": {
+     "as_of": "2026-06-30",
+     "cap_fit": 0.2133,
+     "cap_test": 0.1877,
+     "closest": null,
+     "currency": "EUR",
+     "engine": "rita_ddqn_v2",
+     "excluded": [],
+     "fallback_checked": false,
+     "fit_mdd": -0.09,
+     "fit_return": 0.0912,
+     "fit_vol": 0.11,
+     "fit_window": {
+      "end": "2024-12-31",
+      "start": "2023-01-01"
+     },
+     "gap": null,
+     "graded": null,
+     "holdings": [
+      {
+       "allocation_pct": 100,
+       "episode_day": 100,
+       "episode_length": 252,
+       "episode_start": "2026-01-02",
+       "instrument_id": "E3",
+       "invested_pct": 100.0,
+       "model_action": "full",
+       "model_derisk": false,
+       "model_exit": false,
+       "model_sha12": "abc123def456",
+       "sl_basis": "sleeve_drawdown_from_episode_peak",
+       "sl_drawdown_limit": -0.1,
+       "tolerance": "medium",
+       "tolerance_mdd": -0.15
+      }
+     ],
+     "ladder": [
+      {
+       "cap_fit": 0.21,
+       "cap_test": 0.18,
+       "feasible": true,
+       "fit_vol": 0.1,
+       "tolerance": "low",
+       "tolerance_mdd": -0.1
+      },
+      {
+       "cap_fit": 0.21,
+       "cap_test": 0.18,
+       "feasible": true,
+       "fit_vol": 0.1,
+       "tolerance": "medium",
+       "tolerance_mdd": -0.15
+      },
+      {
+       "cap_fit": 0.21,
+       "cap_test": 0.18,
+       "feasible": true,
+       "fit_vol": 0.1,
+       "tolerance": "high",
+       "tolerance_mdd": -0.2
+      }
+     ],
+     "lineage": "f34p25",
+     "location": "europe",
+     "meets_goal": true,
+     "method": {
+      "sleeves": "ddqn_v2 replay",
+      "weights": "min-variance solver over model sleeves, μ ≥ target (not a model)",
+      "window": "lineage fit/test"
+     },
+     "rf_annual": 0.02,
+     "solver": null,
+     "target_return": 0.0775,
+     "test_mdd": -0.0874,
+     "test_return": 0.0855,
+     "test_sharpe": 0.8,
+     "test_vol": 0.12,
+     "test_window": {
+      "end": "2026-06-30",
+      "start": "2025-01-01"
+     },
+     "tolerance": "medium",
+     "tolerance_mdd": -0.15,
+     "tolerance_sensitive": true,
+     "window_start": "2023-01-01",
+     "years": []
+    },
+    "reason": "ok",
+    "remaining_fraction": 0.5,
+    "required_return": 0.0913,
+    "reselections_next": 1,
+    "reselections_used": 0,
+    "rest_of_year_return": 0.0447,
+    "status": "reselect_proposed",
+    "year_fraction": 0.5,
+    "ytd_return": -0.041
+   },
+   "reselect_count": 1,
+   "reselect_year": 2026,
+   "reselections": [
+    {
+     "at": "2026-04-01",
+     "event": "proposed",
+     "from_return": 0.0775,
+     "to_return": 0.0913,
+     "trigger": "sl_hit"
+    }
+   ],
+   "segments": [
+    {
+     "cause": "track",
+     "from": "2026-03-02",
+     "holdings": [
+      {
+       "allocation_pct": 60,
+       "instrument_id": "E1",
+       "tolerance": "medium"
+      }
+     ],
+     "to": null
+    }
+   ],
+   "selection": {
+    "as_of": "2026-06-30",
+    "cap_fit": 0.2133,
+    "cap_test": 0.1877,
+    "closest": null,
+    "currency": "EUR",
+    "engine": "rita_ddqn_v2",
+    "excluded": [],
+    "fallback_checked": false,
+    "fit_mdd": -0.09,
+    "fit_return": 0.0912,
+    "fit_vol": 0.11,
+    "fit_window": {
+     "end": "2024-12-31",
+     "start": "2023-01-01"
+    },
+    "gap": null,
+    "graded": null,
+    "holdings": [
+     {
+      "allocation_pct": 60,
+      "episode_day": 100,
+      "episode_length": 252,
+      "episode_start": "2026-01-02",
+      "instrument_id": "E1",
+      "invested_pct": 60.0,
+      "model_action": "full",
+      "model_derisk": false,
+      "model_exit": false,
+      "model_sha12": "abc123def456",
+      "sl_basis": "sleeve_drawdown_from_episode_peak",
+      "sl_drawdown_limit": -0.1,
+      "tolerance": "medium",
+      "tolerance_mdd": -0.15
+     },
+     {
+      "allocation_pct": 40,
+      "episode_day": 100,
+      "episode_length": 252,
+      "episode_start": "2026-01-02",
+      "instrument_id": "E2",
+      "invested_pct": 40.0,
+      "model_action": "full",
+      "model_derisk": false,
+      "model_exit": false,
+      "model_sha12": "abc123def456",
+      "sl_basis": "sleeve_drawdown_from_episode_peak",
+      "sl_drawdown_limit": -0.1,
+      "tolerance": "medium",
+      "tolerance_mdd": -0.15
+     }
+    ],
+    "ladder": [
+     {
+      "cap_fit": 0.21,
+      "cap_test": 0.18,
+      "feasible": true,
+      "fit_vol": 0.1,
+      "tolerance": "low",
+      "tolerance_mdd": -0.1
+     },
+     {
+      "cap_fit": 0.21,
+      "cap_test": 0.18,
+      "feasible": true,
+      "fit_vol": 0.1,
+      "tolerance": "medium",
+      "tolerance_mdd": -0.15
+     },
+     {
+      "cap_fit": 0.21,
+      "cap_test": 0.18,
+      "feasible": true,
+      "fit_vol": 0.1,
+      "tolerance": "high",
+      "tolerance_mdd": -0.2
+     }
+    ],
+    "lineage": "f34p25",
+    "location": "europe",
+    "meets_goal": true,
+    "method": {
+     "sleeves": "ddqn_v2 replay",
+     "weights": "min-variance solver over model sleeves, μ ≥ target (not a model)",
+     "window": "lineage fit/test"
+    },
+    "rf_annual": 0.02,
+    "solver": null,
+    "target_return": 0.0775,
+    "test_mdd": -0.0874,
+    "test_return": 0.0855,
+    "test_sharpe": 0.8,
+    "test_vol": 0.12,
+    "test_window": {
+     "end": "2026-06-30",
+     "start": "2025-01-01"
+    },
+    "tolerance": "medium",
+    "tolerance_mdd": -0.15,
+    "tolerance_sensitive": true,
+    "window_start": "2023-01-01",
+    "years": []
+   },
+   "state": "tracking",
+   "target_return": 0.0775,
+   "tracking": [
+    {
+     "allocation_pct": 60,
+     "entry_close": 123.45,
+     "entry_date": "2026-03-02",
+     "episode_length": 252,
+     "episode_start": "2026-01-02",
+     "instrument_id": "E1",
+     "model_sha12": "abc123def456",
+     "sl_basis": "sleeve_drawdown_from_episode_peak",
+     "sl_drawdown_limit": -0.1,
+     "tolerance": "medium"
+    }
+   ],
+   "updated_at": "2026-10-27T09:00:00Z",
+   "version": 4
+  },
+  "live_holdings": [
+   {
+    "as_of": "2026-10-23",
+    "instrument_id": "E1",
+    "invested_fraction": 1.0,
+    "model_action": "full",
+    "next_reset": "2026-12-18",
+    "sl_distance": -0.0747,
+    "sl_hit": false,
+    "status": "ok"
+   }
+  ],
+  "location": "europe",
+  "location_name": "Europe",
+  "messages": [
+   {
+    "created_at": "2026-10-27T09:00:00Z",
+    "intent": "track",
+    "message_id": "m-1",
+    "role": "assistant",
+    "template_id": "track.started.v1",
+    "text": "…"
+   }
+  ],
+  "plan_stale": false,
+  "session": {
+   "last_activity_at": "2026-10-27T09:00:00Z",
+   "session_id": "s-1",
+   "status": "open"
+  }
+ },
+ "A5_portfolio": {
+  "as_of": "2026-10-23",
+  "currency": "EUR",
+  "engines": [
+   {
+    "coverage": 1.0,
+    "engine": "rita",
+    "gap": -0.0202,
+    "label": "RITA model (DDQN)",
+    "model_based": true,
+    "note": null,
+    "on_pace": false,
+    "return_since": 0.021,
+    "status": "ok",
+    "target_to_date": 0.0412
+   }
+  ],
+  "instruments": [
+   {
+    "allocation_pct": 60.0,
+    "engines_available": [
+     "rita",
+     "fno",
+     "asta"
+    ],
+    "held": true,
+    "instrument_id": "E1",
+    "last_close": 154.0,
+    "model_action": "full",
+    "pnl": 160.0,
+    "ret": 0.02,
+    "selected": true,
+    "shares": 40,
+    "sl_distance": -0.0747,
+    "sl_hit": false
+   }
+  ],
+  "journey_state": "tracking",
+  "location": "europe",
+  "perf": {
+   "as_of": "2026-10-23",
+   "coverage": 0.95,
+   "currency": "EUR",
+   "entry_date": "2026-06-14",
+   "goal_return": 0.0775,
+   "holdings": [
+    {
+     "allocation_pct": 60.0,
+     "instrument_id": "E1",
+     "return_since": 0.02,
+     "status": "ok"
+    }
+   ],
+   "location": "europe",
+   "money": {
+    "cash": 12.5,
+    "holdings": [
+     {
+      "entry_close": 150.0,
+      "instrument_id": "E1",
+      "last_close": 154.0,
+      "pnl": 160.0,
+      "shares": 40
+     }
+    ],
+    "legacy_note": false,
+    "name": "My portfolio",
+    "pnl": 310.0,
+    "portfolio_id": "p1",
+    "return_since_entry": 0.031,
+    "series": [
+     {
+      "date": "2026-10-23",
+      "pnl": 310.0,
+      "value": 10310.0
+     }
+    ],
+    "value_entry": 10000.0,
+    "value_now": 10310.0
+   },
+   "pnl_source": "mixed",
+   "series": [
+    {
+     "date": "2026-10-23",
+     "ret": 0.031,
+     "source": "saved"
+    }
+   ],
+   "source": "mixed",
+   "target_path": [
+    {
+     "date": "2026-10-23",
+     "target": 0.0412
+    }
+   ],
+   "target_to_date": 0.0412,
+   "year_start": "2026-03-02",
+   "ytd_return": 0.031
+  },
+  "pnl_source": "mixed",
+  "required": {
+   "effective_return": null,
+   "max_reselections": 2,
+   "reason": "on_track",
+   "required_return": 0.0913,
+   "reselections_used": 1,
+   "status": "on_track"
+  }
+ },
+ "A6_instrument": {
+  "as_of": "2026-10-23",
+  "currency": "EUR",
+  "engines": [
+   {
+    "asta": {
+     "as_of": "2026-10-23",
+     "detail": null,
+     "engine": "rita_ddqn_asta",
+     "instrument_id": "NIFTY",
+     "last_signal": {
+      "confidence": 0.75,
+      "date": "2026-10-23",
+      "mandatory_met": 3,
+      "mandatory_total": 3,
+      "optional_met": 2,
+      "optional_total": 4,
+      "setup": "geo_pan",
+      "signal": "BUY",
+      "stop_loss": 21800.0,
+      "target": 23400.0
+     },
+     "live_replay_note": "fresh replay",
+     "method": {
+      "entries": "ASTA DDQN actions (model)",
+      "sl_target": "ASTA labeller setup levels (rule engine, not a model)"
+     },
+     "model_note": "training run 3fc543eb",
+     "model_sha12": "3fc543eb0000",
+     "pipeline_backtest": {
+      "run_id": "63ea8087",
+      "status": "failed"
+     },
+     "return_since": 0.012,
+     "since": "2026-03-02",
+     "status": "ok",
+     "today_action": "cash",
+     "training_record": {
+      "run_id": "3fc543eb",
+      "test_mdd": -0.0996,
+      "test_return": 0.2294,
+      "test_sharpe": -0.156,
+      "test_trades": 340
+     },
+     "window": {
+      "basis": "temporal_split",
+      "test_end": "2026-08-28",
+      "test_start": "2022-07-25",
+      "verified": true
+     },
+     "window_start": "2022-07-25"
+    },
+    "engine": "rita",
+    "episode_starts": [
+     "2026-01-02"
+    ],
+    "label": "RITA model (DDQN)",
+    "levels": {
+     "entry": {
+      "basis": "model",
+      "date": "2026-10-23",
+      "value": 150.0
+     },
+     "exit": {
+      "basis": "model",
+      "date": "2026-10-23",
+      "value": 149.0
+     },
+     "stop_loss": {
+      "basis": "training limit",
+      "date": "2026-10-23",
+      "value": 0.945
+     },
+     "target": {
+      "basis": "rule",
+      "date": "2026-10-23",
+      "value": 160.0
+     }
+    },
+    "markers": [
+     {
+      "close": 154.0,
+      "date": "2026-10-23",
+      "kind": "entry"
+     }
+    ],
+    "method": {
+     "levels": "ddqn_v2 replay actions"
+    },
+    "model_based": true,
+    "performance": {
+     "gap": -0.0202,
+     "return_since": 0.021,
+     "since": "2026-03-02",
+     "target_to_date": 0.0412
+    },
+    "prices": [
+     {
+      "close": 154.0,
+      "date": "2026-10-23"
+     }
+    ],
+    "rationale": {
+     "action": "full",
+     "date": "2026-10-23",
+     "inputs": [
+      {
+       "model_input": 0.55,
+       "name": "rsi_14",
+       "raw": 55.0
+      }
+     ],
+     "note": null,
+     "prev_action": "cash",
+     "state": [
+      {
+       "name": "prev_allocation",
+       "value": 0.0
+      }
+     ]
+    },
+    "series": {
+     "band_lower": [
+      140.0
+     ],
+     "band_upper": [
+      160.0
+     ],
+     "sl_line": [
+      0.945
+     ],
+     "sleeve_value": [
+      1.02
+     ]
+    },
+    "status": "ok",
+    "tolerance_rule": "selection"
+   }
+  ],
+  "instrument_id": "E1"
+ },
+ "cards": {
+  "closest": {
+   "data": {
+    "cap_fit": 0.0612,
+    "cap_test": 0.0534,
+    "fit_return": 0.0612,
+    "gap": 0.0241,
+    "holdings": [
+     {
+      "allocation_pct": 100,
+      "instrument_id": "E1",
+      "model_action": "full"
+     }
+    ],
+    "target_return": 0.0775,
+    "test_return": 0.0534
+   },
+   "kind": "closest"
+  },
+  "excluded": {
+   "data": {
+    "rows": [
+     {
+      "instrument_id": "ATO",
+      "reason": "retrain_needed"
+     }
+    ]
+   },
+   "kind": "excluded"
+  },
+  "goal": {
+   "data": {
+    "currency": "EUR",
+    "goal_return": 0.0775,
+    "goal_value": 264804.0,
+    "horizon_years": 13.0,
+    "location": "europe",
+    "plan_updated_at": "2026-03-01T10:00:00Z"
+   },
+   "kind": "goal"
+  },
+  "hedge": {
+   "data": {
+    "coverage": 50,
+    "n_hedged": 2,
+    "updated_at": "2026-10-27T09:00:00Z"
+   },
+   "kind": "hedge"
+  },
+  "progress": {
+   "data": {
+    "as_of": "2026-10-23",
+    "reason": "on_track",
+    "required_return": 0.0913,
+    "source": "saved",
+    "status": "on_track",
+    "target_to_date": 0.0412,
+    "year_start": "2026-03-02",
+    "ytd_return": 0.031
+   },
+   "kind": "progress"
+  },
+  "proposal": {
+   "data": {
+    "effective_return": 0.0913,
+    "holdings": [
+     {
+      "allocation_pct": 100,
+      "instrument_id": "E3",
+      "model_action": "full"
+     }
+    ],
+    "max_reselections": 2,
+    "required_return": 0.0913,
+    "reselections_next": 1,
+    "test_return": 0.0855
+   },
+   "kind": "proposal"
+  },
+  "selection": {
+   "data": {
+    "currency": "EUR",
+    "fit_return": 0.0912,
+    "gap": null,
+    "holdings": [
+     {
+      "allocation_pct": 60,
+      "instrument_id": "E1",
+      "model_action": "full"
+     },
+     {
+      "allocation_pct": 40,
+      "instrument_id": "E2",
+      "model_action": "full"
+     }
+    ],
+    "location": "europe",
+    "meets_goal": true,
+    "method_weights": "min-variance solver over model sleeves, μ ≥ target (not a model)",
+    "n_tolerances": 3,
+    "target_return": 0.0775,
+    "test_mdd": -0.0874,
+    "test_return": 0.0855,
+    "test_window": {
+     "end": "2026-06-30",
+     "start": "2025-01-01"
+    },
+    "tolerance": "medium"
+   },
+   "kind": "selection"
+  },
+  "tracking": {
+   "data": {
+    "entry_date": "2026-10-23",
+    "holdings": [
+     {
+      "entry_close": 123.45,
+      "instrument_id": "E1",
+      "today_action": "full"
+     }
+    ],
+    "next_reset": "2026-12-18",
+    "sl_drawdown_limit": -0.1
+   },
+   "kind": "tracking"
+  },
+  "what_if": {
+   "data": {
+    "reason": "on_track",
+    "required_return": 0.12,
+    "rows": [
+     {
+      "instrument_id": "E1",
+      "sl_distance": -0.0747
+     }
+    ],
+    "status": "on_track",
+    "ytd_return": -0.04
+   },
+   "kind": "what_if"
+  },
+  "why": {
+   "data": {
+    "excluded": [
+     {
+      "instrument_id": "ATO",
+      "reason": "retrain_needed"
+     }
+    ],
+    "n_tolerances": 3,
+    "rows": [
+     {
+      "allocation_pct": 60,
+      "fit_return": 0.1012,
+      "instrument_id": "E1",
+      "test_mdd": -0.1043,
+      "test_return": 0.0856,
+      "today_action": "full"
+     }
+    ],
+    "tolerance": "medium"
+   },
+   "kind": "why"
+  }
+ },
+ "journey": {
+  "back_to_plan_reason": null,
+  "currency": "EUR",
+  "goal_return": 0.0775,
+  "goal_value": 264804.0,
+  "horizon_years": 13.0,
+  "journey_id": "j-1",
+  "location": "europe",
+  "max_reselections": 2,
+  "plan_updated_at": "2026-10-27T09:00:00Z",
+  "plan_year_start": "2026-03-02",
+  "previous_journey_id": "j-0",
+  "proposal": {
+   "cap_fit": 0.2133,
+   "cap_test": 0.1877,
+   "closest": null,
+   "effective_return": 0.0913,
+   "goal_return": 0.0775,
+   "location": "europe",
+   "max_reselections": 2,
+   "method": {
+    "sleeves": "ddqn_v2 replay",
+    "weights": "min-variance solver over model sleeves, μ ≥ target (not a model)",
+    "window": "lineage fit/test"
+   },
+   "proposal": {
+    "as_of": "2026-06-30",
+    "cap_fit": 0.2133,
+    "cap_test": 0.1877,
+    "closest": null,
+    "currency": "EUR",
+    "engine": "rita_ddqn_v2",
+    "excluded": [],
+    "fallback_checked": false,
+    "fit_mdd": -0.09,
+    "fit_return": 0.0912,
+    "fit_vol": 0.11,
+    "fit_window": {
+     "end": "2024-12-31",
+     "start": "2023-01-01"
+    },
+    "gap": null,
+    "graded": null,
+    "holdings": [
+     {
+      "allocation_pct": 100,
+      "episode_day": 100,
+      "episode_length": 252,
+      "episode_start": "2026-01-02",
+      "instrument_id": "E3",
+      "invested_pct": 100.0,
+      "model_action": "full",
+      "model_derisk": false,
+      "model_exit": false,
+      "model_sha12": "abc123def456",
+      "sl_basis": "sleeve_drawdown_from_episode_peak",
+      "sl_drawdown_limit": -0.1,
+      "tolerance": "medium",
+      "tolerance_mdd": -0.15
+     }
+    ],
+    "ladder": [
+     {
+      "cap_fit": 0.21,
+      "cap_test": 0.18,
+      "feasible": true,
+      "fit_vol": 0.1,
+      "tolerance": "low",
+      "tolerance_mdd": -0.1
+     },
+     {
+      "cap_fit": 0.21,
+      "cap_test": 0.18,
+      "feasible": true,
+      "fit_vol": 0.1,
+      "tolerance": "medium",
+      "tolerance_mdd": -0.15
+     },
+     {
+      "cap_fit": 0.21,
+      "cap_test": 0.18,
+      "feasible": true,
+      "fit_vol": 0.1,
+      "tolerance": "high",
+      "tolerance_mdd": -0.2
+     }
+    ],
+    "lineage": "f34p25",
+    "location": "europe",
+    "meets_goal": true,
+    "method": {
+     "sleeves": "ddqn_v2 replay",
+     "weights": "min-variance solver over model sleeves, μ ≥ target (not a model)",
+     "window": "lineage fit/test"
+    },
+    "rf_annual": 0.02,
+    "solver": null,
+    "target_return": 0.0775,
+    "test_mdd": -0.0874,
+    "test_return": 0.0855,
+    "test_sharpe": 0.8,
+    "test_vol": 0.12,
+    "test_window": {
+     "end": "2026-06-30",
+     "start": "2025-01-01"
+    },
+    "tolerance": "medium",
+    "tolerance_mdd": -0.15,
+    "tolerance_sensitive": true,
+    "window_start": "2023-01-01",
+    "years": []
+   },
+   "reason": "ok",
+   "remaining_fraction": 0.5,
+   "required_return": 0.0913,
+   "reselections_next": 1,
+   "reselections_used": 0,
+   "rest_of_year_return": 0.0447,
+   "status": "reselect_proposed",
+   "year_fraction": 0.5,
+   "ytd_return": -0.041
+  },
+  "reselect_count": 1,
+  "reselect_year": 2026,
+  "reselections": [
+   {
+    "at": "2026-04-01",
+    "event": "proposed",
+    "from_return": 0.0775,
+    "to_return": 0.0913,
+    "trigger": "sl_hit"
+   }
+  ],
+  "segments": [
+   {
+    "cause": "track",
+    "from": "2026-03-02",
+    "holdings": [
+     {
+      "allocation_pct": 60,
+      "instrument_id": "E1",
+      "tolerance": "medium"
+     }
+    ],
+    "to": null
+   }
+  ],
+  "selection": {
+   "as_of": "2026-06-30",
+   "cap_fit": 0.2133,
+   "cap_test": 0.1877,
+   "closest": null,
+   "currency": "EUR",
+   "engine": "rita_ddqn_v2",
+   "excluded": [],
+   "fallback_checked": false,
+   "fit_mdd": -0.09,
+   "fit_return": 0.0912,
+   "fit_vol": 0.11,
+   "fit_window": {
+    "end": "2024-12-31",
+    "start": "2023-01-01"
+   },
+   "gap": null,
+   "graded": null,
+   "holdings": [
+    {
+     "allocation_pct": 60,
+     "episode_day": 100,
+     "episode_length": 252,
+     "episode_start": "2026-01-02",
+     "instrument_id": "E1",
+     "invested_pct": 60.0,
+     "model_action": "full",
+     "model_derisk": false,
+     "model_exit": false,
+     "model_sha12": "abc123def456",
+     "sl_basis": "sleeve_drawdown_from_episode_peak",
+     "sl_drawdown_limit": -0.1,
+     "tolerance": "medium",
+     "tolerance_mdd": -0.15
+    },
+    {
+     "allocation_pct": 40,
+     "episode_day": 100,
+     "episode_length": 252,
+     "episode_start": "2026-01-02",
+     "instrument_id": "E2",
+     "invested_pct": 40.0,
+     "model_action": "full",
+     "model_derisk": false,
+     "model_exit": false,
+     "model_sha12": "abc123def456",
+     "sl_basis": "sleeve_drawdown_from_episode_peak",
+     "sl_drawdown_limit": -0.1,
+     "tolerance": "medium",
+     "tolerance_mdd": -0.15
+    }
+   ],
+   "ladder": [
+    {
+     "cap_fit": 0.21,
+     "cap_test": 0.18,
+     "feasible": true,
+     "fit_vol": 0.1,
+     "tolerance": "low",
+     "tolerance_mdd": -0.1
+    },
+    {
+     "cap_fit": 0.21,
+     "cap_test": 0.18,
+     "feasible": true,
+     "fit_vol": 0.1,
+     "tolerance": "medium",
+     "tolerance_mdd": -0.15
+    },
+    {
+     "cap_fit": 0.21,
+     "cap_test": 0.18,
+     "feasible": true,
+     "fit_vol": 0.1,
+     "tolerance": "high",
+     "tolerance_mdd": -0.2
+    }
+   ],
+   "lineage": "f34p25",
+   "location": "europe",
+   "meets_goal": true,
+   "method": {
+    "sleeves": "ddqn_v2 replay",
+    "weights": "min-variance solver over model sleeves, μ ≥ target (not a model)",
+    "window": "lineage fit/test"
+   },
+   "rf_annual": 0.02,
+   "solver": null,
+   "target_return": 0.0775,
+   "test_mdd": -0.0874,
+   "test_return": 0.0855,
+   "test_sharpe": 0.8,
+   "test_vol": 0.12,
+   "test_window": {
+    "end": "2026-06-30",
+    "start": "2025-01-01"
+   },
+   "tolerance": "medium",
+   "tolerance_mdd": -0.15,
+   "tolerance_sensitive": true,
+   "window_start": "2023-01-01",
+   "years": []
+  },
+  "state": "tracking",
+  "target_return": 0.0775,
+  "tracking": [
+   {
+    "allocation_pct": 60,
+    "entry_close": 123.45,
+    "entry_date": "2026-03-02",
+    "episode_length": 252,
+    "episode_start": "2026-01-02",
+    "instrument_id": "E1",
+    "model_sha12": "abc123def456",
+    "sl_basis": "sleeve_drawdown_from_episode_peak",
+    "sl_drawdown_limit": -0.1,
+    "tolerance": "medium"
+   }
+  ],
+  "updated_at": "2026-10-27T09:00:00Z",
+  "version": 4
+ }
+}
