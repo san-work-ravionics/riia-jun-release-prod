@@ -10,7 +10,9 @@ from pathlib import Path
 
 from rita.interfaces.tools._base import ToolContext, ToolError, ToolSpec
 from rita.schemas.fx import FxRateIn, FxRateOut
+from rita.schemas.jarvis import AstaTraceOut
 from rita.schemas.mcp_tools import (
+    AstaTraceIn,
     InstrumentIn,
     MarketAskIn,
     MarketAskOut,
@@ -134,6 +136,15 @@ def monitor(_inp: NoArgsIn, _ctx: ToolContext) -> MarketMonitorOut:
     return MarketMonitorOut(summary=summary, intents=intents, recent=recent)
 
 
+
+def asta_trace(inp: AstaTraceIn, ctx: ToolContext) -> AstaTraceOut:
+    """F44 P4: the ASTA DDQN engine for one instrument — from the warm-up cache only (cold →
+    ``warming``; never computed in the request)."""
+    from rita.services.asta_trace_service import AstaTraceService
+
+    with ctx.session() as db:
+        return AstaTraceService(db).trace(inp.instrument, inp.since, inp.detail)
+
 TOOLS = [
     ToolSpec(
         name="market.overview",
@@ -193,5 +204,22 @@ TOOLS = [
         requires_flag="can_access_ops",
         text=lambda o: f"Chat monitor: {o.summary.get('total_queries', 0)} queries.",
         summary=lambda o: f"total_queries={o.summary.get('total_queries', 0)} recent={len(o.recent)}",
+    ),
+    ToolSpec(
+        name="market.asta_trace",
+        description=(
+            "The ASTA DDQN model for one instrument (models present: NIFTY): today's action, its "
+            "entries / exits since the start of its verified test window, the return since a "
+            "date, and the ASTA labeller's last setup with its stop loss / target (a rule engine, "
+            "not a model). status no_model | warming | no_data | no_recorded_window when the "
+            "window can't be confirmed from the training record."
+        ),
+        input_model=AstaTraceIn,
+        output_model=AstaTraceOut,
+        handler=asta_trace,
+        auth=frozenset({"user", "system"}),
+        text=lambda o: (f"ASTA {o.instrument_id}: {o.status}"
+                        + (f", model today {o.today_action}" if o.today_action else "") + "."),
+        summary=lambda o: f"status={o.status} detail={o.detail is not None}",
     ),
 ]

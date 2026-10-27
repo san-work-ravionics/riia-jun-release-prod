@@ -8,7 +8,7 @@ Rules (checked by tests/unit/test_f44_p1_mcp_tools.py):
 """
 from __future__ import annotations
 
-from rita.interfaces.tools import fno, legacy, market, portfolio, whatineed
+from rita.interfaces.tools import fno, journey, legacy, market, portfolio, whatineed
 from rita.interfaces.tools._base import ToolContext, ToolError, ToolSpec, set_session_factory
 
 __all__ = ["ToolContext", "ToolError", "ToolSpec", "all_tools", "set_session_factory"]
@@ -16,4 +16,4 @@ __all__ = ["ToolContext", "ToolError", "ToolSpec", "all_tools", "set_session_fac
 
 def all_tools() -> list[ToolSpec]:
     """Every registered tool: namespaced P1 tools, then the legacy aliases."""
-    return [*whatineed.TOOLS, *portfolio.TOOLS, *fno.TOOLS, *market.TOOLS, *legacy.TOOLS]
+    return [*whatineed.TOOLS, *journey.TOOLS, *portfolio.TOOLS, *fno.TOOLS, *market.TOOLS, *legacy.TOOLS]

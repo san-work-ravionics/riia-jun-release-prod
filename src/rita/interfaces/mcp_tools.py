@@ -4,7 +4,6 @@ Shared MCP Server instance — one server, namespaced tools, one dispatch (F44 P
 Served by every transport:
   - in-memory  ``mcp_client.py``      (RITA modules / Jarvis, same process)
   - HTTP       ``mcp_http_app.py``    (``/mcp`` streamable HTTP, JWT)
-  - SSE        ``mcp_sse_app.py``     (``/mcp/sse``, JWT, deprecated)
   - stdio      ``rita_mcp_server.py`` (Claude Desktop local; Auth ``none`` tools + legacy aliases)
 
 The dispatch is the single path every call takes: resolve the caller identity → check the tool is
@@ -125,6 +124,9 @@ SAFE_ARG_KEYS = frozenset({
     "instrument", "instrument_id", "instruments", "location", "limit", "horizon", "months",
     "horizon_days", "time_horizon_days", "years", "currency", "base", "quote", "as_of", "mode",
     "state", "id", "year_start",
+    # F44 P4 (enums / dates / flags only — never goal amounts or message text)
+    "event", "source", "tolerance", "since", "entry_date", "detail", "trigger", "reason",
+    "expected_version", "preview",
 })
 
 
