@@ -212,3 +212,22 @@ goal_selection:
       val_start: 2023-01-01
       val_end: 2024-12-31
       backtest_start: 2025-01-01
+
+# F44 P4 Jarvis module (JarvisSettings). Classifier + UX settings only — no dates, no levels.
+# intent_threshold = the existing chat classifier's cosine-confidence threshold
+# (classifier.CONFIDENCE_THRESHOLD), reused for the journey seed index (a classifier setting).
+# ASTA (rev 1 B5): the out-of-sample window is derived at runtime from the training dataset with
+# temporal_split and must reproduce the training record (Sharpe / MDD / return to 3 dp, trades
+# exact); otherwise ASTA shows signals only (status no_recorded_window).
+jarvis:
+  intent_threshold: 0.42
+  session_idle_minutes: 30         # UX: reuse an open chat session within this idle time
+  max_message_chars: 500           # UX: longest chat message accepted (422 above)
+  history_messages: 50             # UX: messages returned with the page state
+  asta:
+    enabled: true
+    warm_on_startup: true          # warmed in the goal-selection warm thread, after P3
+    model_pattern: "rita_ddqn_asta_{inst}_*.zip"
+    dataset: "asta_labeled_dataset.csv"
+    instruments_from: "models present"
+    display_months: 12             # UX: signals-only window when the window is not verified

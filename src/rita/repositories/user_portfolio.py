@@ -62,6 +62,20 @@ class UserPortfolioRepo:
             UserPortfolioModel.key_id == key_id, loc_filter,
         ).update({"is_active": False}, synchronize_session="fetch")
 
+    def list_by_key_and_location(self, key_id: str, location: str | None) -> list[UserPortfolioModel]:
+        """Every saved row (active and replaced) for (key_id, location), oldest save first —
+        F44 P4 chains the saved value path across re-saves (rev 2 N1)."""
+        loc_filter = (
+            UserPortfolioModel.location.is_(None) if location is None
+            else UserPortfolioModel.location == location
+        )
+        return (
+            self._db.query(UserPortfolioModel)
+            .filter(UserPortfolioModel.key_id == key_id, loc_filter)
+            .order_by(UserPortfolioModel.created_at.asc(), UserPortfolioModel.portfolio_id.asc())
+            .all()
+        )
+
     def insert(self, row: UserPortfolioModel) -> None:
         """Add a new portfolio row. Caller commits."""
         self._db.add(row)

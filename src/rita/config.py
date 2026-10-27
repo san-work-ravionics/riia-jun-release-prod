@@ -450,6 +450,35 @@ class GoalSelectionSettings(BaseSettings):
     model_lineages: list[ModelLineage] = []
 
 
+class JarvisAstaSettings(BaseSettings):
+    """F44 P4 (rev 1 B5): ASTA engine for the Jarvis portfolio page.  No dates and no levels:
+    the window is derived at runtime from the training dataset (``temporal_split``) and checked
+    against the training record."""
+
+    model_config = SettingsConfigDict(extra="forbid")
+
+    enabled: bool = True
+    warm_on_startup: bool = True
+    model_pattern: str = "rita_ddqn_asta_{inst}_*.zip"   # under <model.path>/<INST>/
+    dataset: str = "asta_labeled_dataset.csv"             # under <data.input_dir>/<INST>/
+    instruments_from: str = "models present"
+    display_months: int = Field(default=12, ge=1, le=60)  # UX: signals-only window (N3)
+
+
+class JarvisSettings(BaseSettings):
+    """F44 P4 Jarvis module (``jarvis:`` in base.yaml).  Classifier + UX settings only."""
+
+    model_config = SettingsConfigDict(extra="forbid")
+
+    # The existing chat classifier's cosine-confidence threshold (classifier.CONFIDENCE_THRESHOLD),
+    # reused for the journey seed index — a classifier setting, not a trading level (rev 1 A1).
+    intent_threshold: float = Field(default=0.42, gt=0, lt=1)
+    session_idle_minutes: int = Field(default=30, ge=1)
+    max_message_chars: int = Field(default=500, ge=1, le=4000)
+    history_messages: int = Field(default=50, ge=1, le=500)
+    asta: JarvisAstaSettings = JarvisAstaSettings()
+
+
 # ---------------------------------------------------------------------------
 # Root Settings
 # ---------------------------------------------------------------------------
@@ -477,6 +506,7 @@ class Settings(BaseSettings):
     trade_analysis: TradeAnalysisSettings = TradeAnalysisSettings()
     retirement_plan: RetirementPlanSettings = RetirementPlanSettings()
     goal_selection: GoalSelectionSettings = GoalSelectionSettings()
+    jarvis: JarvisSettings = JarvisSettings()
 
     # The active environment name (informational — used during construction).
     env: str = "development"
