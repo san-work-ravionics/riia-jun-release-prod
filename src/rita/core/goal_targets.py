@@ -92,6 +92,29 @@ def required_return(goal_return: float, ytd_return: float, as_of: date,
                           max(r_prime, goal_return), False)
 
 
+def target_to_date(goal_return: float, year_start: date, as_of: date) -> float:
+    """F44 P4 (rev 1 B2): the annual goal's path to date, ``T = (1+r)^{(as_of − s + 1)/D} − 1``,
+    with ``D`` = days in ``s``'s calendar year (the same day count as ``required_return``).
+
+    ``r`` is always the user's annual goal — never a re-selection rate r′.  ``as_of = s − 1`` (or
+    earlier) → 0.  Property: a ytd equal to ``T`` gives ``required_return(...).required_return
+    == r`` (on the path ⇔ the guard's ``on_track``)."""
+    if goal_return <= -1.0:
+        raise ValueError("goal_return must be greater than -1")
+    days = (as_of - year_start).days + 1
+    if days <= 0:
+        return 0.0
+    return math.expm1(days / _days_in_year(year_start.year) * math.log1p(goal_return))
+
+
+def chain_returns(segment_returns: Iterable[float]) -> float:
+    """F44 P4 (rev 2 N1): one return over consecutive periods, ``Π(1+r_k) − 1``."""
+    growth = 1.0
+    for r in segment_returns:
+        growth *= 1.0 + float(r)
+    return growth - 1.0
+
+
 @dataclass(frozen=True)
 class SlDecision:
     action: str          # "back_to_plan" | "on_track" | "solve"
