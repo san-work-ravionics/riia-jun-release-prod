@@ -121,6 +121,18 @@ class LocationRuns:
     window_start: date | None = None
 
 
+@dataclass
+class InstrumentRuns:
+    """F44 P4: one instrument's replays (τ → run) or its exclusion, and its indicator frame."""
+
+    instrument: str
+    lineage: ModelLineage
+    split: LineageSplit
+    runs: dict[str, ModelRun] | None = None
+    excluded: ExcludedOut | None = None
+    frame: Any = None
+
+
 def _excl(inst: str, reason: str, detail: str | None = None) -> ExcludedOut:
     return ExcludedOut(instrument_id=inst, reason=reason, detail=detail)
 
@@ -230,6 +242,20 @@ class GoalSelectionService:
                 log.info("goal_selection.replayed", instrument=inst, lineage=lineage.name,
                          tolerances=len(missing))
         return _Prepared(runs=runs, last_date=frame.last_date)
+
+    def instrument_runs(self, instrument: str) -> InstrumentRuns:
+        """F44 P4: one instrument's replays at every τ through the same ``_prepare`` (P3 cache,
+        per-instrument lock), plus the indicator frame the model read.  No change to the
+        location-level behaviour."""
+        lineage = self.active_lineage()
+        split = self._artifacts.lineage_split(lineage)
+        p = self._prepare(instrument.upper(), lineage, split)
+        if p.excluded is not None:
+            return InstrumentRuns(instrument=instrument.upper(), lineage=lineage, split=split,
+                                  excluded=p.excluded)
+        frame = self._artifacts.load_indicator_frame(instrument.upper())
+        return InstrumentRuns(instrument=instrument.upper(), lineage=lineage, split=split,
+                              runs=p.runs, frame=frame.df if frame is not None else None)
 
     def location_runs(self, location: str) -> LocationRuns:
         lineage = self.active_lineage()
@@ -433,6 +459,12 @@ def _warm_job() -> None:
         log.warning("goal_selection.warm_thread_failed", error=type(exc).__name__)
     finally:
         db.close()
+    # F44 P4: the Jarvis ASTA trace warms in this same thread, after P3, with its own session.
+    asta = get_settings().jarvis.asta
+    if asta.enabled and asta.warm_on_startup:
+        from rita.services.asta_trace_service import warm_job as _asta_warm_job
+
+        _asta_warm_job()
 
 
 def start_warm_thread() -> threading.Thread:

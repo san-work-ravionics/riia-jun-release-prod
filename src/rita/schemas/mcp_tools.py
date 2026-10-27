@@ -207,3 +207,53 @@ class RequiredReturnIn(_In):
 
 class ModelRunsIn(_In):
     location: _Location
+
+
+# ── F44 P4 Jarvis tools (outputs in schemas/jarvis.py) ──────────────────────────
+
+class PnlSegmentHoldingIn(_In):
+    instrument_id: str = Field(..., pattern=_INSTRUMENT_PATTERN)
+    allocation_pct: int = Field(..., ge=0, le=100)
+    tolerance: Literal["low", "medium", "high"]
+
+
+class PnlSegmentIn(_In):
+    model_config = ConfigDict(extra="forbid", validate_by_name=True, validate_by_alias=True,
+                              serialize_by_alias=True)
+
+    from_: date = Field(..., alias="from")
+    to: date | None = None
+    holdings: list[PnlSegmentHoldingIn] = Field(..., min_length=1, max_length=50)
+    cause: Literal["track", "accept", "preview"] = "track"
+
+
+class PnlIn(_In):
+    location: _Location
+    goal_return: float | None = Field(None, ge=-0.5, le=2.0,
+                                      description="The user's annual goal r (fraction) for the target path")
+    source: Literal["auto", "saved", "model_sleeves"] = "auto"
+    year_start: date | None = Field(None, description="The journey's plan_year_start s")
+    segments: list[PnlSegmentIn] | None = Field(
+        None, max_length=20, description="Held model-sleeve mixes (journey segments) for the sleeve path")
+    preview: bool = Field(False, description="Selection not tracked yet: sleeves bought on Jan 1 (never for the guard)")
+
+
+class SleeveTraceIn(_In):
+    location: _Location
+    instrument: str = Field(..., pattern=_INSTRUMENT_PATTERN)
+    tolerance: Literal["low", "medium", "high"] | None = Field(
+        None, description="Journey tolerance; omit = the P3 τ* rule on this one sleeve")
+    entry_date: date | None = Field(None, description="Tracking entry (SL peak starts at max(entry, episode start))")
+    since: date | None = Field(None, description="Return measured from this date's close")
+    detail: bool = False
+
+
+class SigmaLevelsIn(_In):
+    instrument: str = Field(..., pattern=_INSTRUMENT_PATTERN)
+    months: int = Field(12, ge=1, le=36)
+
+
+class AstaTraceIn(_In):
+    instrument: str = Field(..., pattern=_INSTRUMENT_PATTERN)
+    since: date | None = None
+    detail: bool = False

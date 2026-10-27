@@ -204,3 +204,61 @@ class PositionValueService:
             bands=bands, candles=candles,
             daily=[PositionValueDaily(date=d.isoformat(), value=round(v, 2)) for d, v in daily],
         )
+
+    # ── F44 P4: fno.sigma_levels (additive; no user, no shares) ─────────────────
+    def sigma_levels(self, instrument: str, months: int = 12):
+        """±1σ monthly levels for one instrument from the existing pure helpers
+        (``ann_vol_pct_from_closes`` over the last ``VOL_WINDOW_CLOSES`` closes, ``monthly_sigma``,
+        ``build_bands``).  Per month: the band anchored at the previous month's last close with the
+        σ of the 253 closes up to that anchor.  Statistical, not a model."""
+        from rita.schemas.jarvis import (
+            ClosePointOut,
+            SigmaLevelsBandOut,
+            SigmaLevelsOut,
+            SigmaMonthOut,
+        )
+
+        iid = instrument.strip().upper()
+        currency = INSTRUMENT_CCY.get(iid)
+        latest = self._market.find_latest(iid)
+        if latest is None:
+            return SigmaLevelsOut(instrument_id=iid, currency=currency, status="no_price_data")
+        end = latest.date
+        start = window_start(end, months)
+        closes = self._market.find_closes(iid, start, end)
+        history = self._market.find_closes(iid, date(start.year - 2, 1, 1), end)
+        recent = self._market.find_recent_closes(iid, VOL_WINDOW_CLOSES)   # same window as build()
+        vol = ann_vol_pct_from_closes(recent)
+        if not closes or vol is None:
+            return SigmaLevelsOut(instrument_id=iid, currency=currency, as_of=end,
+                                  status="insufficient_data" if closes else "no_price_data",
+                                  closes=[ClosePointOut(date=d, close=c) for d, c in closes])
+        last_date, last_close = closes[-1]
+        bands = build_bands(last_close, last_date, vol)
+        monthly = []
+        hist_dates = [d for d, _c in history]
+        for month in sorted({d.strftime("%Y-%m") for d, _c in closes}):
+            first = date(int(month[:4]), int(month[5:]), 1)
+            upto = [k for k, d in enumerate(hist_dates) if d < first]
+            if not upto:
+                continue
+            k = upto[-1]
+            window = [c for _d, c in history[max(0, k + 1 - VOL_WINDOW_CLOSES):k + 1]]
+            mvol = ann_vol_pct_from_closes(window)
+            if mvol is None:
+                continue
+            mb = build_bands(history[k][1], history[k][0], mvol)
+            monthly.append(SigmaMonthOut(month=month, anchor_close=mb.anchor_value,
+                                         plus_1sigma=mb.plus_1sigma_value,
+                                         minus_1sigma=mb.minus_1sigma_value, ann_vol_pct=mvol))
+        return SigmaLevelsOut(
+            instrument_id=iid, currency=currency, as_of=last_date, status="ok",
+            last_close=round(last_close, 4), ann_vol_pct=vol,
+            monthly_sigma_pct=round(vol / math.sqrt(12), 4), lookback_returns=len(recent) - 1,
+            anchor_close=bands.anchor_value, anchor_date=last_date,
+            levels=SigmaLevelsBandOut(entry=bands.anchor_value, plus_1sigma=bands.plus_1sigma_value,
+                                      minus_1sigma=bands.minus_1sigma_value),
+            closes=[ClosePointOut(date=d, close=c) for d, c in closes], monthly=monthly,
+            method=(f"±1σ monthly band from the last {len(recent) - 1} daily returns "
+                    "(statistical, not a model)"),
+        )
