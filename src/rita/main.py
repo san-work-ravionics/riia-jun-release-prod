@@ -52,7 +52,6 @@ from rita.api.v1.system.drift import router as drift_router
 from rita.api.v1.system.data_prep import router as data_prep_router
 from rita.api.v1.system.mcp_calls import router as mcp_calls_router
 from rita.api.v1.system.hedge_plan_history import router as hedge_plan_history_router
-from rita.interfaces.mcp_sse_app import handle_sse, sse_messages_app
 from rita.interfaces.mcp_http_app import mcp_endpoint, mcp_http_app
 from rita.api.v1.system.client_errors import router as client_errors_router
 from rita.api.v1.workflow.train import router as train_router
@@ -91,6 +90,8 @@ from rita.api.experience.optimal_allocation import router as optimal_allocation_
 from rita.api.experience.equity_scenarios import router as equity_scenarios_router
 from rita.api.experience.experiment_backtest import router as experiment_backtest_router
 from rita.api.experience.fx import router as fx_router
+from rita.api.v1.workflow.jarvis import router as jarvis_workflow_router
+from rita.api.experience.jarvis import router as jarvis_experience_router
 
 _MOBILE_UA_RE = re.compile(r"Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini", re.IGNORECASE)
 
@@ -410,9 +411,7 @@ app.include_router(client_errors_router)
 # -- MCP (F44 P1, ADR-007) -- streamable HTTP at /mcp, RITA JWT required --------
 app.add_route("/mcp", mcp_endpoint, methods=["GET", "POST", "DELETE"], include_in_schema=False)
 
-# -- MCP SSE transport (deprecated, F44 P1) -- JWT-gated; removed in F44 P4 ---
-app.add_api_route("/mcp/sse", handle_sse, methods=["GET"], include_in_schema=False)
-app.mount("/mcp/messages", sse_messages_app)
+# (F44 P4: the deprecated SSE transport /mcp/sse + /mcp/messages/ is removed — P1 Finding 2.)
 
 # -- Workflow tier -- JWT-protected business process routers ------------------
 app.include_router(train_router, dependencies=[Depends(get_current_user)])
@@ -422,6 +421,7 @@ app.include_router(pipeline_router)
 app.include_router(instrument_onboard_router)
 app.include_router(user_portfolio_workflow_router, dependencies=[Depends(get_current_user)])
 app.include_router(invest_game_plan_router, dependencies=[Depends(get_current_user)])
+app.include_router(jarvis_workflow_router)   # F44 P4 A1–A3 (each route has get_current_user)
 
 # -- Experience Layer -- UI-shaped aggregation routers (read-only) -------------
 app.include_router(dashboard_router)
@@ -450,6 +450,7 @@ app.include_router(optimal_allocation_router)
 app.include_router(equity_scenarios_router)
 app.include_router(experiment_backtest_router)
 app.include_router(fx_router)
+app.include_router(jarvis_experience_router)  # F44 P4 A4–A6 (read-only; get_current_user)
 
 # -- Chat -- local intent classifier + OHLCV dispatch (no external API) -------
 app.include_router(chat_router)
@@ -610,6 +611,7 @@ def health(db: Session = Depends(get_db)) -> dict:
         "sharpe_trend_last5": sharpe_trend_last5,
         "output_dir": output_dir,
         "mcp": _mcp_health(),
+        "jarvis": _jarvis_health(),
     }
 
 
@@ -620,8 +622,17 @@ def _mcp_health() -> dict:
     return {
         "tools_registered": tools_registered(),
         "auth": "on",
-        "transports": ["http", "memory", "sse"],
-        "sse": "deprecated",
+        "transports": ["http", "memory"],
+    }
+
+
+def _jarvis_health() -> dict:
+    """F44 P4 — Jarvis chat model state (MiniLM stays lazy; A1 loads it)."""
+    from rita.core import journey_intents
+
+    return {
+        "chat_model": "ready" if journey_intents.is_ready() else "not_loaded",
+        "intents": len(journey_intents.INTENT_NAMES),
     }
 
 

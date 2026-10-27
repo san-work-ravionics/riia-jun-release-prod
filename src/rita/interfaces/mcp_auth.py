@@ -1,12 +1,13 @@
 """MCP auth — caller identity and the JWT gate for the network transports (F44 P1, ADR-007 §5–§6).
 
-- ``McpIdentity`` — who is calling a tool: transport (``memory``/``http``/``stdio``/``sse``), caller
+- ``McpIdentity`` — who is calling a tool: transport (``memory``/``http``/``stdio``), caller
   (``jarvis``, ``module:<name>``, ``external``, ``system``) and the user (id + RBAC flags) or None.
   Tools never take a ``user_id`` argument; they read the identity of the call.
-- ``McpJwtGate`` — ASGI wrapper for ``/mcp`` and ``/mcp/messages/``: no / invalid / expired token →
+- ``McpJwtGate`` — ASGI wrapper for ``/mcp``: no / invalid / expired token →
   HTTP 401 ``WWW-Authenticate: Bearer`` before any MCP message is processed.  The token is checked
   by ``rita.auth.resolve_token_user`` — the same check as ``get_current_user``.
-- ``authenticate_request`` — the same check for the ``GET /mcp/sse`` endpoint function.
+- (F44 P4: the SSE transport and its ``authenticate_request`` helper are removed — P1 Finding 2;
+  old ``mcp_calls`` rows keep ``transport='sse'`` as a plain string.)
 
 The resolved identity is stored in the ASGI scope state (per request) and read back by the tool
 dispatch from the MCP request context.  In-memory and stdio calls set it through a context
@@ -23,7 +24,6 @@ import anyio
 import structlog
 from fastapi import HTTPException
 from starlette.datastructures import Headers
-from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
@@ -31,7 +31,7 @@ log = structlog.get_logger(__name__)
 
 STATE_KEY = "rita_mcp_identity"
 
-TRANSPORTS = ("memory", "http", "stdio", "sse")
+TRANSPORTS = ("memory", "http", "stdio")
 
 
 @dataclass(frozen=True)
@@ -132,14 +132,6 @@ async def _identity_from_headers(headers: Headers, transport: str) -> McpIdentit
     except Exception as exc:  # noqa: BLE001 — a broken token check must never let a call through
         log.warning("mcp.auth_failed", transport=transport, error=type(exc).__name__)
         return _unauthorized("Invalid or expired token")
-
-
-async def authenticate_request(request: Request, transport: str) -> McpIdentity | JSONResponse:
-    """Check the bearer token of ``request``; identity on success (also stored in the scope)."""
-    result = await _identity_from_headers(request.headers, transport)
-    if isinstance(result, McpIdentity):
-        request.scope.setdefault("state", {})[STATE_KEY] = result
-    return result
 
 
 class McpJwtGate:

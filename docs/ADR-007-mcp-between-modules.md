@@ -175,3 +175,17 @@ instrument master through fno-margin-fetch).
 | One MCP server process per module | Several Python processes with their own imports — does not fit a 1 GB t3.micro; adds startup ordering. |
 | Keep SSE and only add auth | SSE is deprecated in the MCP spec; streamable HTTP is in the installed SDK and supports stateless JSON responses that need no nginx streaming config. |
 | `user_id` as a tool argument checked against the token | Two sources of identity that can disagree; one missed check leaks another user's data. Identity from the token only. |
+
+---
+
+## Consequences note — F44 P4a (2026-10-27)
+
+- **SSE removed.** `interfaces/mcp_sse_app.py`, `GET /mcp/sse` and the `/mcp/messages/` mount are
+  deleted; `sse` is no longer an `mcp_auth.TRANSPORTS` value (old `mcp_calls` rows keep the string).
+  `/health` reports `mcp.transports = ["http", "memory"]`. The nginx `location /mcp/` block is removed
+  (only `location = /mcp` remains). Claude Desktop must use `https://riia.ravionics.nl/mcp` with a JWT.
+- **Catalogue 16 → 22.** New: `journey.get_current`, `journey.save`, `portfolio.pnl`,
+  `portfolio.sleeve_trace`, `fno.sigma_levels` (open, stdio), `market.asta_trace`.
+- **`journey.explain_pick` dropped.** "Why this pick" is composed in the orchestrator from
+  `journey.get_current` + `portfolio.model_runs`, so no tool handler opens a nested MCP session (no
+  extra thread / event loop on the 1 GB box). `portfolio.analytics` is replaced by `portfolio.pnl`.

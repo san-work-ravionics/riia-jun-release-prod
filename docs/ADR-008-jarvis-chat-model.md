@@ -135,3 +135,19 @@ generative model is not needed to *produce* answers — only to *understand* the
 | Add the journey intents to the existing 20 RITA intents | Changes RITA chat behaviour and its tests; journey intents only make sense with journey state. |
 | Fine-tune MiniLM on journey phrases | Not needed for ~10 intents; seed phrases + threshold are enough and need no training pipeline. |
 | Regex-only intent matching | Brittle on phrasing; MiniLM is already loaded and handles paraphrase. Regex stays for slots only. |
+
+---
+
+## Consequences note — F44 P4a (2026-10-27)
+
+- **Journey intent set** (`core/journey_intents.py`, separate index on the shared MiniLM singleton
+  `classifier._get_model()`; the 23 RITA intents are unchanged): take_goal, change_goal,
+  build_selection, cant_reach, why_this_pick, track, **progress**, **confirm**, **decline**,
+  what_if_sl, show_hedge, help. Below `CONFIDENCE_THRESHOLD` (0.42) the reply is state chips; in
+  `reselect_proposed` a yes/no slot maps to confirm/decline.
+- **`tracking` shape.** `user_journeys.tracking` is a list of per-holding rows
+  (`instrument_id, allocation_pct, tolerance, entry_date, entry_close, sl_drawdown_limit,
+  episode_start, episode_length, model_sha12`), and `segments` records each holding mix with its
+  date range so year-to-date P&L chains saved and model-sleeve returns day by day.
+- Every number in a reply comes from a tool result field (`services/jarvis_templates.py`); templates
+  carry ids (`<intent>.<outcome>.v1`), logged with counts and ids only — never goal amounts or text.
