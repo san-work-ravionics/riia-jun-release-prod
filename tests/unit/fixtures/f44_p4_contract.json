@@ -980,7 +980,9 @@
      }
     ],
     "method": {
-     "levels": "ddqn_v2 replay actions"
+     "levels": "ddqn_v2 replay actions",
+     "next_reset": "business-day estimate from the episode length",
+     "sl": "training constraint hard_mdd_limit (config input, not a model output)"
     },
     "model_based": true,
     "performance": {
@@ -1030,9 +1032,349 @@
     },
     "status": "ok",
     "tolerance_rule": "selection"
+   },
+   {
+    "asta": null,
+    "engine": "fno",
+    "episode_starts": [],
+    "label": "FnO σ levels — not a model",
+    "levels": {
+     "entry": {
+      "basis": "model",
+      "date": "2026-10-23",
+      "value": 150.0
+     },
+     "exit": {
+      "basis": "model",
+      "date": "2026-10-23",
+      "value": 149.0
+     },
+     "stop_loss": {
+      "basis": "training limit",
+      "date": "2026-10-23",
+      "value": 0.945
+     },
+     "target": {
+      "basis": "rule",
+      "date": "2026-10-23",
+      "value": 160.0
+     }
+    },
+    "markers": [],
+    "method": {
+     "currency": "EUR",
+     "lookback_returns": 252,
+     "text": "±1σ monthly band from the last 252 daily returns (statistical, not a model)"
+    },
+    "model_based": false,
+    "performance": null,
+    "prices": [
+     {
+      "close": 154.0,
+      "date": "2026-10-23"
+     }
+    ],
+    "rationale": {
+     "action": "full",
+     "date": "2026-10-23",
+     "inputs": [
+      {
+       "model_input": 0.55,
+       "name": "rsi_14",
+       "raw": 55.0
+      }
+     ],
+     "note": null,
+     "prev_action": "cash",
+     "state": [
+      {
+       "name": "prev_allocation",
+       "value": 0.0
+      }
+     ]
+    },
+    "series": {
+     "band_lower": [
+      140.0
+     ],
+     "band_upper": [
+      160.0
+     ],
+     "sl_line": [
+      0.945
+     ],
+     "sleeve_value": [
+      1.02
+     ]
+    },
+    "status": "levels_only",
+    "tolerance_rule": null
+   },
+   {
+    "asta": {
+     "as_of": "2026-10-23",
+     "detail": null,
+     "engine": "rita_ddqn_asta",
+     "instrument_id": "NIFTY",
+     "last_signal": {
+      "confidence": 0.75,
+      "date": "2026-10-23",
+      "mandatory_met": 3,
+      "mandatory_total": 3,
+      "optional_met": 2,
+      "optional_total": 4,
+      "setup": "geo_pan",
+      "signal": "BUY",
+      "stop_loss": 21800.0,
+      "target": 23400.0
+     },
+     "live_replay_note": "fresh replay",
+     "method": {
+      "entries": "ASTA DDQN actions (model)",
+      "sl_target": "ASTA labeller setup levels (rule engine, not a model)"
+     },
+     "model_note": "training run 3fc543eb",
+     "model_sha12": "3fc543eb0000",
+     "pipeline_backtest": {
+      "run_id": "63ea8087",
+      "status": "failed"
+     },
+     "return_since": 0.012,
+     "since": "2026-03-02",
+     "status": "ok",
+     "today_action": "cash",
+     "training_record": {
+      "run_id": "3fc543eb",
+      "test_mdd": -0.0996,
+      "test_return": 0.2294,
+      "test_sharpe": -0.156,
+      "test_trades": 340
+     },
+     "window": {
+      "basis": "temporal_split",
+      "test_end": "2026-08-28",
+      "test_start": "2022-07-25",
+      "verified": true
+     },
+     "window_start": "2022-07-25"
+    },
+    "engine": "asta",
+    "episode_starts": [
+     "2026-01-02"
+    ],
+    "label": "ASTA model (NIFTY only)",
+    "levels": {
+     "entry": {
+      "basis": "model",
+      "date": "2026-10-23",
+      "value": 150.0
+     },
+     "exit": {
+      "basis": "model",
+      "date": "2026-10-23",
+      "value": 149.0
+     },
+     "stop_loss": {
+      "basis": "training limit",
+      "date": "2026-10-23",
+      "value": 0.945
+     },
+     "target": {
+      "basis": "rule",
+      "date": "2026-10-23",
+      "value": 160.0
+     }
+    },
+    "markers": [
+     {
+      "close": 154.0,
+      "date": "2026-10-23",
+      "kind": "entry"
+     }
+    ],
+    "method": {
+     "entries": "ASTA DDQN actions (model)",
+     "sl_target": "ASTA labeller setup levels (rule engine, not a model)"
+    },
+    "model_based": true,
+    "performance": {
+     "gap": -0.0202,
+     "return_since": 0.021,
+     "since": "2026-03-02",
+     "target_to_date": 0.0412
+    },
+    "prices": [
+     {
+      "close": 154.0,
+      "date": "2026-10-23"
+     }
+    ],
+    "rationale": {
+     "action": "full",
+     "date": "2026-10-23",
+     "inputs": [
+      {
+       "model_input": 0.55,
+       "name": "rsi_14",
+       "raw": 55.0
+      }
+     ],
+     "note": null,
+     "prev_action": "cash",
+     "state": [
+      {
+       "name": "prev_allocation",
+       "value": 0.0
+      }
+     ]
+    },
+    "series": {
+     "band_lower": [],
+     "band_upper": [],
+     "sl_line": [],
+     "sleeve_value": []
+    },
+    "status": "ok",
+    "tolerance_rule": null
    }
   ],
   "instrument_id": "E1"
+ },
+ "A6_instrument_excluded": {
+  "as_of": "2026-10-23",
+  "currency": "EUR",
+  "engines": [
+   {
+    "asta": null,
+    "engine": "rita",
+    "episode_starts": [],
+    "label": "RITA model (DDQN)",
+    "levels": {
+     "entry": null,
+     "exit": null,
+     "stop_loss": null,
+     "target": null
+    },
+    "markers": [],
+    "method": {
+     "excluded_reason": "retrain_needed"
+    },
+    "model_based": true,
+    "performance": null,
+    "prices": [],
+    "rationale": null,
+    "series": {
+     "band_lower": [],
+     "band_upper": [],
+     "sl_line": [],
+     "sleeve_value": []
+    },
+    "status": "excluded",
+    "tolerance_rule": null
+   },
+   {
+    "asta": null,
+    "engine": "fno",
+    "episode_starts": [],
+    "label": "FnO σ levels — not a model",
+    "levels": {
+     "entry": {
+      "basis": "model",
+      "date": "2026-10-23",
+      "value": 150.0
+     },
+     "exit": {
+      "basis": "model",
+      "date": "2026-10-23",
+      "value": 149.0
+     },
+     "stop_loss": {
+      "basis": "training limit",
+      "date": "2026-10-23",
+      "value": 0.945
+     },
+     "target": {
+      "basis": "rule",
+      "date": "2026-10-23",
+      "value": 160.0
+     }
+    },
+    "markers": [],
+    "method": {
+     "currency": "EUR",
+     "lookback_returns": 252,
+     "text": "±1σ monthly band from the last 252 daily returns (statistical, not a model)"
+    },
+    "model_based": false,
+    "performance": null,
+    "prices": [],
+    "rationale": {
+     "action": "full",
+     "date": "2026-10-23",
+     "inputs": [
+      {
+       "model_input": 0.55,
+       "name": "rsi_14",
+       "raw": 55.0
+      }
+     ],
+     "note": null,
+     "prev_action": "cash",
+     "state": [
+      {
+       "name": "prev_allocation",
+       "value": 0.0
+      }
+     ]
+    },
+    "series": {
+     "band_lower": [
+      140.0
+     ],
+     "band_upper": [
+      160.0
+     ],
+     "sl_line": [
+      0.945
+     ],
+     "sleeve_value": [
+      1.02
+     ]
+    },
+    "status": "levels_only",
+    "tolerance_rule": null
+   },
+   {
+    "asta": null,
+    "engine": "asta",
+    "episode_starts": [],
+    "label": "ASTA model (NIFTY only)",
+    "levels": {
+     "entry": null,
+     "exit": null,
+     "stop_loss": null,
+     "target": null
+    },
+    "markers": [],
+    "method": {
+     "entries": "ASTA DDQN actions (model)",
+     "sl_target": "ASTA labeller setup levels (rule engine, not a model)"
+    },
+    "model_based": true,
+    "performance": null,
+    "prices": [],
+    "rationale": null,
+    "series": {
+     "band_lower": [],
+     "band_upper": [],
+     "sl_line": [],
+     "sleeve_value": []
+    },
+    "status": "no_model",
+    "tolerance_rule": null
+   }
+  ],
+  "instrument_id": "ATO"
  },
  "cards": {
   "closest": {

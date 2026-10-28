@@ -10,12 +10,14 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 from rita.schemas.jarvis import (
+    AstaMethodOut,
     AstaTraceOut,
     InstrumentPageOut,
     JourneyOut,
     MessageOut,
     PortfolioPageOut,
     SessionOut,
+    SleeveMethodOut,
     StateOut,
     WarmupOut,
 )
@@ -138,7 +140,18 @@ def payloads() -> dict:
            "series": {"sleeve_value": [1.02], "sl_line": [0.945], "band_upper": [160.0], "band_lower": [140.0]},
            "episode_starts": ["2026-01-02"], "rationale": _rationale(),
            "performance": {"return_since": 0.021, "since": "2026-03-02", "target_to_date": 0.0412, "gap": -0.0202},
-           "method": {"levels": "ddqn_v2 replay actions"}, "tolerance_rule": "selection", "asta": _asta()}
+           "method": SleeveMethodOut().model_dump(), "tolerance_rule": "selection", "asta": _asta()}
+    # P4b FC-004: ``method`` is ``Any`` in InstrumentEngineOut — one example per shape the page service
+    # emits (RITA SleeveMethodOut / excluded_reason, FnO text + currency + lookback_returns, ASTA).
+    fno_method = {"text": "±1σ monthly band from the last 252 daily returns (statistical, not a model)",
+                  "currency": "EUR", "lookback_returns": 252}
+    fno = {**eng, "engine": "fno", "status": "levels_only", "label": "FnO σ levels — not a model",
+           "model_based": False, "markers": [], "performance": None, "episode_starts": [],
+           "method": fno_method, "tolerance_rule": None, "asta": None}
+    asta = {**eng, "engine": "asta", "label": "ASTA model (NIFTY only)", "method": AstaMethodOut().model_dump(),
+            "tolerance_rule": None, "series": {"sleeve_value": [], "sl_line": [], "band_upper": [], "band_lower": []}}
+    excluded = {"engine": "rita", "status": "excluded", "label": "RITA model (DDQN)", "model_based": True,
+                "method": {"excluded_reason": "retrain_needed"}}
     a4 = {"location": "europe", "location_name": "Europe", "currency": "EUR",
           "goal": goal().model_dump(mode="json"), "plan_stale": False, "journey": j,
           "session": {"session_id": "s-1", "status": "open", "last_activity_at": TS.isoformat()},
@@ -156,7 +169,11 @@ def payloads() -> dict:
         "A3_message": {"session_id": "s-1", "reply": reply, "journey": j},
         "A4_state": a4,
         "A5_portfolio": a5,
-        "A6_instrument": {"instrument_id": "E1", "currency": "EUR", "as_of": D.isoformat(), "engines": [eng]},
+        "A6_instrument": {"instrument_id": "E1", "currency": "EUR", "as_of": D.isoformat(), "engines": [eng, fno, asta]},
+        "A6_instrument_excluded": {"instrument_id": "ATO", "currency": "EUR", "as_of": D.isoformat(),
+                                   "engines": [excluded, {**fno, "prices": []},
+                                               {"engine": "asta", "status": "no_model", "label": "ASTA model (NIFTY only)",
+                                                "model_based": True, "method": AstaMethodOut().model_dump()}]},
     }
     # normalise through the schemas (fills defaults; the file is exactly what the API serialises)
     out["A1_warmup"] = WarmupOut(**out["A1_warmup"]).model_dump(mode="json")
@@ -165,6 +182,7 @@ def payloads() -> dict:
     out["A4_state"] = StateOut(**out["A4_state"]).model_dump(mode="json")
     out["A5_portfolio"] = PortfolioPageOut(**out["A5_portfolio"]).model_dump(mode="json")
     out["A6_instrument"] = InstrumentPageOut(**out["A6_instrument"]).model_dump(mode="json")
+    out["A6_instrument_excluded"] = InstrumentPageOut(**out["A6_instrument_excluded"]).model_dump(mode="json")
     out["cards"] = {c["kind"]: c for c in out["A3_message"]["reply"]["cards"]}
     return out
 

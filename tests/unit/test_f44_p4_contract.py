@@ -25,7 +25,8 @@ from rita.schemas.jarvis import (
 from .f44_p4_contract_gen import FIXTURE, render
 
 MODELS = {"A1_warmup": WarmupOut, "A2_session": SessionOut, "A3_message": MessageOut, "A4_state": StateOut,
-          "A5_portfolio": PortfolioPageOut, "A6_instrument": InstrumentPageOut, "journey": JourneyOut}
+          "A5_portfolio": PortfolioPageOut, "A6_instrument": InstrumentPageOut,
+          "A6_instrument_excluded": InstrumentPageOut, "journey": JourneyOut}
 
 
 def test_f44_p4_contract_fixture_is_current():
