@@ -25,238 +25,417 @@
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500&family=Epilogue:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
+/* ── RITA look-and-feel: tokens, shell, sidebar, cards, KPIs, tables, chat — as rita.html ── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
 [hidden]{display:none!important}
 :root{
   --bg:#F5F3EE;--surface:#FFFFFF;--surface2:#F9F8F5;--border:#E4E0D8;--border2:#D0CBBC;
   --text:#1A1814;--t1:#1A1814;--t2:#4A4640;--t3:#8C877A;--t4:#B8B2A6;
   --build:#1A6B3C;--build-bg:#EDF7F2;--build-bd:#B6DEC9;
   --run:#0056B8;--run-bg:#EDF4FF;--run-bd:#AECBF5;
-  --mon:#6B2FA0;--warn:#92480A;--warn-bg:#FEF4EB;--warn-bd:#F5C99A;
-  --danger:#9B1C1C;--danger-bg:#FEF2F2;
+  --mon:#6B2FA0;--mon-bg:#F5EFFE;--mon-bd:#CFADF0;
+  --warn:#92480A;--warn-bg:#FEF4EB;--warn-bd:#F5C99A;
+  --danger:#9B1C1C;--danger-bg:#FEF2F2;--danger-bd:#FCA5A5;
+  --chat:#BE185D;--chat-bg:#FFF0F5;--chat-bd:#FBCFE8;
   --fd:'Epilogue',sans-serif;--fm:'IBM Plex Mono',monospace;--fs:'Instrument Serif',serif;
   --r:6px;--sh:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+  --shm:0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.05);
 }
-body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px;line-height:1.5;min-height:100vh;display:flex;flex-direction:column;}
-.topbar{background:var(--surface);border-bottom:1.5px solid var(--border);display:flex;align-items:center;gap:20px;padding:0 24px;height:52px;box-shadow:var(--sh);position:sticky;top:0;z-index:200;}
-.logo{display:flex;align-items:center;gap:9px;text-decoration:none;color:inherit;font-weight:700;}
-.logo-icon{width:26px;height:26px;background:var(--text);border-radius:5px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;}
-.home-link{font-size:12px;color:var(--t2);text-decoration:none;}
-.home-link:hover{color:var(--run);}
-.topbar-mid{flex:1;display:flex;align-items:center;gap:14px;}
-.seg{display:inline-flex;border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;background:var(--surface2);}
-.seg button,.jv-seg{font-family:var(--fd);font-size:12px;font-weight:600;padding:5px 12px;border:0;background:transparent;color:var(--t2);cursor:pointer;}
-.seg button+button{border-left:1.5px solid var(--border);}
-.seg button.is-active{background:var(--text);color:var(--surface);}
+body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px;line-height:1.5;min-height:100vh;}
+.shell{display:grid;grid-template-columns:224px 1fr;grid-template-rows:52px 1fr;min-height:100vh;transition:grid-template-columns .22s cubic-bezier(.4,0,.2,1);}
+.shell.nav-collapsed{grid-template-columns:0px 1fr;}
+.shell.nav-collapsed .sidebar{overflow:hidden;border-right:none;}
+
+/* Topbar */
+.topbar{grid-column:1/-1;background:var(--surface);border-bottom:1.5px solid var(--border);display:flex;align-items:center;padding:0 20px;position:sticky;top:0;z-index:200;box-shadow:var(--sh);}
+.logo{display:flex;align-items:center;gap:9px;min-width:206px;text-decoration:none;color:inherit;}
+.logo-icon{width:26px;height:26px;background:var(--text);border-radius:5px;display:flex;align-items:center;justify-content:center;}
+.logo-icon svg{fill:var(--surface);}
+.logo-name{font-family:var(--fs);font-size:16px;letter-spacing:-.01em;}
+.logo-ver{font-family:var(--fm);font-size:10px;color:var(--t3);margin-left:2px;}
+.topbar-mid{flex:1;padding:0 24px;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.home-link{font-family:var(--fm);font-size:11px;color:var(--t3);text-decoration:none;display:flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid var(--border);border-radius:var(--r);}
+.home-link:hover{background:var(--surface2);color:var(--text);}
 .status-pill{display:flex;align-items:center;gap:6px;font-family:var(--fm);font-size:11px;color:var(--t2);background:var(--surface2);border:1px solid var(--border);border-radius:100px;padding:3px 10px;white-space:nowrap;}
 .status-dot{width:7px;height:7px;border-radius:50%;background:#ccc;flex-shrink:0;}
-.status-dot.ok{background:var(--build);}
+.status-dot.ok{background:var(--build);animation:blink 2s infinite;}
 .status-dot.warn{background:var(--warn);}
 .status-dot.err{background:var(--danger);}
-main{flex:1;max-width:1240px;width:100%;margin:0 auto;padding:28px 20px 48px;}
-h1{font-family:var(--fs);font-weight:400;font-size:36px;letter-spacing:-.01em;line-height:1.15;margin-bottom:6px;}
-.lead{font-size:14px;color:var(--t2);max-width:720px;margin-bottom:22px;}
-.jv-grid2{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:20px;align-items:start;}
-.card{background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:20px;box-shadow:var(--sh);margin-bottom:20px;}
-.card h2{font-size:14px;font-weight:600;margin-bottom:12px;}
-.jv-h3{font-size:12px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;font-family:var(--fm);margin:14px 0 8px;}
-.jv-h3:first-child{margin-top:0;}
-.btn{display:inline-flex;align-items:center;gap:5px;font-family:var(--fd);font-size:12px;font-weight:600;padding:6px 13px;border-radius:var(--r);border:1.5px solid transparent;cursor:pointer;white-space:nowrap;text-decoration:none;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:5px;font-family:var(--fd);font-size:12px;font-weight:600;padding:6px 13px;border-radius:var(--r);border:1.5px solid transparent;cursor:pointer;transition:opacity .12s,background .12s;white-space:nowrap;text-decoration:none;}
 .btn-primary{background:var(--text);color:var(--surface);border-color:var(--text);}
+.btn-primary:hover{opacity:.85;}
 .btn-ghost{background:transparent;color:var(--t2);border-color:var(--border);}
+.btn-ghost:hover{background:var(--surface2);}
 .btn-sm{padding:4px 10px;font-size:11px;}
 .btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* Sidebar — location + view are nav items (buttons; main.js toggles .is-active) */
+.sidebar{background:var(--surface);border-right:1.5px solid var(--border);padding:14px 0;overflow-y:auto;display:flex;flex-direction:column;}
+.nav-section{margin-bottom:4px;}
+.nav-label{font-family:var(--fm);font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;color:var(--t4);padding:8px 16px 4px;}
+.nav-item{display:flex;align-items:center;gap:8px;width:100%;padding:7px 16px;cursor:pointer;font-family:var(--fd);font-size:12px;color:var(--t2);background:transparent;border:0;border-left:2px solid transparent;text-align:left;transition:background .1s,color .1s;user-select:none;}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.is-active{color:var(--text);font-weight:600;}
+.nav-item.is-active.p00{border-left-color:var(--text);background:var(--surface2);}
+.nav-item.is-active.p03{border-left-color:var(--run);background:var(--run-bg);}
+.nav-item.is-active.p05{border-left-color:var(--chat);background:var(--chat-bg);}
+.nav-icon{width:14px;text-align:center;flex-shrink:0;font-size:12px;}
+.sidebar-footer{margin-top:auto;padding:12px 16px;border-top:1px solid var(--border);}
+.sidebar-footer .lbl{font-family:var(--fm);font-size:10px;color:var(--t4);}
+
+/* Main */
+.main{overflow-y:auto;padding:24px 28px;min-width:0;}
+.page-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px;}
+.page-title{font-family:var(--fs);font-size:22px;letter-spacing:-.01em;}
+.page-sub{color:var(--t3);font-size:12px;margin-top:2px;max-width:760px;}
+
+/* KPI rows / cards */
+.kpi-row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+.kpi-row-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.kpi{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh);}
+.kpi-label{font-family:var(--fm);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-bottom:4px;}
+.kpi-value{font-family:var(--fm);font-size:22px;font-weight:500;letter-spacing:-.02em;line-height:1.1;}
+.kpi-value.pos{color:var(--build);} .kpi-value.neg{color:var(--danger);}
+.kpi-sm{padding:9px 12px;}
+.kpi-sm .kpi-value{font-size:16px;}
+.card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--sh);margin-bottom:16px;}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;}
+.card-title{font-size:13px;font-weight:600;color:var(--text);}
+.card-sub{font-size:11px;color:var(--t3);}
+.card-row-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:16px;}
+.card-row-2>.card,.card-row-2>.chart-wrap{margin-bottom:0;}
+
+/* Charts */
+.chart-wrap{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--sh);margin-bottom:16px;}
+.card .chart-wrap{box-shadow:none;border-width:1px;padding:14px;margin-bottom:0;}
+.chart-title{font-size:12px;font-weight:600;margin-bottom:14px;color:var(--t2);}
+canvas{display:block;}
+.chart-box{position:relative;height:220px;width:100%;}
+.chart-box-sm{position:relative;height:180px;width:100%;}
+
+/* Tables (rita.html th/td) */
+.tbl-wrap{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow-x:auto;box-shadow:var(--sh);}
+.jv-table{width:100%;border-collapse:collapse;}
+.jv-table th{background:var(--surface2);font-family:var(--fm);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);padding:9px 14px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
+.jv-table th.num{text-align:right;}
+.jv-table td{padding:8px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--t2);vertical-align:top;}
+.jv-table tr:last-child td{border-bottom:none;}
+.jv-table tbody tr:hover td{background:var(--surface2);}
+.jv-table-sm th,.jv-table-sm td{padding:6px 10px;}
+.mpanel .jv-table th,.mpanel .jv-table td{padding:7px 10px;}
+#jv-grid-body tr{cursor:pointer;}
+#jv-grid-body tr.is-selected td{background:var(--run-bg);}
+#jv-grid-body tr.is-selected td:first-child{box-shadow:inset 3px 0 0 var(--run);color:var(--run);font-weight:600;}
 .mono{font-family:var(--fm);}
 .num{text-align:right;font-family:var(--fm);white-space:nowrap;}
 .ok{color:var(--build);} .warn{color:var(--warn);} .pos{color:var(--build);} .neg{color:var(--danger);}
+.jv-table td.pos{color:var(--build);} .jv-table td.neg{color:var(--danger);}
+
+/* Text helpers */
+.jv-h3{font-family:var(--fm);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin:18px 0 8px;}
+#jv-plan-goal .jv-h3:first-child{margin-top:0;}
 .jv-muted{color:var(--t3);font-size:11px;}
-.jv-note{color:var(--t2);font-size:12px;margin:4px 0 8px;}
-.jv-method{color:var(--t3);font-size:11px;margin-top:10px;}
-.jv-badge{font-family:var(--fm);font-size:9px;text-transform:uppercase;padding:1px 5px;border-radius:3px;border:1px solid var(--warn-bd);background:var(--warn-bg);color:var(--warn);}
+.jv-note{color:var(--t2);font-size:12px;margin:4px 0 8px;line-height:1.6;}
+.jv-note.ok{color:var(--build);} .jv-note.warn{color:var(--warn);}
+.jv-method{color:var(--t3);font-size:11px;margin-top:12px;line-height:1.6;padding-top:10px;border-top:1px solid var(--border);}
+.jv-badge{display:inline-flex;align-items:center;font-family:var(--fm);font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;padding:1px 6px;border-radius:3px;border:1px solid var(--warn-bd);background:var(--warn-bg);color:var(--warn);}
 .jv-list{list-style:none;font-size:12px;color:var(--t2);}
-.jv-list li{padding:2px 0;}
-/* chat */
-#jv-chat-log{height:460px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 4px 12px;}
-.jv-msg{display:flex;flex-direction:column;max-width:86%;}
+.jv-list li{padding:3px 0;border-bottom:1px dashed var(--border);}
+.jv-list li:last-child{border-bottom:none;}
+
+/* Panels (Market Analysis layout) */
+.jv-chat-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,4fr);gap:14px;height:calc(100vh - 52px - 120px);min-height:520px;}
+.mpanel{display:flex;flex-direction:column;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;min-height:0;}
+.mpanel-hdr{padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.mpanel-title{font-size:12px;font-weight:700;color:var(--text);}
+.mpanel-sub{font-size:10px;color:var(--t3);margin-top:1px;}
+.mpanel-body{flex:1;overflow-y:auto;padding:14px;min-height:0;}
+.mpanel-footer{flex-shrink:0;padding:10px 14px;border-top:1px solid var(--border);}
+
+/* Chat bubbles (rita.html .cmsg / .cbubble) */
+#jv-chat-log{display:flex;flex-direction:column;gap:10px;}
+.jv-msg{display:flex;flex-direction:column;max-width:88%;gap:4px;}
 .jv-msg-user{align-self:flex-end;align-items:flex-end;}
-.jv-msg-assistant{align-self:flex-start;}
-.jv-bubble{padding:9px 12px;border-radius:10px;font-size:13px;white-space:pre-wrap;}
-.jv-msg-user .jv-bubble{background:var(--text);color:var(--surface);border-bottom-right-radius:3px;}
-.jv-msg-assistant .jv-bubble{background:var(--surface2);border:1px solid var(--border);border-bottom-left-radius:3px;}
-.jv-dots{display:inline-flex;gap:4px;}
-.jv-dots i{width:6px;height:6px;border-radius:50%;background:var(--t3);animation:jvb 1.2s infinite;}
-.jv-dots i:nth-child(2){animation-delay:.2s}.jv-dots i:nth-child(3){animation-delay:.4s}
-@keyframes jvb{0%,100%{opacity:.25}50%{opacity:1}}
-.jv-card{margin-top:6px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;min-width:260px;}
-.jv-card-title{font-size:12px;font-weight:600;margin-bottom:4px;}
-.jv-card-sub{font-size:11px;color:var(--t2);margin:4px 0;}
-.jv-kpis{display:flex;flex-wrap:wrap;gap:8px;}
-.jv-kpi{background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:5px 8px;}
+.jv-msg-assistant{align-self:flex-start;align-items:flex-start;}
+.jv-bubble{padding:9px 13px;border-radius:10px;font-size:12px;line-height:1.65;white-space:pre-wrap;}
+.jv-msg-user .jv-bubble{background:var(--chat);color:#fff;border-bottom-right-radius:2px;}
+.jv-msg-assistant .jv-bubble{background:var(--surface2);border:1px solid var(--border);border-bottom-left-radius:2px;color:var(--text);}
+.jv-dots{display:inline-flex;gap:4px;align-items:center;height:12px;}
+.jv-dots i{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--t4);animation:tdot-bounce .8s infinite;}
+.jv-dots i:nth-child(2){animation-delay:.15s}.jv-dots i:nth-child(3){animation-delay:.3s}
+@keyframes tdot-bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-4px)}}
+/* Reply cards */
+.jv-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:10px 12px;min-width:280px;box-shadow:var(--sh);}
+.jv-card-title{font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px;}
+.jv-card-sub{font-size:11px;color:var(--t3);margin:4px 0;}
+.jv-card-sub.ok{color:var(--build);}
+.jv-kpis{display:flex;flex-wrap:wrap;gap:6px;}
+.jv-kpi{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:6px 10px;}
 .jv-kpi-label{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);}
-.jv-kpi-value{font-family:var(--fm);font-size:13px;}
-#jv-chat-chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}
-.jv-chip{font-family:var(--fd);font-size:12px;padding:4px 11px;border-radius:100px;border:1.5px solid var(--run-bd);background:var(--run-bg);color:var(--run);cursor:pointer;}
-.jv-chip:hover{border-color:var(--run);}
-#jv-chat-form{display:flex;gap:8px;}
-#jv-chat-input{flex:1;font-family:var(--fd);font-size:13px;padding:8px 11px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--surface);}
-#jv-chat-input:focus{outline:none;border-color:var(--run);}
-#jv-chat-error{margin-top:8px;font-size:12px;color:var(--danger);}
-/* plan */
-.jv-dl{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;}
-.jv-dl-row{display:flex;flex-direction:column;}
-.jv-dl-row span{font-family:var(--fm);font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);}
-.jv-dl-row b{font-family:var(--fm);font-weight:500;font-size:14px;}
-#jv-plan-empty{color:var(--t2);font-size:13px;}
-/* tables */
-.jv-table{width:100%;border-collapse:collapse;font-size:12px;}
-.jv-table th{font-family:var(--fm);font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);font-weight:500;text-align:left;padding:6px 8px;border-bottom:1.5px solid var(--border);}
-.jv-table th.num{text-align:right;}
-.jv-table td{padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:top;}
-.jv-table-sm td,.jv-table-sm th{padding:4px 6px;}
-#jv-grid-body tr{cursor:pointer;}
-#jv-grid-body tr:hover{background:var(--surface2);}
-#jv-grid-body tr.is-selected{background:var(--run-bg);box-shadow:inset 3px 0 0 var(--run);}
-/* kpis / charts (as rita.html) */
-.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px;}
-.kpi{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:12px 14px;box-shadow:var(--sh);}
-.kpi-sm{padding:8px 12px;}
-.kpi-label{font-family:var(--fm);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-bottom:4px;}
-.kpi-value{font-family:var(--fm);font-size:18px;font-weight:500;letter-spacing:-.02em;line-height:1.1;}
-.kpi-value.pos{color:var(--build);} .kpi-value.neg{color:var(--danger);}
-.chart-wrap{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--sh);margin-bottom:16px;}
-.chart-title{font-size:12px;font-weight:600;margin-bottom:12px;color:var(--t2);}
-.chart-box{position:relative;height:260px;}
-.chart-box-sm{position:relative;height:200px;}
-#jv-pf-source{font-size:13px;color:var(--t2);margin-bottom:12px;}
-#jv-target-required{font-size:12px;font-weight:600;margin-bottom:10px;}
-#jv-inst-engines{display:inline-flex;border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;background:var(--surface2);margin-bottom:12px;}
-.jv-seg+.jv-seg{border-left:1.5px solid var(--border);}
-.jv-seg.is-active{background:var(--text);color:var(--surface);}
+.jv-kpi-value{font-family:var(--fm);font-size:13px;font-weight:500;}
+/* Chips (rita.html .chat-chip, inline) */
+#jv-chat-chips{display:flex;flex-wrap:wrap;gap:6px;}
+#jv-chat-chips:not(:empty){margin-bottom:10px;}
+.jv-chip{background:var(--surface2);border:1px solid var(--border);border-radius:100px;padding:5px 12px;font-size:11px;font-family:var(--fd);color:var(--t2);cursor:pointer;line-height:1.4;transition:background .12s,border-color .12s,color .12s;}
+.jv-chip:hover{background:var(--chat-bg);border-color:var(--chat-bd);color:var(--chat);}
+/* Chat input (rita.html .chat-input / .chat-send) */
+#jv-chat-form{display:flex;gap:8px;align-items:center;}
+#jv-chat-input{flex:1;border:1.5px solid var(--border);border-radius:var(--r);padding:8px 10px;font-family:var(--fd);font-size:12px;background:var(--surface2);color:var(--text);outline:none;transition:border-color .12s;}
+#jv-chat-input:focus{border-color:var(--chat);}
+#jv-chat-send{width:32px;height:32px;border-radius:var(--r);border:none;background:var(--chat);color:#fff;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:opacity .12s;}
+#jv-chat-send:hover{opacity:.88;}
+#jv-chat-send:disabled{background:var(--t4);cursor:not-allowed;}
+#jv-chat-error{margin-top:8px;font-size:12px;color:var(--danger);background:var(--danger-bg);border:1px solid var(--danger-bd);border-radius:var(--r);padding:6px 10px;}
+
+/* Plan */
+.jv-dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+.jv-dl-row{display:flex;flex-direction:column;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;}
+.jv-dl-row span{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-bottom:2px;}
+.jv-dl-row b{font-family:var(--fm);font-weight:500;font-size:15px;letter-spacing:-.01em;}
+#jv-plan-empty{color:var(--t3);font-size:12px;text-align:center;padding:40px 12px;}
+#jv-plan-empty .jv-note{text-align:left;}
+
+/* Portfolio */
+#jv-pf-source{font-size:12px;color:var(--t2);background:var(--surface);border:1.5px solid var(--border);border-left:3px solid var(--run);border-radius:var(--r);padding:9px 14px;margin-bottom:16px;box-shadow:var(--sh);}
+#jv-target-required{font-size:12px;font-weight:600;color:var(--run);margin-bottom:10px;}
+#jv-pnl-empty{background:var(--surface);border:1.5px dashed var(--border2);border-radius:var(--r);padding:28px 16px;text-align:center;color:var(--t3);margin:0;}
+.jv-pnl-col{display:flex;flex-direction:column;}
+.jv-pnl-col>.chart-wrap{flex:1;margin-bottom:0;}
+.jv-pnl-col>#jv-pnl-empty{flex:1;display:flex;align-items:center;justify-content:center;}
+
+/* Instrument — engine toggle as the Overview Daily/Weekly/Monthly tabs */
+#jv-inst-engines{display:flex;align-items:center;gap:4px;border-bottom:1.5px solid var(--border);margin-bottom:16px;}
+.jv-seg{background:transparent;border:none;border-bottom:2px solid transparent;padding:8px 16px;font-family:var(--fd);font-size:12px;font-weight:600;color:var(--t3);cursor:pointer;margin-bottom:-1.5px;transition:color .12s,border-color .12s;}
+.jv-seg:hover{color:var(--text);}
+.jv-seg.is-active{color:var(--build);border-bottom-color:var(--build);}
 .jv-seg.is-dim{color:var(--t4);}
-.jv-seg.is-dim.is-active{color:var(--surface);background:var(--t3);}
-#jv-inst-status{font-size:12px;color:var(--warn);background:var(--warn-bg);border:1px solid var(--warn-bd);border-radius:var(--r);padding:8px 10px;margin-bottom:12px;}
+.jv-seg.is-dim.is-active{color:var(--t3);border-bottom-color:var(--t3);}
+#jv-inst-status{font-size:12px;color:var(--warn);background:var(--warn-bg);border:1px solid var(--warn-bd);border-radius:var(--r);padding:9px 14px;margin-bottom:14px;}
+#jv-inst-levels,#jv-rationale{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;}
+#jv-inst-levels .jv-table td{background:transparent;}
 /* rationale — .reasoning-data-row layout as fno/hedge-reasoning.js (re-implemented) */
 .reasoning-data-row{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0;}
 .reasoning-kpi{font-family:var(--fm);font-size:10px;color:var(--t3);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2px 8px;}
 .reasoning-kpi strong{color:var(--text);font-weight:600;}
-@media (max-width:900px){
-  .jv-grid2{grid-template-columns:1fr;}
-  .topbar{flex-wrap:wrap;height:auto;padding:8px 16px;}
-  main{padding:20px 16px 40px;}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+@media (max-width:1100px){
+  .jv-chat-grid{grid-template-columns:1fr;height:auto;min-height:0;}
+  .jv-chat-grid .mpanel{min-height:420px;}
+  #sec-jv-chat{height:560px;}
+  .kpi-row-4{grid-template-columns:repeat(2,1fr);}
+  .card-row-2{grid-template-columns:1fr;}
 }
 </style>
+<link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
+<div class="shell">
+
+<!-- ── Topbar ──────────────────────────────────────────────── -->
 <header class="topbar">
-  <a class="logo" href="index.html"><span class="logo-icon">R</span>RIIA</a>
-  <div class="topbar-mid">
-    <div class="seg" id="jv-loc-tabs">
-      <button type="button" data-loc="europe" data-copy="loc.europe"></button>
-      <button type="button" data-loc="india" data-copy="loc.india"></button>
-      <button type="button" data-loc="us" data-copy="loc.us"></button>
+  <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+      <line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="14" y2="12"/>
+    </svg>
+  </button>
+  <a class="logo" href="index.html">
+    <div class="logo-icon">
+      <svg width="14" height="14" viewBox="0 0 16 16"><path d="M8 1L1 5v6l7 4 7-4V5L8 1zm0 1.8L13.5 6 8 9.2 2.5 6 8 2.8zM2 7.1l5.5 3.2v3.9L2 11V7.1zm7.5 7.1v-3.9L15 7.1V11l-5.5 3.2z"/></svg>
     </div>
-    <div class="seg">
-      <button type="button" id="jv-tab-chat" data-copy="tab.chat"></button>
-      <button type="button" id="jv-tab-portfolio" data-copy="tab.portfolio"></button>
-    </div>
+    <span class="logo-name" data-copy="page.h1"></span>
+    <span class="logo-ver app-ver">v…</span>
+  </a>
+  <div class="topbar-mid"></div>
+  <div class="topbar-right">
+    <a class="home-link" href="index.html">← Home</a>
+    <div class="status-pill" id="jv-status-model"><span class="status-dot warn"></span><span class="status-text">…</span></div>
   </div>
-  <div class="status-pill" id="jv-status-model"><span class="status-dot warn"></span><span class="status-text">…</span></div>
-  <a class="home-link" href="index.html">← Home</a>
 </header>
-<main>
-  <h1 data-copy="page.h1"></h1>
-  <p class="lead" data-copy="page.lead"></p>
 
-  <!-- ── Chat & plan ─────────────────────────────────────── -->
-  <div class="jv-grid2">
-    <section class="card" id="sec-jv-chat">
-      <div id="jv-chat-log" aria-live="polite"></div>
-      <div id="jv-chat-chips"></div>
-      <form id="jv-chat-form" autocomplete="off">
-        <input id="jv-chat-input" type="text" maxlength="500">
-        <button class="btn btn-primary" id="jv-chat-send" type="submit"></button>
-      </form>
-      <div id="jv-chat-error" hidden></div>
-    </section>
+<!-- ── Sidebar ─────────────────────────────────────────────── -->
+<nav class="sidebar">
+  <div class="nav-section">
+    <div class="nav-label" style="color:var(--t3)" data-copy="nav.view"></div>
+    <button type="button" class="nav-item p05" id="jv-tab-chat"><span class="nav-icon">◈</span><span data-copy="tab.chat"></span></button>
+    <button type="button" class="nav-item p03" id="jv-tab-portfolio"><span class="nav-icon">⊞</span><span data-copy="tab.portfolio"></span></button>
+  </div>
+  <div class="nav-section" id="jv-loc-tabs">
+    <div class="nav-label" style="color:var(--t3)" data-copy="nav.location"></div>
+    <button type="button" class="nav-item p00" data-loc="europe"><span class="nav-icon">🇪🇺</span><span data-copy="loc.europe"></span></button>
+    <button type="button" class="nav-item p00" data-loc="india"><span class="nav-icon">🇮🇳</span><span data-copy="loc.india"></span></button>
+    <button type="button" class="nav-item p00" data-loc="us"><span class="nav-icon">🇺🇸</span><span data-copy="loc.us"></span></button>
+  </div>
+</nav>
 
-    <section class="card" id="sec-jv-plan">
-      <div id="jv-plan-empty" hidden></div>
-      <div id="jv-plan-goal" hidden></div>
-      <div id="jv-plan-selection" hidden></div>
-      <div id="jv-plan-method" hidden></div>
-      <div id="jv-plan-excluded" hidden></div>
-      <div id="jv-plan-tracking" hidden></div>
-      <div id="jv-plan-proposal" hidden></div>
-    </section>
+<!-- ── Main ────────────────────────────────────────────────── -->
+<main class="main">
+
+  <!-- ════════════════ CHAT & PLAN ════════════════ -->
+  <div id="jv-view-chat">
+    <div class="page-hdr">
+      <div>
+        <div class="page-title" data-copy="tab.chat"></div>
+        <div class="page-sub" data-copy="page.lead"></div>
+      </div>
+    </div>
+    <div class="jv-chat-grid">
+      <section class="mpanel" id="sec-jv-chat">
+        <div class="mpanel-hdr">
+          <div>
+            <div class="mpanel-title" style="color:var(--chat)" data-copy="panel.chat"></div>
+            <div class="mpanel-sub" data-copy="panel.chat.sub"></div>
+          </div>
+        </div>
+        <div class="mpanel-body" id="jv-chat-log" aria-live="polite"></div>
+        <div class="mpanel-footer">
+          <div id="jv-chat-chips"></div>
+          <form id="jv-chat-form" autocomplete="off">
+            <input id="jv-chat-input" type="text" maxlength="500">
+            <button id="jv-chat-send" type="submit">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </form>
+          <div id="jv-chat-error" hidden></div>
+        </div>
+      </section>
+
+      <section class="mpanel" id="sec-jv-plan">
+        <div class="mpanel-hdr">
+          <div class="mpanel-title" data-copy="panel.plan"></div>
+        </div>
+        <div class="mpanel-body">
+          <div id="jv-plan-empty" hidden></div>
+          <div id="jv-plan-goal" hidden></div>
+          <div id="jv-plan-selection" hidden></div>
+          <div id="jv-plan-tracking" hidden></div>
+          <div id="jv-plan-proposal" hidden></div>
+          <div id="jv-plan-excluded" hidden></div>
+          <div id="jv-plan-method" hidden></div>
+        </div>
+      </section>
+    </div>
   </div>
 
-  <!-- ── Portfolio ───────────────────────────────────────── -->
-  <section id="sec-jv-portfolio" hidden>
-    <div id="jv-pf-source"></div>
-    <div class="kpi-row" id="jv-pf-kpis"></div>
-
-    <div class="chart-wrap" hidden>
-      <div class="chart-title" data-copy="pnl.title"></div>
-      <div class="chart-box"><canvas id="jv-pnl-chart"></canvas></div>
+  <!-- ════════════════ PORTFOLIO ════════════════ -->
+  <div id="jv-view-portfolio" hidden>
+    <div class="page-hdr">
+      <div>
+        <div class="page-title" data-copy="tab.portfolio"></div>
+        <div class="page-sub" data-copy="grid.hint"></div>
+      </div>
     </div>
-    <p class="jv-note" id="jv-pnl-empty" hidden></p>
 
-    <section class="card">
-      <h2 data-copy="target.title"></h2>
-      <div id="jv-target-required" hidden></div>
-      <div class="kpi-row" id="jv-target-kpis"></div>
+    <section id="sec-jv-portfolio">
+      <div id="jv-pf-source"></div>
+      <div class="kpi-row-4" id="jv-pf-kpis"></div>
+
+      <div class="card-row-2">
+        <div class="jv-pnl-col">
+          <div class="chart-wrap" hidden>
+            <div class="chart-title" data-copy="pnl.title"></div>
+            <div class="chart-box"><canvas id="jv-pnl-chart"></canvas></div>
+          </div>
+          <p class="jv-note" id="jv-pnl-empty" hidden></p>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title" data-copy="target.title"></span></div>
+          <div id="jv-target-required" hidden></div>
+          <div class="kpi-row-4" id="jv-target-kpis"></div>
+          <div class="chart-wrap" hidden>
+            <div class="chart-title" data-copy="target.chart"></div>
+            <div class="chart-box"><canvas id="jv-target-chart"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-title" data-copy="grid.title"></span>
+          <span class="card-sub" data-copy="grid.hint"></span>
+        </div>
+        <div class="tbl-wrap">
+          <table class="jv-table" id="jv-grid">
+            <thead><tr>
+              <th data-copy="grid.col.instrument"></th><th data-copy="grid.col.in"></th>
+              <th class="num" data-copy="grid.col.weight"></th><th class="num" data-copy="grid.col.shares"></th>
+              <th class="num" data-copy="grid.col.last_close"></th><th class="num" data-copy="grid.col.pnl"></th>
+              <th class="num" data-copy="grid.col.return"></th><th data-copy="grid.col.model"></th>
+              <th class="num" data-copy="grid.col.sl"></th>
+            </tr></thead>
+            <tbody id="jv-grid-body"></tbody>
+          </table>
+        </div>
+        <p class="jv-note" id="jv-grid-empty" hidden></p>
+      </div>
+    </section>
+
+    <!-- ── Instrument (click-to-chart) ─────────────────────── -->
+    <section class="card" id="sec-jv-instrument" hidden>
+      <div id="jv-inst-engines"></div>
+      <div id="jv-inst-status" hidden></div>
+      <div class="kpi-row-3" id="jv-inst-perf" hidden></div>
       <div class="chart-wrap" hidden>
-        <div class="chart-title" data-copy="target.title"></div>
-        <div class="chart-box"><canvas id="jv-target-chart"></canvas></div>
+        <div class="chart-title" id="jv-inst-title"></div>
+        <div class="chart-box" style="height:280px"><canvas id="jv-inst-chart"></canvas></div>
+      </div>
+      <div class="chart-wrap" id="jv-sleeve-wrap" hidden style="margin-top:14px">
+        <div class="chart-title" data-copy="inst.sleeve.title"></div>
+        <div class="chart-box-sm"><canvas id="jv-sleeve-chart"></canvas></div>
+      </div>
+      <div class="card-row-2" style="margin:14px 0 0">
+        <div id="jv-inst-levels" hidden></div>
+        <div id="jv-rationale" hidden></div>
       </div>
     </section>
 
     <section class="card">
-      <h2 data-copy="engine.col.engine"></h2>
-      <div id="jv-engine-table"></div>
-      <p class="jv-muted" id="jv-engine-note" hidden></p>
-      <div class="chart-wrap" hidden>
+      <div class="card-hdr"><span class="card-title" data-copy="engine.title"></span></div>
+      <div class="tbl-wrap" id="jv-engine-table"></div>
+      <p class="jv-muted" id="jv-engine-note" hidden style="margin-top:8px"></p>
+      <div class="chart-wrap" hidden style="margin-top:14px">
         <div class="chart-title" data-copy="engine.col.return"></div>
         <div class="chart-box-sm"><canvas id="jv-engine-chart"></canvas></div>
       </div>
     </section>
-    <section class="card">
-      <h2 data-copy="grid.title"></h2>
-      <p class="jv-muted" data-copy="grid.hint"></p>
-      <table class="jv-table" id="jv-grid">
-        <thead><tr>
-          <th data-copy="grid.col.instrument"></th><th data-copy="grid.col.in"></th>
-          <th class="num" data-copy="grid.col.weight"></th><th class="num" data-copy="grid.col.shares"></th>
-          <th class="num" data-copy="grid.col.last_close"></th><th class="num" data-copy="grid.col.pnl"></th>
-          <th class="num" data-copy="grid.col.return"></th><th data-copy="grid.col.model"></th>
-          <th class="num" data-copy="grid.col.sl"></th>
-        </tr></thead>
-        <tbody id="jv-grid-body"></tbody>
-      </table>
-      <p class="jv-note" id="jv-grid-empty" hidden></p>
-    </section>
-  </section>
-
-  <!-- ── Instrument (click-to-chart) ─────────────────────── -->
-  <section class="card" id="sec-jv-instrument" hidden>
-    <div id="jv-inst-engines"></div>
-    <div id="jv-inst-status" hidden></div>
-    <div class="kpi-row" id="jv-inst-perf" hidden></div>
-    <div class="chart-wrap" hidden>
-      <div class="chart-title" id="jv-inst-title"></div>
-      <div class="chart-box"><canvas id="jv-inst-chart"></canvas></div>
-    </div>
-    <div class="chart-wrap" id="jv-sleeve-wrap" hidden>
-      <div class="chart-title" data-copy="inst.sleeve.title"></div>
-      <div class="chart-box-sm"><canvas id="jv-sleeve-chart"></canvas></div>
-    </div>
-    <div class="jv-grid2">
-      <div id="jv-inst-levels" hidden></div>
-      <div id="jv-rationale" hidden></div>
-    </div>
-  </section>
+  </div>
 
 </main>
+</div>
+
+<script>
+(function(){
+  var KEY='rita_nav_collapsed';
+  var btn=document.getElementById('nav-toggle');
+  var shell=document.querySelector('.shell');
+  var sidebar=document.querySelector('.sidebar');
+  if(!btn||!shell||!sidebar)return;
+  if(window.innerWidth>768&&localStorage.getItem(KEY)==='1')shell.classList.add('nav-collapsed');
+  btn.addEventListener('click',function(){
+    if(window.innerWidth>768){
+      var c=shell.classList.toggle('nav-collapsed');
+      localStorage.setItem(KEY,c?'1':'0');
+    } else {
+      sidebar.classList.toggle('open');
+      document.body.classList.toggle('nav-open');
+    }
+  });
+  document.addEventListener('click',function(e){
+    if(document.body.classList.contains('nav-open')&&!sidebar.contains(e.target)&&e.target!==btn){
+      sidebar.classList.remove('open');document.body.classList.remove('nav-open');
+    }
+  });
+})();
+</script>
 
 <!-- ── Chart expand modal (copied from rita.html; shared/charts.js opens it) ── -->
 <div id="chart-modal" onclick="closeChartModal()" style="
@@ -276,5 +455,6 @@ h1{font-family:var(--fs);font-weight:400;font-size:36px;letter-spacing:-.01em;li
   </div>
 </div>
 <script type="module" src="./js/jarvis/main.js?v=2"></script>
+<script>fetch('/health').then(r=>r.json()).then(d=>{document.querySelectorAll('.app-ver').forEach(e=>e.textContent='v'+d.version)}).catch(()=>{})</script>
 </body>
 </html>

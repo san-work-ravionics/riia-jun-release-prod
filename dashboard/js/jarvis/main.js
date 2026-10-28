@@ -23,8 +23,8 @@ function _byId(id) { return document.getElementById(id); }
 function applyStaticCopy() {
   document.title = t('page.title');
   document.querySelectorAll('[data-copy]').forEach(el => { el.textContent = t(el.dataset.copy); });
-  const send = _byId('jv-chat-send');
-  if (send) send.textContent = t('chat.send');
+  const send = _byId('jv-chat-send');                              // icon button (rita.html .chat-send)
+  if (send) { send.title = t('chat.send'); send.setAttribute('aria-label', t('chat.send')); }
 }
 
 function setModel(status) {
@@ -41,8 +41,10 @@ function showTab(tab) {
   S.tab = tab;
   _byId('jv-tab-chat')?.classList.toggle('is-active', tab === 'chat');
   _byId('jv-tab-portfolio')?.classList.toggle('is-active', tab === 'portfolio');
-  for (const id of ['sec-jv-chat', 'sec-jv-plan']) { const el = _byId(id); if (el) el.hidden = tab !== 'chat'; }
-  for (const id of ['sec-jv-portfolio', 'sec-jv-instrument']) { const el = _byId(id); if (el) el.hidden = tab !== 'portfolio'; }
+  const chat = _byId('jv-view-chat');
+  const pf = _byId('jv-view-portfolio');
+  if (chat) chat.hidden = tab !== 'chat';
+  if (pf) pf.hidden = tab !== 'portfolio';
   if (tab === 'portfolio' && (S.pfStale || S.pfLoc !== S.loc)) loadPortfolioSection();
 }
 
@@ -158,7 +160,7 @@ async function loadPortfolioSection() {
   const first = renderPortfolio(pf, loc);
   const sec = _byId('sec-jv-instrument');
   if (first) {
-    if (sec) sec.hidden = S.tab !== 'portfolio';
+    if (sec) sec.hidden = false;
     openInstrument(first);
   } else if (sec) {
     sec.hidden = true;

@@ -28,8 +28,8 @@ export function sourceText(pf, location) {
   }
 }
 
-function _kpi(label, value, cls = '') {
-  return `<div class="kpi kpi-sm"><div class="kpi-label">${esc(label)}</div><div class="kpi-value ${cls}">${esc(value)}</div></div>`;
+function _kpi(label, value, cls = '', size = ' kpi-sm') {
+  return `<div class="kpi${size}"><div class="kpi-label">${esc(label)}</div><div class="kpi-value ${cls}">${esc(value)}</div></div>`;
 }
 
 const _sign = v => (isNum(v) ? (v > 0 ? 'pos' : v < 0 ? 'neg' : '') : '');
@@ -40,11 +40,11 @@ export function kpisHtml(pf) {
   const m = p.money;
   const parts = [];
   if (m) {
-    parts.push(_kpi(t('pf.kpi.value'), fmtMoney(m.value_now, pf.currency)));
-    parts.push(_kpi(t('pf.kpi.pnl'), fmtMoney(m.pnl, pf.currency), _sign(m.pnl)));
-    parts.push(_kpi(t('pf.kpi.return_since', { date: fmtDate(p.entry_date) }), fmtRate(m.return_since_entry), _sign(m.return_since_entry)));
+    parts.push(_kpi(t('pf.kpi.value'), fmtMoney(m.value_now, pf.currency), '', ''));
+    parts.push(_kpi(t('pf.kpi.pnl'), fmtMoney(m.pnl, pf.currency), _sign(m.pnl), ''));
+    parts.push(_kpi(t('pf.kpi.return_since', { date: fmtDate(p.entry_date) }), fmtRate(m.return_since_entry), _sign(m.return_since_entry), ''));
   }
-  parts.push(_kpi(t('pf.kpi.this_year'), fmtRate(p.ytd_return), _sign(p.ytd_return)));
+  parts.push(_kpi(t('pf.kpi.this_year'), fmtRate(p.ytd_return), _sign(p.ytd_return), ''));
   return parts.join('');
 }
 
