@@ -64,8 +64,13 @@ def test_jarvis_page_has_the_login_gate_before_render():
 
 
 def test_jarvis_js_uses_the_shared_auth_pattern():
+    # P4b: main.js boots (dev token first); the API calls live in the section modules, all via api()
     js = (_DASH / "js" / "jarvis" / "main.js").read_text(encoding="utf-8")
-    assert "from '../shared/api.js'" in js and "from '../shared/dev-auth.js'" in js
+    assert "from '../shared/dev-auth.js'" in js
     assert "await ensureDevToken();" in js
     assert "fetch(" not in js  # every call through api()
-    assert "innerHTML" not in js  # server values via textContent only
+    assert "innerHTML" not in js  # main.js renders nothing itself
+    for name in ("chat.js", "portfolio.js", "instrument.js"):
+        mod = (_DASH / "js" / "jarvis" / name).read_text(encoding="utf-8")
+        assert "import { api } from '../shared/api.js'" in mod, name
+        assert "fetch(" not in mod, name
