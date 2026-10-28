@@ -12,11 +12,12 @@ import {
 import { renderPlan } from './plan.js?v=2';
 import { loadPortfolio, renderPortfolio, initGrid, markSelected } from './portfolio.js?v=2';
 import { loadInstrument, renderInstrument, renderInstrumentError, initInstrument } from './instrument.js?v=2';
+import { renderConcepts, initConcepts } from './concepts.js?v=2';
 
 window.closeChartModal = closeChartModal;
 
 const LOCS = ['europe', 'india', 'us'];
-const S = { loc: 'europe', tab: 'chat', state: null, sessionId: null, pf: null, pfLoc: null, pfStale: true, model: 'not_loaded', seq: 0 };
+const S = { loc: 'europe', tab: 'chat', state: null, sessionId: null, pf: null, pfLoc: null, pfStale: true, inst: null, model: 'not_loaded', seq: 0 };
 
 function _byId(id) { return document.getElementById(id); }
 
@@ -41,11 +42,10 @@ function showTab(tab) {
   S.tab = tab;
   _byId('jv-tab-chat')?.classList.toggle('is-active', tab === 'chat');
   _byId('jv-tab-portfolio')?.classList.toggle('is-active', tab === 'portfolio');
-  const chat = _byId('jv-view-chat');
-  const pf = _byId('jv-view-portfolio');
-  if (chat) chat.hidden = tab !== 'chat';
-  if (pf) pf.hidden = tab !== 'portfolio';
+  _byId('jv-tab-concepts')?.classList.toggle('is-active', tab === 'concepts');
+  for (const v of ['chat', 'portfolio', 'concepts']) { const el = _byId(`jv-view-${v}`); if (el) el.hidden = tab !== v; }
   if (tab === 'portfolio' && (S.pfStale || S.pfLoc !== S.loc)) loadPortfolioSection();
+  if (tab === 'concepts') loadConceptsSection();
 }
 
 function initTabs() {
@@ -55,6 +55,7 @@ function initTabs() {
   });
   _byId('jv-tab-chat')?.addEventListener('click', () => showTab('chat'));
   _byId('jv-tab-portfolio')?.addEventListener('click', () => showTab('portfolio'));
+  _byId('jv-tab-concepts')?.addEventListener('click', () => showTab('concepts'));
 }
 
 // ── location / chat section ────────────────────────────────────────────────────
@@ -64,6 +65,7 @@ async function selectLocation(loc) {
   S.state = null;
   S.sessionId = null;
   S.pfStale = true;
+  S.inst = null;
   try { history.replaceState(null, '', `#${loc}`); } catch { /* file:// or sandboxed */ }
   document.querySelectorAll('#jv-loc-tabs button[data-loc]').forEach(b => b.classList.toggle('is-active', b.dataset.loc === loc));
   renderHistory([]);
@@ -89,6 +91,7 @@ async function selectLocation(loc) {
     if (seq === S.seq) showChatError(e.message);
   }
   if (seq === S.seq && S.tab === 'portfolio') loadPortfolioSection();
+  if (seq === S.seq && S.tab === 'concepts') loadConceptsSection();
 }
 
 function _refreshState(loc) {
@@ -144,6 +147,7 @@ function _slLimit(inst) {
 
 async function loadPortfolioSection() {
   const loc = S.loc;
+  S.inst = null;
   const src = _byId('jv-pf-source');
   if (src) { src.textContent = '…'; src.hidden = false; }
   let pf;
@@ -161,7 +165,7 @@ async function loadPortfolioSection() {
   const sec = _byId('sec-jv-instrument');
   if (first) {
     if (sec) sec.hidden = false;
-    openInstrument(first);
+    await openInstrument(first);
   } else if (sec) {
     sec.hidden = true;
   }
@@ -175,9 +179,20 @@ async function openInstrument(inst) {
   try {
     const data = await loadInstrument(loc, inst);                   // A6
     if (S.loc !== loc) return;
+    S.inst = data;
     renderInstrument(data, null, { slLimit: _slLimit(inst) });
   } catch (e) {
     if (S.loc === loc) renderInstrumentError(e.message);
+  }
+}
+
+// ── concepts: the user's own numbers from A4 / A5 / A6 (loaded here only when not yet loaded) ──
+async function loadConceptsSection() {
+  const loc = S.loc;
+  renderConcepts({ state: S.state, pf: S.pfLoc === loc ? S.pf : null, inst: S.inst }, loc);
+  if (S.state && (S.pfStale || S.pfLoc !== loc)) {
+    await loadPortfolioSection();
+    if (S.loc === loc && S.tab === 'concepts') renderConcepts({ state: S.state, pf: S.pf, inst: S.inst }, loc);
   }
 }
 
@@ -193,6 +208,7 @@ async function boot() {
   initChat(onSend);
   initGrid(openInstrument);
   initInstrument();
+  initConcepts();
   showTab('chat');
   await ensureDevToken();                                           // localhost: dev token (prod: login gate)
   warmup().then(r => setModel(r && r.status === 'ready' ? 'ready' : 'unavailable'))

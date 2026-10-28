@@ -182,6 +182,7 @@ function _drawEngines(pf) {
                     borderDash: [5, 4], pointRadius: 0, borderWidth: 1.4 });
   }
   const opts = chartOpts('', _pctTick, labels);
+  opts.scales.x.ticks.maxTicksLimit = labels.length;                 // chartOpts thins date axes; show every bar
   mkChart('jv-engine-chart', { type: 'bar', data: { labels, datasets }, options: opts });
 }
 

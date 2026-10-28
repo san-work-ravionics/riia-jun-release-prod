@@ -65,7 +65,7 @@ def _src(name: str) -> str:
 
 def test_all_design_modules_present():
     assert set(_MODULES) == {"main.js", "copy.js", "esc.js", "format.js", "chat.js", "plan.js",
-                             "portfolio.js", "instrument.js"}
+                             "portfolio.js", "instrument.js", "concepts.js"}
 
 
 # ── stale token (A2, A3, A4, A5, A6) ───────────────────────────────────────────
@@ -335,6 +335,7 @@ const chat = await import(base + 'jarvis/chat.js?v=2');
 const plan = await import(base + 'jarvis/plan.js?v=2');
 const pf = await import(base + 'jarvis/portfolio.js?v=2');
 const inst = await import(base + 'jarvis/instrument.js?v=2');
+const cx = await import(base + 'jarvis/concepts.js?v=2');
 for (const [kind, card] of Object.entries(FX.cards)) chat.cardHtml({{ kind, data: rec('card.' + kind, clone(card.data)) }});
 for (const state of ['tracking', 'selected', 'cant_reach', 'reselect_proposed', 'back_to_plan']) {{
   const st = clone(FX.A4_state);
@@ -364,6 +365,12 @@ for (const key of ['A6_instrument', 'A6_instrument_excluded']) {{
       inst.priceDatasets(e); inst.sleeveDatasets(e);
     }}
   }}
+}}
+for (const state of ['tracking', 'selected', 'reselect_proposed']) {{
+  const st = clone(FX.A4_state); st.journey.state = state;
+  const data = {{ state: rec('A4', st), pf: rec('A5', clone(FX.A5_portfolio)), inst: rec('A6', clone(FX.A6_instrument)) }};
+  for (const step of cx.STEPS) cx.panelHtml(step, data);
+  cx.statusText(data.state, data.pf, 'europe'); cx.stepBarHtml(data.state.journey.state);
 }}
 console.log(JSON.stringify(Object.fromEntries(Object.entries(seen).map(([k, v]) => [k, [...v].sort()]))));""")
 
@@ -447,3 +454,39 @@ def test_charts_sit_in_chart_wraps_with_titles():
         i = html.index(f'id="{cid}"')
         wrap = html.rfind('class="chart-wrap"', 0, i)
         assert wrap != -1 and 'class="chart-title"' in html[wrap:i], cid
+
+
+# ── Concepts page ──────────────────────────────────────────────────────────────
+
+def test_html_concepts_view_ids():
+    html = _HTML.read_text()
+    ids = re.findall(r'\bid="([^"]+)"', html)
+    for i in ("jv-tab-concepts", "jv-view-concepts", "jv-cx-steps", "jv-cx-flow", "jv-cx-status", "jv-cx-tabs", "jv-cx-panel"):
+        assert ids.count(i) == 1, i
+
+
+@_needs_node
+def test_concepts_every_step_renders_with_and_without_data():
+    fx = json.dumps(_FIXTURE)
+    r = _node(_PRELUDE + f"""
+const FX = {fx};
+const cx = await import(base + 'jarvis/concepts.js?v=2');
+const {{ COPY }} = await import(base + 'jarvis/copy.js?v=2');
+const full = {{ state: FX.A4_state, pf: FX.A5_portfolio, inst: FX.A6_instrument }};
+const out = {{}};
+for (const s of cx.STEPS) {{
+  const a = cx.panelHtml(s, full), b = cx.panelHtml(s, {{}});
+  out[s] = {{ full: a.includes('concept-desc') && (a.match(/chart-wrap/g) || []).length === 2,
+              empty: b.includes('cx-empty') || s === 's2' || s === 's8',
+              canvas: (a.match(/<canvas id="([^"]+)"/g) || []).length,
+              copy: ['tab', 'who', 'kind', 'desc', 'c1', 'c2'].every(k => COPY[`cx.${{s}}.${{k}}`]) }};
+}}
+const hostile = JSON.parse(JSON.stringify(FX.A4_state));
+hostile.journey.selection.ladder[0].tolerance = {json.dumps(HOSTILE)};
+hostile.live_holdings[0].instrument_id = {json.dumps(HOSTILE)};
+out.escaped = !cx.panelHtml('s1', {{ state: hostile }}).includes('<img') && !cx.flowTableHtml().includes('<img');
+console.log(JSON.stringify(out));""")
+    assert r.pop("escaped") is True
+    for step, v in r.items():
+        assert v["full"] and v["empty"] and v["copy"], (step, v)
+    assert sum(v["canvas"] for v in r.values()) >= 9

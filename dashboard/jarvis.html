@@ -223,6 +223,29 @@ canvas{display:block;}
 .reasoning-kpi{font-family:var(--fm);font-size:10px;color:var(--t3);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2px 8px;}
 .reasoning-kpi strong{color:var(--text);font-weight:600;}
 
+/* Concepts (rita.html Concepts + Agents & Linked Analytics) */
+.step-bar{display:flex;gap:0;margin-bottom:16px;border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;background:var(--surface);}
+.step-seg{flex:1;padding:6px 4px;text-align:center;font-family:var(--fm);font-size:9px;color:var(--t4);border-right:1px solid var(--border);transition:background .2s;}
+.step-seg:last-child{border-right:none;}
+.step-seg.done{background:var(--build-bg);color:var(--build);}
+.step-seg.active{background:var(--run-bg);color:var(--run);font-weight:600;}
+.concept-text{font-size:13px;color:var(--t2);line-height:1.8;}
+.concept-text p+p{margin-top:12px;}
+.concept-tab-bar{display:flex;flex-wrap:wrap;width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:22px;}
+.concept-tab{flex:1;min-width:120px;text-align:center;font-family:var(--fd);font-size:12px;font-weight:500;padding:9px 6px;border:none;border-right:1px solid var(--border);cursor:pointer;background:transparent;color:var(--t2);transition:background .12s,color .12s;white-space:nowrap;}
+.concept-tab:last-child{border-right:none;}
+.concept-tab:hover{background:var(--surface2);color:var(--text);}
+.concept-tab.active{background:var(--run-bg);color:var(--run);font-weight:700;}
+.concept-desc{font-size:12.5px;color:var(--t2);line-height:1.78;margin-bottom:16px;}
+.concept-chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}
+.chart-col-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--t3);margin-bottom:6px;}
+.kpi-row-2{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.cx-empty{height:240px;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 24px;color:var(--t4);font-size:12px;border:1px dashed var(--border);border-radius:var(--r);background:var(--surface2);}
+.cx-states{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-height:120px;align-content:center;}
+.cx-state{font-family:var(--fm);font-size:10px;text-transform:uppercase;letter-spacing:.04em;padding:5px 9px;border-radius:3px;background:var(--surface2);border:1px solid var(--border);color:var(--t3);}
+.cx-state.is-current{background:var(--run-bg);border-color:var(--run-bd);color:var(--run);font-weight:600;}
+.cx-arrow{color:var(--t4);font-size:11px;}
+
 /* Scrollbar */
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -234,6 +257,7 @@ canvas{display:block;}
   #sec-jv-chat{height:560px;}
   .kpi-row-4{grid-template-columns:repeat(2,1fr);}
   .card-row-2{grid-template-columns:1fr;}
+  .concept-chart-grid{grid-template-columns:1fr;}
 }
 </style>
 <link rel="stylesheet" href="css/responsive.css">
@@ -268,6 +292,7 @@ canvas{display:block;}
     <div class="nav-label" style="color:var(--t3)" data-copy="nav.view"></div>
     <button type="button" class="nav-item p05" id="jv-tab-chat"><span class="nav-icon">◈</span><span data-copy="tab.chat"></span></button>
     <button type="button" class="nav-item p03" id="jv-tab-portfolio"><span class="nav-icon">⊞</span><span data-copy="tab.portfolio"></span></button>
+    <button type="button" class="nav-item p00" id="jv-tab-concepts"><span class="nav-icon">◎</span><span data-copy="tab.concepts"></span></button>
   </div>
   <div class="nav-section" id="jv-loc-tabs">
     <div class="nav-label" style="color:var(--t3)" data-copy="nav.location"></div>
@@ -407,6 +432,37 @@ canvas{display:block;}
         <div class="chart-box-sm"><canvas id="jv-engine-chart"></canvas></div>
       </div>
     </section>
+  </div>
+
+  <!-- ════════════════ CONCEPTS ════════════════ -->
+  <div id="jv-view-concepts" hidden>
+    <div class="page-hdr">
+      <div>
+        <div class="page-title" data-copy="tab.concepts"></div>
+        <div class="page-sub" data-copy="cx.sub"></div>
+      </div>
+    </div>
+
+    <div class="step-bar" id="jv-cx-steps"></div>
+
+    <div class="card">
+      <div class="card-hdr"><span class="card-title" data-copy="cx.flow.title"></span></div>
+      <div class="card-row-2" style="align-items:start;margin-bottom:0">
+        <div class="tbl-wrap" id="jv-cx-flow" style="box-shadow:none"></div>
+        <div class="concept-text">
+          <p data-copy="cx.flow.p1"></p>
+          <p data-copy="cx.flow.p2"></p>
+          <p data-copy="cx.flow.p3"></p>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:20px 0 8px">
+      <span style="font-size:12px;font-weight:700;color:var(--t2)" data-copy="cx.tabs.title"></span>
+      <span id="jv-cx-status" style="font-size:11px;color:var(--t3)"></span>
+    </div>
+    <div class="concept-tab-bar" id="jv-cx-tabs"></div>
+    <div class="concept-panel" id="jv-cx-panel"></div>
   </div>
 
 </main>
