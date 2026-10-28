@@ -83,7 +83,7 @@ def no_network(monkeypatch):
     monkeypatch.setattr(socket.socket, "connect", _boom)
     monkeypatch.setattr(socket, "create_connection", _boom)
     import yfinance
-    monkeypatch.setattr(yfinance, "download", _boom)
+    monkeypatch.setattr(yfinance, "download", _boom, raising=False)  # yfinance may be a spec'd stub (test_data_refresh)
 
 
 # ── service ───────────────────────────────────────────────────────────────────

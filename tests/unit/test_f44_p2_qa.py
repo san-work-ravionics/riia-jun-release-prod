@@ -453,7 +453,7 @@ def net_guard(monkeypatch):
     import yfinance
 
     from rita.services import data_refresh
-    monkeypatch.setattr(yfinance, "download", _rec("yfinance.download"))
+    monkeypatch.setattr(yfinance, "download", _rec("yfinance.download"), raising=False)  # yfinance may be a spec'd stub (test_data_refresh)
     monkeypatch.setattr(yfinance, "Ticker", _rec("yfinance.Ticker"))
     monkeypatch.setattr(data_refresh, "refresh_fx", _rec("refresh_fx"))
     return calls

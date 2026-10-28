@@ -315,7 +315,9 @@ def test_warm_thread_uses_its_own_session_and_closes_it():
     fake_db = MagicMock()
     started = threading.Event()
     with patch("rita.database.SessionLocal", return_value=fake_db), \
+            patch("rita.services.asta_trace_service.warm_job"), \
             patch.object(GoalSelectionService, "warm", side_effect=lambda: started.set()):
+        # the P4 ASTA warm-up runs in the same thread with its own session — stubbed here
         t = svc_mod.start_warm_thread()
         t.join(timeout=5)
     assert started.is_set() and t.daemon
