@@ -312,16 +312,26 @@ def test_goal_from_the_saved_plan(db_session):
 # ── warm-up ────────────────────────────────────────────────────────────────────
 
 def test_warm_thread_uses_its_own_session_and_closes_it():
-    fake_db = MagicMock()
+    # QA-F2: SessionLocal is global — other threads can call it while patched, so hand out a
+    # fresh session per call and assert only on the one the warm thread opened.
+    opened: list[tuple[str, MagicMock]] = []
+
+    def _session():
+        m = MagicMock()
+        opened.append((threading.current_thread().name, m))
+        return m
+
     started = threading.Event()
-    with patch("rita.database.SessionLocal", return_value=fake_db), \
+    with patch("rita.database.SessionLocal", side_effect=_session), \
             patch("rita.services.asta_trace_service.warm_job"), \
             patch.object(GoalSelectionService, "warm", side_effect=lambda: started.set()):
         # the P4 ASTA warm-up runs in the same thread with its own session — stubbed here
         t = svc_mod.start_warm_thread()
         t.join(timeout=5)
     assert started.is_set() and t.daemon
-    fake_db.close.assert_called_once()
+    mine = [m for name, m in opened if name == "goal-selection-warm"]
+    assert len(mine) == 1
+    mine[0].close.assert_called_once()
 
 
 def test_warm_never_raises(world, monkeypatch):

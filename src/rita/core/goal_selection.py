@@ -85,7 +85,10 @@ def build_matrix(runs: dict[str, ModelRun], window: Window) -> SleeveMatrix:
     cols = {}
     for i in ids:
         s = runs[i].returns_series()
-        cols[i] = s[(s.index >= lo) & (s.index <= hi)]
+        s = s[(s.index >= lo) & (s.index <= hi)]
+        if not np.isfinite(s.to_numpy(dtype=float)).all():   # design edge 7 (QA-F1)
+            raise ValueError(f"{i}: sleeve returns are not finite in the {window.name} window")
+        cols[i] = s
     rets = pd.DataFrame(cols).sort_index().fillna(0.0)
     if rets.empty:
         raise ValueError(f"no bars in the {window.name} window")

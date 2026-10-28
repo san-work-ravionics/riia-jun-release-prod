@@ -462,10 +462,7 @@ def test_edge_holdings_invested_pct_is_weight_times_todays_model_allocation(db_s
         assert h.tolerance == out.tolerance and h.sl_drawdown_limit == DEFAULT_ENV_CONFIG.hard_mdd_limit
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "QA-F1: design edge 7 says the combined stream is checked finite before the solve; "
-    "build_matrix fillna(0) turns a NaN sleeve return into a 0 % day and the selection proceeds. "
-    "Only reachable if a ModelRun carries NaN (upstream check_bad_data + clip guard the replay path)."))
+# QA-F1 (fixed): design edge 7 — the combined stream is checked finite before the solve.
 def test_qa_f1_non_finite_sleeve_return_is_rejected_before_the_solve():
     runs = _three()
     x = list(runs["A"].daily_returns)
