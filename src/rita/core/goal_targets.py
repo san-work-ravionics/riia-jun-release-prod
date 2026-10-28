@@ -87,7 +87,10 @@ def required_return(goal_return: float, ytd_return: float, as_of: date,
         return RequiredReturn(goal_return, ytd_return, f_y, 0.0, g, None, None, True)
     # = growth_needed ** (1/φ) − 1, in log space (log1p / expm1) so r′ = r at as_of = s − 1
     # holds to the last bit instead of picking up the (1 + r) − 1 rounding.
-    r_prime = math.expm1((f_y * math.log1p(goal_return) - math.log1p(ytd_return)) / phi)
+    try:
+        r_prime = math.expm1((f_y * math.log1p(goal_return) - math.log1p(ytd_return)) / phi)
+    except OverflowError:                 # deep loss with days left: r′ beyond any float
+        r_prime = math.inf
     return RequiredReturn(goal_return, ytd_return, f_y, phi, g, r_prime,
                           max(r_prime, goal_return), False)
 

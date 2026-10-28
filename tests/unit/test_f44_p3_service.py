@@ -200,6 +200,27 @@ def test_on_track_and_count_and_year_end_need_no_model_run(world):
     assert fa.loads == [] and on.cap_fit is None and on.max_reselections == 2
 
 
+def test_required_return_overflow_late_in_year_is_back_to_plan_cap(world):
+    """Code Review P3 #1: a deep loss on Dec 30 overflows r′ — back to plan, never an error."""
+    db, fa, cache, _ = world
+    out = GoalSelectionService(db, artifacts=fa, cache=cache).required_return(
+        "europe", 0.07, -0.85, date(2026, 12, 30), date(2026, 1, 1), 0)
+    assert (out.status, out.reason, out.required_return) == ("back_to_plan", "cap", None)
+    assert fa.loads == []                           # no model run for an unreachable r′
+    out.model_dump_json()                           # serialises (no inf in the payload)
+
+
+def test_replay_version_invalidates_the_cache(world, monkeypatch):
+    """Code Review P3 #2: a change to the replay code (REPLAY_VERSION) re-runs the models."""
+    db, fa, cache, _ = world
+    GoalSelectionService(db, artifacts=fa, cache=cache).location_runs("europe")
+    svc_mod.clear_memo()
+    fa.loads.clear()
+    monkeypatch.setattr(svc_mod, "REPLAY_VERSION", "test-next")
+    GoalSelectionService(db, artifacts=fa, cache=cache).location_runs("europe")
+    assert "E1" in fa.loads and "E2" in fa.loads
+
+
 def test_required_return_invalid_input(world):
     with pytest.raises(GoalSelectionError) as e:
         _svc(world).required_return("europe", R, 0.0, date(2027, 2, 1), date(2026, 1, 1), 0)

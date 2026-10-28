@@ -118,3 +118,10 @@ def test_guard_order():
 def test_guard_limit_comes_from_settings():
     assert get_settings().goal_selection.max_reselections_per_year == 2
     assert decide_sl_response(_req(0.12), 0.25, 2, 3).action == "solve"
+
+
+def test_r_prime_overflow_is_inf_and_trips_the_cap():
+    """Code Review P3 #1: expm1 overflow (ytd −85 % on Dec 30) → r′ = inf → back_to_plan/cap."""
+    req = required_return(0.07, -0.85, date(2026, 12, 30), date(2026, 1, 1))
+    assert req.required_return == float("inf") and not req.year_end
+    assert decide_sl_response(req, 0.15, 0, 2).reason == "cap"

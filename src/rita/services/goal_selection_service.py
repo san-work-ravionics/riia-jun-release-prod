@@ -15,6 +15,7 @@ compute an instrument once.
 """
 from __future__ import annotations
 
+import math
 import threading
 from dataclasses import dataclass, field
 from datetime import date
@@ -27,6 +28,7 @@ from rita.config import ModelLineage, get_settings
 from rita.core.data_integrity import check_window
 from rita.core.goal_model_runs import (
     ACTION_ALLOCATION,
+    REPLAY_VERSION,
     TOLERANCE_LEVELS,
     LineageSplit,
     ModelRun,
@@ -197,7 +199,7 @@ class GoalSelectionService:
         env_cfg = load_instrument_env_config(inst)
         sha = self._artifacts.sha256(path)
         parts = (inst, lineage.name, sha, env_config_hash(env_cfg), split.split_hash(),
-                 frame.data_hash)
+                 frame.data_hash, REPLAY_VERSION)
         keys = {tau: cache_key(*parts, tau) for tau in TOLERANCE_LEVELS}
 
         with _instrument_lock(inst):
@@ -385,6 +387,10 @@ class GoalSelectionService:
         if pre.action != "solve":
             status = "on_track" if pre.action == "on_track" else "back_to_plan"
             return RequiredReturnOut(**base, status=status, reason=pre.reason)
+        if not math.isfinite(req.required_return):
+            # r′ overflowed (deep loss late in the year): no mix of model sleeves can reach it.
+            base.update(required_return=None, effective_return=None)
+            return RequiredReturnOut(**base, status="back_to_plan", reason="cap")
 
         lr = self._eligible(location)
         r_prime = req.required_return

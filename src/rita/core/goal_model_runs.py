@@ -34,6 +34,9 @@ from rita.core.instrument_config import InstrumentEnvConfig
 from rita.core.trading_env_v2 import _STRUCTURAL_BASE_COLS, _ema_ratio_enabled, run_episode_v2
 
 TOLERANCE_LEVELS: tuple[str, ...] = ("low", "medium", "high")
+# Part of the replay cache key: bump when the replay/metrics code changes, so a deploy never
+# serves runs computed by older code (the prod cache dir survives redeploys).
+REPLAY_VERSION = "p3-2"
 ACTION_NAMES = {0: "cash", 1: "half", 2: "full", 3: "hedged"}
 ACTION_ALLOCATION = {"cash": 0.0, "half": 0.5, "full": 1.0, "hedged": 1.0}
 
