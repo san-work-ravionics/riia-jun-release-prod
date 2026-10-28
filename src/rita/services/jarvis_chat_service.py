@@ -553,7 +553,8 @@ class JarvisChatService:
     # progress / what-if ---------------------------------------------------------
 
     def _ytd(self, t: _Turn) -> tuple[PnlOut | None, float | None, date | None, date | None, str]:
-        """``(pnl, ytd, as_of, year_start, source)`` — saved / segments path, else the sleeve sum."""
+        """``(pnl, ytd, as_of, year_start, source)`` from ``portfolio.pnl`` (saved / segments path).
+        No pnl → no ytd (CR-2: summing the open segment alone would drop the earlier segments, rev 2 N1)."""
         j = t.journey
         args: dict[str, Any] = {"location": t.location, "goal_return": j.goal_return}
         if j.plan_year_start is not None:
@@ -563,16 +564,7 @@ class JarvisChatService:
         p = t.call("portfolio.pnl", args, PnlOut, missing_ok=True)
         if p is not None:
             return p, p.ytd_return, p.as_of, p.year_start, p.source
-        ys = j.plan_year_start
-        total, as_of = 0.0, None
-        for inst, pct, tau in _open_holdings(j):
-            tr = self._trace(t, inst, tau, since=ys)
-            if tr.return_since is None:
-                return None, None, None, ys, "model_sleeves"
-            total += pct / 100.0 * tr.return_since
-            as_of = tr.as_of if as_of is None else min(as_of, tr.as_of)
-            ys = ys or tr.since
-        return None, total, as_of, ys, "model_sleeves"
+        return None, None, None, j.plan_year_start, "model_sleeves"
 
     def _required(self, t: _Turn, ytd: float, as_of: date, year_start: date | None) -> RequiredReturnOut:
         j = t.journey

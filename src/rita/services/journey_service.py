@@ -20,6 +20,9 @@ Events (``journey.save``), always checked against the stored row, never the clie
   and ``plan_year_start = Jan 1`` with segments clipped (an open segment restarts on Jan 1 with the
   same holdings); persisted on the next save.
 - **A5** compare-and-set on ``version``; ``start`` relies on the partial unique index.
+- **CR-1** the guard year (lazy reset, ``reselect_year``, the restart carry) is the server's date,
+  never the client's ``as_of``; ``as_of`` only dates events and segments and must lie in
+  [open segment's ``from``, today].  A proposal may only raise the count, up to the limit.
 
 ADR-002: rows only through ``repositories/jarvis.py``.  The service owns the transaction.
 """
@@ -146,16 +149,19 @@ class JourneyService:
     # ── write ──────────────────────────────────────────────────────────────────
 
     def save(self, user_id: str, inp: JourneySaveIn, today: date | None = None) -> JourneyOut:
-        as_of = inp.as_of or today or date.today()
+        today = today or date.today()
+        as_of = inp.as_of or today
+        if as_of > today:
+            raise JourneyError("invalid_input", "as_of is in the future")
         try:
             if inp.event == "start":
-                return self._start(user_id, inp, as_of)
-            return self._apply(user_id, inp, as_of)
+                return self._start(user_id, inp, as_of, today)
+            return self._apply(user_id, inp, as_of, today)
         except IntegrityError as exc:
             self._db.rollback()
             raise JourneyError("invalid_input", "journey changed — reload") from exc
 
-    def _start(self, user_id: str, inp: JourneySaveIn, as_of: date) -> JourneyOut:
+    def _start(self, user_id: str, inp: JourneySaveIn, as_of: date, today: date) -> JourneyOut:
         if inp.goal is None:
             raise JourneyError("invalid_input", "start needs the goal")
         goal = inp.goal
@@ -170,10 +176,10 @@ class JourneyService:
                                  "plan_year_start": None, "segments": []}
         latest = self._repo.latest_any(user_id, inp.location)
         if latest is not None:
-            if latest.reselect_year == as_of.year:
+            if latest.reselect_year == today.year:
                 carry["reselect_count"] = latest.reselect_count or 0
                 carry["reselect_year"] = latest.reselect_year
-            if latest.plan_year_start is not None and latest.plan_year_start.year == as_of.year:
+            if latest.plan_year_start is not None and latest.plan_year_start.year == today.year:
                 carry["plan_year_start"] = latest.plan_year_start
                 carry["segments"] = list(latest.segments or [])
         if active is not None:
@@ -200,7 +206,7 @@ class JourneyService:
                  carried_count=carry["reselect_count"], carried_segments=len(carry["segments"]))
         return _out(_values(row))
 
-    def _apply(self, user_id: str, inp: JourneySaveIn, as_of: date) -> JourneyOut:
+    def _apply(self, user_id: str, inp: JourneySaveIn, as_of: date, today: date) -> JourneyOut:
         row = self._repo.get_active(user_id, inp.location)
         if row is None:
             raise JourneyError("not_found", "no active journey for this location")
@@ -208,7 +214,11 @@ class JourneyService:
         if row.state not in allowed:
             raise JourneyError("invalid_input", f"{inp.event} is not allowed in state {row.state}")
         expected = inp.expected_version if inp.expected_version is not None else row.version
-        cur = year_reset(_values(row), as_of)
+        cur = year_reset(_values(row), today)
+        open_from = [date.fromisoformat(s["from"]) for s in cur.get("segments") or [] if s.get("to") is None]
+        if open_from and as_of < max(open_from):
+            raise JourneyError("invalid_input", "as_of is before the held mix started")
+        cur["_year"] = today.year
         new = getattr(self, f"_ev_{inp.event}")(cur, inp, as_of)
         new["updated_at"] = datetime.now(timezone.utc)
         changed = {k: v for k, v in new.items() if k in _ROW_FIELDS and k not in ("journey_id", "version")}
@@ -258,11 +268,14 @@ class JourneyService:
         p = inp.proposal
         if p is None or p.status != "reselect_proposed" or p.proposal is None:
             raise JourneyError("invalid_input", "propose needs a reselect_proposed required_return result")
+        used, max_n = v.get("reselect_count") or 0, get_settings().goal_selection.max_reselections_per_year
+        if not used < p.reselections_next <= max_n:
+            raise JourneyError("invalid_input", "proposal count is stale or over the limit — reload")
         events = list(v.get("reselections") or [])
         events.append({"at": as_of.isoformat(), "event": "proposed", "from_return": v.get("target_return"),
                        "to_return": p.effective_return, "trigger": inp.trigger or "behind_target"})
         v.update(proposal=p.model_dump(mode="json"), reselect_count=p.reselections_next,
-                 reselect_year=as_of.year, reselections=events, state="reselect_proposed")
+                 reselect_year=v["_year"], reselections=events, state="reselect_proposed")
         return v
 
     @staticmethod

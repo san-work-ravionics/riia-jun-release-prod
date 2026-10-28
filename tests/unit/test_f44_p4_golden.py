@@ -333,3 +333,26 @@ def test_session_owner_check(journey_db, fake_classifier):
     assert e.value.code == "not_found"
     with pytest.raises(JarvisChatError):
         JarvisChatService(journey_db, mcp, User()).message(MessageIn(session_id="nope", text="hi", location="europe"))
+
+
+def test_progress_without_pnl_is_no_data_not_open_segment_sum(journey_db, fake_classifier):
+    """CR-2: portfolio.pnl not_found → progress.no_data; never a ytd from the open segment alone."""
+    sel = selection("europe")
+    payloads = {
+        "whatineed.get_goal": goal("europe"), "portfolio.select_for_goal": sel,
+        "portfolio.model_runs": runs_out("europe", sel),
+        "portfolio.sleeve_trace": lambda a: trace(a["instrument"], as_of=TODAY),
+        "portfolio.pnl": None,
+        "portfolio.required_return": lambda a: required(ytd=a["ytd_return"]),
+    }
+    mcp = FakeMcp(journey_db, payloads)
+    svc = JarvisChatService(journey_db, mcp, User())
+    sid = _session(svc, "europe")
+    for text in ("use my goal", "build my portfolio", "track it"):
+        _turn(svc, mcp, sid, text, "europe")
+    for text in ("how am I doing", "what if a stop loss hits"):
+        out = _turn(svc, mcp, sid, text, "europe")
+        _check(out, mcp, "progress.no_data", "tracking")
+        tools = [c.tool for c in out.reply.tool_calls]
+        assert "portfolio.pnl" in tools and "portfolio.sleeve_trace" not in tools
+        assert "portfolio.required_return" not in tools

@@ -38,11 +38,11 @@ def _to_tracking(svc: JourneyService, entry: date = D1, sel=None):
     return svc.save(U, save_in("track", tracking=tracking(sel, entry), as_of=entry, expected_version=j.version))
 
 
-def _propose(svc, j, used=0, on=date(2026, 4, 1)):
+def _propose(svc, j, used=0, on=date(2026, 4, 1), today=None):
     prop = selection(holdings=[holding("E3", 100)])
     return svc.save(U, save_in("propose", proposal=required("reselect_proposed", "ok", ytd=-0.08, used=used,
                                                              proposal=prop),
-                               trigger="behind_target", as_of=on, expected_version=j.version))
+                               trigger="behind_target", as_of=on, expected_version=j.version), today=today)
 
 
 # ── transitions ────────────────────────────────────────────────────────────────
@@ -178,14 +178,14 @@ def test_restart_newer_plan_carries_reselect_count(journey_db):
 
 def test_count_resets_only_on_new_year(journey_db):
     svc = JourneyService(journey_db)
-    j = _propose(svc, _to_tracking(svc), on=date(2025, 11, 1))
+    j = _propose(svc, _to_tracking(svc, entry=date(2025, 10, 1)), on=date(2025, 11, 1), today=date(2025, 11, 1))
     assert j.reselect_count == 1 and j.reselect_year == 2025
     same = svc.get_current(U, "europe", today=date(2025, 12, 31))
     assert same.reselect_count == 1
     nxt = svc.get_current(U, "europe", today=date(2026, 1, 2))
     assert nxt.reselect_count == 0 and nxt.reselect_year is None
     newer = goal(updated=PLAN_T0 + timedelta(days=30))
-    j2 = svc.save(U, save_in("start", goal=goal_in(newer), as_of=date(2026, 1, 5)))
+    j2 = svc.save(U, save_in("start", goal=goal_in(newer), as_of=date(2026, 1, 5)), today=date(2026, 1, 5))
     assert j2.reselect_count == 0                     # carried only within the same year
 
 
@@ -241,3 +241,43 @@ def test_clip_segments_drops_closed_before_s():
             {"from": "2025-09-01", "to": None, "holdings": [], "cause": "accept"}]
     out = clip_segments(segs, date(2026, 1, 1))
     assert out == [{"from": "2026-01-01", "to": None, "holdings": [], "cause": "accept"}]
+
+
+# ── CR-1: the guard year is the server's date; as_of is bounded ────────────────
+
+def test_future_as_of_is_refused(journey_db):
+    svc = JourneyService(journey_db)
+    j = _to_tracking(svc)
+    with pytest.raises(JourneyError) as e:
+        _propose(svc, j, on=date(2026, 4, 1), today=date(2026, 3, 31))
+    assert e.value.code == "invalid_input" and "future" in e.value.message
+
+
+def test_backdated_as_of_cannot_reset_the_count(journey_db):
+    svc = JourneyService(journey_db)
+    today = date(2026, 6, 1)
+    j = _propose(svc, _to_tracking(svc), on=date(2026, 4, 1), today=today)
+    assert j.reselect_count == 1 and j.reselect_year == 2026
+    newer = goal(updated=PLAN_T0 + timedelta(days=30))
+    j2 = svc.save(U, save_in("start", goal=goal_in(newer), as_of=date(2025, 12, 31)), today=today)
+    assert j2.reselect_count == 1 and j2.reselect_year == 2026      # last year's as_of does not reset it
+
+
+def test_as_of_before_open_segment_is_refused(journey_db):
+    svc = JourneyService(journey_db)
+    j = _to_tracking(svc, entry=D1)
+    with pytest.raises(JourneyError) as e:
+        _propose(svc, j, on=D1 - timedelta(days=1), today=date(2026, 6, 1))
+    assert e.value.code == "invalid_input"
+
+
+@pytest.mark.parametrize("stored_used,next_n", [(1, 1), (0, 3)])
+def test_proposal_count_must_rise_within_limit(journey_db, stored_used, next_n):
+    svc = JourneyService(journey_db)
+    j = _to_tracking(svc)
+    if stored_used:
+        j = _propose(svc, j, used=0)
+        j = svc.save(U, save_in("decline", expected_version=j.version))
+    with pytest.raises(JourneyError) as e:
+        _propose(svc, j, used=next_n - 1)               # required() gives next = used + 1
+    assert e.value.code == "invalid_input"
