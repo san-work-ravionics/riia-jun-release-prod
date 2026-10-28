@@ -163,15 +163,24 @@ class PortfolioPnlService:
         """V_t = Σ shares × close_t + cash, from the last bar ≤ ``start`` to ``end``."""
         cash = sum(holding_cash(h) or 0.0 for h in row.holdings)
         series = []
+        calendar: pd.DatetimeIndex | None = None
         for h in row.holdings:
             shares = h.get("shares")
             if not isinstance(shares, (int, float)) or isinstance(shares, bool) or shares <= 0:
+                if cash > 0 and shares is not None and calendar is None:
+                    c = self._closes(str(h["instrument_id"]), start, end)
+                    calendar = c.index if not c.empty else None
                 continue
             c = self._closes(str(h["instrument_id"]), start, end)
             if not c.empty:
                 series.append(c * float(shares))
         if not series:
-            return pd.Series(dtype=float)
+            # A row whose holdings all have 0 shares is all cash: its value is flat at the cash, over
+            # its instruments' trading days (else the chained year path would stop at the previous
+            # row and show a stale return).  No shares and no cash → no value path.
+            if calendar is None:
+                return pd.Series(dtype=float)
+            return _from_base(pd.Series(float(cash), index=calendar), start, end)
         frame = pd.concat(series, axis=1).sort_index().ffill().dropna()
         values = frame.sum(axis=1) + cash
         return _from_base(values, start, end)

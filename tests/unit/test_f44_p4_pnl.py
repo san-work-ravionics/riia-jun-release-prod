@@ -243,3 +243,29 @@ def test_resave_chains_rows(pnl_db):
 
     exp = (1 + ret(c1, a, b)) * (1 + ret(c2, b, DATES[-1])) - 1
     assert out.ytd_return == pytest.approx(exp, rel=1e-9) and out.money.portfolio_id == "new"
+
+
+def test_resave_to_all_cash_keeps_the_year_path_to_as_of(pnl_db):
+    """P4b fix: a re-save whose holdings all have 0 shares is all cash — its value is flat at the
+    cash, so the chained year path runs to as_of (it used to stop at the previous row's last bar
+    and show a stale June return as "this year")."""
+    p1 = _path(13)
+    _closes(pnl_db, "E1", p1)
+    a, b = date(YEAR, 1, 20), date(YEAR, 4, 6)
+    _portfolio(pnl_db, "old", a, [{"instrument_id": "E1", "allocation_pct": 100, "shares": 5}], active=False)
+    _portfolio(pnl_db, "cash", b, [{"instrument_id": "E1", "allocation_pct": 100, "shares": 0, "cash": 750.0}])
+    out = PortfolioPnlService(pnl_db, goal=FakeGoal({})).pnl("alice", "europe")
+    c1 = pd.Series(p1, index=DATES)
+    held = c1[c1.index <= pd.Timestamp(b)].iloc[-1] / c1[c1.index <= pd.Timestamp(a)].iloc[-1] - 1
+    assert out.as_of == DATES[-1].date()
+    assert out.ytd_return == pytest.approx(held, rel=1e-9)                 # flat after the all-cash re-save
+    assert out.money.portfolio_id == "cash" and out.money.value_now == pytest.approx(750.0)
+    assert out.money.pnl == pytest.approx(0.0)
+
+
+def test_row_without_share_counts_still_has_no_value_path(pnl_db):
+    """Pre-P2 rows with no ``shares`` key stay unpriced (unknown, not cash)."""
+    _closes(pnl_db, "E1", _path(14))
+    _portfolio(pnl_db, "old", date(YEAR, 1, 20), [{"instrument_id": "E1", "allocation_pct": 100, "cash": 10.0}])
+    out = PortfolioPnlService(pnl_db, goal=FakeGoal({})).pnl("alice", "europe")
+    assert out.ytd_return is None and out.money.value_now is None
