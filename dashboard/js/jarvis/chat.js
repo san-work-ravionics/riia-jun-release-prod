@@ -2,9 +2,9 @@
 // card kind; an unknown kind renders nothing). Cards are chat summaries only; the plan view renders
 // from the journey (plan.js). Every server string goes through esc() or textContent.
 import { api } from '../shared/api.js';
-import { esc } from './esc.js?v=2';
-import { t } from './copy.js?v=2';
-import { fmtRate, fmtMoney, fmtDate, fmtYears, isNum } from './format.js?v=2';
+import { esc } from './esc.js?v=3';
+import { t } from './copy.js?v=3';
+import { fmtRate, fmtMoney, fmtDate, fmtYears, isNum } from './format.js?v=3';
 
 // ── API (every call through api(): 401 → ensureDevToken(true) → one retry) ─────
 export function warmup() {

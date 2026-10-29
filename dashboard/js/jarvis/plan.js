@@ -1,10 +1,10 @@
 // Jarvis — plan view. Renders ONLY from the journey (JourneyOut, rev 1 B3) plus A4 live_holdings (rev 2
 // N2: "Model today", "Invested now", next_reset). The journey selection is the selection-time
 // snapshot and is labelled "at selection".
-import { esc } from './esc.js?v=2';
-import { t } from './copy.js?v=2';
-import { fmtRate, fmtMoney, fmtDate, fmtYears, isNum } from './format.js?v=2';
-import { actionText, reasonText } from './chat.js?v=2';
+import { esc } from './esc.js?v=3';
+import { t } from './copy.js?v=3';
+import { fmtRate, fmtMoney, fmtDate, fmtYears, isNum } from './format.js?v=3';
+import { actionText, reasonText } from './chat.js?v=3';
 
 function _row(label, value) {
   return `<div class="jv-dl-row"><span>${esc(label)}</span><b>${esc(value)}</b></div>`;

@@ -4,11 +4,11 @@
 // honest status texts. Every figure is a field of the A6 payload.
 import { api } from '../shared/api.js';
 import { mkChart, destroyChart, chartOpts, C } from '../shared/charts.js';
-import { esc } from './esc.js?v=2';
-import { t } from './copy.js?v=2';
-import { fmtRate, fmtPp, fmtNum, fmtDate, isNum } from './format.js?v=2';
-import { reasonText } from './chat.js?v=2';
-import { engineStatusText } from './portfolio.js?v=2';
+import { esc } from './esc.js?v=3';
+import { t } from './copy.js?v=3';
+import { fmtRate, fmtPp, fmtNum, fmtDate, isNum } from './format.js?v=3';
+import { reasonText } from './chat.js?v=3';
+import { engineStatusText } from './portfolio.js?v=3';
 
 export function loadInstrument(location, instrument) {
   return api(`/api/v1/experience/jarvis/instrument?location=${encodeURIComponent(location)}&instrument=${encodeURIComponent(instrument)}`);

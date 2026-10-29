@@ -1,5 +1,6 @@
 """Builds the F44 P4 contract fixture (``fixtures/f44_p4_contract.json``): one example per chat
-card kind, A1–A6 and JourneyOut — every list holds one element so every nested field the JS may
+card kind, A1–A6, JourneyOut and (P4c) ``G_geography`` (GeographyOverviewResponse, read by
+``jarvis/regions.js``) — every list holds one element so every nested field the JS may
 read is present (FC-004).  Run ``python -m tests.unit.f44_p4_contract_gen`` to rewrite it;
 ``test_f44_p4_contract.py`` checks the file equals this output and validates it.
 """
@@ -9,6 +10,7 @@ import json
 from datetime import date, datetime, timezone
 from pathlib import Path
 
+from rita.schemas.geography import GeographyOverviewResponse
 from rita.schemas.jarvis import (
     AstaMethodOut,
     AstaTraceOut,
@@ -114,6 +116,20 @@ def _level(v: float, basis: str) -> dict:
     return {"date": D.isoformat(), "value": v, "basis": basis}
 
 
+def _geography() -> dict:
+    """P4c: one instrument per region (EU, India, US, Other), every field set; Other carries currency."""
+    def inst(i: str, name: str, close: float, ccy: str | None, signal: str) -> dict:
+        return {"id": i, "name": name, "flag": "x", "close": close, "daily_return_pct": 0.42,
+                "signal": signal, "return_1y_pct": 12.34, "return_5y_pct": 9.1, "return_15y_pct": 8.2,
+                "risk_score": 3, "sector": "Tech", "horizons": ["long_term"], "currency": ccy}
+    return {"regions": [
+        {"region": "EU", "flag": "eu", "instruments": [inst("E1", "Euro One", 154.0, "EUR", "bullish")]},
+        {"region": "India", "flag": "in", "instruments": [inst("NIFTY", "Nifty 50", 24500.0, "INR", "neutral")]},
+        {"region": "US", "flag": "us", "instruments": [inst("NVIDIA", "Nvidia", 180.5, "USD", "bearish")]},
+        {"region": "Other", "flag": "w", "instruments": [inst("AEX", "AEX index", 910.0, "EUR", "neutral")]},
+    ]}
+
+
 def payloads() -> dict:
     cs = cards()
     j = _journey().model_dump(mode="json")
@@ -184,6 +200,7 @@ def payloads() -> dict:
     out["A6_instrument"] = InstrumentPageOut(**out["A6_instrument"]).model_dump(mode="json")
     out["A6_instrument_excluded"] = InstrumentPageOut(**out["A6_instrument_excluded"]).model_dump(mode="json")
     out["cards"] = {c["kind"]: c for c in out["A3_message"]["reply"]["cards"]}
+    out["G_geography"] = GeographyOverviewResponse(**_geography()).model_dump(mode="json")
     return out
 
 

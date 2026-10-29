@@ -3,10 +3,10 @@
 // numbers for the selected location — from A4 state, A5 portfolio and A6 instrument, nothing new
 // fetched. Only the active tab's charts are drawn (Chart.js can't size a hidden canvas).
 import { mkChart, destroyChart, chartOpts, C } from '../shared/charts.js';
-import { esc } from './esc.js?v=2';
-import { t } from './copy.js?v=2';
-import { fmtRate, fmtMoney, fmtDate, fmtYears, isNum, locationName } from './format.js?v=2';
-import { sleeveDatasets, priceDatasets } from './instrument.js?v=2';
+import { esc } from './esc.js?v=3';
+import { t } from './copy.js?v=3';
+import { fmtRate, fmtMoney, fmtDate, fmtYears, isNum, locationName } from './format.js?v=3';
+import { sleeveDatasets, priceDatasets } from './instrument.js?v=3';
 
 export const STEPS = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8'];
 

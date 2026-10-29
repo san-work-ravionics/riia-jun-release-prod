@@ -3,10 +3,11 @@
 // engine table + chart. Every figure is a field of the A5 payload.
 import { api } from '../shared/api.js';
 import { mkChart, destroyChart, chartOpts, C } from '../shared/charts.js';
-import { esc } from './esc.js?v=2';
-import { t } from './copy.js?v=2';
-import { fmtRate, fmtPp, fmtMoney, fmtNum, fmtDate, isNum, locationName } from './format.js?v=2';
-import { actionText } from './chat.js?v=2';
+import { portfolioCurrency } from '../shared/portfolio-currency.js';
+import { esc } from './esc.js?v=3';
+import { t } from './copy.js?v=3';
+import { fmtRate, fmtPp, fmtMoney, fmtNum, fmtDate, isNum, locationName } from './format.js?v=3';
+import { actionText } from './chat.js?v=3';
 
 export function loadPortfolio(location) {
   return api(`/api/v1/experience/jarvis/portfolio?location=${encodeURIComponent(location)}`);
@@ -117,6 +118,63 @@ export function engineTableHtml(engines, location) {
     <th class="num">${esc(t('engine.col.gap'))}</th><th>${esc(t('engine.col.pace'))}</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
+// ── P4c: one location column (compact KPIs + saved holdings or the Jarvis pick) ──
+// DR-A3 field map: Value = perf.money.value_now · P&L = perf.money.pnl · This year = perf.ytd_return ·
+// Target = perf.goal_return. Every amount is this location's own A5 figure in its own currency (D1).
+export function locKpisHtml(pf) {
+  const p = (pf && pf.perf) || {};
+  const m = p.money;
+  const ccy = pf && pf.currency;
+  return [
+    _kpi(t('pf.kpi.value'), m ? fmtMoney(m.value_now, ccy) : '—'),
+    _kpi(t('pf.kpi.pnl'), m ? fmtMoney(m.pnl, ccy) : '—', m ? _sign(m.pnl) : ''),
+    _kpi(t('pf.kpi.this_year'), fmtRate(p.ytd_return), _sign(p.ytd_return)),
+    _kpi(t('loc.kpi.target'), fmtRate(p.goal_return)),
+  ].join('');
+}
+
+function _chip(id, text) {
+  return `<span class="jv-hold-chip"><b class="mono">${esc(id)}</b> ${esc(text)}</span>`;
+}
+
+function _upper(v) { return String(v ?? '').toUpperCase(); }
+
+export function locPortfolioHtml(pf, loc) {
+  if (!pf) return '';
+  const p = pf.perf || {};
+  const m = p.money;
+  const kpis = `<div class="jv-loc-kpis">${locKpisHtml(pf)}</div>`;
+  if (m) {
+    const pct = Object.fromEntries((p.holdings || []).map(h => [_upper(h.instrument_id), h.allocation_pct]));
+    const chips = (m.holdings || []).map(h => {
+      const a = pct[_upper(h.instrument_id)];
+      return _chip(h.instrument_id, t('loc.hold.chip', { pct: isNum(a) ? fmtNum(a, 0) : null, units: isNum(h.shares) ? String(h.shares) : null }));
+    }).join('');
+    const legacy = !!m.legacy_note;
+    const cashLabel = legacy ? t('loc.hold.cash_eur') : t('loc.hold.cash');
+    const cash = fmtMoney(m.cash, legacy ? portfolioCurrency(null) : pf.currency);
+    const title = m.name ? `${t('loc.pf.title')} · ${m.name}` : t('loc.pf.title');
+    return `<div class="jv-loc-pf-title">${esc(title)}</div>${kpis}
+      <div class="jv-hold-chips">${chips}</div>
+      <div class="jv-loc-cash"><span class="jv-muted">${esc(cashLabel)}</span> <b class="mono">${esc(cash)}</b></div>`;
+  }
+  const pick = (pf.instruments || []).filter(r => r.selected);
+  if (pick.length) {
+    const chips = sortInstruments(pick).map(r => _chip(r.instrument_id, isNum(r.allocation_pct) ? `${fmtNum(r.allocation_pct, 0)}%` : '—')).join('');
+    return `<div class="jv-loc-pf-title">${esc(t('loc.pick.title'))}</div>${kpis}
+      <div class="jv-hold-chips">${chips}</div><p class="jv-muted">${esc(t('loc.pick.note'))}</p>`;
+  }
+  return `${kpis}<p class="jv-muted">${esc(t('pf.source.none', { location: locationName(loc) }))}</p>`;
+}
+
+export function detailTitle(location, currency) {
+  return t('pf.s3.title', { location: locationName(location), currency: currency || '—' });
+}
+
+export function detailDivider(location) {
+  return t('pf.divider.detail', { LOCATION: locationName(location).toUpperCase() });
+}
+
 // ── charts ─────────────────────────────────────────────────────────────────────
 function _drawPnl(pf) {
   const m = pf.perf && pf.perf.money;
@@ -197,7 +255,15 @@ function _text(id, text) {
   if (el) { el.textContent = text; el.hidden = !text; }
 }
 
+export function renderDetailHeader(location, currency) {
+  const title = document.getElementById('jv-pf-detail-title');
+  if (title) title.textContent = detailTitle(location, currency);
+  const div = document.getElementById('jv-pf-detail-divider');
+  if (div) div.textContent = detailDivider(location);
+}
+
 export function renderPortfolio(pf, location) {
+  renderDetailHeader(location, pf.currency);
   _text('jv-pf-source', sourceText(pf, location));
   _html('jv-pf-kpis', kpisHtml(pf));
   _html('jv-target-kpis', targetKpisHtml(pf));

@@ -19,6 +19,12 @@ export function fmtPp(v, digits = 1) {
   return `${v > 0 ? '+' : ''}${s} pp`;
 }
 
+// Already a percentage (geography-overview *_pct fields, ×100 server-side) → "+12.3%" / "−4.0%".
+export function fmtPctPoint(v, digits = 1) {
+  if (!isNum(v)) return DASH;
+  return `${v > 0 ? '+' : ''}${v.toFixed(digits)}%`;
+}
+
 export function fmtMoney(v, ccy) {
   if (!isNum(v)) return DASH;
   try {

@@ -1376,6 +1376,102 @@
   ],
   "instrument_id": "ATO"
  },
+ "G_geography": {
+  "regions": [
+   {
+    "flag": "eu",
+    "instruments": [
+     {
+      "close": 154.0,
+      "currency": "EUR",
+      "daily_return_pct": 0.42,
+      "flag": "x",
+      "horizons": [
+       "long_term"
+      ],
+      "id": "E1",
+      "name": "Euro One",
+      "return_15y_pct": 8.2,
+      "return_1y_pct": 12.34,
+      "return_5y_pct": 9.1,
+      "risk_score": 3,
+      "sector": "Tech",
+      "signal": "bullish"
+     }
+    ],
+    "region": "EU"
+   },
+   {
+    "flag": "in",
+    "instruments": [
+     {
+      "close": 24500.0,
+      "currency": "INR",
+      "daily_return_pct": 0.42,
+      "flag": "x",
+      "horizons": [
+       "long_term"
+      ],
+      "id": "NIFTY",
+      "name": "Nifty 50",
+      "return_15y_pct": 8.2,
+      "return_1y_pct": 12.34,
+      "return_5y_pct": 9.1,
+      "risk_score": 3,
+      "sector": "Tech",
+      "signal": "neutral"
+     }
+    ],
+    "region": "India"
+   },
+   {
+    "flag": "us",
+    "instruments": [
+     {
+      "close": 180.5,
+      "currency": "USD",
+      "daily_return_pct": 0.42,
+      "flag": "x",
+      "horizons": [
+       "long_term"
+      ],
+      "id": "NVIDIA",
+      "name": "Nvidia",
+      "return_15y_pct": 8.2,
+      "return_1y_pct": 12.34,
+      "return_5y_pct": 9.1,
+      "risk_score": 3,
+      "sector": "Tech",
+      "signal": "bearish"
+     }
+    ],
+    "region": "US"
+   },
+   {
+    "flag": "w",
+    "instruments": [
+     {
+      "close": 910.0,
+      "currency": "EUR",
+      "daily_return_pct": 0.42,
+      "flag": "x",
+      "horizons": [
+       "long_term"
+      ],
+      "id": "AEX",
+      "name": "AEX index",
+      "return_15y_pct": 8.2,
+      "return_1y_pct": 12.34,
+      "return_5y_pct": 9.1,
+      "risk_score": 3,
+      "sector": "Tech",
+      "signal": "neutral"
+     }
+    ],
+    "region": "Other"
+   }
+  ]
+ },
  "cards": {
   "closest": {
    "data": {
