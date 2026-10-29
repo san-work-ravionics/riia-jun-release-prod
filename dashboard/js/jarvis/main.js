@@ -29,7 +29,7 @@ export const S = {
   loc: 'europe', tab: 'chat', state: null, sessionId: null, inst: null, model: 'not_loaded', seq: 0,
   geo: null, geoErr: null,                                    // G — cached once per page session
   pfs: {}, pfErr: {}, pfStale: _perLoc(true), pfGen: _perLoc(0), // A5 per location
-  sort: { col: 'ret', asc: false }, pfSeq: 0, detailLoc: null,
+  sort: { col: 'ret', asc: false }, pfSeq: 0, detailLoc: null, mapHidden: false,
 };
 
 function _byId(id) { return document.getElementById(id); }
@@ -57,7 +57,10 @@ function showTab(tab) {
   _byId('jv-tab-portfolio')?.classList.toggle('is-active', tab === 'portfolio');
   _byId('jv-tab-concepts')?.classList.toggle('is-active', tab === 'concepts');
   for (const v of ['chat', 'portfolio', 'concepts']) { const el = _byId(`jv-view-${v}`); if (el) el.hidden = tab !== v; }
-  if (tab === 'portfolio' && _pfNeedsLoad()) loadPortfolioSection();
+  if (tab === 'portfolio') {
+    if (_pfNeedsLoad()) loadPortfolioSection();
+    else if (S.mapHidden) _renderUniverse();                        // CR-P4c-1: drawn while hidden → redraw
+  }
   if (tab === 'concepts') loadConceptsSection();
 }
 
@@ -219,7 +222,9 @@ function _renderColumn(loc) {
                       pfErr: S.pfStale[loc] ? S.pfErr[loc] : null });
 }
 
-function _renderUniverse() { renderUniverse(S.geo, S.pfs, S.sort); }
+// Chart.js can't size a hidden canvas: remember when the map was drawn with Portfolio hidden
+// (Concepts loads the portfolio data first) so showTab('portfolio') redraws it from the cache.
+function _renderUniverse() { S.mapHidden = S.tab !== 'portfolio'; renderUniverse(S.geo, S.pfs, S.sort); }
 
 function _onSort(col) {
   S.sort = S.sort.col === col ? { col, asc: !S.sort.asc } : { col, asc: ['id', 'loc', 'ccy', 'signal'].includes(col) };

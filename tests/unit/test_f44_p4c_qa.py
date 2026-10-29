@@ -10,7 +10,7 @@ Adds to the engineer's ``test_f44_p4_js.py`` (same node harness, no browser, no 
   Other with null currency (5), missing risk / 1Y → skipped + nulls last both ways (6), case-insensitive
   Held / Picked (8), cached re-open makes no G/A5 request (9), hostile strings in the table (10).
 - CR-P4c-1: Concepts opened first draws the map into the hidden Portfolio view; opening Portfolio
-  afterwards must redraw or resize it. Recorded as a known failure (xfail strict) — not fixed here.
+  afterwards must redraw or resize it. Fixed in main.js (showTab redraws from cache); regression test.
 - DR-A4: wall-clock first paint is not measurable without a browser; the parallel-load test in
   ``test_f44_p4_js.py`` asserts the 4 requests start before any resolves; here G + 3×A5 are also
   shown to be in flight concurrently (not sequential).
@@ -365,8 +365,6 @@ console.log(JSON.stringify({ map: charts.filter(c => c.id === 'jv-geo-map') }));
 
 
 @_needs_node
-@pytest.mark.xfail(strict=True, reason="CR-P4c-1 open: map drawn while Portfolio hidden is not redrawn/resized "
-                                       "when Portfolio opens (main.js _pfNeedsLoad false → no render)")
 def test_cr_p4c_1_concepts_then_portfolio_redraws_map():
     r = _boot_then("""
 click('jv-tab-concepts'); await settle();
