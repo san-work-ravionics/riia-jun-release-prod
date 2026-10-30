@@ -35,6 +35,18 @@ class UserPortfolioRepo:
             .first()
         )
 
+    def find_all_active_by_key_id(self, key_id: str) -> list[UserPortfolioModel]:
+        """All active portfolios for the key (one per location bucket), most-recent first."""
+        return (
+            self._db.query(UserPortfolioModel)
+            .filter(
+                UserPortfolioModel.key_id == key_id,
+                UserPortfolioModel.is_active.is_(True),
+            )
+            .order_by(*_LATEST_FIRST)
+            .all()
+        )
+
     def find_active_by_key_and_location(self, key_id: str, location: str | None) -> UserPortfolioModel | None:
         """The active portfolio for (key_id, location); ``location=None`` → the legacy row."""
         loc_filter = (

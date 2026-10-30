@@ -453,7 +453,7 @@ async function _loadExposure() {
   state.hedgeWorkflow.positionValue = {}; // full reload: drop cached position-value items
 
   const [portfolioRes, analyticsRes, geoRes] = await Promise.allSettled([
-    api('/api/v1/experience/user-portfolio').catch(() => null),
+    api('/api/v1/experience/user-portfolio?all_locations=true').catch(() => null),
     apiFetch('/api/v1/experience/fno/portfolio-analytics?mode=real', { headers }),
     apiFetch('/api/v1/experience/rita/geography-overview', {}),
   ]);

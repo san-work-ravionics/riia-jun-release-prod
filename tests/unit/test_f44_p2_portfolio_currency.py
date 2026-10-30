@@ -354,3 +354,68 @@ def test_mcp_get_holdings_p2_fields(tool_db):
 def test_mcp_get_holdings_input_has_location_no_user_id():
     schema = mt.REGISTRY["portfolio.get_holdings"].input_model.model_json_schema()
     assert set(schema.get("properties", {})) == {"location"}
+
+
+# ── Hedge workflow: all_locations merged view (bug fix) ────────────────────────
+
+def test_find_all_active_by_key_id_returns_all_location_rows(db):
+    """Repo returns one row per active location bucket, not just the most recent."""
+    from rita.repositories.user_portfolio import UserPortfolioRepo
+    from rita.repositories.user_portfolio_key import UserPortfolioKeyRepo
+    svc = UserPortfolioService(db)
+    svc.save("alice", [HoldingItem(instrument_id="NIFTY", allocation_pct=100)], location="india", total_value=1_000_000)
+    svc.save("alice", [HoldingItem(instrument_id="ASML", allocation_pct=100)], total_value_eur=50_000)
+    key = UserPortfolioKeyRepo(db).find_by_user_id("alice")
+    rows = UserPortfolioRepo(db).find_all_active_by_key_id(key.key_id)
+    locations = {r.location for r in rows}
+    assert locations == {"india", None}
+
+
+def test_service_get_all_returns_all_active_portfolios(db):
+    """get_all returns all location buckets, not just the most recent."""
+    svc = UserPortfolioService(db)
+    svc.save("alice", [HoldingItem(instrument_id="NIFTY", allocation_pct=100)], location="india", total_value=1_000_000)
+    svc.save("alice", [HoldingItem(instrument_id="ASML", allocation_pct=100)], total_value_eur=50_000)
+    results = svc.get_all("alice")
+    assert len(results) == 2
+    assert {p.location for p in results} == {"india", None}
+
+
+def test_all_locations_endpoint_merges_holdings(client, db):
+    """GET user-portfolio?all_locations=true returns instruments from every active location."""
+    client.post("/api/v1/user-portfolio/", json=_india_body())
+    client.post("/api/v1/user-portfolio/", json={"holdings": [{"instrument_id": "ASML", "allocation_pct": 100}],
+                                                 "total_value_eur": 50_000})
+    r = client.get("/api/v1/experience/user-portfolio?all_locations=true")
+    assert r.status_code == 200, r.text
+    b = r.json()
+    ids = {h["instrument_id"] for h in b["holdings"]}
+    assert "NIFTY" in ids and "ASML" in ids
+    assert b["currency"] == "EUR"
+    assert b["total_value_eur"] == pytest.approx(50_000 + 1_000_000 / 91.0, rel=1e-3)
+
+
+def test_all_locations_endpoint_allocation_pct_sums_to_100(client, db):
+    """Merged allocation percentages sum to 100 (re-weighted by EUR totals)."""
+    client.post("/api/v1/user-portfolio/", json=_india_body())         # 2 holdings: NIFTY 50%, RELIANCE 50%
+    client.post("/api/v1/user-portfolio/", json={"holdings": [{"instrument_id": "ASML", "allocation_pct": 100}],
+                                                 "total_value_eur": 50_000})
+    r = client.get("/api/v1/experience/user-portfolio?all_locations=true")
+    assert r.status_code == 200
+    total = sum(h["allocation_pct"] for h in r.json()["holdings"])
+    assert abs(total - 100.0) < 0.01
+
+
+def test_all_locations_endpoint_single_portfolio_returns_unchanged(client):
+    """When only one active portfolio exists, it is returned as-is without merging."""
+    client.post("/api/v1/user-portfolio/", json=_india_body())
+    r = client.get("/api/v1/experience/user-portfolio?all_locations=true")
+    assert r.status_code == 200
+    b = r.json()
+    assert b["currency"] == "INR"
+    assert b["location"] == "india"
+
+
+def test_all_locations_endpoint_no_portfolio_is_404(client):
+    r = client.get("/api/v1/experience/user-portfolio?all_locations=true")
+    assert r.status_code == 404

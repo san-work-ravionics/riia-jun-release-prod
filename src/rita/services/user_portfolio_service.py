@@ -174,6 +174,14 @@ class UserPortfolioService:
         self._db.refresh(new_row)
         return UserPortfolioOut.model_validate(new_row)
 
+    def get_all(self, user_id: str) -> list[UserPortfolioOut]:
+        """All active portfolios across every location bucket, most-recent first."""
+        key = UserPortfolioKeyRepo(self._db).find_by_user_id(user_id)
+        if key is None:
+            return []
+        rows = UserPortfolioRepo(self._db).find_all_active_by_key_id(key.key_id)
+        return [UserPortfolioOut.model_validate(row) for row in rows]
+
     def get(self, user_id: str, location: str | None = None) -> UserPortfolioOut | None:
         """Active portfolio for the user.
 
