@@ -244,8 +244,6 @@ canvas{display:block;}
 .jv-badge-selected{border-color:var(--run-bd);background:var(--run-bg);color:var(--run);}
 .jv-minibar{display:inline-block;height:5px;border-radius:2px;background:var(--t4);flex-shrink:0;}
 .jv-minibar.pos{background:var(--build);} .jv-minibar.neg{background:var(--danger);}
-.jv-loc-details{align-self:flex-start;}
-.jv-loc-col.is-active .jv-loc-details{color:var(--run);border-color:var(--run-bd);background:var(--run-bg);}
 .jv-divider{display:flex;align-items:center;gap:12px;margin:22px 0 14px;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);}
 .jv-divider::before,.jv-divider::after{content:"";flex:1;height:1px;background:var(--border2);}
 /* Region breadcrumb — shown when a sidebar location button is clicked in Portfolio view */
@@ -256,10 +254,14 @@ canvas{display:block;}
 /* Overview cards — clean summary: hide instrument tiles, chips, cash, verbose section header */
 #sec-jv-locations .jv-sec-hdr{display:none;}
 #sec-jv-locations .jv-loc-inst{display:none;}
+#sec-jv-locations .jv-loc-meta{display:none;}
+#sec-jv-locations .jv-loc-avg{display:none;}
 #sec-jv-locations .jv-loc-pf-title{display:none;}
 #sec-jv-locations .jv-hold-chips{display:none;}
 #sec-jv-locations .jv-loc-cash{display:none;}
+#sec-jv-locations .jv-loc-pf{background:none;border:none;padding:0;}
 #sec-jv-locations .jv-loc-pf .jv-muted{display:none;}
+#sec-jv-locations .kpi-delta{display:none;}
 .jv-geo-scroll{max-height:400px;overflow-y:auto;box-shadow:none;}
 .jv-sort{background:none;border:0;padding:0;font:inherit;color:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer;}
 .jv-sort:hover{color:var(--text);}
@@ -440,6 +442,13 @@ canvas{display:block;}
         <div class="card-sub" data-copy="pf.s1.hint"></div>
       </div>
       <div class="jv-loc-grid">
+        <div class="jv-loc-col" id="jv-loc-col-total" style="border-top-color:var(--text);cursor:default;">
+          <div class="jv-loc-hdr">
+            <div class="jv-loc-name"><span data-copy="loc.total"></span> <span class="jv-loc-ccy">EUR</span></div>
+            <div class="jv-loc-meta jv-muted" id="jv-loc-total-note" hidden></div>
+          </div>
+          <div id="jv-loc-total-kpis"></div>
+        </div>
         <div class="jv-loc-col" id="jv-loc-col-europe">
           <div class="jv-loc-hdr">
             <div class="jv-loc-name"><span data-copy="loc.europe"></span> <span class="jv-loc-ccy" id="jv-loc-ccy-europe"></span></div>
@@ -448,7 +457,6 @@ canvas{display:block;}
           </div>
           <div class="jv-loc-pf" id="jv-loc-pf-europe"></div>
           <div class="jv-loc-inst" id="jv-loc-inst-europe"></div>
-          <button type="button" class="btn btn-ghost btn-sm jv-loc-details" data-loc="europe" data-copy="loc.details"></button>
         </div>
         <div class="jv-loc-col" id="jv-loc-col-india">
           <div class="jv-loc-hdr">
@@ -458,7 +466,6 @@ canvas{display:block;}
           </div>
           <div class="jv-loc-pf" id="jv-loc-pf-india"></div>
           <div class="jv-loc-inst" id="jv-loc-inst-india"></div>
-          <button type="button" class="btn btn-ghost btn-sm jv-loc-details" data-loc="india" data-copy="loc.details"></button>
         </div>
         <div class="jv-loc-col" id="jv-loc-col-us">
           <div class="jv-loc-hdr">
@@ -468,21 +475,13 @@ canvas{display:block;}
           </div>
           <div class="jv-loc-pf" id="jv-loc-pf-us"></div>
           <div class="jv-loc-inst" id="jv-loc-inst-us"></div>
-          <button type="button" class="btn btn-ghost btn-sm jv-loc-details" data-loc="us" data-copy="loc.details"></button>
-        </div>
-        <div class="jv-loc-col" id="jv-loc-col-total" style="border-top-color:var(--text);cursor:default;">
-          <div class="jv-loc-hdr">
-            <div class="jv-loc-name"><span data-copy="loc.total"></span> <span class="jv-loc-ccy">EUR</span></div>
-            <div class="jv-loc-meta jv-muted" id="jv-loc-total-note" hidden></div>
-          </div>
-          <div id="jv-loc-total-kpis"></div>
         </div>
       </div>
     </section>
 
-    <!-- Geography & Instrument return charts — after the 4-col panel row, before scatter -->
+    <!-- Geography Returns · Instrument Returns · Risk vs Return — three charts in one row -->
     <div id="jv-perf-chart-wrap" hidden style="margin-bottom:18px">
-      <div class="card-row-2" style="gap:16px;align-items:start">
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start">
         <div class="chart-wrap">
           <div class="chart-title" data-copy="perf.chart.title"></div>
           <div class="card-sub" data-copy="perf.chart.sub" style="margin:-6px 0 10px"></div>
@@ -493,45 +492,59 @@ canvas{display:block;}
           <div class="card-sub" data-copy="inst.chart.sub" style="margin:-6px 0 10px"></div>
           <div class="chart-box" style="height:220px"><canvas id="jv-geo-inst-chart"></canvas></div>
         </div>
+        <div class="chart-wrap">
+          <div class="chart-title" data-copy="geo.map.title"></div>
+          <div class="card-sub" data-copy="geo.map.sub" style="margin:-6px 0 10px"></div>
+          <div class="chart-box" style="height:220px"><canvas id="jv-geo-map"></canvas></div>
+          <p class="jv-muted" id="jv-geo-map-note" hidden style="margin-top:8px"></p>
+        </div>
       </div>
+      <p class="jv-note jv-empty-box" id="jv-geo-map-empty" hidden style="margin-top:8px"></p>
     </div>
 
-    <div class="jv-divider"><span data-copy="pf.divider.universe"></span></div>
+    <div class="jv-divider" id="jv-divider-universe"><span data-copy="pf.divider.universe"></span></div>
 
-    <!-- (2) Risk vs return: scatter + sortable table of every instrument -->
+    <!-- (2) All instruments: sortable table -->
     <section id="sec-jv-universe">
-      <div class="jv-sec-hdr"><div class="card-title" data-copy="pf.s2.title"></div></div>
-      <div class="card-row-2 jv-universe-grid">
-        <div class="jv-pnl-col">
-          <div class="chart-wrap">
-            <div class="chart-title" data-copy="geo.map.title"></div>
-            <div class="card-sub" data-copy="geo.map.sub" style="margin:-8px 0 10px"></div>
-            <div class="chart-box" style="height:340px"><canvas id="jv-geo-map"></canvas></div>
-            <p class="jv-muted" id="jv-geo-map-note" hidden style="margin-top:8px"></p>
-          </div>
-          <p class="jv-note jv-empty-box" id="jv-geo-map-empty" hidden></p>
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-title" data-copy="geo.table.title"></span>
+          <span class="card-sub" data-copy="geo.table.sub"></span>
         </div>
-        <div class="card">
-          <div class="card-hdr">
-            <span class="card-title" data-copy="geo.table.title"></span>
-            <span class="card-sub" data-copy="geo.table.sub"></span>
-          </div>
-          <div class="tbl-wrap jv-geo-scroll" id="jv-geo-table-wrap">
-            <table class="jv-table jv-table-sm" id="jv-geo-table"></table>
-          </div>
-          <p class="jv-note" id="jv-geo-table-empty" hidden></p>
+        <div class="tbl-wrap jv-geo-scroll" id="jv-geo-table-wrap">
+          <table class="jv-table jv-table-sm" id="jv-geo-table"></table>
         </div>
+        <p class="jv-note" id="jv-geo-table-empty" hidden></p>
       </div>
     </section>
 
-    <div class="jv-divider"><span id="jv-pf-detail-divider"></span></div>
+    <div class="jv-divider" id="jv-pf-detail-divider-wrap" hidden><span id="jv-pf-detail-divider"></span></div>
 
     <!-- (3) One location in detail: P&L, target, instruments, drill-down, engines -->
-    <section id="sec-jv-portfolio">
+    <section id="sec-jv-portfolio" hidden>
       <div class="jv-sec-hdr">
         <div class="card-title" id="jv-pf-detail-title"></div>
         <div class="card-sub" data-copy="pf.s3.hint"></div>
       </div>
+
+      <!-- Period returns card — shown only in single-region drill-down -->
+      <div class="card" id="jv-period-card" hidden style="margin-bottom:16px">
+        <div class="card-hdr" style="flex-wrap:wrap;gap:8px">
+          <span class="card-title" id="jv-period-card-title"></span>
+          <div id="jv-period-tabs" style="display:flex;gap:0;border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;background:var(--surface)">
+            <button type="button" class="jv-seg is-active" data-period="daily" data-copy="period.daily"></button>
+            <button type="button" class="jv-seg" data-period="weekly" data-copy="period.weekly"></button>
+            <button type="button" class="jv-seg" data-period="monthly" data-copy="period.monthly"></button>
+          </div>
+        </div>
+        <div class="kpi-row-4" id="jv-period-kpis"></div>
+        <div class="chart-wrap" id="jv-period-chart-wrap" hidden style="margin-top:12px">
+          <div class="chart-title" id="jv-period-chart-title"></div>
+          <div class="chart-box" style="height:180px"><canvas id="jv-period-chart"></canvas></div>
+        </div>
+        <div id="jv-period-hedge" hidden style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border)"></div>
+      </div>
+
       <div id="jv-pf-source"></div>
       <div class="kpi-row-4" id="jv-pf-kpis"></div>
 

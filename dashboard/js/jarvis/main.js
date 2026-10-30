@@ -22,6 +22,7 @@ import {
   LOCS, loadGeography, locCurrency, loadEurRates, renderTotalPanel,
   renderColumn, renderUniverse, initGeoTable,
 } from './regions.js?v=3';
+import { initRegionPeriod, renderRegionPeriod, clearRegionPeriod } from './region-period.js?v=3';
 
 window.closeChartModal = closeChartModal;
 
@@ -54,6 +55,12 @@ function setModel(status) {
 }
 
 // ── region view helpers ────────────────────────────────────────────────────────
+function _applyLocNavHighlight(loc) {
+  for (const l of LOCS) {
+    document.querySelector(`#jv-loc-tabs button[data-loc="${l}"]`)?.classList.toggle('is-active', l === loc);
+  }
+}
+
 function showAllRegions() {
   S.regionMode = false;
   S.geoFilter = null;
@@ -62,14 +69,18 @@ function showAllRegions() {
   if (bc) bc.hidden = true;
   const locsEl = _byId('sec-jv-locations');
   if (locsEl) locsEl.hidden = false;
-  const univDiv = locsEl && locsEl.nextElementSibling;
-  if (univDiv && univDiv.classList.contains('jv-divider')) univDiv.hidden = false;
   const univEl = _byId('sec-jv-universe');
   if (univEl) univEl.hidden = false;
+  _byId('jv-divider-universe') && (_byId('jv-divider-universe').hidden = false);
+  _byId('jv-pf-detail-divider-wrap') && (_byId('jv-pf-detail-divider-wrap').hidden = true);
+  _byId('sec-jv-portfolio') && (_byId('sec-jv-portfolio').hidden = true);
+  clearRegionPeriod();
+  _applyLocNavHighlight(null);
 }
 
 function showRegionView(loc) {
   S.regionMode = true;
+  document.querySelector('.main')?.scrollTo({ top: 0, behavior: 'smooth' });
   const bc = _byId('jv-region-breadcrumb');
   if (bc) bc.hidden = false;
   const back = _byId('jv-region-back');
@@ -79,10 +90,14 @@ function showRegionView(loc) {
   if (head) head.textContent = t(`loc.${loc}`) + (ccy ? ` · ${ccy}` : '');
   const locsEl = _byId('sec-jv-locations');
   if (locsEl) locsEl.hidden = true;
-  const univDiv = locsEl && locsEl.nextElementSibling;
-  if (univDiv && univDiv.classList.contains('jv-divider')) univDiv.hidden = true;
   const univEl = _byId('sec-jv-universe');
   if (univEl) univEl.hidden = true;
+  _byId('jv-divider-universe') && (_byId('jv-divider-universe').hidden = true);
+  _byId('jv-pf-detail-divider-wrap') && (_byId('jv-pf-detail-divider-wrap').hidden = false);
+  _byId('sec-jv-portfolio') && (_byId('sec-jv-portfolio').hidden = false);
+  _byId('jv-perf-chart-wrap') && (_byId('jv-perf-chart-wrap').hidden = true);
+  renderRegionPeriod(loc, S.pfs[loc] || null, S.geo);
+  _applyLocNavHighlight(loc);
 }
 
 // ── tabs ───────────────────────────────────────────────────────────────────────
@@ -96,6 +111,8 @@ function showTab(tab) {
     showAllRegions();                                                // reset to overview; clicking a loc drills in
     if (_pfNeedsLoad()) loadPortfolioSection();
     else if (S.mapHidden) _renderUniverse();                        // CR-P4c-1: drawn while hidden → redraw
+  } else {
+    _applyLocNavHighlight(S.loc);                                   // restore location highlight in chat/concepts
   }
   if (tab === 'concepts') loadConceptsSection();
 }
@@ -271,8 +288,6 @@ function _fetchGeo() {
 function _markActiveColumn(loc) {
   for (const l of LOCS) {
     _byId(`jv-loc-col-${l}`)?.classList.toggle('is-active', l === loc);
-    const b = document.querySelector(`#jv-loc-col-${l} button[data-loc]`);
-    if (b) b.textContent = t(l === loc ? 'loc.details.active' : 'loc.details');
   }
 }
 
@@ -335,7 +350,10 @@ export async function loadPortfolioSection() {
     const job = (fresh ? Promise.resolve(S.pfs[l]) : _fetchPf(l)).catch(() => null).then(() => {
       _renderColumn(l);
       _renderTotalPanel();
-      if (l === S.loc) detail = _renderDetail(l);
+      if (l === S.loc) {
+        detail = _renderDetail(l);
+        if (S.regionMode) renderRegionPeriod(l, S.pfs[l] || null, S.geo);
+      }
     });
     jobs.push(job);
   }
@@ -386,6 +404,7 @@ async function boot() {
   initGeoTable(_onSort);
   initInstrument();
   initConcepts();
+  initRegionPeriod();
   showTab('chat');
   await ensureDevToken();                                           // localhost: dev token (prod: login gate)
   warmup().then(r => setModel(r && r.status === 'ready' ? 'ready' : 'unavailable'))
