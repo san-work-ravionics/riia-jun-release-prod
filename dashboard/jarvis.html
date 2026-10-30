@@ -24,6 +24,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500&family=Epilogue:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 <style>
 /* ── RITA look-and-feel: tokens, shell, sidebar, cards, KPIs, tables, chat — as rita.html ── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -103,6 +104,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
 .kpi-value.pos{color:var(--build);} .kpi-value.neg{color:var(--danger);}
 .kpi-sm{padding:9px 12px;}
 .kpi-sm .kpi-value{font-size:16px;}
+.kpi-delta{font-size:11px;color:var(--t3);margin-top:3px;}
 .card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--sh);margin-bottom:16px;}
 .card-hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;}
 .card-title{font-size:13px;font-weight:600;color:var(--text);}
@@ -213,9 +215,10 @@ canvas{display:block;}
 .jv-sec-hdr .card-sub{margin-top:2px;}
 #jv-pf-status{margin-top:6px;}
 .jv-loc-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:16px;align-items:start;}
-.jv-loc-col{background:var(--surface);border:1.5px solid var(--border);border-top:3px solid var(--border2);border-radius:var(--r);padding:14px;box-shadow:var(--sh);display:flex;flex-direction:column;gap:10px;min-width:0;}
-.jv-loc-col.is-active{border-top-color:var(--run);box-shadow:var(--shm);}
-.jv-loc-name{font-family:var(--fs);font-size:18px;}
+.jv-loc-col{background:var(--surface);border:1.5px solid var(--border);border-top:3px solid var(--border2);border-radius:var(--r);padding:14px;box-shadow:var(--sh);display:flex;flex-direction:column;gap:10px;min-width:0;cursor:pointer;transition:border-color .15s,background .15s,box-shadow .15s;}
+.jv-loc-col:hover{border-top-color:var(--border2);background:var(--surface2);}
+.jv-loc-col.is-active{border-top-color:var(--run);border-color:var(--run-bd);background:var(--run-bg);box-shadow:var(--shm);}
+.jv-loc-name{font-family:var(--fd);font-size:13px;font-weight:700;color:var(--text);}
 .jv-loc-ccy{font-family:var(--fm);font-size:10px;color:var(--t3);background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:1px 6px;vertical-align:middle;}
 .jv-loc-meta{font-size:11px;color:var(--t3);}
 .jv-loc-avg{font-family:var(--fm);font-size:12px;}
@@ -244,6 +247,11 @@ canvas{display:block;}
 .jv-loc-col.is-active .jv-loc-details{color:var(--run);border-color:var(--run-bd);background:var(--run-bg);}
 .jv-divider{display:flex;align-items:center;gap:12px;margin:22px 0 14px;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);}
 .jv-divider::before,.jv-divider::after{content:"";flex:1;height:1px;background:var(--border2);}
+/* Region breadcrumb — shown when a sidebar location button is clicked in Portfolio view */
+.jv-region-breadcrumb{display:flex;align-items:center;gap:8px;margin-bottom:14px;font-size:12px;color:var(--t3);}
+.jv-region-breadcrumb button{background:none;border:none;padding:0;font-family:var(--fd);font-size:12px;color:var(--run);cursor:pointer;}
+.jv-region-breadcrumb button:hover{text-decoration:underline;}
+.jv-region-breadcrumb .sep{color:var(--t4);}
 .jv-geo-scroll{max-height:400px;overflow-y:auto;box-shadow:none;}
 .jv-sort{background:none;border:0;padding:0;font:inherit;color:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer;}
 .jv-sort:hover{color:var(--text);}
@@ -405,6 +413,13 @@ canvas{display:block;}
         <div class="page-sub" data-copy="pf.lead"></div>
         <div class="jv-muted" id="jv-pf-status" hidden></div>
       </div>
+    </div>
+
+    <!-- Breadcrumb shown in region drill-down mode (sidebar location click); hidden in overview mode -->
+    <div id="jv-region-breadcrumb" class="jv-region-breadcrumb" hidden>
+      <button type="button" id="jv-region-back"></button>
+      <span class="sep">›</span>
+      <span id="jv-region-head"></span>
     </div>
 
     <!-- (1) Europe | India | US side by side, each in its own currency -->

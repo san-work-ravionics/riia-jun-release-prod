@@ -121,15 +121,21 @@ export function engineTableHtml(engines, location) {
 // ── P4c: one location column (compact KPIs + saved holdings or the Jarvis pick) ──
 // DR-A3 field map: Value = perf.money.value_now · P&L = perf.money.pnl · This year = perf.ytd_return ·
 // Target = perf.goal_return. Every amount is this location's own A5 figure in its own currency (D1).
+function _kpiD(label, value, cls = '', delta = '', size = ' kpi-sm') {
+  const d = delta ? `<div class="kpi-delta">${esc(delta)}</div>` : '';
+  return `<div class="kpi${size}"><div class="kpi-label">${esc(label)}</div><div class="kpi-value ${cls}">${esc(value)}</div>${d}</div>`;
+}
+
 export function locKpisHtml(pf) {
   const p = (pf && pf.perf) || {};
   const m = p.money;
   const ccy = pf && pf.currency;
+  const entryDelta = p.entry_date ? fmtDate(p.entry_date) : '';
   return [
-    _kpi(t('pf.kpi.value'), m ? fmtMoney(m.value_now, ccy) : '—'),
-    _kpi(t('pf.kpi.pnl'), m ? fmtMoney(m.pnl, ccy) : '—', m ? _sign(m.pnl) : ''),
-    _kpi(t('pf.kpi.this_year'), fmtRate(p.ytd_return), _sign(p.ytd_return)),
-    _kpi(t('loc.kpi.target'), fmtRate(p.goal_return)),
+    _kpiD(t('pf.kpi.value'), m ? fmtMoney(m.value_now, ccy) : '—', '', entryDelta),
+    _kpiD(t('pf.kpi.pnl'), m ? fmtMoney(m.pnl, ccy) : '—', m ? _sign(m.pnl) : '', m && isNum(m.return_since_entry) ? fmtRate(m.return_since_entry) : ''),
+    _kpiD(t('pf.kpi.this_year'), fmtRate(p.ytd_return), _sign(p.ytd_return), isNum(p.target_to_date) ? `${t('target.kpi.to_date')} ${fmtRate(p.target_to_date)}` : ''),
+    _kpiD(t('loc.kpi.target'), fmtRate(p.goal_return), '', t('pf.kpi.annual')),
   ].join('');
 }
 

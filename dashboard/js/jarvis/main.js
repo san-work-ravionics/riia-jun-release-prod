@@ -30,6 +30,7 @@ export const S = {
   geo: null, geoErr: null,                                    // G — cached once per page session
   pfs: {}, pfErr: {}, pfStale: _perLoc(true), pfGen: _perLoc(0), // A5 per location
   sort: { col: 'ret', asc: false }, pfSeq: 0, detailLoc: null, mapHidden: false,
+  regionMode: false,                                          // P4c: single-region drill-down
 };
 
 function _byId(id) { return document.getElementById(id); }
@@ -50,6 +51,36 @@ function setModel(status) {
   el.querySelector('.status-dot').className = `status-dot ${status === 'ready' ? 'ok' : status === 'unavailable' ? 'err' : 'warn'}`;
 }
 
+// ── region view helpers ────────────────────────────────────────────────────────
+function showAllRegions() {
+  S.regionMode = false;
+  const bc = _byId('jv-region-breadcrumb');
+  if (bc) bc.hidden = true;
+  const locsEl = _byId('sec-jv-locations');
+  if (locsEl) locsEl.hidden = false;
+  const univDiv = locsEl && locsEl.nextElementSibling;
+  if (univDiv && univDiv.classList.contains('jv-divider')) univDiv.hidden = false;
+  const univEl = _byId('sec-jv-universe');
+  if (univEl) univEl.hidden = false;
+}
+
+function showRegionView(loc) {
+  S.regionMode = true;
+  const bc = _byId('jv-region-breadcrumb');
+  if (bc) bc.hidden = false;
+  const back = _byId('jv-region-back');
+  if (back) back.textContent = t('tab.portfolio');
+  const head = _byId('jv-region-head');
+  const ccy = locCurrency(loc, S.pfs[loc] || null);
+  if (head) head.textContent = t(`loc.${loc}`) + (ccy ? ` · ${ccy}` : '');
+  const locsEl = _byId('sec-jv-locations');
+  if (locsEl) locsEl.hidden = true;
+  const univDiv = locsEl && locsEl.nextElementSibling;
+  if (univDiv && univDiv.classList.contains('jv-divider')) univDiv.hidden = true;
+  const univEl = _byId('sec-jv-universe');
+  if (univEl) univEl.hidden = true;
+}
+
 // ── tabs ───────────────────────────────────────────────────────────────────────
 function showTab(tab) {
   S.tab = tab;
@@ -58,6 +89,7 @@ function showTab(tab) {
   _byId('jv-tab-concepts')?.classList.toggle('is-active', tab === 'concepts');
   for (const v of ['chat', 'portfolio', 'concepts']) { const el = _byId(`jv-view-${v}`); if (el) el.hidden = tab !== v; }
   if (tab === 'portfolio') {
+    showAllRegions();                                                // reset to overview; clicking a loc drills in
     if (_pfNeedsLoad()) loadPortfolioSection();
     else if (S.mapHidden) _renderUniverse();                        // CR-P4c-1: drawn while hidden → redraw
   }
@@ -67,11 +99,15 @@ function showTab(tab) {
 function initTabs() {
   _byId('jv-loc-tabs')?.addEventListener('click', e => {
     const b = e.target.closest('button[data-loc]');
-    if (b && LOCS.includes(b.dataset.loc) && b.dataset.loc !== S.loc) selectLocation(b.dataset.loc);
+    if (!b || !LOCS.includes(b.dataset.loc)) return;
+    const loc = b.dataset.loc;
+    if (S.tab === 'portfolio') showRegionView(loc);                 // drill into single-region view
+    if (loc !== S.loc) selectLocation(loc);
   });
   _byId('jv-tab-chat')?.addEventListener('click', () => showTab('chat'));
   _byId('jv-tab-portfolio')?.addEventListener('click', () => showTab('portfolio'));
   _byId('jv-tab-concepts')?.addEventListener('click', () => showTab('concepts'));
+  _byId('jv-region-back')?.addEventListener('click', showAllRegions);  // breadcrumb back → overview
   // Delegated: each column's "Show details" button carries data-loc (no onclick).
   _byId('sec-jv-locations')?.addEventListener('click', e => {
     const b = e.target.closest('button[data-loc]');

@@ -116,19 +116,22 @@ export function locAvgHtml(insts) {
   return `<span class="jv-muted">${esc(label)}</span> <b class="${_sign(a.value)}">${esc(isNum(a.value) ? fmtPctPoint(a.value) : '—')}</b>`;
 }
 
-// One column's ranked instrument list; Held / Picked badges from that location's A5.
+// One column's ranked instrument list as compact geo-kpi tiles (auto-fit grid).
+// Each tile keeps class jv-loc-row for test assertions and held/selected highlighting.
 export function locInstrumentsHtml(insts, pf, loc) {
   const rows = rankInstruments(insts);
   if (!rows.length) return `<p class="jv-muted">${esc(t('loc.inst.empty', { location: locationName(loc) }))}</p>`;
-  return rows.map(i => {
+  const tiles = rows.map(i => {
     const k = _inKey(_a5Row(i.id, pf));
-    const badge = k ? ` <span class="jv-badge jv-badge-${k}">${esc(t(`grid.in.${k}`))}</span>` : '';
     const v = _ret(i);
-    return `<div class="jv-loc-row${k ? ' is-mine' : ''}">
-      <div class="jv-loc-row-id"><span class="mono">${esc(i.id)}</span>${badge}
-        ${i.sector ? `<span class="jv-sector">${esc(i.sector)}</span>` : ''}</div>
-      ${_miniBar(v)}<span class="num ${_sign(v)}">${esc(retLabel(i))}</span></div>`;
+    const sig = i.signal ? (i.signal.charAt(0).toUpperCase() + i.signal.slice(1)) : (i.sector || '');
+    const badge = k ? `<span class="jv-badge jv-badge-${k}" style="display:block;margin-top:3px">${esc(t(`grid.in.${k}`))}</span>` : '';
+    return `<div class="kpi jv-loc-row${k ? ' is-mine' : ''}" style="padding:5px 6px;box-shadow:none">
+      <div class="kpi-label" style="font-size:10px;font-weight:600;min-height:2.2em;line-height:1.3">${esc(i.id)}</div>
+      <div class="kpi-value ${_sign(v)}" style="font-size:13px">${esc(retLabel(i))}</div>
+      ${sig ? `<div class="kpi-delta" style="font-size:10px">${esc(sig)}</div>` : ''}${badge}</div>`;
   }).join('');
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(72px,1fr));gap:5px;padding:2px 0">${tiles}</div>`;
 }
 
 // ── sortable table ─────────────────────────────────────────────────────────────

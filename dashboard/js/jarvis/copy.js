@@ -83,6 +83,7 @@ export const COPY = {
   'pf.kpi.pnl': 'P&L',
   'pf.kpi.return_since': 'Return since {date}',
   'pf.kpi.this_year': 'This year',
+  'pf.kpi.annual': 'annual target',
   'pnl.title': 'P&L since you saved it',
   'pnl.empty': 'P&L starts after the next close.',
   'pnl.sleeves_note': 'P&L in money needs a saved portfolio. Save this pick in Portfolio Builder to see it.',
