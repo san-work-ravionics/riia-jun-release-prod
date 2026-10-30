@@ -122,8 +122,7 @@ function initTabs() {
     const col = e.target.closest('.jv-loc-col[id^="jv-loc-col-"]');
     if (!col) return;
     const loc = col.id.replace('jv-loc-col-', '');
-    if (!LOCS.includes(loc)) return;
-    S.geoFilter = S.geoFilter === loc ? null : loc;
+    S.geoFilter = (LOCS.includes(loc) && S.geoFilter !== loc) ? loc : null;
     for (const l of LOCS) _byId(`jv-loc-col-${l}`)?.classList.toggle('is-filtered', l === S.geoFilter);
     _renderUniverse();
   });
