@@ -214,10 +214,11 @@ canvas{display:block;}
 .jv-sec-hdr{margin-bottom:12px;}
 .jv-sec-hdr .card-sub{margin-top:2px;}
 #jv-pf-status{margin-top:6px;}
-.jv-loc-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:16px;align-items:start;}
+.jv-loc-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:16px;align-items:start;}
 .jv-loc-col{background:var(--surface);border:1.5px solid var(--border);border-top:3px solid var(--border2);border-radius:var(--r);padding:14px;box-shadow:var(--sh);display:flex;flex-direction:column;gap:10px;min-width:0;cursor:pointer;transition:border-color .15s,background .15s,box-shadow .15s;}
 .jv-loc-col:hover{border-top-color:var(--border2);background:var(--surface2);}
 .jv-loc-col.is-active{border-top-color:var(--run);border-color:var(--run-bd);background:var(--run-bg);box-shadow:var(--shm);}
+.jv-loc-col.is-filtered{border-top-color:var(--build);border-color:var(--build-bd);background:var(--build-bg);}
 .jv-loc-name{font-family:var(--fd);font-size:13px;font-weight:700;color:var(--text);}
 .jv-loc-ccy{font-family:var(--fm);font-size:10px;color:var(--t3);background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:1px 6px;vertical-align:middle;}
 .jv-loc-meta{font-size:11px;color:var(--t3);}
@@ -311,6 +312,9 @@ canvas{display:block;}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 
+@media (max-width:1400px){
+  .jv-loc-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
 @media (max-width:1100px){
   .jv-chat-grid{grid-template-columns:1fr;height:auto;min-height:0;}
   .jv-chat-grid .mpanel{min-height:420px;}
@@ -466,6 +470,13 @@ canvas{display:block;}
           <div class="jv-loc-inst" id="jv-loc-inst-us"></div>
           <button type="button" class="btn btn-ghost btn-sm jv-loc-details" data-loc="us" data-copy="loc.details"></button>
         </div>
+        <div class="jv-loc-col" id="jv-loc-col-total" style="border-top-color:var(--text);cursor:default;">
+          <div class="jv-loc-hdr">
+            <div class="jv-loc-name"><span data-copy="loc.total"></span> <span class="jv-loc-ccy">EUR</span></div>
+            <div class="jv-loc-meta jv-muted" id="jv-loc-total-note" hidden></div>
+          </div>
+          <div id="jv-loc-total-kpis"></div>
+        </div>
       </div>
     </section>
 
@@ -494,6 +505,11 @@ canvas{display:block;}
           </div>
           <p class="jv-note" id="jv-geo-table-empty" hidden></p>
         </div>
+      </div>
+      <div class="chart-wrap" id="jv-perf-chart-wrap" hidden style="margin-top:18px">
+        <div class="chart-title" data-copy="perf.chart.title"></div>
+        <div class="card-sub" data-copy="perf.chart.sub" style="margin:-6px 0 10px"></div>
+        <div class="chart-box" style="height:180px"><canvas id="jv-perf-chart"></canvas></div>
       </div>
     </section>
 

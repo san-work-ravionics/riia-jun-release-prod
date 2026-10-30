@@ -321,7 +321,7 @@ log.length = 0;
 await m.loadPortfolioSection(); await settle();
 console.log(JSON.stringify({ firstCount, second: log.filter(u => !u.includes('/instrument')),
   title: e('jv-pf-detail-title').textContent }));""")
-    assert r["firstCount"] == 4
+    assert r["firstCount"] == 6
     assert r["second"] == []
     assert r["title"] == "Europe in detail · EUR"
 
@@ -338,8 +338,8 @@ globalThis.fetch = async (url) => { log.push(url);
 const t0 = Date.now();
 await m.loadPortfolioSection();
 console.log(JSON.stringify({ peak, ms: Date.now() - t0 }));""")
-    assert r["peak"] == 4
-    assert r["ms"] < 4 * 50
+    assert r["peak"] == 6
+    assert r["ms"] < 6 * 50
 
 
 # ── 4. CR-P4c-1: Concepts → Portfolio map render ─────────────────────────────

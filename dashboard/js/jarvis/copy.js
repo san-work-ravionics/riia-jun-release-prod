@@ -203,6 +203,15 @@ export const COPY = {
   'pf.s3.title': '{location} in detail · {currency}',
   'pf.s3.hint': 'Pick the location in the sidebar or with Show details. P&L, target and engines here are for this location only.',
 
+  'loc.total': 'All Regions',
+  'loc.total.note': 'at today\'s rates',
+  'loc.total.empty': 'No saved portfolios',
+
+  'perf.chart.title': 'Geography & Portfolio Returns',
+  'perf.chart.sub': 'Market average (1Y) vs your portfolio (YTD) by region',
+  'perf.chart.market': 'Market avg (1Y)',
+  'perf.chart.portfolio': 'My portfolio (YTD)',
+
   // ── Concepts page (how the flow works; RITA Concepts + Agents & Linked Analytics pattern) ──
   'tab.concepts': 'Concepts',
   'cx.sub': 'How Jarvis gets from your What I Need goal to a tracked portfolio — and which parts are models',

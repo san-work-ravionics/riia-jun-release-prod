@@ -729,6 +729,8 @@ for (const p of pending.splice(0)) {{
   if (p.url.includes('geography-overview')) p.res(jr(FX.G_geography));
   else if (p.url.includes('location=india')) p.res(jr({{ detail: 'india down' }}, 500));
   else if (p.url.includes('/jarvis/portfolio')) p.res(jr(a5(p.url.split('location=')[1])));
+  else if (p.url.includes('/fx?base=EUR&quote=INR')) p.res(jr({{ base: 'EUR', quote: 'INR', rate: 89.5, as_of: '2026-10-30', source: 'cache' }}));
+  else if (p.url.includes('/fx?base=EUR&quote=USD')) p.res(jr({{ base: 'EUR', quote: 'USD', rate: 1.08, as_of: '2026-10-30', source: 'cache' }}));
 }}
 for (let i = 0; i < 20 && !pending.length; i++) await new Promise(r => setTimeout(r, 5));
 const a6 = pending.map(p => p.url);
@@ -745,6 +747,8 @@ console.log(JSON.stringify({{ before, a6, charts,
     assert r["before"] == ["/api/v1/experience/jarvis/portfolio?location=europe",
                            "/api/v1/experience/jarvis/portfolio?location=india",
                            "/api/v1/experience/jarvis/portfolio?location=us",
+                           "/api/v1/experience/rita/fx?base=EUR&quote=INR",
+                           "/api/v1/experience/rita/fx?base=EUR&quote=USD",
                            "/api/v1/experience/rita/geography-overview"]
     assert r["a6"] == ["/api/v1/experience/jarvis/instrument?location=europe&instrument=E1"]
     eur, ind, us = r["pf"]

@@ -19,7 +19,8 @@ import {
 import { loadInstrument, renderInstrument, renderInstrumentError, initInstrument } from './instrument.js?v=3';
 import { renderConcepts, initConcepts } from './concepts.js?v=3';
 import {
-  LOCS, loadGeography, locCurrency, renderColumn, renderUniverse, initGeoTable,
+  LOCS, loadGeography, locCurrency, loadEurRates, renderTotalPanel,
+  renderColumn, renderUniverse, initGeoTable,
 } from './regions.js?v=3';
 
 window.closeChartModal = closeChartModal;
@@ -31,6 +32,7 @@ export const S = {
   pfs: {}, pfErr: {}, pfStale: _perLoc(true), pfGen: _perLoc(0), // A5 per location
   sort: { col: 'ret', asc: false }, pfSeq: 0, detailLoc: null, mapHidden: false,
   regionMode: false,                                          // P4c: single-region drill-down
+  eurRates: {}, geoFilter: null,                             // total EUR panel + scatter/table filter
 };
 
 function _byId(id) { return document.getElementById(id); }
@@ -54,6 +56,8 @@ function setModel(status) {
 // ── region view helpers ────────────────────────────────────────────────────────
 function showAllRegions() {
   S.regionMode = false;
+  S.geoFilter = null;
+  for (const l of LOCS) _byId(`jv-loc-col-${l}`)?.classList.remove('is-filtered');
   const bc = _byId('jv-region-breadcrumb');
   if (bc) bc.hidden = true;
   const locsEl = _byId('sec-jv-locations');
@@ -108,10 +112,20 @@ function initTabs() {
   _byId('jv-tab-portfolio')?.addEventListener('click', () => showTab('portfolio'));
   _byId('jv-tab-concepts')?.addEventListener('click', () => showTab('concepts'));
   _byId('jv-region-back')?.addEventListener('click', showAllRegions);  // breadcrumb back → overview
-  // Delegated: each column's "Show details" button carries data-loc (no onclick).
+  // Delegated: "Show details" button → change location; card body → toggle scatter/table filter.
   _byId('sec-jv-locations')?.addEventListener('click', e => {
-    const b = e.target.closest('button[data-loc]');
-    if (b && LOCS.includes(b.dataset.loc) && b.dataset.loc !== S.loc) selectLocation(b.dataset.loc);
+    const btn = e.target.closest('button[data-loc]');
+    if (btn) {
+      if (LOCS.includes(btn.dataset.loc) && btn.dataset.loc !== S.loc) selectLocation(btn.dataset.loc);
+      return;
+    }
+    const col = e.target.closest('.jv-loc-col[id^="jv-loc-col-"]');
+    if (!col) return;
+    const loc = col.id.replace('jv-loc-col-', '');
+    if (!LOCS.includes(loc)) return;
+    S.geoFilter = S.geoFilter === loc ? null : loc;
+    for (const l of LOCS) _byId(`jv-loc-col-${l}`)?.classList.toggle('is-filtered', l === S.geoFilter);
+    _renderUniverse();
   });
 }
 
@@ -234,6 +248,16 @@ function _fetchPf(loc) {
   return promise;
 }
 
+let _eurRateReq = null;
+function _fetchEurRates() {
+  if (S.eurRates.INR !== undefined) return Promise.resolve(S.eurRates);
+  if (!_eurRateReq) {
+    _eurRateReq = loadEurRates().then(rates => { S.eurRates = rates; return rates; })
+                                .finally(() => { _eurRateReq = null; });
+  }
+  return _eurRateReq;
+}
+
 let _geoReq = null;
 function _fetchGeo() {
   if (S.geo) return Promise.resolve(S.geo);
@@ -260,7 +284,9 @@ function _renderColumn(loc) {
 
 // Chart.js can't size a hidden canvas: remember when the map was drawn with Portfolio hidden
 // (Concepts loads the portfolio data first) so showTab('portfolio') redraws it from the cache.
-function _renderUniverse() { S.mapHidden = S.tab !== 'portfolio'; renderUniverse(S.geo, S.pfs, S.sort); }
+function _renderUniverse() { S.mapHidden = S.tab !== 'portfolio'; renderUniverse(S.geo, S.pfs, S.sort, S.geoFilter); }
+
+function _renderTotalPanel() { renderTotalPanel(S.pfs, S.eurRates); }
 
 function _onSort(col) {
   S.sort = S.sort.col === col ? { col, asc: !S.sort.asc } : { col, asc: ['id', 'loc', 'ccy', 'signal'].includes(col) };
@@ -301,11 +327,15 @@ export async function loadPortfolioSection() {
   const src = _byId('jv-pf-source');
   if (src && (S.pfStale[loc] || !S.pfs[loc])) { src.textContent = '…'; src.hidden = false; }
   let detail = null;
-  const jobs = [_fetchGeo().catch(() => null).then(() => { LOCS.forEach(_renderColumn); })];
+  const jobs = [
+    _fetchGeo().catch(() => null).then(() => { LOCS.forEach(_renderColumn); }),
+    _fetchEurRates().catch(() => null).then(() => _renderTotalPanel()),
+  ];
   for (const l of LOCS) {
     const fresh = S.pfs[l] && !S.pfStale[l];
     const job = (fresh ? Promise.resolve(S.pfs[l]) : _fetchPf(l)).catch(() => null).then(() => {
       _renderColumn(l);
+      _renderTotalPanel();
       if (l === S.loc) detail = _renderDetail(l);
     });
     jobs.push(job);
@@ -313,6 +343,7 @@ export async function loadPortfolioSection() {
   await Promise.allSettled(jobs);
   if (seq !== S.pfSeq) return;
   _renderUniverse();
+  _renderTotalPanel();
   _byIdText('jv-pf-status', '');
   if (detail) await detail;
 }

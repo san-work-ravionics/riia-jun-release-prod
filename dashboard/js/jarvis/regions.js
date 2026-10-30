@@ -8,7 +8,7 @@ import { mkChart, destroyChart, C } from '../shared/charts.js';
 import { REGION_CCY, instrumentCurrency } from '../shared/portfolio-currency.js';
 import { esc } from './esc.js?v=3';
 import { t } from './copy.js?v=3';
-import { fmtNum, fmtPctPoint, isNum, locationName } from './format.js?v=3';
+import { fmtMoney, fmtNum, fmtPctPoint, isNum, locationName } from './format.js?v=3';
 import { locPortfolioHtml } from './portfolio.js?v=3';
 
 export const LOCS = ['europe', 'india', 'us'];
@@ -17,6 +17,25 @@ const _LOC_COLOR = { europe: C.run, india: C.warn, us: C.mon, other: C.t4 };
 
 export function loadGeography() {
   return api('/api/v1/experience/rita/geography-overview');            // G
+}
+
+// EUR conversion rates: fetches INR and USD rates from the FX endpoint.
+// Returns { INR: float|null, USD: float|null } — null when the rate is unavailable.
+export function loadEurRates() {
+  return Promise.allSettled([
+    api('/api/v1/experience/rita/fx?base=EUR&quote=INR'),
+    api('/api/v1/experience/rita/fx?base=EUR&quote=USD'),
+  ]).then(([inr, usd]) => ({
+    INR: inr.status === 'fulfilled' ? inr.value.rate : null,
+    USD: usd.status === 'fulfilled' ? usd.value.rate : null,
+  }));
+}
+
+function _toEur(value, ccy, rates) {
+  if (!isNum(value)) return null;
+  if (!ccy || ccy === 'EUR') return value;
+  const r = rates && rates[ccy];
+  return isNum(r) ? value / r : null;
 }
 
 // geography region (EU / India / US / Other) → location key, or null for Other / unknown.
@@ -196,13 +215,79 @@ export function initGeoTable(onSort) {
   });
 }
 
+// ── total panel (all-regions aggregate in EUR) ─────────────────────────────────
+export function renderTotalPanel(pfs, rates) {
+  const kpisEl = document.getElementById('jv-loc-total-kpis');
+  const noteEl = document.getElementById('jv-loc-total-note');
+  if (!kpisEl) return;
+  let totalVal = null, totalPnl = null;
+  for (const loc of LOCS) {
+    const pf = pfs[loc];
+    const m = pf && pf.perf && pf.perf.money;
+    if (!m) continue;
+    const ccy = locCurrency(loc, pf);
+    const v = _toEur(m.value_now, ccy, rates);
+    const p = _toEur(m.pnl, ccy, rates);
+    if (v !== null) totalVal = (totalVal ?? 0) + v;
+    if (p !== null) totalPnl = (totalPnl ?? 0) + p;
+  }
+  const hasRates = rates && (rates.INR !== null || rates.USD !== null);
+  if (noteEl) { noteEl.textContent = hasRates ? t('loc.total.note') : ''; noteEl.hidden = !hasRates; }
+  const _s = v => (v !== null && v > 0 ? 'pos' : v !== null && v < 0 ? 'neg' : '');
+  kpisEl.innerHTML = totalVal !== null
+    ? `<div class="jv-loc-kpis">
+        <div class="kpi kpi-sm"><div class="kpi-label">${esc(t('pf.kpi.value'))}</div><div class="kpi-value">${esc(fmtMoney(totalVal, 'EUR'))}</div></div>
+        ${totalPnl !== null ? `<div class="kpi kpi-sm"><div class="kpi-label">${esc(t('pf.kpi.pnl'))}</div><div class="kpi-value ${_s(totalPnl)}">${esc(fmtMoney(totalPnl, 'EUR'))}</div></div>` : ''}
+      </div>`
+    : `<p class="jv-muted" style="font-size:11px">${esc(t('loc.total.empty'))}</p>`;
+}
+
+// ── geography & portfolio performance line chart ───────────────────────────────
+// Two lines: market average 1Y return per region vs portfolio YTD return per region.
+export function drawPerfChart(geo, pfs = {}) {
+  const wrap = document.getElementById('jv-perf-chart-wrap');
+  const canvas = document.getElementById('jv-perf-chart');
+  if (!canvas) return;
+  const byLoc = geo ? groupByLocation(geo) : {};
+  const labels = LOCS.map(l => locationName(l));
+  const marketData = LOCS.map(l => { const a = regionAvg(byLoc[l] || []); return isNum(a.value) ? a.value : null; });
+  const pfData = LOCS.map(l => { const pf = pfs[l]; const v = pf && pf.perf && isNum(pf.perf.ytd_return) ? pf.perf.ytd_return : null; return v; });
+  const hasData = marketData.some(v => v !== null) || pfData.some(v => v !== null);
+  if (!hasData) { destroyChart('jv-perf-chart'); if (wrap) wrap.hidden = true; return; }
+  if (wrap) wrap.hidden = false;
+  const mono = { family: C.mono, size: 10 };
+  mkChart('jv-perf-chart', {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: t('perf.chart.market'), data: marketData, borderColor: C.warn, backgroundColor: `${C.warn}18`, fill: false, pointRadius: 5, pointHoverRadius: 7, borderWidth: 2, tension: 0.25, spanGaps: true },
+        { label: t('perf.chart.portfolio'), data: pfData, borderColor: C.run, backgroundColor: `${C.run}18`, fill: false, pointRadius: 5, pointHoverRadius: 7, borderWidth: 2, tension: 0.25, spanGaps: true },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw !== null ? fmtPctPoint(ctx.raw) : '—'}` } },
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: mono } },
+        y: { grid: { color: 'rgba(0,0,0,.05)' }, ticks: { font: mono, callback: v => `${v}%` } },
+      },
+    },
+  });
+}
+
 // ── risk vs return map ─────────────────────────────────────────────────────────
 // Pure: one scatter dataset per location (colour), held → larger dot + ring; instruments
 // without a 1Y return or a risk score are not plotted (counted in `skipped`).
-export function geoMapData(geo, pfs = {}) {
+// Optional filter: when set to a loc key, only that location's instruments are shown.
+export function geoMapData(geo, pfs = {}, filter = null) {
   const groups = { europe: [], india: [], us: [], other: [] };
   let skipped = 0;
   for (const i of allInstruments(geo)) {
+    if (filter && i.loc !== filter) continue;
     if (!isNum(i.return_1y_pct) || !isNum(i.risk_score)) { skipped += 1; continue; }
     groups[i.loc || 'other'].push({ x: i.return_1y_pct, y: i.risk_score, id: i.id, held: _isHeld(i, pfs) });
   }
@@ -221,8 +306,8 @@ export function geoMapData(geo, pfs = {}) {
   return { datasets, skipped, plotted: datasets.reduce((s, d) => s + d.data.length, 0) };
 }
 
-export function drawGeoMap(geo, pfs = {}) {
-  const { datasets, skipped, plotted } = geoMapData(geo, pfs);
+export function drawGeoMap(geo, pfs = {}, filter = null) {
+  const { datasets, skipped, plotted } = geoMapData(geo, pfs, filter);
   const wrap = document.getElementById('jv-geo-map')?.closest('.chart-wrap');
   const empty = document.getElementById('jv-geo-map-empty');
   const note = document.getElementById('jv-geo-map-note');
@@ -285,9 +370,13 @@ export function renderColumn(loc, { geo = null, geoErr = null, pf = null, pfErr 
 }
 
 // Map + table of every instrument (Other included); empty / failed G → the empty texts.
-export function renderUniverse(geo, pfs = {}, sort = { col: 'ret', asc: false }) {
-  const rows = allInstruments(geo);
-  drawGeoMap(geo, pfs);
+// Optional filter: when set to a loc key, scatter and table show only that location.
+// The performance line chart always shows all locations for comparison.
+export function renderUniverse(geo, pfs = {}, sort = { col: 'ret', asc: false }, filter = null) {
+  const allRows = allInstruments(geo);
+  const rows = filter ? allRows.filter(i => i.loc === filter) : allRows;
+  drawGeoMap(geo, pfs, filter);
+  drawPerfChart(geo, pfs);
   const wrap = document.getElementById('jv-geo-table-wrap');
   _html('jv-geo-table', rows.length ? geoTableHtml(rows, sort, pfs) : '');
   if (wrap) wrap.hidden = !rows.length;
