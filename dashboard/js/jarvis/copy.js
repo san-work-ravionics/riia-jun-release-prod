@@ -157,11 +157,11 @@ export const COPY = {
   'err.load': "Couldn't load — {message}",
 
   // ── Portfolio page (F44 P4c: RITA Portfolio Builder layout — locations side by side) ──
-  'pf.lead': 'Europe, India and US side by side — each in its own currency, never added together. Read-only: change holdings in RITA Portfolio Builder.',
+  'pf.lead': 'Three regions, each in its own currency.',
   'pf.loading': 'Loading your locations…',
   'pf.s1.title': 'Your locations, instruments ranked by return',
   'pf.s1.hint': "One column per location, in that location's currency. Your saved holdings are on top; every instrument we cover is below, best 1-year return first.",
-  'loc.meta': '{n} instruments · ranked by 1Y return',
+  'loc.meta': '{n} instruments',
   'loc.avg': 'Avg 1Y',
   'loc.avg.day': 'Avg day (est.)',
   'loc.pf.title': 'Your portfolio',

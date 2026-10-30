@@ -252,6 +252,13 @@ canvas{display:block;}
 .jv-region-breadcrumb button{background:none;border:none;padding:0;font-family:var(--fd);font-size:12px;color:var(--run);cursor:pointer;}
 .jv-region-breadcrumb button:hover{text-decoration:underline;}
 .jv-region-breadcrumb .sep{color:var(--t4);}
+/* Overview cards — clean summary: hide instrument tiles, chips, cash, verbose section header */
+#sec-jv-locations .jv-sec-hdr{display:none;}
+#sec-jv-locations .jv-loc-inst{display:none;}
+#sec-jv-locations .jv-loc-pf-title{display:none;}
+#sec-jv-locations .jv-hold-chips{display:none;}
+#sec-jv-locations .jv-loc-cash{display:none;}
+#sec-jv-locations .jv-loc-pf .jv-muted{display:none;}
 .jv-geo-scroll{max-height:400px;overflow-y:auto;box-shadow:none;}
 .jv-sort{background:none;border:0;padding:0;font:inherit;color:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer;}
 .jv-sort:hover{color:var(--text);}

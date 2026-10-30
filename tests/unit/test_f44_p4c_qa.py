@@ -211,7 +211,7 @@ console.log(JSON.stringify({{ meta: e('jv-loc-meta-india').textContent, avg: e('
   inst: e('jv-loc-inst-india').innerHTML, pf: e('jv-loc-pf-india').innerHTML,
   mapEmpty: [e('jv-geo-map-empty').textContent, e('jv-geo-map-empty').hidden], mapWrapHidden: e('wrap:jv-geo-map').hidden,
   tableEmpty: e('jv-geo-table-empty').textContent, tableWrapHidden: e('jv-geo-table-wrap').hidden }}));""")
-    assert r["meta"] == "0 instruments · ranked by 1Y return"
+    assert r["meta"] == "0 instruments"
     assert ">—<" in r["avg"]
     assert "No instruments for India yet." in r["inst"]
     assert "jv-loc-kpis" in r["pf"]

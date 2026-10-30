@@ -636,7 +636,7 @@ console.log(JSON.stringify({{
     assert r["sortId"] == ["D", "C", "B", "A"]
     assert r["label"] == ["+10.0%", "+2.0% (est.)", "—"]
     assert "No instruments for India yet." in r["empty"]
-    assert r["meta"] == "1 instruments · ranked by 1Y return"
+    assert r["meta"] == "1 instruments"
 
 
 @_needs_node
