@@ -480,6 +480,22 @@ canvas{display:block;}
       </div>
     </section>
 
+    <!-- Geography & Instrument return charts — after the 4-col panel row, before scatter -->
+    <div id="jv-perf-chart-wrap" hidden style="margin-bottom:18px">
+      <div class="card-row-2" style="gap:16px;align-items:start">
+        <div class="chart-wrap">
+          <div class="chart-title" data-copy="perf.chart.title"></div>
+          <div class="card-sub" data-copy="perf.chart.sub" style="margin:-6px 0 10px"></div>
+          <div class="chart-box" style="height:220px"><canvas id="jv-perf-chart"></canvas></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title" data-copy="inst.chart.title"></div>
+          <div class="card-sub" data-copy="inst.chart.sub" style="margin:-6px 0 10px"></div>
+          <div class="chart-box" style="height:220px"><canvas id="jv-geo-inst-chart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
     <div class="jv-divider"><span data-copy="pf.divider.universe"></span></div>
 
     <!-- (2) Risk vs return: scatter + sortable table of every instrument -->
@@ -505,11 +521,6 @@ canvas{display:block;}
           </div>
           <p class="jv-note" id="jv-geo-table-empty" hidden></p>
         </div>
-      </div>
-      <div class="chart-wrap" id="jv-perf-chart-wrap" hidden style="margin-top:18px">
-        <div class="chart-title" data-copy="perf.chart.title"></div>
-        <div class="card-sub" data-copy="perf.chart.sub" style="margin:-6px 0 10px"></div>
-        <div class="chart-box" style="height:180px"><canvas id="jv-perf-chart"></canvas></div>
       </div>
     </section>
 

@@ -572,7 +572,9 @@ def test_html_portfolio_view_children_parsed():
     kids = [(c.tag, c.attrs.get("id"), c.attrs.get("class")) for c in view.children]
     assert kids == [("div", None, "page-hdr"),
                     ("div", "jv-region-breadcrumb", "jv-region-breadcrumb"),
-                    ("section", "sec-jv-locations", None), ("div", None, "jv-divider"),
+                    ("section", "sec-jv-locations", None),
+                    ("div", "jv-perf-chart-wrap", None),
+                    ("div", None, "jv-divider"),
                     ("section", "sec-jv-universe", None), ("div", None, "jv-divider"),
                     ("section", "sec-jv-portfolio", None)]
 

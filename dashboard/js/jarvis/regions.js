@@ -242,19 +242,19 @@ export function renderTotalPanel(pfs, rates) {
     : `<p class="jv-muted" style="font-size:11px">${esc(t('loc.total.empty'))}</p>`;
 }
 
-// ── geography & portfolio performance line chart ───────────────────────────────
-// Two lines: market average 1Y return per region vs portfolio YTD return per region.
-export function drawPerfChart(geo, pfs = {}) {
-  const wrap = document.getElementById('jv-perf-chart-wrap');
+// ── geography & portfolio performance charts (rendered side by side) ──────────
+// Left: line chart — market avg 1Y vs portfolio YTD per region.
+// Right: horizontal bar chart — top instrument returns, coloured by location.
+// renderUniverse manages the shared wrapper visibility.
+
+function _drawPerfChart(geo, pfs) {
   const canvas = document.getElementById('jv-perf-chart');
-  if (!canvas) return;
+  if (!canvas) return false;
   const byLoc = geo ? groupByLocation(geo) : {};
   const labels = LOCS.map(l => locationName(l));
   const marketData = LOCS.map(l => { const a = regionAvg(byLoc[l] || []); return isNum(a.value) ? a.value : null; });
-  const pfData = LOCS.map(l => { const pf = pfs[l]; const v = pf && pf.perf && isNum(pf.perf.ytd_return) ? pf.perf.ytd_return : null; return v; });
-  const hasData = marketData.some(v => v !== null) || pfData.some(v => v !== null);
-  if (!hasData) { destroyChart('jv-perf-chart'); if (wrap) wrap.hidden = true; return; }
-  if (wrap) wrap.hidden = false;
+  const pfData = LOCS.map(l => { const pf = pfs[l]; return pf && pf.perf && isNum(pf.perf.ytd_return) ? pf.perf.ytd_return : null; });
+  if (!marketData.some(v => v !== null) && !pfData.some(v => v !== null)) { destroyChart('jv-perf-chart'); return false; }
   const mono = { family: C.mono, size: 10 };
   mkChart('jv-perf-chart', {
     type: 'line',
@@ -277,6 +277,44 @@ export function drawPerfChart(geo, pfs = {}) {
       },
     },
   });
+  return true;
+}
+
+function _drawInstChart(geo, filter) {
+  const canvas = document.getElementById('jv-geo-inst-chart');
+  if (!canvas) return false;
+  const all = (geo ? allInstruments(geo) : []).filter(i => isNum(_ret(i)));
+  const src = filter ? all.filter(i => i.loc === filter) : all;
+  const top = rankInstruments(src).slice(0, 12);
+  if (!top.length) { destroyChart('jv-geo-inst-chart'); return false; }
+  const labels = top.map(i => i.id);
+  const data = top.map(i => _ret(i));
+  const colors = top.map(i => _LOC_COLOR[i.loc || 'other']);
+  const mono = { family: C.mono, size: 10 };
+  mkChart('jv-geo-inst-chart', {
+    type: 'bar',
+    data: { labels, datasets: [{ data, backgroundColor: colors.map(c => `${c}B0`), borderColor: colors, borderWidth: 1, borderRadius: 2 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => `${ctx.label}: ${fmtPctPoint(ctx.raw)}` } },
+      },
+      scales: {
+        x: { grid: { color: 'rgba(0,0,0,.05)' }, ticks: { font: mono, callback: v => `${v}%` } },
+        y: { grid: { display: false }, ticks: { font: { family: C.mono, size: 9 }, autoSkip: false } },
+      },
+    },
+  });
+  return true;
+}
+
+// Kept exported for backward compatibility; callers should prefer renderUniverse.
+export function drawPerfChart(geo, pfs = {}) {
+  const wrap = document.getElementById('jv-perf-chart-wrap');
+  const has = _drawPerfChart(geo, pfs) || _drawInstChart(geo, null);
+  if (wrap) wrap.hidden = !has;
 }
 
 // ── risk vs return map ─────────────────────────────────────────────────────────
@@ -376,7 +414,9 @@ export function renderUniverse(geo, pfs = {}, sort = { col: 'ret', asc: false },
   const allRows = allInstruments(geo);
   const rows = filter ? allRows.filter(i => i.loc === filter) : allRows;
   drawGeoMap(geo, pfs, filter);
-  drawPerfChart(geo, pfs);
+  const perfWrap = document.getElementById('jv-perf-chart-wrap');
+  const hasPerf = _drawPerfChart(geo, pfs) || _drawInstChart(geo, filter);
+  if (perfWrap) perfWrap.hidden = !hasPerf;
   const wrap = document.getElementById('jv-geo-table-wrap');
   _html('jv-geo-table', rows.length ? geoTableHtml(rows, sort, pfs) : '');
   if (wrap) wrap.hidden = !rows.length;

@@ -207,10 +207,12 @@ export const COPY = {
   'loc.total.note': 'at today\'s rates',
   'loc.total.empty': 'No saved portfolios',
 
-  'perf.chart.title': 'Geography & Portfolio Returns',
+  'perf.chart.title': 'Geography Returns',
   'perf.chart.sub': 'Market average (1Y) vs your portfolio (YTD) by region',
   'perf.chart.market': 'Market avg (1Y)',
   'perf.chart.portfolio': 'My portfolio (YTD)',
+  'inst.chart.title': 'Instrument Returns',
+  'inst.chart.sub': 'Top performers · colour = location',
 
   // ── Concepts page (how the flow works; RITA Concepts + Agents & Linked Analytics pattern) ──
   'tab.concepts': 'Concepts',
