@@ -1,0 +1,35 @@
+{
+  "run_id": "20261031-1042",
+  "app": "ops",
+  "request": "Production deploy v1.2.45 — F44 P4c Jarvis Portfolio tab (region drill-down, geo-kpi tiles, UI alignment) + FnO hedge workflow fix",
+  "skill_file": "aws-production-deploy",
+  "agents": [
+    {
+      "role": "engineer",
+      "status": "pass",
+      "steps_required": 7,
+      "steps_completed": 7,
+      "adherence_score": 0.9,
+      "token_estimate": 3200,
+      "grounding_checks": {
+        "branch_created": false,
+        "code_changed": true,
+        "spec_updated": false,
+        "ruff_passed": true,
+        "contract_matches_architect": true
+      },
+      "failure_modes": [
+        "PAT read error: tr -d on whole git-key.txt returns empty (two-token file); fixed with sed -n '3p' (PATTERN revisit)",
+        "4 CI test failures on first push: test assertions not updated for new HTML structure (region-period.js module, divider IDs, repo order_by count 2→3, jv-geo-map container)",
+        "2nd CI run: jv-geo-map inside sec-jv-locations (wrong); fixed to jv-perf-chart-wrap after HTML inspection"
+      ],
+      "notes": "7 feature commits on aug master before deploy. Version bump 1.2.44→1.2.45 (6697908). 3 test-fix commits to pass CI (559f17d, 0bc877b, 7420cea). Deployed SHA 7420cea. /health ok v1.2.45 10:42 UTC."
+    }
+  ],
+  "overall_status": "pass",
+  "total_tokens_estimated": 3200,
+  "duration_minutes": 90,
+  "branch": "master",
+  "merge_status": "merged",
+  "merge_commit": "7420cea"
+}
