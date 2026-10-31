@@ -350,7 +350,7 @@ def test_same_second_saves_return_the_last_save(db):
 def test_repo_orders_by_updated_created_then_portfolio_id():
     s = (_SRC / "repositories" / "user_portfolio.py").read_text()
     assert "UserPortfolioModel.portfolio_id.desc()" in s
-    assert s.count(".order_by(*_LATEST_FIRST)") == 2
+    assert s.count(".order_by(*_LATEST_FIRST)") == 3
     assert "rowid" not in s.split('"""', 2)[2]                             # portable (PostgreSQL v2)
 
 

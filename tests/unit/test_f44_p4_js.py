@@ -65,7 +65,8 @@ def _src(name: str) -> str:
 
 def test_all_design_modules_present():
     assert set(_MODULES) == {"main.js", "copy.js", "esc.js", "format.js", "chat.js", "plan.js",
-                             "portfolio.js", "instrument.js", "concepts.js", "regions.js"}
+                             "portfolio.js", "instrument.js", "concepts.js", "regions.js",
+                             "region-period.js"}
 
 
 # ── stale token (A2, A3, A4, A5, A6) ───────────────────────────────────────────
@@ -574,8 +575,9 @@ def test_html_portfolio_view_children_parsed():
                     ("div", "jv-region-breadcrumb", "jv-region-breadcrumb"),
                     ("section", "sec-jv-locations", None),
                     ("div", "jv-perf-chart-wrap", None),
-                    ("div", None, "jv-divider"),
-                    ("section", "sec-jv-universe", None), ("div", None, "jv-divider"),
+                    ("div", "jv-divider-universe", "jv-divider"),
+                    ("section", "sec-jv-universe", None),
+                    ("div", "jv-pf-detail-divider-wrap", "jv-divider"),
                     ("section", "sec-jv-portfolio", None)]
 
     def inside(i, sec):

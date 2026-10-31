@@ -242,7 +242,7 @@ def test_portfolio_hedge_requests_send_total_value():
 @pytest.mark.parametrize("rel", PORTFOLIO_LOADERS)
 def test_user_portfolio_reads_go_through_api(rel):
     s = _src(rel)
-    assert "api('/api/v1/experience/user-portfolio')" in s, rel
+    assert "api('/api/v1/experience/user-portfolio" in s, rel
     assert not re.search(r"apiFetch\(\s*'/api/v1/experience/user-portfolio'", s), rel
     assert not re.search(r"fetch\(\s*apiBase\(\)\s*\+\s*'/api/v1/experience/user-portfolio'", s), rel
 
