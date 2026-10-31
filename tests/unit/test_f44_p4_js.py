@@ -592,8 +592,8 @@ def test_html_portfolio_view_children_parsed():
         assert p.ids[f"jv-loc-col-{loc}"][0].parent.attrs.get("class") == "jv-loc-grid"
     for i in ("jv-pf-source", "jv-pf-kpis", "jv-grid", "sec-jv-instrument", "jv-engine-table", "jv-engine-chart"):
         assert inside(i, "sec-jv-portfolio"), i
-    for i in ("jv-geo-map", "jv-geo-table"):
-        assert inside(i, "sec-jv-universe"), i
+    assert inside("jv-geo-map", "sec-jv-locations"), "jv-geo-map"
+    assert inside("jv-geo-table", "sec-jv-universe"), "jv-geo-table"
     assert "jv-loc-tabs" in p.ids                                   # D3: still the current-location control
 
 
