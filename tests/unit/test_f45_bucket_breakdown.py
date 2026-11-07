@@ -6,6 +6,7 @@ from types import SimpleNamespace as NS
 
 import pytest
 
+from rita.services.bucket_status_service import compute_bucket_breakdown
 from rita.services.jarvis_page_service import JarvisPageService
 
 
@@ -64,10 +65,9 @@ def test_stale_prices_before_save_date_gives_zero_target_and_no_status():
 
 def test_falls_back_to_calendar_year_without_perf():
     inst = [NS(instrument_id="ASRNL", allocation_pct=20.0, ret=None)]
-    eq = _by_key(_svc(None, inst)._bucket_breakdown("europe", _inputs()))["eq"]
-    today = date.today()
-    expected = 0.10 * (today - date(today.year, 1, 1)).days / 365.0
-    assert eq.target_to_date == pytest.approx(expected, abs=1e-9)
+    today = date(2026, 6, 15)          # fixed: no dependence on the clock
+    eq = _by_key(compute_bucket_breakdown(inst, None, _inputs(), today=today))["eq"]
+    assert eq.target_to_date == pytest.approx(0.10 * (today - date(2026, 1, 1)).days / 365.0, abs=1e-9)
 
 
 def test_no_instruments_still_returns_all_buckets_with_no_status():

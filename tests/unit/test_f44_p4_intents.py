@@ -62,7 +62,7 @@ def real_model(monkeypatch):
 def test_shares_the_rita_minilm_singleton(real_model):
     from rita.core import classifier
 
-    assert ji.build_index() == 12 and ji.is_ready()
+    assert ji.build_index() == 16 and ji.is_ready()
     assert ji._encoder() is classifier._get_model()
 
 
