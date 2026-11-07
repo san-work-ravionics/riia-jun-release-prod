@@ -333,7 +333,7 @@ export const COPY = {
   'wn.scenario.pessimistic': 'Pessimistic',
   'wn.scenario.base': 'Base',
   'wn.scenario.optimistic': 'Optimistic',
-  'wn.discount.label': 'Discounted corpus',
+  'wn.discount.label': 'Discounted investment',
   'wn.discount.rate': 'Post-retirement return',
   'wn.wf.title': 'Waterfall — how your need is covered',
   'wn.wf.need': 'Total need',
