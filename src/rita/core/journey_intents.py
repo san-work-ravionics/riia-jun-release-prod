@@ -67,6 +67,34 @@ JOURNEY_INTENTS: dict[str, list[str]] = {
         "no", "keep my current mix", "don't switch", "no thanks", "keep it as it is",
         "stay with the current mix", "reject the new mix", "no keep it",
     ],
+    # F45 Phase D — the What I Need portfolio tracker (retirement plan vs the saved portfolio, by bucket)
+    "wn_on_track": [
+        "am I on track for retirement", "is my retirement plan on track",
+        "are my investments on track for my plan", "how are my retirement buckets doing",
+        "am I ahead or behind on my retirement plan", "is my portfolio keeping up with my retirement targets",
+        "are all my buckets on track", "how is my savings plan tracking",
+        "am I meeting my retirement return targets", "retirement progress by bucket",
+    ],
+    "wn_bucket_status": [
+        "how is my index doing", "show the index bucket", "how are my equities doing",
+        "how is the equity bucket", "how are my commodities doing", "show my commodity bucket",
+        "how is my alternate bucket", "status of my index fund",
+        "how is my equity investment doing against its target", "show me the alternates bucket",
+        "and the alternates", "what about my commodities", "tell me about my equity bucket",
+    ],
+    "wn_hedge_signal": [
+        "do I need to hedge", "should I hedge my portfolio", "is any bucket at risk",
+        "do I need a hedge right now", "is my portfolio at risk of missing my plan",
+        "is there a hedge signal", "should I protect my investments", "am I behind enough to hedge",
+        "any hedge warning", "is hedging needed",
+    ],
+    "wn_what_needs_hedging": [
+        "what needs hedging", "which buckets need hedging", "which investments need a hedge",
+        "what is at risk", "list the buckets that are behind", "which bucket is falling behind",
+        "what should I hedge", "show me what needs protection", "which buckets are at risk",
+        "what is behind target", "what part of my portfolio is at risk",
+        "what in my plan is falling behind",
+    ],
     "help": [
         "hi", "what can you do", "help", "hello", "how does this work", "what can I ask",
         "show me the options", "hey jarvis",

@@ -186,6 +186,7 @@ instrument master through fno-margin-fetch).
   (only `location = /mcp` remains). Claude Desktop must use `https://riia.ravionics.nl/mcp` with a JWT.
 - **Catalogue 16 → 22.** New: `journey.get_current`, `journey.save`, `portfolio.pnl`,
   `portfolio.sleeve_trace`, `fno.sigma_levels` (open, stdio), `market.asta_trace`.
+- **Catalogue 22 -> 23 (F45 Phase D).** New: `whatineed.bucket_status` (user auth). It follows the rule above: the handler calls `BucketStatusService` (services only) and opens **no nested MCP session**; the bucket maths (`compute_bucket_breakdown`) is shared with the What I Need page endpoint.
 - **`journey.explain_pick` dropped.** "Why this pick" is composed in the orchestrator from
   `journey.get_current` + `portfolio.model_runs`, so no tool handler opens a nested MCP session (no
   extra thread / event loop on the 1 GB box). `portfolio.analytics` is replaced by `portfolio.pnl`.

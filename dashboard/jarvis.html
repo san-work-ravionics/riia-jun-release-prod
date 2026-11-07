@@ -237,6 +237,8 @@ canvas{display:block;}
 .jv-hold-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;}
 .jv-hold-chip{font-family:var(--fm);font-size:10px;background:var(--run-bg);border:1px solid var(--run-bd);color:var(--t2);border-radius:100px;padding:2px 8px;}
 .jv-hold-chip b{color:var(--run);font-weight:600;}
+.jv-card .jv-badge.ok{border-color:var(--build-bd);background:var(--build-bg);color:var(--build);}
+.jv-card .jv-badge.none{border-color:var(--border);background:var(--surface2);color:var(--t3);}
 .jv-loc-cash{font-size:11px;}
 .jv-loc-inst{max-height:420px;overflow-y:auto;}
 .jv-loc-row{display:flex;align-items:center;gap:8px;padding:6px 6px;border-radius:var(--r);border:1px solid transparent;font-size:12px;}
@@ -759,7 +761,7 @@ canvas{display:block;}
     <img id="chart-modal-img" style="width:100%;max-height:88vh;display:block;border-radius:4px;object-fit:contain;" />
   </div>
 </div>
-<script type="module" src="./js/jarvis/main.js?v=6"></script>
+<script type="module" src="./js/jarvis/main.js?v=7"></script>
 <script>fetch('/health').then(r=>r.json()).then(d=>{document.querySelectorAll('.app-ver').forEach(e=>e.textContent='v'+d.version)}).catch(()=>{})</script>
 </body>
 </html>

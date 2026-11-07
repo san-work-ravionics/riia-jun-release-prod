@@ -11,7 +11,7 @@ import { t } from './copy.js?v=3';
 import {
   warmup, openSession, sendMessage, loadState, initChat, renderHistory, renderChips, appendBubble,
   appendPending, showChatError, setBusy,
-} from './chat.js?v=3';
+} from './chat.js?v=4';
 import { renderPlan } from './plan.js?v=3';
 import {
   loadPortfolio, renderPortfolio, renderDetailHeader, initGrid, markSelected,

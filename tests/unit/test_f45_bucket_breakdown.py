@@ -75,3 +75,13 @@ def test_no_instruments_still_returns_all_buckets_with_no_status():
     out = _svc(perf, [])._bucket_breakdown("europe", _inputs())
     assert [b.key for b in out] == ["idx", "eq", "com", "alt"]
     assert all(b.at_risk is None and b.ytd_return is None for b in out)
+
+
+def test_zero_elapsed_days_is_no_status_not_on_track():
+    # Saved on a day with no later close: the period is 0 days, ret is 0.0 and target is 0.0 -> the
+    # gap is 0 but nothing has been measured, so the bucket is neither on track nor at risk.
+    perf = NS(year_start=date(2026, 11, 6), as_of=date(2026, 11, 6))
+    inst = [NS(instrument_id="ASRNL", allocation_pct=20.0, ret=0.0)]
+    eq = _by_key(_svc(perf, inst)._bucket_breakdown("europe", _inputs()))["eq"]
+    assert eq.target_to_date == 0.0 and eq.ytd_return == 0.0 and eq.gap == 0.0
+    assert eq.at_risk is None

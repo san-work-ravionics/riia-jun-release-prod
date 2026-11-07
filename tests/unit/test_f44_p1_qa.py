@@ -71,6 +71,8 @@ CONTRACT_AUTH = {
     "portfolio.select_for_goal":    ({"user", "system"}, None),
     "portfolio.required_return":    ({"user", "system"}, None),
     "portfolio.model_runs":         ({"user", "system"}, None),
+    # F45 Phase D
+    "whatineed.bucket_status":      ({"user"}, None),
     # F44 P4 (Jarvis): journey + pnl need a user; sleeve/asta traces answer the system identity;
     # sigma levels are open (stdio)
     "journey.get_current":          ({"user", "system"}, None),

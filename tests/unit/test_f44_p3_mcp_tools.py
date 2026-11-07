@@ -98,7 +98,7 @@ def _err(res):
 # ── catalogue ──────────────────────────────────────────────────────────────────
 
 def test_registry_has_22_tools_with_schemas_and_no_user_id():
-    assert P3_TOOLS <= set(mt.REGISTRY) and mt.tools_registered() == 22
+    assert P3_TOOLS <= set(mt.REGISTRY) and mt.tools_registered() == 23
     for name in P3_TOOLS:
         spec = mt.REGISTRY[name]
         assert spec.output_json_schema() is not None and not spec.stdio
@@ -237,7 +237,7 @@ def test_no_network_on_any_p3_tool(tool_db, fake_models, monkeypatch):
 
 
 def test_health_reports_22_tools(client):
-    assert client.get("/health").json()["mcp"]["tools_registered"] == 22
+    assert client.get("/health").json()["mcp"]["tools_registered"] == 23
 
 
 def test_required_return_at_year_start_is_the_goal(tool_db, fake_models):

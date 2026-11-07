@@ -3,7 +3,7 @@
 // from the journey (plan.js). Every server string goes through esc() or textContent.
 import { api } from '../shared/api.js';
 import { esc } from './esc.js?v=3';
-import { t } from './copy.js?v=3';
+import { t } from './copy.js?v=7';
 import { fmtRate, fmtMoney, fmtDate, fmtYears, isNum } from './format.js?v=3';
 
 // ── API (every call through api(): 401 → ensureDevToken(true) → one retry) ─────
@@ -54,6 +54,24 @@ function _excludedList(rows) {
 
 const _SOURCE = { saved: () => t('src.saved'), model_sleeves: () => t('src.model_sleeves'),
                   mixed: () => `${t('src.saved')} + ${t('src.model_sleeves')}` };
+
+// F45 Phase D — bucket cards. Labels come from copy (the server sends only the bucket key).
+const _BUCKET_LABEL = { idx: 'wn.label.idx', eq: 'wn.label.eq', com: 'wn.label.com', alt: 'wn.label.alt' };
+
+function _bucketLabel(key) {
+  return (_BUCKET_LABEL[key] && t(_BUCKET_LABEL[key])) || String(key || '');
+}
+
+function _bucketState(atRisk) {
+  if (atRisk === true) return { cls: 'warn', text: t('wn.bucket.at_risk') };
+  if (atRisk === false) return { cls: 'ok', text: t('wn.bucket.on_pace') };
+  return { cls: 'none', text: t('wn.bucket.no_data') };
+}
+
+// The FnO link is a server string: only a same-site dashboard path is ever made clickable.
+function _fnoLink(href) {
+  return typeof href === 'string' && /^\/dashboard\/[A-Za-z0-9_.-]+\.html$/.test(href) ? href : '';
+}
 
 // ── card renderers: data fields only as in tests/unit/fixtures/f44_p4_contract.json ─
 const CARD_RENDERERS = {
@@ -106,6 +124,37 @@ const CARD_RENDERERS = {
   },
   excluded(d) {
     return _excludedList(d.rows);
+  },
+  bucket_progress(d) {
+    const rows = (d.buckets || []).map(b => {
+      const st = _bucketState(b.at_risk);
+      return `<tr><td>${esc(_bucketLabel(b.key))}</td>
+        <td class="num">${esc(fmtRate(b.ytd_return))}</td><td class="num">${esc(fmtRate(b.target_to_date))}</td>
+        <td class="num">${esc(fmtRate(b.gap))}</td><td><span class="jv-badge ${esc(st.cls)}">${esc(st.text)}</span></td></tr>`;
+    }).join('');
+    return `<div class="jv-card-title">${esc(t('chat.bucket.progress.title'))}</div>
+      <table class="jv-table jv-table-sm"><thead><tr><th>${esc(t('wn.bucket.col.bucket'))}</th>
+      <th class="num">${esc(t('wn.bucket.col.actual_ytd'))}</th><th class="num">${esc(t('wn.bucket.col.target_ytd'))}</th>
+      <th class="num">${esc(t('wn.bucket.col.gap'))}</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+  },
+  bucket_status(d) {
+    const st = _bucketState(d.at_risk);
+    const chips = (d.instruments || []).map(i => `<span class="jv-hold-chip"><b class="mono">${esc(i)}</b></span>`).join('');
+    return `<div class="jv-card-title">${esc(_bucketLabel(d.key))} <span class="jv-badge ${esc(st.cls)}">${esc(st.text)}</span></div>
+      <div class="jv-kpis">
+      ${_kpi(t('wn.bucket.col.actual_ytd'), fmtRate(d.ytd_return))}
+      ${_kpi(t('wn.bucket.col.target_ytd'), fmtRate(d.target_to_date))}
+      ${_kpi(t('wn.bucket.col.gap'), fmtRate(d.gap))}</div>
+      ${chips ? `<div class="jv-hold-chips">${chips}</div>` : ''}`;
+  },
+  hedge_signal(d) {
+    const risky = d.at_risk_buckets || [];
+    const link = _fnoLink(d.fno_link);
+    const cta = risky.length && link ? `<a class="jv-wn-hedge-cta" href="${esc(link)}">${esc(t('wn.bucket.review_hedge'))}</a>` : '';
+    const head = risky.length
+      ? risky.map(k => `<span class="jv-badge warn">${esc(_bucketLabel(k))}</span>`).join(' ')
+      : `<span class="jv-badge ${d.all_on_track ? 'ok' : 'none'}">${esc(d.all_on_track ? t('chat.hedge.none') : t('wn.bucket.no_data'))}</span>`;
+    return `<div class="jv-card-title">${esc(t('chat.hedge.title'))}</div><div class="jv-hold-chips">${head}</div>${cta}`;
   },
 };
 

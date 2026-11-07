@@ -57,6 +57,16 @@ def cards() -> dict[str, dict]:
                                                                                 "sl_distance": tr.sl_distance}]}},
         "hedge": {"kind": "hedge", "data": {"n_hedged": 2, "coverage": 50, "updated_at": TS.isoformat()}},
         "excluded": C._excluded_card([("ATO", "retrain_needed")]),
+        "bucket_progress": {"kind": "bucket_progress", "data": {
+            "buckets": [{"key": "idx", "ytd_return": None, "target_to_date": 0.0021, "gap": None, "at_risk": None},
+                        {"key": "eq", "ytd_return": -0.031, "target_to_date": 0.0412, "gap": -0.0722,
+                         "at_risk": True}],
+            "n_at_risk": 1, "n_on_track": 0, "n_no_data": 1}},
+        "bucket_status": {"kind": "bucket_status", "data": {
+            "key": "eq", "ytd_return": -0.031, "target_to_date": 0.0412, "gap": -0.0722, "at_risk": True,
+            "instruments": ["E1", "E2"]}},
+        "hedge_signal": {"kind": "hedge_signal", "data": {
+            "at_risk_buckets": ["eq"], "all_on_track": False, "fno_link": "/dashboard/fno.html"}},
     }
 
 

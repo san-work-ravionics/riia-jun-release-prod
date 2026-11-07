@@ -28,6 +28,7 @@ from rita.interfaces.mcp_client import McpCallError, McpRequestClient
 from rita.models.jarvis import JarvisMessageModel, JarvisSessionModel
 from rita.repositories.jarvis import JarvisMessageRepo, JarvisSessionRepo
 from rita.schemas.goal_selection import GoalOut, GoalSelectionOut, ModelRunsOut, RequiredReturnOut
+from rita.schemas.mcp_tools import BucketStatusOut
 from rita.schemas.jarvis import (
     ChipOut,
     JourneyOut,
@@ -46,7 +47,7 @@ from rita.services.journey_service import plan_is_newer
 
 log = structlog.get_logger(__name__)
 
-ACCEPTED: dict[str, frozenset[str]] = {
+_ACCEPTED_JOURNEY: dict[str, frozenset[str]] = {
     "none": frozenset({"take_goal", "change_goal", "show_hedge", "help"}),
     "no_goal": frozenset({"take_goal", "change_goal", "show_hedge", "help"}),
     "goal_loaded": frozenset({"take_goal", "build_selection", "change_goal", "show_hedge", "help"}),
@@ -60,6 +61,12 @@ ACCEPTED: dict[str, frozenset[str]] = {
                                     "help"}),
     "back_to_plan": frozenset({"take_goal", "change_goal", "show_hedge", "help"}),
 }
+
+# F45 Phase D: the portfolio-tracker questions depend on the saved plan and portfolio, not on the
+# journey, so every state accepts them.
+WN_INTENTS = frozenset({"wn_on_track", "wn_bucket_status", "wn_hedge_signal", "wn_what_needs_hedging"})
+ACCEPTED: dict[str, frozenset[str]] = {state: ok | WN_INTENTS for state, ok in _ACCEPTED_JOURNEY.items()}
+FNO_LINK = "/dashboard/fno.html"
 
 
 class JarvisChatError(Exception):
@@ -670,6 +677,86 @@ class JarvisChatService:
                                           "updated_at": plan.updated_at.isoformat() if plan.updated_at else None}}
         return _Reply("show_hedge.plan", {"n": T.fmt_num(len(plan.hedged_ids)), "coverage": T.fmt_num(plan.coverage)},
                       cards=[card])
+
+    # F45 Phase D — What I Need portfolio tracker ------------------------------------------
+
+    @staticmethod
+    def _bucket_row(b) -> dict:
+        return {"key": b.key, "ytd_return": b.ytd_return, "target_to_date": b.target_to_date,
+                "gap": b.gap, "at_risk": b.at_risk}
+
+    @staticmethod
+    def _bucket_names(out: BucketStatusOut, *, at_risk: bool) -> str:
+        return ", ".join(T.BUCKET_LABELS[b.key] for b in out.buckets if (b.at_risk is True) == at_risk
+                         and b.at_risk is not None)
+
+    @staticmethod
+    def _wn_counts(out: BucketStatusOut) -> dict[str, str]:
+        return {"n_buckets": T.fmt_num(out.n_buckets), "n_at_risk": T.fmt_num(out.n_at_risk),
+                "n_on_track": T.fmt_num(out.n_on_track), "n_no_data": T.fmt_num(out.n_no_data),
+                "threshold": T.fmt_rate(abs(out.at_risk_threshold))}
+
+    def _buckets(self, t: _Turn) -> BucketStatusOut:
+        return t.call("whatineed.bucket_status", {"location": t.location}, BucketStatusOut, missing_ok=False)
+
+    def _i_wn_on_track(self, t: _Turn, _slots) -> _Reply:
+        out = self._buckets(t)
+        if not out.saved:
+            return _Reply("wn.no_plan", {"location": T.LOCATION_NAMES.get(out.location, out.location)})
+        card = {"kind": "bucket_progress", "data": {
+            "buckets": [self._bucket_row(b) for b in out.buckets], "n_at_risk": out.n_at_risk,
+            "n_on_track": out.n_on_track, "n_no_data": out.n_no_data}}
+        counts = self._wn_counts(out)
+        if out.n_at_risk + out.n_on_track == 0:
+            return _Reply("wn.no_data", counts, cards=[card])
+        if out.n_at_risk == 0:
+            return _Reply("wn.on_track.ok", counts, cards=[card])
+        return _Reply("wn.on_track.risk", {**counts, "list": self._bucket_names(out, at_risk=True)}, cards=[card])
+
+    def _i_wn_bucket_status(self, t: _Turn, slots) -> _Reply:
+        if slots.bucket is None:
+            return _Reply("wn.bucket.which")
+        out = self._buckets(t)
+        if not out.saved:
+            return _Reply("wn.no_plan", {"location": T.LOCATION_NAMES.get(out.location, out.location)})
+        b = next((x for x in out.buckets if x.key == slots.bucket), None)
+        if b is None:
+            return _Reply("wn.bucket.no_data", {"bucket": T.BUCKET_LABELS[slots.bucket]})
+        label = T.BUCKET_LABELS[b.key]
+        card = {"kind": "bucket_status", "data": {
+            **self._bucket_row(b), "instruments": [i.instrument_id for i in b.instruments]}}
+        if not b.instruments:
+            return _Reply("wn.bucket.empty", {"bucket": label}, cards=[card])
+        if b.at_risk is None:
+            return _Reply("wn.bucket.no_data", {"bucket": label}, cards=[card])
+        slots_ = {"bucket": label, "ytd": T.fmt_rate(b.ytd_return), "target": T.fmt_rate(b.target_to_date),
+                  "gap": T.fmt_rate(b.gap), "threshold": T.fmt_rate(abs(out.at_risk_threshold))}
+        return _Reply("wn.bucket.risk" if b.at_risk else "wn.bucket.ok", slots_, cards=[card])
+
+    def _hedge_reply(self, out: BucketStatusOut, *, lines: bool) -> _Reply:
+        if not out.saved:
+            return _Reply("wn.no_plan", {"location": T.LOCATION_NAMES.get(out.location, out.location)})
+        risky = [b for b in out.buckets if b.at_risk is True]
+        card = {"kind": "hedge_signal", "data": {
+            "at_risk_buckets": [b.key for b in risky],
+            "all_on_track": out.n_at_risk == 0 and out.n_on_track > 0, "fno_link": FNO_LINK}}
+        counts = self._wn_counts(out)
+        if out.n_at_risk + out.n_on_track == 0:
+            return _Reply("wn.no_data", counts, cards=[card])
+        if not risky:
+            return _Reply("wn.hedge.none", counts, cards=[card])
+        if lines:
+            extra = [("wn.hedge.line", {"bucket": T.BUCKET_LABELS[b.key], "ytd": T.fmt_rate(b.ytd_return),
+                                        "target": T.fmt_rate(b.target_to_date), "gap": T.fmt_rate(b.gap)})
+                     for b in risky]
+            return _Reply("wn.hedge.list", counts, cards=[card], extra=extra)
+        return _Reply("wn.hedge.signal", {**counts, "list": self._bucket_names(out, at_risk=True)}, cards=[card])
+
+    def _i_wn_hedge_signal(self, t: _Turn, _slots) -> _Reply:
+        return self._hedge_reply(self._buckets(t), lines=False)
+
+    def _i_wn_what_needs_hedging(self, t: _Turn, _slots) -> _Reply:
+        return self._hedge_reply(self._buckets(t), lines=True)
 
     def _i_help(self, _t: _Turn, _slots) -> _Reply:
         return _Reply("help.menu")

@@ -507,6 +507,42 @@ class ExcludedCardData(BaseModel):
     rows: list[ExcludedRowOut]
 
 
+class BucketRowOut(BaseModel):
+    key: Literal["idx", "eq", "com", "alt"]
+    ytd_return: float | None = None
+    target_to_date: float | None = None
+    gap: float | None = None
+    at_risk: bool | None = None
+
+
+class BucketProgressCardData(BaseModel):
+    """F45 Phase D: the bucket-level roll-up (``wn_on_track``)."""
+
+    buckets: list[BucketRowOut]
+    n_at_risk: int
+    n_on_track: int
+    n_no_data: int
+
+
+class BucketStatusCardData(BaseModel):
+    """F45 Phase D: one bucket (``wn_bucket_status``); the UI maps ``key`` to its label."""
+
+    key: Literal["idx", "eq", "com", "alt"]
+    ytd_return: float | None = None
+    target_to_date: float | None = None
+    gap: float | None = None
+    at_risk: bool | None = None
+    instruments: list[str] = []
+
+
+class HedgeSignalCardData(BaseModel):
+    """F45 Phase D: buckets past the at-risk limit (``wn_hedge_signal`` / ``wn_what_needs_hedging``)."""
+
+    at_risk_buckets: list[Literal["idx", "eq", "com", "alt"]]
+    all_on_track: bool
+    fno_link: str
+
+
 class GoalCard(BaseModel):
     kind: Literal["goal"] = "goal"
     data: GoalCardData
@@ -557,13 +593,28 @@ class ExcludedCard(BaseModel):
     data: ExcludedCardData
 
 
+class BucketProgressCard(BaseModel):
+    kind: Literal["bucket_progress"] = "bucket_progress"
+    data: BucketProgressCardData
+
+
+class BucketStatusCard(BaseModel):
+    kind: Literal["bucket_status"] = "bucket_status"
+    data: BucketStatusCardData
+
+
+class HedgeSignalCard(BaseModel):
+    kind: Literal["hedge_signal"] = "hedge_signal"
+    data: HedgeSignalCardData
+
+
 CardOut = Annotated[
     Union[GoalCard, SelectionCard, ClosestCard, WhyCard, TrackingCard, ProgressCard, ProposalCard,
-          WhatIfCard, HedgeCard, ExcludedCard],
+          WhatIfCard, HedgeCard, ExcludedCard, BucketProgressCard, BucketStatusCard, HedgeSignalCard],
     Field(discriminator="kind"),
 ]
 CARD_KINDS = ("goal", "selection", "closest", "why", "tracking", "progress", "proposal",
-              "what_if", "hedge", "excluded")
+              "what_if", "hedge", "excluded", "bucket_progress", "bucket_status", "hedge_signal")
 
 
 # ── A1–A3 (Workflow) ───────────────────────────────────────────────────────────
