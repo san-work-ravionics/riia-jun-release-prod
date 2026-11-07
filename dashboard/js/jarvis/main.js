@@ -18,7 +18,7 @@ import {
 } from './portfolio.js?v=3';
 import { loadInstrument, renderInstrument, renderInstrumentError, initInstrument } from './instrument.js?v=3';
 import { renderConcepts, initConcepts } from './concepts.js?v=3';
-import { loadWhatINeed, initWhatINeed } from './what-i-need.js?v=3';
+import { loadWhatINeed, initWhatINeed } from './what-i-need.js?v=4';
 import {
   LOCS, loadGeography, locCurrency, loadEurRates, renderTotalPanel,
   renderColumn, renderUniverse, initGeoTable,

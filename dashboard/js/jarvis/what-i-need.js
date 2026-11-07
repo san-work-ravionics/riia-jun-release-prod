@@ -1,6 +1,6 @@
 import { api } from '../shared/api.js';
 import { locCurrency } from './regions.js?v=3';
-import { t } from './copy.js?v=6';
+import { t } from './copy.js?v=8';
 import { fmtMoney, fmtRate, fmtDate, fmtNum, isNum } from './format.js?v=3';
 import { esc } from './esc.js?v=3';
 import { loadPortfolio } from './portfolio.js?v=3';
