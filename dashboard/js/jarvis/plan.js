@@ -4,7 +4,7 @@
 import { esc } from './esc.js?v=3';
 import { t } from './copy.js?v=3';
 import { fmtRate, fmtMoney, fmtDate, fmtYears, isNum } from './format.js?v=3';
-import { actionText, reasonText } from './chat.js?v=3';
+import { actionText, reasonText } from './chat.js?v=4';
 
 function _row(label, value) {
   return `<div class="jv-dl-row"><span>${esc(label)}</span><b>${esc(value)}</b></div>`;

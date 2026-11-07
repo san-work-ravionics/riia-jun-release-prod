@@ -9,16 +9,15 @@ a request is the ``mcp_calls`` log rows written by the MCP logger in its own ses
 """
 from __future__ import annotations
 
-import structlog
 from datetime import date
 from typing import Any
 
+import structlog
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from rita.config import get_settings
 
-log = structlog.get_logger(__name__)
 from rita.core.goal_targets import target_to_date
 from rita.interfaces.mcp_client import McpCallError, McpRequestClient
 from rita.repositories.jarvis import JarvisMessageRepo, JarvisSessionRepo
@@ -55,6 +54,8 @@ from rita.schemas.jarvis import (
 from rita.services import jarvis_templates as T
 from rita.services.journey_service import plan_is_newer
 from rita.services.user_portfolio_service import location_currency
+
+log = structlog.get_logger(__name__)
 
 TRACKED = ("tracking", "reselect_proposed", "back_to_plan")
 
@@ -531,7 +532,8 @@ class JarvisPageService:
 
             ttd = rate * elapsed_fraction
             gap = (ytd - ttd) if ytd is not None else None
-            at_risk = (gap < _AT_RISK_THRESHOLD) if gap is not None else None
+            # No elapsed days = nothing measured yet: neither on track nor at risk.
+            at_risk = (gap < _AT_RISK_THRESHOLD) if (gap is not None and elapsed_fraction > 0) else None
 
             result.append(BucketBreakdownOut(
                 key=key,

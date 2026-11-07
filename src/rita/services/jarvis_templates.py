@@ -94,6 +94,9 @@ SOURCE_LABELS = {"saved": "Your saved portfolio", "model_sleeves": "RITA's model
 WHAT_IF_STATUS = {"on_track": "still on track", "reselect_proposed": "a re-selection would be proposed",
                   "back_to_plan": "you would be sent back to What I Need"}
 
+# F45 Phase D — the retirement-plan buckets (same names as the What I Need tab)
+BUCKET_LABELS = {"idx": "Index fund", "eq": "Equity", "com": "Commodities", "alt": "Alternate"}
+
 TEMPLATES: dict[str, str] = {
     "take_goal.loaded": ("Your {location} goal from What I Need: {goal_return} a year over {horizon} "
                          "years, aiming for {goal_value} at retirement. Say \"build my portfolio\" "
@@ -144,6 +147,28 @@ TEMPLATES: dict[str, str] = {
     "show_hedge.plan": ("Your FnO hedge plan covers {n} instrument(s) at {coverage}% coverage. Open "
                         "FnO to change it."),
     "show_hedge.none": "You have no saved hedge plan. FnO's Hedge Workflow builds one.",
+    "wn.no_plan": ("You have no saved retirement plan for {location}. Save one on What I Need, then "
+                   "ask again."),
+    "wn.no_data": ("None of your {n_buckets} buckets has performance data yet — check back after the "
+                   "next close."),
+    "wn.on_track.ok": ("{n_on_track} of {n_buckets} buckets are on track against the return your plan "
+                       "needs so far; {n_no_data} have no performance data yet."),
+    "wn.on_track.risk": ("{n_at_risk} of {n_buckets} buckets are more than {threshold} behind the "
+                         "return your plan needs so far: {list}. {n_on_track} are on track and "
+                         "{n_no_data} have no performance data yet."),
+    "wn.bucket.which": "Which bucket? Index fund, Equity, Commodities or Alternate.",
+    "wn.bucket.empty": ("You hold no {bucket} instruments yet, so there is nothing to compare with "
+                        "your plan."),
+    "wn.bucket.no_data": "{bucket}: no performance data yet — check back after the next close.",
+    "wn.bucket.ok": ("{bucket}: {ytd} so far against {target} that your plan needs to date — on "
+                     "track, gap {gap}."),
+    "wn.bucket.risk": ("{bucket}: {ytd} so far against {target} that your plan needs to date — gap "
+                       "{gap}, past the {threshold} limit. Open FnO to review a hedge."),
+    "wn.hedge.none": "No bucket is more than {threshold} behind your plan, so there is no hedge signal.",
+    "wn.hedge.signal": ("{n_at_risk} bucket(s) at risk: {list}. A hedge is built in FnO — open it to "
+                        "review. Jarvis doesn't compute one."),
+    "wn.hedge.list": "{n_at_risk} of {n_buckets} buckets need a look. Open FnO to review a hedge.",
+    "wn.hedge.line": "{bucket}: {ytd} against {target} to date (gap {gap}).",
     "change_goal.info": ("Jarvis doesn't change your goal. It is {goal_return} a year on What I Need "
                          "— change it there."),
     "confirm.accepted": "Switched for the rest of the year: {mix}, target {effective}.",

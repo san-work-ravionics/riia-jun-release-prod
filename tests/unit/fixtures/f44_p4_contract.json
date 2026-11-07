@@ -442,6 +442,54 @@
       ]
      },
      "kind": "excluded"
+    },
+    {
+     "data": {
+      "buckets": [
+       {
+        "at_risk": null,
+        "gap": null,
+        "key": "idx",
+        "target_to_date": 0.0021,
+        "ytd_return": null
+       },
+       {
+        "at_risk": true,
+        "gap": -0.0722,
+        "key": "eq",
+        "target_to_date": 0.0412,
+        "ytd_return": -0.031
+       }
+      ],
+      "n_at_risk": 1,
+      "n_no_data": 1,
+      "n_on_track": 0
+     },
+     "kind": "bucket_progress"
+    },
+    {
+     "data": {
+      "at_risk": true,
+      "gap": -0.0722,
+      "instruments": [
+       "E1",
+       "E2"
+      ],
+      "key": "eq",
+      "target_to_date": 0.0412,
+      "ytd_return": -0.031
+     },
+     "kind": "bucket_status"
+    },
+    {
+     "data": {
+      "all_on_track": false,
+      "at_risk_buckets": [
+       "eq"
+      ],
+      "fno_link": "/dashboard/fno.html"
+     },
+     "kind": "hedge_signal"
     }
    ],
    "chips": [
@@ -1473,6 +1521,44 @@
   ]
  },
  "cards": {
+  "bucket_progress": {
+   "data": {
+    "buckets": [
+     {
+      "at_risk": null,
+      "gap": null,
+      "key": "idx",
+      "target_to_date": 0.0021,
+      "ytd_return": null
+     },
+     {
+      "at_risk": true,
+      "gap": -0.0722,
+      "key": "eq",
+      "target_to_date": 0.0412,
+      "ytd_return": -0.031
+     }
+    ],
+    "n_at_risk": 1,
+    "n_no_data": 1,
+    "n_on_track": 0
+   },
+   "kind": "bucket_progress"
+  },
+  "bucket_status": {
+   "data": {
+    "at_risk": true,
+    "gap": -0.0722,
+    "instruments": [
+     "E1",
+     "E2"
+    ],
+    "key": "eq",
+    "target_to_date": 0.0412,
+    "ytd_return": -0.031
+   },
+   "kind": "bucket_status"
+  },
   "closest": {
    "data": {
     "cap_fit": 0.0612,
@@ -1520,6 +1606,16 @@
     "updated_at": "2026-10-27T09:00:00Z"
    },
    "kind": "hedge"
+  },
+  "hedge_signal": {
+   "data": {
+    "all_on_track": false,
+    "at_risk_buckets": [
+     "eq"
+    ],
+    "fno_link": "/dashboard/fno.html"
+   },
+   "kind": "hedge_signal"
   },
   "progress": {
    "data": {

@@ -257,3 +257,41 @@ class AstaTraceIn(_In):
     instrument: str = Field(..., pattern=_INSTRUMENT_PATTERN)
     since: date | None = None
     detail: bool = False
+
+
+# ── F45 Phase D: whatineed.bucket_status ───────────────────────────────────────
+
+
+class BucketStatusIn(_In):
+    location: _Location = Field(..., description="Plan location: europe | india | us")
+
+
+class BucketInstrumentStatus(BaseModel):
+    instrument_id: str
+    allocation_pct: float | None = None
+    ytd_return: float | None = Field(None, description="Fraction since the return period start")
+
+
+class BucketStatus(BaseModel):
+    key: Literal["idx", "eq", "com", "alt"]
+    target_rate: float = Field(..., description="Annual return the plan assumes for the bucket (fraction)")
+    target_to_date: float = Field(..., description="target_rate pro-rated over the return period (fraction)")
+    ytd_return: float | None = Field(None, description="Weighted return of the bucket's held instruments")
+    gap: float | None = Field(None, description="ytd_return - target_to_date")
+    at_risk: bool | None = Field(None, description="True when gap is below the at-risk threshold; None = no data")
+    monthly_target: float | None = Field(None, description="Planned monthly amount, plan currency")
+    instruments: list[BucketInstrumentStatus] = []
+
+
+class BucketStatusOut(BaseModel):
+    """Plan-vs-portfolio status per retirement-plan bucket (idx / eq / com / alt)."""
+
+    location: str
+    currency: str
+    saved: bool = Field(..., description="False = no saved plan, so no buckets")
+    at_risk_threshold: float = Field(..., description="Gap below this (a negative fraction) = at risk")
+    n_buckets: int
+    n_at_risk: int
+    n_on_track: int
+    n_no_data: int
+    buckets: list[BucketStatus] = []

@@ -3,7 +3,16 @@ from __future__ import annotations
 
 from rita.interfaces.tools._base import ToolContext, ToolError, ToolSpec
 from rita.schemas.goal_selection import GoalOut
-from rita.schemas.mcp_tools import GoalIn, WhatINeedPlanIn, WhatINeedPlanOut, WhatINeedPlanResult
+from rita.schemas.mcp_tools import (
+    BucketInstrumentStatus,
+    BucketStatus,
+    BucketStatusIn,
+    BucketStatusOut,
+    GoalIn,
+    WhatINeedPlanIn,
+    WhatINeedPlanOut,
+    WhatINeedPlanResult,
+)
 
 
 def get_plan(inp: WhatINeedPlanIn, ctx: ToolContext) -> WhatINeedPlanOut:
@@ -42,6 +51,47 @@ def get_goal(inp: GoalIn, ctx: ToolContext) -> GoalOut:
             return RetirementPlanService(db).goal(user.id, inp.location)
         except PlanValidationError as exc:
             raise ToolError("invalid_input", str(exc)) from exc
+
+
+def bucket_status(inp: BucketStatusIn, ctx: ToolContext) -> BucketStatusOut:
+    """F45 Phase D: per-bucket plan-vs-portfolio status (the What I Need tab's bucket table).
+
+    Runs the same service as ``GET /api/v1/experience/jarvis/retirement-plan`` over an in-memory MCP
+    session (ADR-007 §4), so the chat and the page can never disagree."""
+    from rita.interfaces.mcp_client import McpRequestClient, identity_for
+    from rita.services.jarvis_page_service import _AT_RISK_THRESHOLD, JarvisPageService
+    from rita.services.retirement_plan_service import PlanValidationError
+
+    user = ctx.require_user()
+    with ctx.session() as db, McpRequestClient(identity_for(user, "module:whatineed")) as mcp:
+        try:
+            out = JarvisPageService(db, mcp, user).retirement_plan(inp.location)
+        except PlanValidationError as exc:
+            raise ToolError("invalid_input", str(exc)) from exc
+    buckets = [
+        BucketStatus(
+            key=b.key, target_rate=b.target_rate, target_to_date=b.target_to_date,
+            ytd_return=b.ytd_return, gap=b.gap, at_risk=b.at_risk, monthly_target=b.monthly_target,
+            instruments=[BucketInstrumentStatus(instrument_id=i.instrument_id, allocation_pct=i.allocation_pct,
+                                                ytd_return=i.ytd_return) for i in b.instruments],
+        )
+        for b in out.bucket_breakdown
+    ]
+    return BucketStatusOut(
+        location=out.plan.location, currency=out.plan.currency, saved=out.plan.saved,
+        at_risk_threshold=_AT_RISK_THRESHOLD, n_buckets=len(buckets),
+        n_at_risk=sum(1 for b in buckets if b.at_risk is True),
+        n_on_track=sum(1 for b in buckets if b.at_risk is False),
+        n_no_data=sum(1 for b in buckets if b.at_risk is None),
+        buckets=buckets,
+    )
+
+
+def _bucket_text(out: BucketStatusOut) -> str:
+    if not out.saved:
+        return f"No saved What I Need plan for {out.location} — save the plan first."
+    return (f"Buckets ({out.location}): {out.n_at_risk} at risk, {out.n_on_track} on track, "
+            f"{out.n_no_data} without data.")
 
 
 def _goal_text(out: GoalOut) -> str:
@@ -86,5 +136,22 @@ TOOLS = [
         auth=frozenset({"user", "system"}),
         text=_goal_text,
         summary=lambda o: f"saved={o.saved} location={o.location}",
+    ),
+    ToolSpec(
+        name="whatineed.bucket_status",
+        description=(
+            "How the signed-in user's saved portfolio is tracking against their What I Need plan, per "
+            "asset bucket (index / equity / commodities / alternate): the bucket's return over the "
+            "return period, the plan's annual rate pro-rated over the same period, the gap, and an "
+            "at-risk flag when the gap is below the threshold. No saved plan → saved=false, no buckets. "
+            "A bucket with no priced holdings has at_risk=null."
+        ),
+        input_model=BucketStatusIn,
+        output_model=BucketStatusOut,
+        handler=bucket_status,
+        auth=frozenset({"user"}),
+        text=_bucket_text,
+        summary=lambda o: (f"saved={o.saved} buckets={o.n_buckets} at_risk={o.n_at_risk} "
+                           f"on_track={o.n_on_track} no_data={o.n_no_data}"),
     ),
 ]

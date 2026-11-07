@@ -44,7 +44,7 @@ def no_asta(tmp_path, monkeypatch):
 
 
 def test_registry_has_22_tools():
-    assert P4_TOOLS <= set(mt.REGISTRY) and mt.tools_registered() == 22
+    assert P4_TOOLS <= set(mt.REGISTRY) and mt.tools_registered() == 23
     for name in P4_TOOLS:
         spec = mt.REGISTRY[name]
         assert spec.output_json_schema() is not None
@@ -154,5 +154,5 @@ def test_no_network_on_any_p4_tool(tool_db, fake_models, no_asta, monkeypatch):
 
 def test_health_reports_22_tools_and_jarvis(client):
     body = client.get("/health").json()
-    assert body["mcp"] == {"tools_registered": 22, "auth": "on", "transports": ["http", "memory"]}
+    assert body["mcp"] == {"tools_registered": 23, "auth": "on", "transports": ["http", "memory"]}
     assert body["jarvis"]["intents"] == 12 and body["jarvis"]["chat_model"] in ("ready", "not_loaded")

@@ -22,11 +22,12 @@ THRESHOLD = 0.42
 
 
 def test_seed_set_shape():
-    assert len(ji.JOURNEY_INTENTS) == 12
+    assert len(ji.JOURNEY_INTENTS) == 16
     assert sum(len(v) for v in ji.JOURNEY_INTENTS.values()) >= 100
     assert set(ji.INTENT_NAMES) == {"take_goal", "build_selection", "why_this_pick", "cant_reach", "track",
                                     "progress", "what_if_sl", "show_hedge", "change_goal", "confirm",
-                                    "decline", "help"}
+                                    "decline", "help", "wn_on_track", "wn_bucket_status", "wn_hedge_signal",
+                                    "wn_what_needs_hedging"}
     assert all(len(v) >= 8 for v in ji.JOURNEY_INTENTS.values())
 
 

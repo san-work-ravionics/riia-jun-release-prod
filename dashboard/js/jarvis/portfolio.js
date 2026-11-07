@@ -7,7 +7,7 @@ import { portfolioCurrency } from '../shared/portfolio-currency.js';
 import { esc } from './esc.js?v=3';
 import { t } from './copy.js?v=3';
 import { fmtRate, fmtPp, fmtMoney, fmtNum, fmtDate, isNum, locationName } from './format.js?v=3';
-import { actionText } from './chat.js?v=3';
+import { actionText } from './chat.js?v=4';
 
 export function loadPortfolio(location) {
   return api(`/api/v1/experience/jarvis/portfolio?location=${encodeURIComponent(location)}`);

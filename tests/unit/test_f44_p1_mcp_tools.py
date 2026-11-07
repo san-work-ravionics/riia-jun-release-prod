@@ -139,7 +139,7 @@ def _fake_classify():
 
 def test_registry_has_p1_tools_and_aliases():
     assert set(mt.REGISTRY) == P1_TOOLS | P2_TOOLS | P3_TOOLS | P4_TOOLS | ALIASES
-    assert mt.tools_registered() == 22
+    assert mt.tools_registered() == 23
 
 
 def test_no_tool_has_a_user_id_input():
