@@ -772,3 +772,49 @@ class InstrumentPageOut(BaseModel):
     currency: str | None = None
     as_of: date | None = None
     engines: list[InstrumentEngineOut]
+
+
+# ── F43 Phase 5: "What I Need" retirement plan in Jarvis ─────────────────────
+
+from rita.schemas.retirement_plan import (  # noqa: E402
+    RetirementPlanInputs,
+    RetirementPlanOut,
+    RetirementPlanResult,
+)
+
+
+class ScenarioSpreadOut(BaseModel):
+    pessimistic: float
+    optimistic: float
+
+
+class JarvisRetirementPlanOut(BaseModel):
+    plan: RetirementPlanOut
+    scenario_spread: ScenarioSpreadOut
+
+
+class WaterfallOut(BaseModel):
+    need_all: float
+    portfolio_value: float
+    house_release: float
+    savings: float
+    target: float
+
+
+class ScenarioResultOut(BaseModel):
+    result: RetirementPlanResult
+    waterfall: WaterfallOut
+    discounted_target: float | None = None
+
+
+class JarvisRetirementPlanCalcIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    inputs: RetirementPlanInputs
+    scenarios: list[Literal["pessimistic", "base", "optimistic"]] = ["pessimistic", "base", "optimistic"]
+    spread: ScenarioSpreadOut
+    discount_rate: float | None = None
+
+
+class JarvisRetirementPlanCalcOut(BaseModel):
+    scenarios: dict[str, ScenarioResultOut]

@@ -443,3 +443,53 @@ class JarvisPageService:
                                    rationale=d.rationale if d else None, performance=perf,
                                    method=at.method.model_dump(),
                                    asta=at.model_copy(update={"detail": None}), **base)
+
+    # ── F43 Phase 5: "What I Need" retirement plan ───────────────────────────
+
+    def retirement_plan(self, location: str):
+        from rita.schemas.jarvis import JarvisRetirementPlanOut, ScenarioSpreadOut
+        from rita.services.retirement_plan_service import RetirementPlanService
+
+        svc = RetirementPlanService(self._db)
+        user_id = self._user.id if self._user else None
+        plan = svc.load(user_id, location)
+        cfg = get_settings().retirement_plan.scenario_spread
+        spread = ScenarioSpreadOut(pessimistic=cfg.pessimistic, optimistic=cfg.optimistic)
+        return JarvisRetirementPlanOut(plan=plan, scenario_spread=spread)
+
+    def calculate_retirement_plan(self, body):
+        from rita.core.retirement_plan import ASSET_KEYS
+        from rita.schemas.jarvis import (
+            JarvisRetirementPlanCalcOut,
+            ScenarioResultOut,
+            WaterfallOut,
+        )
+        from rita.services.retirement_plan_service import calculate
+
+        spread_map = {"pessimistic": body.spread.pessimistic, "base": 0.0, "optimistic": body.spread.optimistic}
+        scenarios: dict[str, ScenarioResultOut] = {}
+        for name in body.scenarios:
+            offset = spread_map.get(name, 0.0)
+            adjusted = body.inputs.model_copy()
+            for key in ASSET_KEYS:
+                rate_field = f"{key}_rate"
+                base_rate = getattr(adjusted, rate_field)
+                if base_rate is not None:
+                    object.__setattr__(adjusted, rate_field, base_rate + offset)
+            result = calculate(adjusted)
+            wf = WaterfallOut(
+                need_all=result.need_all,
+                portfolio_value=result.value,
+                house_release=result.house_release,
+                savings=max(result.savings - result.big_expenses, 0.0),
+                target=result.target,
+            )
+            disc = None
+            if body.discount_rate is not None and adjusted.ret is not None and adjusted.now is not None:
+                years_to_ret = adjusted.ret - adjusted.now
+                if years_to_ret > 0:
+                    disc = result.target / ((1 + body.discount_rate) ** years_to_ret)
+                else:
+                    disc = result.target
+            scenarios[name] = ScenarioResultOut(result=result, waterfall=wf, discounted_target=disc)
+        return JarvisRetirementPlanCalcOut(scenarios=scenarios)

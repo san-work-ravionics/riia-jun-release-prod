@@ -13,8 +13,17 @@ from rita.auth import get_current_user
 from rita.database import get_db
 from rita.interfaces.mcp_client import McpRequestClient, mcp_client_dependency
 from rita.models.user import UserModel
-from rita.schemas.jarvis import InstrumentPageOut, Location, PortfolioPageOut, StateOut
+from rita.schemas.jarvis import (
+    InstrumentPageOut,
+    JarvisRetirementPlanCalcIn,
+    JarvisRetirementPlanCalcOut,
+    JarvisRetirementPlanOut,
+    Location,
+    PortfolioPageOut,
+    StateOut,
+)
 from rita.services.jarvis_page_service import JarvisPageService, PageError
+from rita.services.retirement_plan_service import PlanValidationError
 
 router = APIRouter(prefix="/api/v1/experience/jarvis", tags=["experience:jarvis"])
 
@@ -47,3 +56,23 @@ def jarvis_instrument(location: Location = Query(...),
         if exc.code == "not_found":
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=exc.message) from exc
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=exc.message) from exc
+
+
+@router.get("/retirement-plan", response_model=JarvisRetirementPlanOut)
+def jarvis_retirement_plan(location: Location = Query(...),
+                           user: UserModel = Depends(get_current_user),
+                           db: Session = Depends(get_db),
+                           mcp: McpRequestClient = Depends(_mcp)) -> JarvisRetirementPlanOut:
+    """A7: the user's saved retirement plan + scenario spread config."""
+    return JarvisPageService(db, mcp, user).retirement_plan(location)
+
+
+@router.post("/retirement-plan/calculate", response_model=JarvisRetirementPlanCalcOut)
+def jarvis_retirement_plan_calculate(body: JarvisRetirementPlanCalcIn,
+                                     db: Session = Depends(get_db),
+                                     mcp: McpRequestClient = Depends(_mcp)) -> JarvisRetirementPlanCalcOut:
+    """A8: calculate the retirement plan for multiple scenarios with optional discounting."""
+    try:
+        return JarvisPageService(db, mcp, None).calculate_retirement_plan(body)
+    except PlanValidationError as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc

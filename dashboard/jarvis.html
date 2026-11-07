@@ -360,6 +360,7 @@ canvas{display:block;}
     <button type="button" class="nav-item p05" id="jv-tab-chat"><span class="nav-icon">◈</span><span data-copy="tab.chat"></span></button>
     <button type="button" class="nav-item p03" id="jv-tab-portfolio"><span class="nav-icon">⊞</span><span data-copy="tab.portfolio"></span></button>
     <button type="button" class="nav-item p00" id="jv-tab-concepts"><span class="nav-icon">◎</span><span data-copy="tab.concepts"></span></button>
+    <button type="button" class="nav-item p00" id="jv-tab-whatineed"><span class="nav-icon">◇</span><span data-copy="tab.whatineed"></span></button>
   </div>
   <div class="nav-section" id="jv-loc-tabs">
     <div class="nav-label" style="color:var(--t3)" data-copy="nav.location"></div>
@@ -647,6 +648,117 @@ canvas{display:block;}
     </div>
     <div class="concept-tab-bar" id="jv-cx-tabs"></div>
     <div class="concept-panel" id="jv-cx-panel"></div>
+  </div>
+
+  <!-- ════════════════ WHAT I NEED (F43 Phase 5) ════════════════ -->
+  <div id="jv-view-whatineed" hidden>
+    <div class="page-hdr">
+      <div>
+        <div class="page-title" data-copy="wn.title"></div>
+        <div class="page-sub" data-copy="wn.sub"></div>
+      </div>
+    </div>
+
+    <div id="jv-wn-status" class="wn-status"></div>
+
+    <!-- scenario pills -->
+    <div class="pill-group" id="jv-wn-scenario-tabs" style="margin:12px 0">
+      <button type="button" class="pill is-active" id="jv-wn-sc-pessimistic" data-copy="wn.scenario.pessimistic"></button>
+      <button type="button" class="pill" id="jv-wn-sc-base" data-copy="wn.scenario.base"></button>
+      <button type="button" class="pill" id="jv-wn-sc-optimistic" data-copy="wn.scenario.optimistic"></button>
+    </div>
+
+    <!-- waterfall chart -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title" data-copy="wn.wf.title"></div>
+      <div style="height:260px"><canvas id="jv-wn-waterfall"></canvas></div>
+    </div>
+
+    <!-- summary table -->
+    <div class="card" id="jv-wn-summary" style="margin-bottom:16px"></div>
+
+    <!-- age table -->
+    <div class="card tbl-wrap" id="jv-wn-age-table" style="margin-bottom:16px"></div>
+
+    <!-- discount toggle -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+      <label style="font-size:12px;color:var(--t2)"><input type="checkbox" id="jv-wn-discount-toggle"> <span data-copy="wn.discount.label"></span></label>
+      <input type="number" id="jv-wn-discount-rate" step="0.005" value="0.04" disabled style="width:72px;font-size:11px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--t1)">
+      <span style="font-size:11px;color:var(--t3)" data-copy="wn.discount.rate"></span>
+    </div>
+
+    <!-- inputs form -->
+    <div id="jv-wn-form">
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-title" data-copy="wn.section.inputs"></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">
+          <label class="wn-lbl"><span data-copy="wn.label.need"></span><input type="number" id="jv-wn-need" step="100" class="wn-inp"></label>
+          <label class="wn-lbl"><span data-copy="wn.label.infl"></span><input type="number" id="jv-wn-infl" step="0.001" class="wn-inp"></label>
+          <label class="wn-lbl"><span data-copy="wn.label.now"></span><input type="number" id="jv-wn-age-now" step="1" class="wn-inp"></label>
+          <label class="wn-lbl"><span data-copy="wn.label.ret"></span><input type="number" id="jv-wn-age-ret" step="1" class="wn-inp"></label>
+          <label class="wn-lbl"><span data-copy="wn.label.end"></span><input type="number" id="jv-wn-age-end" step="1" class="wn-inp"></label>
+          <label class="wn-lbl"><span data-copy="wn.label.tax"></span><input type="number" id="jv-wn-tax" step="0.01" class="wn-inp"></label>
+          <label class="wn-lbl"><span data-copy="wn.label.partial"></span><input type="number" id="jv-wn-partial" step="0.01" class="wn-inp"></label>
+          <label class="wn-lbl"><span data-copy="wn.label.exit"></span><input type="number" id="jv-wn-exit" step="1" class="wn-inp"></label>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-title" data-copy="wn.section.events"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div><span style="font-size:11px;font-weight:600;color:var(--t2)" data-copy="wn.label.sv"></span>
+            <div style="display:flex;gap:4px;margin-top:4px"><input type="number" id="jv-wn-sv-0-age" class="wn-inp wn-sm" placeholder="age"><input type="number" id="jv-wn-sv-0-amt" class="wn-inp" placeholder="amount"></div>
+            <div style="display:flex;gap:4px;margin-top:4px"><input type="number" id="jv-wn-sv-1-age" class="wn-inp wn-sm" placeholder="age"><input type="number" id="jv-wn-sv-1-amt" class="wn-inp" placeholder="amount"></div>
+            <div style="display:flex;gap:4px;margin-top:4px"><input type="number" id="jv-wn-sv-2-age" class="wn-inp wn-sm" placeholder="age"><input type="number" id="jv-wn-sv-2-amt" class="wn-inp" placeholder="amount"></div>
+          </div>
+          <div><span style="font-size:11px;font-weight:600;color:var(--t2)" data-copy="wn.label.bx"></span>
+            <div style="display:flex;gap:4px;margin-top:4px"><input type="number" id="jv-wn-bx-0-age" class="wn-inp wn-sm" placeholder="age"><input type="number" id="jv-wn-bx-0-amt" class="wn-inp" placeholder="amount"></div>
+            <div style="display:flex;gap:4px;margin-top:4px"><input type="number" id="jv-wn-bx-1-age" class="wn-inp wn-sm" placeholder="age"><input type="number" id="jv-wn-bx-1-amt" class="wn-inp" placeholder="amount"></div>
+            <div style="display:flex;gap:4px;margin-top:4px"><input type="number" id="jv-wn-bx-2-age" class="wn-inp wn-sm" placeholder="age"><input type="number" id="jv-wn-bx-2-amt" class="wn-inp" placeholder="amount"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-title" data-copy="wn.section.house"></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">
+          <label class="wn-lbl"><span data-copy="wn.label.hValue"></span><input type="number" id="jv-wn-h-value" step="1000" class="wn-inp"></label>
+          <label class="wn-lbl"><span data-copy="wn.label.hAppr"></span><input type="number" id="jv-wn-h-appr" step="0.001" class="wn-inp"></label>
+          <label class="wn-lbl"><span data-copy="wn.label.hSell"></span><input type="number" id="jv-wn-h-sell" step="1" class="wn-inp"></label>
+          <label class="wn-lbl"><span data-copy="wn.label.hTax"></span><input type="number" id="jv-wn-h-tax" step="0.01" class="wn-inp"></label>
+          <label class="wn-lbl"><span data-copy="wn.label.h2Price"></span><input type="number" id="jv-wn-h2-price" step="1000" class="wn-inp"></label>
+          <label class="wn-lbl"><span data-copy="wn.label.h2Mode"></span><select id="jv-wn-h2-mode" class="wn-inp"><option value="same">Same house</option><option value="new">New house</option></select></label>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-title" data-copy="wn.section.invest"></div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+          <div><span style="font-size:11px;font-weight:600;color:var(--t2)" data-copy="wn.label.idx"></span>
+            <label class="wn-lbl"><span data-copy="wn.label.monthly"></span><input type="number" id="jv-wn-idx-monthly" step="100" class="wn-inp"></label>
+            <label class="wn-lbl"><span data-copy="wn.label.rate"></span><input type="number" id="jv-wn-idx-rate" step="0.001" class="wn-inp"></label>
+          </div>
+          <div><span style="font-size:11px;font-weight:600;color:var(--t2)" data-copy="wn.label.eq"></span>
+            <label class="wn-lbl"><span data-copy="wn.label.monthly"></span><input type="number" id="jv-wn-eq-monthly" step="100" class="wn-inp"></label>
+            <label class="wn-lbl"><span data-copy="wn.label.rate"></span><input type="number" id="jv-wn-eq-rate" step="0.001" class="wn-inp"></label>
+          </div>
+          <div><span style="font-size:11px;font-weight:600;color:var(--t2)" data-copy="wn.label.com"></span>
+            <label class="wn-lbl"><span data-copy="wn.label.monthly"></span><input type="number" id="jv-wn-com-monthly" step="100" class="wn-inp"></label>
+            <label class="wn-lbl"><span data-copy="wn.label.rate"></span><input type="number" id="jv-wn-com-rate" step="0.001" class="wn-inp"></label>
+          </div>
+          <div><span style="font-size:11px;font-weight:600;color:var(--t2)" data-copy="wn.label.alt"></span>
+            <label class="wn-lbl"><span data-copy="wn.label.monthly"></span><input type="number" id="jv-wn-alt-monthly" step="100" class="wn-inp"></label>
+            <label class="wn-lbl"><span data-copy="wn.label.rate"></span><input type="number" id="jv-wn-alt-rate" step="0.001" class="wn-inp"></label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- action buttons -->
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button type="button" class="btn-sm" id="jv-wn-calc" data-copy="wn.btn.calc"></button>
+      <button type="button" class="btn-sm" id="jv-wn-save" data-copy="wn.btn.save"></button>
+    </div>
   </div>
 
 </main>

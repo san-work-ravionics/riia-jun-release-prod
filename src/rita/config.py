@@ -416,6 +416,13 @@ class RetirementLocationPreset(BaseSettings):
     defaults: dict[str, Any] = {}
 
 
+class ScenarioSpreadSettings(BaseSettings):
+    model_config = SettingsConfigDict(extra="forbid")
+
+    pessimistic: float = -0.02
+    optimistic: float = 0.02
+
+
 class RetirementPlanSettings(BaseSettings):
     """F43 retirement plan presets (``retirement_plan:`` in base.yaml)."""
 
@@ -423,6 +430,7 @@ class RetirementPlanSettings(BaseSettings):
 
     default_location: str = "europe"
     locations: dict[str, RetirementLocationPreset] = {}
+    scenario_spread: ScenarioSpreadSettings = ScenarioSpreadSettings()
 
 
 class ModelLineage(BaseSettings):

@@ -18,6 +18,7 @@ import {
 } from './portfolio.js?v=3';
 import { loadInstrument, renderInstrument, renderInstrumentError, initInstrument } from './instrument.js?v=3';
 import { renderConcepts, initConcepts } from './concepts.js?v=3';
+import { loadWhatINeed, initWhatINeed, calculateScenarios } from './what-i-need.js?v=1';
 import {
   LOCS, loadGeography, locCurrency, loadEurRates, renderTotalPanel,
   renderColumn, renderUniverse, initGeoTable,
@@ -106,7 +107,8 @@ function showTab(tab) {
   _byId('jv-tab-chat')?.classList.toggle('is-active', tab === 'chat');
   _byId('jv-tab-portfolio')?.classList.toggle('is-active', tab === 'portfolio');
   _byId('jv-tab-concepts')?.classList.toggle('is-active', tab === 'concepts');
-  for (const v of ['chat', 'portfolio', 'concepts']) { const el = _byId(`jv-view-${v}`); if (el) el.hidden = tab !== v; }
+  _byId('jv-tab-whatineed')?.classList.toggle('is-active', tab === 'whatineed');
+  for (const v of ['chat', 'portfolio', 'concepts', 'whatineed']) { const el = _byId(`jv-view-${v}`); if (el) el.hidden = tab !== v; }
   if (tab === 'portfolio') {
     showAllRegions();                                                // reset to overview; clicking a loc drills in
     if (_pfNeedsLoad()) loadPortfolioSection();
@@ -115,6 +117,7 @@ function showTab(tab) {
     _applyLocNavHighlight(S.loc);                                   // restore location highlight in chat/concepts
   }
   if (tab === 'concepts') loadConceptsSection();
+  if (tab === 'whatineed') loadWhatINeed(S.loc);
 }
 
 function initTabs() {
@@ -128,6 +131,7 @@ function initTabs() {
   _byId('jv-tab-chat')?.addEventListener('click', () => showTab('chat'));
   _byId('jv-tab-portfolio')?.addEventListener('click', () => showTab('portfolio'));
   _byId('jv-tab-concepts')?.addEventListener('click', () => showTab('concepts'));
+  _byId('jv-tab-whatineed')?.addEventListener('click', () => showTab('whatineed'));
   _byId('jv-region-back')?.addEventListener('click', showAllRegions);  // breadcrumb back → overview
   // Delegated: "Show details" button → change location; card body → toggle scatter/table filter.
   _byId('sec-jv-locations')?.addEventListener('click', e => {
@@ -404,6 +408,7 @@ async function boot() {
   initGeoTable(_onSort);
   initInstrument();
   initConcepts();
+  initWhatINeed(() => S.loc);
   initRegionPeriod();
   showTab('chat');
   await ensureDevToken();                                           // localhost: dev token (prod: login gate)
