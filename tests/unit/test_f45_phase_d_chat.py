@@ -9,7 +9,6 @@ number is a formatted tool field.
 # ruff: noqa: F811 — pytest fixtures imported from a sibling module are redefined as test params
 from __future__ import annotations
 
-from contextlib import contextmanager
 from types import SimpleNamespace as NS
 
 import pytest
@@ -234,10 +233,6 @@ def test_bucket_slot(text, key):
 
 # ── the MCP tool ────────────────────────────────────────────────────────────────
 
-def _page_out(saved=True, breakdown=()):
-    return NS(plan=NS(saved=saved, location="europe", currency="EUR"), bucket_breakdown=list(breakdown))
-
-
 def _bb(key, at_risk, ytd=0.01, ttd=0.04):
     return NS(key=key, target_rate=0.1, target_to_date=ttd, ytd_return=ytd, gap=None if ytd is None else ytd - ttd,
               at_risk=at_risk, monthly_target=400.0,
@@ -246,26 +241,26 @@ def _bb(key, at_risk, ytd=0.01, ttd=0.04):
 
 @pytest.fixture
 def tool_env(monkeypatch):
-    """Run the tool handler without opening a real MCP session or DB."""
+    """Run the tool handler without a DB: the service is stubbed, and no MCP session may be opened."""
     import rita.interfaces.mcp_client as mc
-    import rita.services.jarvis_page_service as ps
+    import rita.services.bucket_status_service as bs
     from rita.interfaces.mcp_auth import McpIdentity
     from rita.interfaces.tools import ToolContext
     from rita.models.user import UserModel
-
-    @contextmanager
-    def fake_client(_identity):
-        yield object()
 
     class FakeSession:
         def close(self):
             pass
 
-    monkeypatch.setattr(mc, "McpRequestClient", fake_client)
+    def no_nested_mcp(*_a, **_k):
+        raise AssertionError("a tool handler must not open a nested MCP session (ADR-007)")
+
+    monkeypatch.setattr(mc, "McpRequestClient", no_nested_mcp)
     monkeypatch.setattr("rita.interfaces.tools._base._session_factory", [FakeSession])
-    holder = {"out": _page_out()}
-    monkeypatch.setattr(ps.JarvisPageService, "__init__", lambda self, db, mcp, user: None)
-    monkeypatch.setattr(ps.JarvisPageService, "retirement_plan", lambda self, location: holder["out"])
+    holder = {"plan": NS(saved=True, location="europe", currency="EUR"), "breakdown": []}
+    monkeypatch.setattr(bs.BucketStatusService, "__init__", lambda self, db: None)
+    monkeypatch.setattr(bs.BucketStatusService, "status",
+                        lambda self, user_id, location: (holder["plan"], holder["breakdown"]))
     ident = McpIdentity.from_user(UserModel(id="alice"), transport="memory", caller="jarvis")
     return NS(ctx=ToolContext(identity=ident), holder=holder)
 
@@ -274,8 +269,8 @@ def test_tool_counts_and_threshold(tool_env):
     from rita.interfaces.tools.whatineed import bucket_status
     from rita.schemas.mcp_tools import BucketStatusIn
 
-    tool_env.holder["out"] = _page_out(breakdown=[_bb("idx", False), _bb("eq", True), _bb("com", None, ytd=None),
-                                                  _bb("alt", None, ytd=None)])
+    tool_env.holder["breakdown"] = [_bb("idx", False), _bb("eq", True), _bb("com", None, ytd=None),
+                                    _bb("alt", None, ytd=None)]
     out = bucket_status(BucketStatusIn(location="europe"), tool_env.ctx)
     assert (out.n_buckets, out.n_at_risk, out.n_on_track, out.n_no_data) == (4, 1, 1, 2)
     assert out.at_risk_threshold == -0.02 and out.saved and out.currency == "EUR"
@@ -287,7 +282,7 @@ def test_tool_without_a_saved_plan_returns_no_buckets(tool_env):
     from rita.interfaces.tools.whatineed import bucket_status
     from rita.schemas.mcp_tools import BucketStatusIn
 
-    tool_env.holder["out"] = _page_out(saved=False)
+    tool_env.holder["plan"] = NS(saved=False, location="europe", currency="EUR")
     out = bucket_status(BucketStatusIn(location="europe"), tool_env.ctx)
     assert out.saved is False and out.buckets == [] and out.n_buckets == 0
 

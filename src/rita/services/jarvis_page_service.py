@@ -25,7 +25,6 @@ from rita.schemas.goal_selection import GoalOut, RequiredReturnOut
 from rita.schemas.jarvis import (
     AstaTraceOut,
     BucketBreakdownOut,
-    BucketInstrumentOut,
     ChartMarkerOut,
     ChipOut,
     ClosePointOut,
@@ -52,6 +51,7 @@ from rita.schemas.jarvis import (
     StateOut,
 )
 from rita.services import jarvis_templates as T
+from rita.services.bucket_status_service import compute_bucket_breakdown
 from rita.services.journey_service import plan_is_newer
 from rita.services.user_portfolio_service import location_currency
 
@@ -62,10 +62,6 @@ TRACKED = ("tracking", "reselect_proposed", "back_to_plan")
 ENGINE_LABELS = {"rita": "RITA model (DDQN)", "fno": "FnO σ levels — not a model",
                  "asta": "ASTA model (NIFTY only)", "held": "Your holdings"}
 
-_AT_RISK_THRESHOLD = -0.02
-_INDEX_INSTRUMENTS = {"NIFTY50", "BANKNIFTY", "NIFTYMIDCAP50", "FINNIFTY", "NIFTY_FIN_SERVICE"}
-_COMMODITY_INSTRUMENTS = {"GOLDM", "SILVERM", "GOLD", "SILVER", "CRUDEOIL", "NATURALGAS"}
-_ALT_INSTRUMENTS = {"BITCOIN", "ETH", "REIT"}
 
 
 class PageError(Exception):
@@ -459,93 +455,14 @@ class JarvisPageService:
 
     # ── F43 Phase 5: "What I Need" retirement plan ───────────────────────────
 
-    def _classify_bucket(self, instrument_id: str) -> str:
-        uid = instrument_id.upper()
-        if uid in _INDEX_INSTRUMENTS:
-            return "idx"
-        if uid in _COMMODITY_INSTRUMENTS:
-            return "com"
-        if uid in _ALT_INSTRUMENTS:
-            return "alt"
-        return "eq"
-
     def _bucket_breakdown(self, location: str, plan_inputs: Any) -> list[BucketBreakdownOut]:
-        from datetime import date as _date
-
         try:
             pf = self.portfolio(location)
             instruments = pf.instruments or []
         except Exception:
             log.exception("jarvis.bucket_breakdown.portfolio_failed", location=location)
             return []
-
-        # The target must cover the SAME period as the actual returns. The instrument returns
-        # (``i.ret``) run from perf.year_start (the later of 1 Jan and the portfolio's save date)
-        # to perf.as_of (the latest close), not 1 Jan to today. Fall back to the calendar year
-        # only when no performance period exists.
-        perf = pf.perf
-        if perf is not None and perf.year_start is not None and perf.as_of is not None:
-            period_start, period_end = perf.year_start, perf.as_of
-        else:
-            today = _date.today()
-            period_start, period_end = _date(today.year, 1, 1), today
-        elapsed_fraction = max(0, (period_end - period_start).days) / 365.0
-
-        bucket_map: dict[str, list[Any]] = {"idx": [], "eq": [], "com": [], "alt": []}
-        for inst in instruments:
-            key = self._classify_bucket(inst.instrument_id)
-            bucket_map[key].append(inst)
-
-        bucket_config = [
-            ("idx", plan_inputs.idx_rate, plan_inputs.idx_monthly),
-            ("eq",  plan_inputs.eq_rate,  plan_inputs.eq_monthly),
-            ("com", plan_inputs.com_rate, plan_inputs.com_monthly),
-            ("alt", plan_inputs.alt_rate, plan_inputs.alt_monthly),
-        ]
-
-        result: list[BucketBreakdownOut] = []
-        for key, rate, monthly in bucket_config:
-            if rate is None:
-                continue
-            insts = bucket_map.get(key, [])
-            inst_outs = [
-                BucketInstrumentOut(
-                    instrument_id=i.instrument_id,
-                    allocation_pct=i.allocation_pct,
-                    ytd_return=i.ret,
-                )
-                for i in insts
-            ]
-            total_w = sum(
-                i.allocation_pct
-                for i in insts
-                if i.allocation_pct is not None and i.ret is not None
-            )
-            if total_w > 0:
-                ytd: float | None = sum(
-                    i.ret * i.allocation_pct
-                    for i in insts
-                    if i.allocation_pct is not None and i.ret is not None
-                ) / total_w
-            else:
-                ytd = None
-
-            ttd = rate * elapsed_fraction
-            gap = (ytd - ttd) if ytd is not None else None
-            # No elapsed days = nothing measured yet: neither on track nor at risk.
-            at_risk = (gap < _AT_RISK_THRESHOLD) if (gap is not None and elapsed_fraction > 0) else None
-
-            result.append(BucketBreakdownOut(
-                key=key,
-                target_rate=rate,
-                target_to_date=ttd,
-                ytd_return=ytd,
-                gap=gap,
-                at_risk=at_risk,
-                monthly_target=monthly,
-                instruments=inst_outs,
-            ))
-        return result
+        return compute_bucket_breakdown(instruments, pf.perf, plan_inputs)
 
     def retirement_plan(self, location: str):
         from rita.schemas.jarvis import JarvisRetirementPlanOut, ScenarioSpreadOut

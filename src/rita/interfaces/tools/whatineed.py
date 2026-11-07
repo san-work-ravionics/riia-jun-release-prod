@@ -56,16 +56,15 @@ def get_goal(inp: GoalIn, ctx: ToolContext) -> GoalOut:
 def bucket_status(inp: BucketStatusIn, ctx: ToolContext) -> BucketStatusOut:
     """F45 Phase D: per-bucket plan-vs-portfolio status (the What I Need tab's bucket table).
 
-    Runs the same service as ``GET /api/v1/experience/jarvis/retirement-plan`` over an in-memory MCP
-    session (ADR-007 §4), so the chat and the page can never disagree."""
-    from rita.interfaces.mcp_client import McpRequestClient, identity_for
-    from rita.services.jarvis_page_service import _AT_RISK_THRESHOLD, JarvisPageService
+    Calls services only: a tool handler never opens a nested MCP session (ADR-007 — no extra thread /
+    event loop on the 1 GB box).  The maths is ``compute_bucket_breakdown``, shared with the page."""
+    from rita.services.bucket_status_service import AT_RISK_THRESHOLD, BucketStatusService
     from rita.services.retirement_plan_service import PlanValidationError
 
     user = ctx.require_user()
-    with ctx.session() as db, McpRequestClient(identity_for(user, "module:whatineed")) as mcp:
+    with ctx.session() as db:
         try:
-            out = JarvisPageService(db, mcp, user).retirement_plan(inp.location)
+            plan, breakdown = BucketStatusService(db).status(user.id, inp.location)
         except PlanValidationError as exc:
             raise ToolError("invalid_input", str(exc)) from exc
     buckets = [
@@ -75,11 +74,11 @@ def bucket_status(inp: BucketStatusIn, ctx: ToolContext) -> BucketStatusOut:
             instruments=[BucketInstrumentStatus(instrument_id=i.instrument_id, allocation_pct=i.allocation_pct,
                                                 ytd_return=i.ytd_return) for i in b.instruments],
         )
-        for b in out.bucket_breakdown
+        for b in breakdown
     ]
     return BucketStatusOut(
-        location=out.plan.location, currency=out.plan.currency, saved=out.plan.saved,
-        at_risk_threshold=_AT_RISK_THRESHOLD, n_buckets=len(buckets),
+        location=plan.location, currency=plan.currency, saved=plan.saved,
+        at_risk_threshold=AT_RISK_THRESHOLD, n_buckets=len(buckets),
         n_at_risk=sum(1 for b in buckets if b.at_risk is True),
         n_on_track=sum(1 for b in buckets if b.at_risk is False),
         n_no_data=sum(1 for b in buckets if b.at_risk is None),
