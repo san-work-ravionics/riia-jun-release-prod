@@ -117,8 +117,11 @@ class BucketStatusService:
         plan = plans.load(user_id, location)
         if not plan.saved:
             return plan, []
-        goal = plans.goal(user_id, location)
-        perf, instruments = self._portfolio(user_id, location, goal.goal_return if goal.saved else None)
+        # The plan's blended return, from the plan already loaded (plans.goal() would load it again).
+        from rita.core.goal_targets import ASSET_CLASSES, blend_goal_return
+        goal_return = blend_goal_return(
+            (getattr(plan.inputs, f"{c}_monthly"), getattr(plan.inputs, f"{c}_rate")) for c in ASSET_CLASSES)
+        perf, instruments = self._portfolio(user_id, location, goal_return)
         return plan, compute_bucket_breakdown(instruments, perf, plan.inputs)
 
     def _portfolio(self, user_id: str, location: str, plan_goal_return: float | None):

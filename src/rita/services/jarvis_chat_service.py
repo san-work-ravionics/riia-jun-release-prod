@@ -717,6 +717,8 @@ class JarvisChatService:
 
     def _i_wn_bucket_status(self, t: _Turn, slots) -> _Reply:
         if slots.bucket is None:
+            if len(slots.buckets) > 1:
+                return _Reply("wn.bucket.which_of", {"list": " or ".join(T.BUCKET_LABELS[k] for k in slots.buckets)})
             return _Reply("wn.bucket.which")
         out = self._buckets(t)
         if not out.saved:

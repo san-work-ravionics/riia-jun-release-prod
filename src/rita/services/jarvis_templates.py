@@ -159,6 +159,7 @@ TEMPLATES: dict[str, str] = {
     "wn.no_buckets": "Your saved plan has no asset lines to track yet. Add them on What I Need.",
     "wn.bucket.not_in_plan": "Your plan has no {bucket} line, so there is nothing to compare.",
     "wn.bucket.which": "Which bucket? Index fund, Equity, Commodities or Alternate.",
+    "wn.bucket.which_of": "You named more than one bucket ({list}). Which one should I look at?",
     "wn.bucket.empty": ("You hold no {bucket} instruments yet, so there is nothing to compare with "
                         "your plan."),
     "wn.bucket.no_data": "{bucket}: no performance data yet — check back after the next close.",

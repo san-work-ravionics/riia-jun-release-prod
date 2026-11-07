@@ -35,7 +35,8 @@ class Slots:
     location: str | None = None
     instruments: list[str] = field(default_factory=list)
     yes_no: str | None = None             # "yes" | "no" | None
-    bucket: str | None = None             # "idx" | "eq" | "com" | "alt" | None (F45 Phase D)
+    bucket: str | None = None             # "idx" | "eq" | "com" | "alt"; None when none OR several are named
+    buckets: list[str] = field(default_factory=list)   # every distinct bucket named, in order of mention
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -52,8 +53,9 @@ def parse_slots(text: str, universe: Iterable[str] = ()) -> Slots:
     for w in words:
         if out.location is None and w in LOCATION_WORDS:
             out.location = LOCATION_WORDS[w]
-        if out.bucket is None and w in BUCKET_WORDS:
-            out.bucket = BUCKET_WORDS[w]
+        if w in BUCKET_WORDS and BUCKET_WORDS[w] not in out.buckets:
+            out.buckets.append(BUCKET_WORDS[w])
+    out.bucket = out.buckets[0] if len(out.buckets) == 1 else None   # several named → ask, don't guess
     ids = {i.lower(): i for i in universe}
     for w in words:
         inst = ids.get(w)
