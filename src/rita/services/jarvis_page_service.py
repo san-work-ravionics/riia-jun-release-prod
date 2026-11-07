@@ -22,6 +22,8 @@ from rita.repositories.jarvis import JarvisMessageRepo, JarvisSessionRepo
 from rita.schemas.goal_selection import GoalOut, RequiredReturnOut
 from rita.schemas.jarvis import (
     AstaTraceOut,
+    BucketBreakdownOut,
+    BucketInstrumentOut,
     ChartMarkerOut,
     ChipOut,
     ClosePointOut,
@@ -55,6 +57,11 @@ TRACKED = ("tracking", "reselect_proposed", "back_to_plan")
 
 ENGINE_LABELS = {"rita": "RITA model (DDQN)", "fno": "FnO σ levels — not a model",
                  "asta": "ASTA model (NIFTY only)", "held": "Your holdings"}
+
+_AT_RISK_THRESHOLD = -0.02
+_INDEX_INSTRUMENTS = {"NIFTY50", "BANKNIFTY", "NIFTYMIDCAP50", "FINNIFTY", "NIFTY_FIN_SERVICE"}
+_COMMODITY_INSTRUMENTS = {"GOLDM", "SILVERM", "GOLD", "SILVER", "CRUDEOIL", "NATURALGAS"}
+_ALT_INSTRUMENTS = {"BITCOIN", "ETH", "REIT"}
 
 
 class PageError(Exception):
@@ -446,6 +453,84 @@ class JarvisPageService:
 
     # ── F43 Phase 5: "What I Need" retirement plan ───────────────────────────
 
+    def _classify_bucket(self, instrument_id: str) -> str:
+        uid = instrument_id.upper()
+        if uid in _INDEX_INSTRUMENTS:
+            return "idx"
+        if uid in _COMMODITY_INSTRUMENTS:
+            return "com"
+        if uid in _ALT_INSTRUMENTS:
+            return "alt"
+        return "eq"
+
+    def _bucket_breakdown(self, location: str, plan_inputs: Any) -> list[BucketBreakdownOut]:
+        from datetime import date as _date
+
+        try:
+            pf = self.portfolio(location)
+            instruments = pf.instruments or []
+        except Exception:
+            return []
+
+        today = _date.today()
+        year_start = _date(today.year, 1, 1)
+        elapsed_fraction = (today - year_start).days / 365.0
+
+        bucket_map: dict[str, list[Any]] = {"idx": [], "eq": [], "com": [], "alt": []}
+        for inst in instruments:
+            key = self._classify_bucket(inst.instrument_id)
+            bucket_map[key].append(inst)
+
+        bucket_config = [
+            ("idx", plan_inputs.idx_rate, plan_inputs.idx_monthly),
+            ("eq",  plan_inputs.eq_rate,  plan_inputs.eq_monthly),
+            ("com", plan_inputs.com_rate, plan_inputs.com_monthly),
+            ("alt", plan_inputs.alt_rate, plan_inputs.alt_monthly),
+        ]
+
+        result: list[BucketBreakdownOut] = []
+        for key, rate, monthly in bucket_config:
+            if rate is None:
+                continue
+            insts = bucket_map.get(key, [])
+            inst_outs = [
+                BucketInstrumentOut(
+                    instrument_id=i.instrument_id,
+                    allocation_pct=i.allocation_pct,
+                    ytd_return=i.ret,
+                )
+                for i in insts
+            ]
+            total_w = sum(
+                i.allocation_pct
+                for i in insts
+                if i.allocation_pct is not None and i.ret is not None
+            )
+            if total_w > 0:
+                ytd: float | None = sum(
+                    i.ret * i.allocation_pct
+                    for i in insts
+                    if i.allocation_pct is not None and i.ret is not None
+                ) / total_w
+            else:
+                ytd = None
+
+            ttd = rate * elapsed_fraction
+            gap = (ytd - ttd) if ytd is not None else None
+            at_risk = (gap < _AT_RISK_THRESHOLD) if gap is not None else None
+
+            result.append(BucketBreakdownOut(
+                key=key,
+                target_rate=rate,
+                target_to_date=ttd,
+                ytd_return=ytd,
+                gap=gap,
+                at_risk=at_risk,
+                monthly_target=monthly,
+                instruments=inst_outs,
+            ))
+        return result
+
     def retirement_plan(self, location: str):
         from rita.schemas.jarvis import JarvisRetirementPlanOut, ScenarioSpreadOut
         from rita.services.retirement_plan_service import RetirementPlanService
@@ -455,7 +540,10 @@ class JarvisPageService:
         plan = svc.load(user_id, location)
         cfg = get_settings().retirement_plan.scenario_spread
         spread = ScenarioSpreadOut(pessimistic=cfg.pessimistic, optimistic=cfg.optimistic)
-        return JarvisRetirementPlanOut(plan=plan, scenario_spread=spread)
+        breakdown: list[BucketBreakdownOut] = []
+        if plan.saved:
+            breakdown = self._bucket_breakdown(location, plan.inputs)
+        return JarvisRetirementPlanOut(plan=plan, scenario_spread=spread, bucket_breakdown=breakdown)
 
     def calculate_retirement_plan(self, body):
         from rita.core.retirement_plan import ASSET_KEYS

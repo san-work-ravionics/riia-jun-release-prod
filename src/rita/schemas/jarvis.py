@@ -782,6 +782,29 @@ from rita.schemas.retirement_plan import (  # noqa: E402
     RetirementPlanResult,
 )
 
+from pydantic.alias_generators import to_camel  # noqa: E402
+
+_CAMEL = ConfigDict(alias_generator=to_camel, populate_by_name=True, from_attributes=True)
+
+
+class BucketInstrumentOut(BaseModel):
+    model_config = _CAMEL
+    instrument_id: str
+    allocation_pct: float | None = None
+    ytd_return: float | None = None
+
+
+class BucketBreakdownOut(BaseModel):
+    model_config = _CAMEL
+    key: Literal["idx", "eq", "com", "alt"]
+    target_rate: float
+    target_to_date: float
+    ytd_return: float | None = None
+    gap: float | None = None
+    at_risk: bool | None = None
+    monthly_target: float | None = None
+    instruments: list[BucketInstrumentOut] = []
+
 
 class ScenarioSpreadOut(BaseModel):
     pessimistic: float
@@ -791,6 +814,7 @@ class ScenarioSpreadOut(BaseModel):
 class JarvisRetirementPlanOut(BaseModel):
     plan: RetirementPlanOut
     scenario_spread: ScenarioSpreadOut
+    bucket_breakdown: list[BucketBreakdownOut] = []
 
 
 class WaterfallOut(BaseModel):

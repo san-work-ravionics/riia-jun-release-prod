@@ -395,6 +395,17 @@ export const COPY = {
   'wn.trk.col.atret': 'Value at retirement',
   'wn.trk.saved': 'Plan saved {date}',
 
+  'wn.bucket.section': 'Bucket milestones',
+  'wn.bucket.col.bucket': 'Bucket',
+  'wn.bucket.col.monthly': 'Monthly target',
+  'wn.bucket.col.target_ytd': 'Target YTD',
+  'wn.bucket.col.actual_ytd': 'Actual YTD',
+  'wn.bucket.col.gap': 'Gap',
+  'wn.bucket.at_risk': 'At risk',
+  'wn.bucket.on_pace': 'On pace',
+  'wn.bucket.no_data': 'No data',
+  'wn.bucket.col.instruments': 'Status',
+
   'state.no_goal': 'No goal',
   'state.goal_loaded': 'Goal loaded',
   'state.selected': 'Selected',
