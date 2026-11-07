@@ -9,6 +9,7 @@ a request is the ``mcp_calls`` log rows written by the MCP logger in its own ses
 """
 from __future__ import annotations
 
+import structlog
 from datetime import date
 from typing import Any
 
@@ -16,6 +17,8 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from rita.config import get_settings
+
+log = structlog.get_logger(__name__)
 from rita.core.goal_targets import target_to_date
 from rita.interfaces.mcp_client import McpCallError, McpRequestClient
 from rita.repositories.jarvis import JarvisMessageRepo, JarvisSessionRepo
@@ -80,6 +83,8 @@ def _call(mcp: McpRequestClient, tool: str, args: dict[str, Any], model: type[Ba
         if exc.code == "not_found":
             return None
         raise PageError(exc.code, f"{tool}: {exc.code}") from exc
+    if res.structured is None:
+        return None
     return model.model_validate(res.structured)
 
 
@@ -470,6 +475,7 @@ class JarvisPageService:
             pf = self.portfolio(location)
             instruments = pf.instruments or []
         except Exception:
+            log.exception("jarvis.bucket_breakdown.portfolio_failed", location=location)
             return []
 
         today = _date.today()

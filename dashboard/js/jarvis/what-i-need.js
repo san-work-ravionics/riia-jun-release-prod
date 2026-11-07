@@ -36,7 +36,7 @@ function _renderBuckets(breakdowns, ccy) {
   const rows = breakdowns.map(b => {
     const chips = (b.instruments || []).map(i => `<span class="jv-hold-chip"><b class="mono">${esc(i.instrumentId)}</b>${isNum(i.allocationPct) ? ' ' + fmtNum(i.allocationPct, 0) + '%' : ''}</span>`).join('');
     const statusChip = b.atRisk === true
-      ? `<span class="jv-badge warn">${t('wn.bucket.at_risk')}</span>`
+      ? `<span class="jv-badge warn">${t('wn.bucket.at_risk')}</span> <a class="jv-wn-hedge-cta" href="/dashboard/fno.html">${t('wn.bucket.review_hedge')}</a>`
       : b.atRisk === false
         ? `<span class="jv-badge ok">${t('wn.bucket.on_pace')}</span>`
         : `<span class="jv-muted">${t('wn.bucket.no_data')}</span>`;
@@ -49,6 +49,16 @@ function _renderBuckets(breakdowns, ccy) {
       <td>${statusChip}</td>
     </tr>`;
   }).join('');
+
+  const nRisk = breakdowns.filter(b => b.atRisk === true).length;
+  const sum = $('jv-wn-bucket-summary');
+  if (sum) {
+    const nOk = breakdowns.filter(b => b.atRisk === false).length;
+    const state = nRisk ? 'risk' : nOk ? 'ok' : 'nodata';
+    sum.className = 'jv-wn-bucket-summary ' + state;
+    sum.textContent = state === 'risk' ? t('wn.bucket.summary_risk').replace('{n}', nRisk)
+      : state === 'ok' ? t('wn.bucket.summary_ok') : t('wn.bucket.summary_nodata');
+  }
 
   const tbl = $('jv-wn-bucket-tbl');
   if (tbl) {

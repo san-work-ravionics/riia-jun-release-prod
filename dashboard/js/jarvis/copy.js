@@ -404,6 +404,10 @@ export const COPY = {
   'wn.bucket.at_risk': 'At risk',
   'wn.bucket.on_pace': 'On pace',
   'wn.bucket.no_data': 'No data',
+  'wn.bucket.review_hedge': 'Review Hedge →',
+  'wn.bucket.summary_ok': 'All buckets on track',
+  'wn.bucket.summary_nodata': 'No performance data yet — status unavailable',
+  'wn.bucket.summary_risk': '{n} bucket(s) at risk',
   'wn.bucket.col.instruments': 'Status',
 
   'state.no_goal': 'No goal',

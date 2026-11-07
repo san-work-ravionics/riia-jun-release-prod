@@ -812,6 +812,7 @@ class ScenarioSpreadOut(BaseModel):
 
 
 class JarvisRetirementPlanOut(BaseModel):
+    model_config = _CAMEL
     plan: RetirementPlanOut
     scenario_spread: ScenarioSpreadOut
     bucket_breakdown: list[BucketBreakdownOut] = []

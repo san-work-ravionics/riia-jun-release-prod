@@ -145,6 +145,10 @@ canvas{display:block;}
 .jv-note{color:var(--t2);font-size:12px;margin:4px 0 8px;line-height:1.6;}
 .jv-note.ok{color:var(--build);} .jv-note.warn{color:var(--warn);}
 .jv-method{color:var(--t3);font-size:11px;margin-top:12px;line-height:1.6;padding-top:10px;border-top:1px solid var(--border);}
+.jv-wn-bucket-summary{font-size:12px;padding:6px 10px;border-radius:4px;margin:6px 0;border:1px solid var(--warn-bd);background:var(--warn-bg);color:var(--warn);}
+.jv-wn-bucket-summary.nodata{border-color:var(--border);background:transparent;color:var(--t3);}
+.jv-wn-bucket-summary.ok{border-color:var(--run-bd);background:var(--run-bg);color:var(--run);}
+.jv-wn-hedge-cta{font-size:11px;margin-left:6px;color:var(--warn);text-decoration:underline;}
 .jv-badge{display:inline-flex;align-items:center;font-family:var(--fm);font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;padding:1px 6px;border-radius:3px;border:1px solid var(--warn-bd);background:var(--warn-bg);color:var(--warn);}
 .jv-list{list-style:none;font-size:12px;color:var(--t2);}
 .jv-list li{padding:3px 0;border-bottom:1px dashed var(--border);}
@@ -696,6 +700,7 @@ canvas{display:block;}
       <!-- bucket milestone breakdown -->
       <div id="jv-wn-bucket-wrap" hidden>
         <div class="sec-label" data-i18n="wn.bucket.section"></div>
+        <div id="jv-wn-bucket-summary" class="jv-wn-bucket-summary"></div>
         <div id="jv-wn-bucket-tbl"></div>
       </div>
 
