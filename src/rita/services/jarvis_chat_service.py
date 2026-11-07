@@ -114,7 +114,7 @@ def warmup() -> WarmupOut:
     try:
         n = journey_intents.build_index()
     except Exception as exc:  # noqa: BLE001 — model path missing / load failure
-        log.warning("jarvis.warmup_failed", error=type(exc).__name__)
+        log.warning("jarvis.warmup_failed", error=type(exc).__name__, detail=str(exc)[:200])
         raise JarvisChatError("unavailable", "chat model unavailable") from exc
     return WarmupOut(status="ready", intents=n)
 

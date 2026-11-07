@@ -15,7 +15,7 @@ model:
 
 chat:
   # Local path to the sentence-transformers/all-MiniLM-L6-v2 snapshot.
-  # Override with RITA_CHAT__EMBED_MODEL_PATH env var for your platform.
+  # Override with RITA_CHAT_EMBED_MODEL_PATH env var for your platform.
   embed_model_path: ""
 
 # Financial constants — config-driven, never hardcoded in application code.

@@ -48,6 +48,10 @@ def _get_model():
         model_path = get_settings().chat.embed_model_path
         # Force offline — never contact HuggingFace at runtime
         os.environ["TRANSFORMERS_OFFLINE"] = "1"
+        if not model_path or not os.path.isdir(model_path):
+            raise RuntimeError(
+                f"chat.embed_model_path is not a directory ({model_path!r}); set RITA_CHAT_EMBED_MODEL_PATH "
+                "to the local all-MiniLM-L6-v2 snapshot")
         _model = SentenceTransformer(model_path)
     return _model
 
