@@ -362,6 +362,26 @@ class PortfolioPnlService:
                                      return_since=ret, status=status))
         return out
 
+    def month_end_returns(self, instrument_ids: list[str], start: date, end: date) -> dict[str, dict[date, float]]:
+        """F45 Phase B: each instrument's cumulative close-to-close return at every calendar month end
+        from ``start`` to ``end`` (the running month is keyed ``end``).  Same base bar as
+        ``_saved_holdings``.  Instruments without prices are left out.  Read-only."""
+        from rita.services.bucket_status_service import month_key
+
+        out: dict[str, dict[date, float]] = {}
+        for iid in instrument_ids:
+            c = _from_base(self._closes(iid, start, end), start, end)
+            if len(c) < 2:
+                continue
+            ret = c / c.iloc[0] - 1.0
+            by_month: dict[date, float] = {}
+            for ts, v in ret.items():
+                if ts.date() > start:
+                    by_month[month_key(ts.date(), end)] = float(v)      # later bars overwrite: month's last
+            if by_month:
+                out[iid] = by_month
+        return out
+
     @staticmethod
     def _saved_coverage(money: MoneyOut, row: _SavedRow) -> float:
         priced = {h.instrument_id for h in money.holdings if h.last_close is not None and h.shares}

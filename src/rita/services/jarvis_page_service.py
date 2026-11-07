@@ -462,7 +462,26 @@ class JarvisPageService:
         except Exception:
             log.exception("jarvis.bucket_breakdown.portfolio_failed", location=location)
             return []
-        return compute_bucket_breakdown(instruments, pf.perf, plan_inputs)
+        return compute_bucket_breakdown(instruments, pf.perf, plan_inputs,
+                                        month_returns=self._bucket_month_returns(instruments, pf.perf, location))
+
+    def _bucket_month_returns(self, instruments: list[Any], perf: Any, location: str):
+        """Month-end cumulative returns per held instrument; the running month is pinned to the
+        instrument's own period return so the last row equals the YTD figure.  Never fails the page."""
+        if perf is None or perf.year_start is None or perf.as_of is None:
+            return None
+        try:
+            from rita.services.portfolio_pnl_service import PortfolioPnlService
+            held = [i for i in instruments if i.ret is not None]
+            out = PortfolioPnlService(self._db).month_end_returns(
+                [i.instrument_id for i in held], perf.year_start, perf.as_of)
+            for i in held:
+                if i.instrument_id in out:
+                    out[i.instrument_id][perf.as_of] = i.ret
+            return out
+        except Exception:
+            log.exception("jarvis.bucket_month_returns_failed", location=location)
+            return None
 
     def retirement_plan(self, location: str):
         from rita.schemas.jarvis import JarvisRetirementPlanOut, ScenarioSpreadOut

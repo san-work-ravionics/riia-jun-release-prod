@@ -66,7 +66,7 @@ def _src(name: str) -> str:
 def test_all_design_modules_present():
     assert set(_MODULES) == {"main.js", "copy.js", "esc.js", "format.js", "chat.js", "plan.js",
                              "portfolio.js", "instrument.js", "concepts.js", "regions.js",
-                             "region-period.js"}
+                             "region-period.js", "what-i-need.js"}
 
 
 # ── stale token (A2, A3, A4, A5, A6) ───────────────────────────────────────────
@@ -282,14 +282,16 @@ def test_fc_imp_named_imports_resolve(name):
                 assert n in exported, f"FC-IMP: {n} not exported by {spec} (imported in {name})"
 
 
-def test_intra_jarvis_imports_share_one_cache_bust_query():
-    """Every ./x.js import carries the same ?v= (a module imported under two URLs would load twice)."""
-    qs = set()
+def test_each_jarvis_module_is_imported_under_one_cache_bust_query():
+    """A module imported under two URLs loads twice (two instances).  Every import of a given ./x.js
+    must carry the same ?v= (modules may be bumped independently of each other)."""
+    by_module: dict[str, set[str]] = {}
     for name in _MODULES:
         for spec in re.findall(r"from\s*'(\./[^']+)'", _src(name)):
             assert "?v=" in spec, f"{name}: {spec}"
-            qs.add(spec.split("?")[1])
-    assert qs == {"v=3"}
+            mod, q = spec.split("?")
+            by_module.setdefault(mod, set()).add(q)
+    assert {m: q for m, q in by_module.items() if len(q) > 1} == {}
 
 
 @_needs_node
@@ -464,9 +466,9 @@ def test_html_has_every_design_id_once():
     assert len(ids) == len(set(ids))
 
 
-def test_html_loads_main_v3_and_chartjs():
+def test_html_loads_versioned_main_and_chartjs():
     html = _HTML.read_text(encoding="utf-8")
-    assert '<script type="module" src="./js/jarvis/main.js?v=3"></script>' in html
+    assert re.search(r'<script type="module" src="\./js/jarvis/main\.js\?v=\d+"></script>', html)
     assert "chart.js@4.4.0/dist/chart.umd.min.js" in html
 
 

@@ -396,6 +396,11 @@ export const COPY = {
   'wn.trk.saved': 'Plan saved {date}',
 
   'wn.bucket.section': 'Bucket milestones',
+  'wn.bucket.monthly.title': 'Month by month',
+  'wn.bucket.monthly.col.month': 'Month',
+  'wn.bucket.monthly.col.target': 'Target so far',
+  'wn.bucket.monthly.col.actual': 'Actual so far',
+  'wn.bucket.monthly.col.status': 'Status',
   'wn.bucket.col.bucket': 'Bucket',
   'wn.bucket.col.monthly': 'Monthly target',
   'wn.bucket.col.target_ytd': 'Target YTD',

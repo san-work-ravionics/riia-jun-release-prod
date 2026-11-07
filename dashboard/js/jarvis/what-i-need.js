@@ -1,6 +1,6 @@
 import { api } from '../shared/api.js';
 import { locCurrency } from './regions.js?v=3';
-import { t } from './copy.js?v=8';
+import { t } from './copy.js?v=9';
 import { fmtMoney, fmtRate, fmtDate, fmtNum, isNum } from './format.js?v=3';
 import { esc } from './esc.js?v=3';
 import { loadPortfolio } from './portfolio.js?v=3';
@@ -22,6 +22,27 @@ const _ASSETS = [
   { key: 'com', copyKey: 'wn.label.com' },
   { key: 'alt', copyKey: 'wn.label.alt' },
 ];
+
+function _renderMonthly(breakdowns, LABEL) {
+  const box = $('jv-wn-bucket-monthly');
+  if (!box) return;
+  const sections = breakdowns.filter(b => (b.monthly || []).length).map(b => {
+    const rows = b.monthly.map(m => {
+      const chip = m.atRisk === true ? `<span class="jv-badge warn">${t('wn.bucket.at_risk')}</span>`
+        : m.atRisk === false ? `<span class="jv-badge ok">${t('wn.bucket.on_pace')}</span>`
+        : `<span class="jv-muted">${t('wn.bucket.no_data')}</span>`;
+      return `<tr><td>${esc(fmtDate(m.month))}</td>
+        <td class="num">${isNum(m.target) ? fmtRate(m.target) : '—'}</td>
+        <td class="num ${m.actual < 0 ? 'neg' : m.actual > 0 ? 'pos' : ''}">${isNum(m.actual) ? fmtRate(m.actual) : '—'}</td>
+        <td>${chip}</td></tr>`;
+    }).join('');
+    return `<div class="sec-label">${esc(LABEL[b.key] || b.key)} — ${t('wn.bucket.monthly.title')}</div>
+      <table class="jv-table jv-table-sm"><thead><tr><th>${t('wn.bucket.monthly.col.month')}</th>
+      <th class="num">${t('wn.bucket.monthly.col.target')}</th><th class="num">${t('wn.bucket.monthly.col.actual')}</th>
+      <th>${t('wn.bucket.monthly.col.status')}</th></tr></thead><tbody>${rows}</tbody></table>`;
+  });
+  box.innerHTML = sections.join('');
+}
 
 function _renderBuckets(breakdowns, ccy) {
   const wrap = $('jv-wn-bucket-wrap');
@@ -49,6 +70,8 @@ function _renderBuckets(breakdowns, ccy) {
       <td>${statusChip}</td>
     </tr>`;
   }).join('');
+
+  _renderMonthly(breakdowns, LABEL);
 
   const nRisk = breakdowns.filter(b => b.atRisk === true).length;
   const sum = $('jv-wn-bucket-summary');
