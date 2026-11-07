@@ -478,9 +478,17 @@ class JarvisPageService:
             log.exception("jarvis.bucket_breakdown.portfolio_failed", location=location)
             return []
 
-        today = _date.today()
-        year_start = _date(today.year, 1, 1)
-        elapsed_fraction = (today - year_start).days / 365.0
+        # The target must cover the SAME period as the actual returns. The instrument returns
+        # (``i.ret``) run from perf.year_start (the later of 1 Jan and the portfolio's save date)
+        # to perf.as_of (the latest close), not 1 Jan to today. Fall back to the calendar year
+        # only when no performance period exists.
+        perf = pf.perf
+        if perf is not None and perf.year_start is not None and perf.as_of is not None:
+            period_start, period_end = perf.year_start, perf.as_of
+        else:
+            today = _date.today()
+            period_start, period_end = _date(today.year, 1, 1), today
+        elapsed_fraction = max(0, (period_end - period_start).days) / 365.0
 
         bucket_map: dict[str, list[Any]] = {"idx": [], "eq": [], "com": [], "alt": []}
         for inst in instruments:
