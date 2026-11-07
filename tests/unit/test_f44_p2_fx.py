@@ -36,6 +36,19 @@ from rita.main import app
 from rita.models.market_data import MarketDataCacheModel
 from rita.services.fx_service import FX_YF_TICKERS, FxService, fx_underlying
 
+
+_REAL_CONNECT = socket.socket.connect
+
+
+def _loopback_ok(refuse):
+    """Network guard that still lets loopback through: on Windows asyncio builds its event loop from a
+    127.0.0.1 socketpair, which is not network access."""
+    def connect(self, address, *a, **k):
+        if isinstance(address, tuple) and address and address[0] in ("127.0.0.1", "::1", "localhost"):
+            return _REAL_CONNECT(self, address, *a, **k)
+        return refuse(self, address, *a, **k)
+    return connect
+
 _SRC = Path(__file__).resolve().parents[2] / "src" / "rita"
 NOW = datetime(2026, 10, 20, 12, 0, 0)
 
@@ -80,7 +93,7 @@ def no_network(monkeypatch):
     """Any socket connect / yfinance download fails the test."""
     def _boom(*a, **k):
         raise AssertionError("network call from request code")
-    monkeypatch.setattr(socket.socket, "connect", _boom)
+    monkeypatch.setattr(socket.socket, "connect", _loopback_ok(_boom))
     monkeypatch.setattr(socket, "create_connection", _boom)
     import yfinance
     monkeypatch.setattr(yfinance, "download", _boom, raising=False)  # yfinance may be a spec'd stub (test_data_refresh)

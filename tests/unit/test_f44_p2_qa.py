@@ -59,6 +59,19 @@ from rita.repositories.user_portfolio_key import UserPortfolioKeyRepo
 from rita.schemas.user_portfolio import UserPortfolioCreate, UserPortfolioOut
 from rita.services.user_portfolio_service import UserPortfolioService, holding_cash
 
+
+_REAL_CONNECT = socket.socket.connect
+
+
+def _loopback_ok(refuse):
+    """Network guard that still lets loopback through: on Windows asyncio builds its event loop from a
+    127.0.0.1 socketpair, which is not network access."""
+    def connect(self, address, *a, **k):
+        if isinstance(address, tuple) and address and address[0] in ("127.0.0.1", "::1", "localhost"):
+            return _REAL_CONNECT(self, address, *a, **k)
+        return refuse(self, address, *a, **k)
+    return connect
+
 _ROOT = Path(__file__).resolve().parents[2]
 _SRC = _ROOT / "src" / "rita"
 _JS = _ROOT / "dashboard" / "js"
@@ -446,7 +459,7 @@ def net_guard(monkeypatch):
             raise OSError(f"network disabled in test: {kind}")
         return _boom
 
-    monkeypatch.setattr(socket.socket, "connect", _rec("socket.connect"))
+    monkeypatch.setattr(socket.socket, "connect", _loopback_ok(_rec("socket.connect")))
     monkeypatch.setattr(socket.socket, "connect_ex", _rec("socket.connect_ex"))
     monkeypatch.setattr(socket, "create_connection", _rec("socket.create_connection"))
     monkeypatch.setattr(socket, "getaddrinfo", _rec("socket.getaddrinfo"))

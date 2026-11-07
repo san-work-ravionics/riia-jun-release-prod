@@ -16,6 +16,7 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
+from sqlalchemy.orm import Session
 
 import rita.services.goal_selection_service as svc_mod
 from rita.config import get_settings
@@ -166,20 +167,36 @@ def test_new_data_invalidates_the_cache(world):
 
 
 def test_concurrent_callers_replay_each_instrument_once(world):
-    db, fa, cache, _ = world
+    import sqlite3
+    from sqlalchemy import create_engine
+    db, fa, cache, tmp = world
+    # The fixture's in-memory engine shares ONE sqlite connection, which is not safe across threads.
+    # Snapshot the seeded data to a file so every caller has its own connection; the per-instrument
+    # lock under test is what must keep the replay count at one.
+    db.commit()
+    dest = tmp / "concurrent.db"
+    src = db.get_bind().raw_connection().driver_connection
+    out = sqlite3.connect(dest)
+    src.backup(out)
+    out.close()
+    engine = create_engine(f"sqlite:///{dest}")
     errors = []
 
     def go():
+        own = Session(bind=engine)
         try:
-            GoalSelectionService(db, artifacts=fa, cache=cache).location_runs("us")
+            GoalSelectionService(own, artifacts=fa, cache=cache).location_runs("us")
         except Exception as exc:  # pragma: no cover
             errors.append(exc)
+        finally:
+            own.close()
 
     threads = [threading.Thread(target=go) for _ in range(4)]
     for t in threads:
         t.start()
     for t in threads:
         t.join()
+    engine.dispose()
     assert not errors and fa.loads == ["U1"]
 
 

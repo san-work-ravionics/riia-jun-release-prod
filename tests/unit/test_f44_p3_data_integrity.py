@@ -23,6 +23,19 @@ from rita.core.data_integrity import check_window
 from rita.repositories.model_artifact import REWRITE_MARKER, ModelArtifactRepository
 from rita.services import data_refresh
 
+
+_REAL_CONNECT = socket.socket.connect
+
+
+def _loopback_ok(refuse):
+    """Network guard that still lets loopback through: on Windows asyncio builds its event loop from a
+    127.0.0.1 socketpair, which is not network access."""
+    def connect(self, address, *a, **k):
+        if isinstance(address, tuple) and address and address[0] in ("127.0.0.1", "::1", "localhost"):
+            return _REAL_CONNECT(self, address, *a, **k)
+        return refuse(self, address, *a, **k)
+    return connect
+
 TRAIN_END = date(2022, 12, 31)
 
 
@@ -91,7 +104,7 @@ def data_dirs(tmp_path, monkeypatch):
 def no_network(monkeypatch):
     def refuse(*_a, **_k):
         raise AssertionError("network access in a unit test")
-    monkeypatch.setattr(socket.socket, "connect", refuse)
+    monkeypatch.setattr(socket.socket, "connect", _loopback_ok(refuse))
     monkeypatch.setattr(socket, "create_connection", refuse)
     monkeypatch.setattr(socket, "getaddrinfo", refuse)
 
