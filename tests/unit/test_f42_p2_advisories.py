@@ -118,6 +118,6 @@ def test_delimiter_sniff_uses_several_lines():
 def test_js_escapes_quotes_and_date_hint():
     from pathlib import Path
     root = Path(__file__).resolve().parents[2]
-    js = (root / "dashboard/js/fno/trade-import.js").read_text()
+    js = (root / "dashboard/js/fno/trade-import.js").read_text(encoding="utf-8")
     assert "&quot;" in js and "&#39;" in js and "ta-imp-from-hint" in js
-    assert 'id="ta-imp-from-hint"' in (root / "dashboard/fno.html").read_text()
+    assert 'id="ta-imp-from-hint"' in (root / "dashboard/fno.html").read_text(encoding="utf-8")

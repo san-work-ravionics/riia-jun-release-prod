@@ -40,7 +40,7 @@ pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="node not i
 
 
 def _src(rel: str) -> str:
-    return (_JS / rel).read_text()
+    return (_JS / rel).read_text(encoding="utf-8")
 
 
 def _node(script: str) -> dict:
@@ -335,5 +335,5 @@ def test_cache_bust_bumped():
 def test_fno_portfolio_builder_untouched_and_unloaded():
     """fno/portfolio-builder.js is not loaded by any page (Architect table: confirm and leave)."""
     assert "portfolio-builder" not in _src("fno/main.js")
-    html = (_JS.parent / "fno.html").read_text()
+    html = (_JS.parent / "fno.html").read_text(encoding="utf-8")
     assert "portfolio-builder.js" not in html

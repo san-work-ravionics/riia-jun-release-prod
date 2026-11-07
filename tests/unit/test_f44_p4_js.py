@@ -28,7 +28,7 @@ _ROOT = Path(__file__).resolve().parents[1].parent
 _JS = _ROOT / "dashboard" / "js"
 _JV = _JS / "jarvis"
 _HTML = _ROOT / "dashboard" / "jarvis.html"
-_FIXTURE = json.loads((Path(__file__).parent / "fixtures" / "f44_p4_contract.json").read_text())
+_FIXTURE = json.loads((Path(__file__).parent / "fixtures" / "f44_p4_contract.json").read_text(encoding="utf-8"))
 _MODULES = sorted(p.name for p in _JV.glob("*.js"))
 _needs_node = pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
 
@@ -60,7 +60,7 @@ const jr = (body, status = 200) => ({ ok: status < 400, status, statusText: 'x',
 
 
 def _src(name: str) -> str:
-    return (_JV / name).read_text()
+    return (_JV / name).read_text(encoding="utf-8")
 
 
 def test_all_design_modules_present():
@@ -263,7 +263,7 @@ def test_only_window_binding_is_close_chart_modal():
 # ── FC-IMP ─────────────────────────────────────────────────────────────────────
 
 def _exports(path: Path) -> set[str]:
-    s = path.read_text()
+    s = path.read_text(encoding="utf-8")
     names = set(re.findall(r"export\s+(?:async\s+)?(?:function|const|let|class)\s+(\w+)", s))
     for group in re.findall(r"export\s*\{([^}]*)\}", s):
         names |= {g.split(" as ")[-1].strip() for g in group.split(",") if g.strip()}
@@ -457,7 +457,7 @@ jv-geo-table-wrap jv-geo-table jv-geo-table-empty jv-pf-detail-title""".split() 
 
 
 def test_html_has_every_design_id_once():
-    html = _HTML.read_text()
+    html = _HTML.read_text(encoding="utf-8")
     ids = re.findall(r'\bid="([^"]+)"', html)
     for i in _DESIGN_IDS:
         assert ids.count(i) == 1, i
@@ -465,13 +465,13 @@ def test_html_has_every_design_id_once():
 
 
 def test_html_loads_main_v3_and_chartjs():
-    html = _HTML.read_text()
+    html = _HTML.read_text(encoding="utf-8")
     assert '<script type="module" src="./js/jarvis/main.js?v=3"></script>' in html
     assert "chart.js@4.4.0/dist/chart.umd.min.js" in html
 
 
 def test_html_keeps_the_stub_login_gate_verbatim():
-    html = _HTML.read_text()
+    html = _HTML.read_text(encoding="utf-8")
     gate = html[html.index("<script>"):html.index("</script>") + len("</script>")]
     assert "// Login gate (F44: Jarvis requires login)." in gate
     assert "window.location.href = '/auth/google/login';" in gate
@@ -484,7 +484,7 @@ def test_html_keeps_the_stub_login_gate_verbatim():
 
 
 def test_charts_sit_in_chart_wraps_with_titles():
-    html = _HTML.read_text()
+    html = _HTML.read_text(encoding="utf-8")
     for cid in ("jv-pnl-chart", "jv-target-chart", "jv-engine-chart", "jv-inst-chart", "jv-sleeve-chart", "jv-geo-map"):
         i = html.index(f'id="{cid}"')
         wrap = html.rfind('class="chart-wrap"', 0, i)
@@ -494,7 +494,7 @@ def test_charts_sit_in_chart_wraps_with_titles():
 # ── Concepts page ──────────────────────────────────────────────────────────────
 
 def test_html_concepts_view_ids():
-    html = _HTML.read_text()
+    html = _HTML.read_text(encoding="utf-8")
     ids = re.findall(r'\bid="([^"]+)"', html)
     for i in ("jv-tab-concepts", "jv-view-concepts", "jv-cx-steps", "jv-cx-flow", "jv-cx-status", "jv-cx-tabs", "jv-cx-panel"):
         assert ids.count(i) == 1, i
@@ -567,7 +567,7 @@ def test_html_portfolio_view_children_parsed():
                 self.cur = c.parent
 
     p = _P()
-    p.feed(_HTML.read_text())
+    p.feed(_HTML.read_text(encoding="utf-8"))
     assert p.mismatch == []
     view = p.ids["jv-view-portfolio"][0]
     kids = [(c.tag, c.attrs.get("id"), c.attrs.get("class")) for c in view.children]

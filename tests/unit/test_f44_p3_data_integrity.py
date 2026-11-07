@@ -142,7 +142,7 @@ def test_rewrite_only_for_a_failing_instrument_and_marker(data_dirs, no_network)
     assert kw["start"] == str(broken.index[0].date())          # full history
     stored = pd.read_csv(p_bad, index_col=0, parse_dates=True)["Close"]
     assert np.allclose(stored.to_numpy(), fixed.to_numpy())
-    marker = json.loads((data_dirs / "BRK" / REWRITE_MARKER).read_text())
+    marker = json.loads((data_dirs / "BRK" / REWRITE_MARKER).read_text(encoding="utf-8"))
     assert marker["lineages_invalidated"] == ["f34p25"]
     assert marker["integrity_after_passed"] is True and "2024-11-12" in marker["integrity_before"]["f34p25"]
     # the repository reads it back (→ retrain_needed in the service)
@@ -156,7 +156,7 @@ def test_rewrite_that_is_still_broken_is_recorded(data_dirs, no_network):
     _write_raw(data_dirs, "ATX", broken)
     res = data_refresh.rewrite_history_if_broken("ATX", "ATX.PA", downloader=_Downloader(broken))
     assert res["rewritten"] and res["integrity_after_passed"] is False
-    marker = json.loads((data_dirs / "ATX" / REWRITE_MARKER).read_text())
+    marker = json.loads((data_dirs / "ATX" / REWRITE_MARKER).read_text(encoding="utf-8"))
     assert marker["integrity_after_passed"] is False and marker["integrity_after"]["f34p25"]
     assert marker["lineages_invalidated"] == ["f34p25"]       # excluded either way (N10)
 

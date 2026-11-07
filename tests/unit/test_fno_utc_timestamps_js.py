@@ -14,7 +14,7 @@ pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="node not i
 
 
 def _helper() -> str:
-    m = re.search(r"^function _utcIso\(.*$", (_FNO / "my-portfolio.js").read_text(), re.M)
+    m = re.search(r"^function _utcIso\(.*$", (_FNO / "my-portfolio.js").read_text(encoding="utf-8"), re.M)
     assert m, "_utcIso helper missing"
     return m.group(0)
 
@@ -39,5 +39,5 @@ def test_non_string_passthrough():
 
 
 def test_save_step_formatter_uses_same_rule():
-    src = (_FNO / "hedge-workflow-save.js").read_text()
+    src = (_FNO / "hedge-workflow-save.js").read_text(encoding="utf-8")
     assert "iso + 'Z'" in src and "(Z|[+-]" in src

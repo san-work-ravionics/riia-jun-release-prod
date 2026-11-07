@@ -205,7 +205,7 @@ def test_history_endpoints_never_write(client, db_session):
 
 
 def test_experience_routes_still_have_no_commit():
-    src = (Path(__file__).parent.parent.parent / "src" / "rita" / "api" / "experience" / "invest_game.py").read_text()
+    src = (Path(__file__).parent.parent.parent / "src" / "rita" / "api" / "experience" / "invest_game.py").read_text(encoding="utf-8")
     assert ".commit(" not in src
 
 

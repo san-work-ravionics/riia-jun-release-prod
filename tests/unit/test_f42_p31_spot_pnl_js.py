@@ -12,9 +12,9 @@ import pytest
 from rita.schemas import fno_trade_analytics as sch
 
 ROOT = Path(__file__).resolve().parents[2]
-JS = (ROOT / "dashboard/js/fno/trade-analytics.js").read_text()
-MAIN = (ROOT / "dashboard/js/fno/main.js").read_text()
-HTML = (ROOT / "dashboard/fno.html").read_text()
+JS = (ROOT / "dashboard/js/fno/trade-analytics.js").read_text(encoding="utf-8")
+MAIN = (ROOT / "dashboard/js/fno/main.js").read_text(encoding="utf-8")
+HTML = (ROOT / "dashboard/fno.html").read_text(encoding="utf-8")
 
 
 def _func(name: str) -> str:

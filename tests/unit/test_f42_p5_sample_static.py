@@ -13,15 +13,15 @@ from rita.config import TradeAnalysisSettings
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src" / "rita"
-SERVICE = (SRC / "services/fno_sample_service.py").read_text()
-IMPORT_SVC = (SRC / "services/fno_import_service.py").read_text()
-REPO_SRC = (SRC / "repositories/fno_sample_files.py").read_text()
-ROUTER = (SRC / "api/v1/workflow/fno_console_import.py").read_text()
-MAIN_PY = (SRC / "main.py").read_text()
-JS = (ROOT / "dashboard/js/fno/trade-import.js").read_text()
-JS_AN = (ROOT / "dashboard/js/fno/trade-analytics.js").read_text()
-MAIN_JS = (ROOT / "dashboard/js/fno/main.js").read_text()
-HTML = (ROOT / "dashboard/fno.html").read_text()
+SERVICE = (SRC / "services/fno_sample_service.py").read_text(encoding="utf-8")
+IMPORT_SVC = (SRC / "services/fno_import_service.py").read_text(encoding="utf-8")
+REPO_SRC = (SRC / "repositories/fno_sample_files.py").read_text(encoding="utf-8")
+ROUTER = (SRC / "api/v1/workflow/fno_console_import.py").read_text(encoding="utf-8")
+MAIN_PY = (SRC / "main.py").read_text(encoding="utf-8")
+JS = (ROOT / "dashboard/js/fno/trade-import.js").read_text(encoding="utf-8")
+JS_AN = (ROOT / "dashboard/js/fno/trade-analytics.js").read_text(encoding="utf-8")
+MAIN_JS = (ROOT / "dashboard/js/fno/main.js").read_text(encoding="utf-8")
+HTML = (ROOT / "dashboard/fno.html").read_text(encoding="utf-8")
 
 # actual file access primitives (string helpers such as os.path.basename are NOT file access)
 _FILE_IO = re.compile(
@@ -77,7 +77,7 @@ def test_no_print_and_no_hardcoded_lot_sizes_in_new_modules():
     for src in (SERVICE, REPO_SRC):
         assert "print(" not in src
         assert not re.search(r"\b(75|30)\b", src)                          # lot sizes only from settings
-    gen = (ROOT / "scripts/generate_fno_sample.py").read_text()
+    gen = (ROOT / "scripts/generate_fno_sample.py").read_text(encoding="utf-8")
     assert "args.nifty_lot" not in gen and "required=True" in gen          # lot sizes are mandatory arguments
 
 
@@ -89,7 +89,7 @@ def test_sample_runs_cannot_be_created_through_the_upload_route():
 # ── config ──────────────────────────────────────────────────────────────────────
 
 def test_config_keys_in_class_and_base_yaml():
-    base = yaml.safe_load((ROOT / "config/base.yaml").read_text())["trade_analysis"]
+    base = yaml.safe_load((ROOT / "config/base.yaml").read_text(encoding="utf-8"))["trade_analysis"]
     for k in ("sample_enabled", "sample_dir", "sample_file_prefix"):
         assert k in TradeAnalysisSettings.model_fields and k in base
     assert set(base) <= set(TradeAnalysisSettings.model_fields)           # extra="forbid"-safe
@@ -109,16 +109,16 @@ def test_config_validators_reject_bad_values(kw):
 # ── delivery assumptions (verified in the Engineer's first step) ───────────────
 
 def test_deploy_rsync_ships_data_input_and_the_sample_is_tracked():
-    wf = (ROOT / ".github/workflows/deploy.yaml").read_text()
+    wf = (ROOT / ".github/workflows/deploy.yaml").read_text(encoding="utf-8")
     assert re.search(r"rsync -av --update[^\n]*\\\n(?:[^\n]*\\\n)*\s*data/input/\s*\\\n\s*ubuntu@[^\n]*:/opt/rita_input/input/", wf)
-    ig = (ROOT / ".gitignore").read_text()
+    ig = (ROOT / ".gitignore").read_text(encoding="utf-8")
     assert "data/input/sample" not in ig and not re.search(r"^data/input/?\*?$", ig, re.M)
-    prod = yaml.safe_load((ROOT / "config/production.yaml").read_text())
+    prod = yaml.safe_load((ROOT / "config/production.yaml").read_text(encoding="utf-8"))
     assert prod["data"]["input_dir"] == "/app/data/input"
 
 
 def test_single_process_assumption_for_the_in_process_lock():
-    docker = (ROOT / "Dockerfile").read_text()
+    docker = (ROOT / "Dockerfile").read_text(encoding="utf-8")
     assert "uvicorn rita.main:app" in docker and "--workers" not in docker
     assert "WEB_CONCURRENCY" not in docker
 
@@ -209,6 +209,6 @@ def test_sample_load_uses_busy_guard_and_refreshes_via_taRefresh():
 def test_no_data_copy_updated_in_js_and_service():
     copy = "Import your Console files on the Import tab, or load sample data there."
     assert copy in JS_AN
-    svc = (SRC / "services/fno_trade_analytics_service.py").read_text()
+    svc = (SRC / "services/fno_trade_analytics_service.py").read_text(encoding="utf-8")
     assert "Import your Console files on the Import tab" in svc and "load sample data there" in svc
     assert "Import panel first" not in svc and "Import panel first" not in JS_AN

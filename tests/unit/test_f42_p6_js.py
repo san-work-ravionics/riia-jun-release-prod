@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-JS = (ROOT / "dashboard/js/fno/trade-analytics.js").read_text()
+JS = (ROOT / "dashboard/js/fno/trade-analytics.js").read_text(encoding="utf-8")
 HARNESS = Path(__file__).with_name("f42_p6_harness.mjs")
 NODE = shutil.which("node")
 pytestmark = pytest.mark.skipif(NODE is None, reason="node not installed")
@@ -140,7 +140,7 @@ def out(tmp_path_factory) -> dict:
         (d / rel).write_text(text)
     (d / "js/fno/trade-analytics.js").write_text(JS)
     (d / "fixtures.json").write_text(json.dumps({"ok": _ok()}))
-    (d / "harness.mjs").write_text(HARNESS.read_text())
+    (d / "harness.mjs").write_text(HARNESS.read_text(encoding="utf-8"))
     r = subprocess.run([NODE, "harness.mjs"], cwd=d, capture_output=True, text=True, timeout=120)
     assert r.returncode == 0, r.stderr[-3000:]
     return json.loads(r.stdout.strip().splitlines()[-1])

@@ -9,7 +9,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-WF = (Path(__file__).parent.parent.parent / ".github" / "workflows" / "deploy.yaml").read_text()
+WF = (Path(__file__).parent.parent.parent / ".github" / "workflows" / "deploy.yaml").read_text(encoding="utf-8")
 
 
 def _rsyncs_to(dest: str) -> list[str]:

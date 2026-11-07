@@ -116,12 +116,12 @@ def test_legacy_eur_analytics_unchanged(legacy_client):
     if os.environ.get("F44P2_WRITE_SNAPSHOT") == "1":
         SNAPSHOT.parent.mkdir(exist_ok=True)
         SNAPSHOT.write_text(json.dumps(got, indent=1, sort_keys=True))
-    expected = json.loads(SNAPSHOT.read_text())
+    expected = json.loads(SNAPSHOT.read_text(encoding="utf-8"))
     _assert_superset(expected, got)
 
 
 def test_snapshot_is_a_real_legacy_payload():
-    snap = json.loads(SNAPSHOT.read_text())
+    snap = json.loads(SNAPSHOT.read_text(encoding="utf-8"))
     assert snap["mode"] == "real"
     assert snap["portfolio_meta"]["total_value_eur"] == 50000.0
     assert [(p["und"], p["position_eur"]) for p in snap["positions"]] == [("NIFTY", 30000.0), ("ASML", 20000.0)]

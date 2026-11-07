@@ -16,7 +16,7 @@ from rita.services import fno_trade_suggestions as sg
 from tests.unit.f42_p3_helpers import D, cfg, ctx, fill, spot
 
 ROOT = Path(__file__).resolve().parents[2]
-JS = (ROOT / "dashboard/js/fno/trade-analytics.js").read_text()
+JS = (ROOT / "dashboard/js/fno/trade-analytics.js").read_text(encoding="utf-8")
 W = dict(date_from="2026-10-01", date_to="2026-10-12")
 SYM2 = dict(symbol="BANKNIFTY26OCT50000CE", underlying="BANKNIFTY", strike=50000.0)
 
@@ -37,7 +37,7 @@ def test_config_defaults_and_bounds():
 def test_base_yaml_carries_the_keys_and_loads():
     import yaml
 
-    y = yaml.safe_load((ROOT / "config/base.yaml").read_text())
+    y = yaml.safe_load((ROOT / "config/base.yaml").read_text(encoding="utf-8"))
     blk = next(v for v in y.values() if isinstance(v, dict) and "burst_window_minutes" in v)
     assert blk["chain_story_top_n"] == 3 and blk["chain_steps_max"] == 40
     TradeAnalysisSettings(**blk)      # the whole block validates (extra=forbid would fail on an unknown key)
@@ -220,7 +220,7 @@ def test_rule_copy_keys_equal_server_rule_ids():
 
 
 def test_every_literal_rule_id_in_the_server_module_is_declared():
-    src = (ROOT / "src/rita/services/fno_trade_suggestions.py").read_text()
+    src = (ROOT / "src/rita/services/fno_trade_suggestions.py").read_text(encoding="utf-8")
     used = set(re.findall(r'(?:_rule|insufficient|finish)\(\s*"([a-z_]+)"', src))
     assert used <= set(sg.RULE_IDS), used - set(sg.RULE_IDS)
     assert set(sg.SPOT_RULE_IDS) <= set(sg.RULE_IDS)

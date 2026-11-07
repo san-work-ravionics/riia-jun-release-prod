@@ -98,7 +98,7 @@ const base = pathToFileURL(process.cwd() + '/').href;
 
 
 def _src(rel: str) -> str:
-    return (_JS / rel).read_text()
+    return (_JS / rel).read_text(encoding="utf-8")
 
 
 # ── #2 computeNShares: no silent placeholder ───────────────────────────────────
@@ -167,7 +167,7 @@ console.log(JSON.stringify({
 
 
 def test_portfolio_engine_still_reports_fx_unavailable():
-    s = (_SRC / "core" / "portfolio_engine.py").read_text()
+    s = (_SRC / "core" / "portfolio_engine.py").read_text(encoding="utf-8")
     assert '"fx_unavailable":             fx_unavailable' in s
 
 
@@ -231,7 +231,7 @@ def test_geography_overview_carries_instrument_currency(client):
 # ── #5 Experience route reads through the service ──────────────────────────────
 
 def test_experience_user_portfolio_route_uses_service_not_repo():
-    tree = ast.parse((_SRC / "api" / "experience" / "user_portfolio.py").read_text())
+    tree = ast.parse((_SRC / "api" / "experience" / "user_portfolio.py").read_text(encoding="utf-8"))
     imported = {a.name for n in ast.walk(tree) if isinstance(n, ast.ImportFrom) for a in n.names}
     assert "UserPortfolioService" in imported
     assert not {"UserPortfolioRepo", "UserPortfolioKeyRepo"} & imported
@@ -348,7 +348,7 @@ def test_same_second_saves_return_the_last_save(db):
 
 
 def test_repo_orders_by_updated_created_then_portfolio_id():
-    s = (_SRC / "repositories" / "user_portfolio.py").read_text()
+    s = (_SRC / "repositories" / "user_portfolio.py").read_text(encoding="utf-8")
     assert "UserPortfolioModel.portfolio_id.desc()" in s
     assert s.count(".order_by(*_LATEST_FIRST)") == 3
     assert "rowid" not in s.split('"""', 2)[2]                             # portable (PostgreSQL v2)
@@ -373,8 +373,8 @@ def test_country_rule_single_source(country, region, location):
 
 
 def test_no_copied_country_sets():
-    svc = (_SRC / "services" / "user_portfolio_service.py").read_text()
-    rita = (_SRC / "api" / "experience" / "rita.py").read_text()
+    svc = (_SRC / "services" / "user_portfolio_service.py").read_text(encoding="utf-8")
+    rita = (_SRC / "api" / "experience" / "rita.py").read_text(encoding="utf-8")
     assert "_EUROPE" not in svc and '"NETHERLANDS"' not in svc
     assert "from rita.core.geography import country_to_location" in svc
     assert "_EU_COUNTRY_CODES = frozenset" not in rita and "from rita.core.geography import country_to_region" in rita

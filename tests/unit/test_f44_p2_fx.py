@@ -113,7 +113,7 @@ def test_missing_rate_is_none_never_static(db):
 
 
 def test_fx_service_has_no_network_imports():
-    tree = ast.parse((_SRC / "services" / "fx_service.py").read_text())
+    tree = ast.parse((_SRC / "services" / "fx_service.py").read_text(encoding="utf-8"))
     names = {a.name.split(".")[0] for n in ast.walk(tree) if isinstance(n, (ast.Import, ast.ImportFrom))
              for a in (n.names if isinstance(n, ast.Import) else [ast.alias(n.module or "")])}
     assert not names & {"yfinance", "requests", "httpx", "urllib", "aiohttp", "socket"}
@@ -140,7 +140,7 @@ def test_fx_route_rejects_unknown_currency(client):
 
 
 def test_fx_route_is_experience_tier_read_only():
-    src = (_SRC / "api" / "experience" / "fx.py").read_text()
+    src = (_SRC / "api" / "experience" / "fx.py").read_text(encoding="utf-8")
     assert "commit" not in src and "repositories" not in src
     assert 'prefix="/api/v1/experience"' in src and '"/rita/fx"' in src
 
@@ -206,7 +206,7 @@ def test_refresh_all_does_not_fetch_fx(db):
 def _code_names(path: Path) -> set[str]:
     """Identifiers used in code (imports, names, attributes) — docstrings/comments excluded."""
     out: set[str] = set()
-    for n in ast.walk(ast.parse(path.read_text())):
+    for n in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
         if isinstance(n, ast.Name):
             out.add(n.id)
         elif isinstance(n, ast.Attribute):
@@ -228,7 +228,7 @@ def test_portfolio_engine_has_no_static_fx_table():
     from rita.core import portfolio_engine
 
     assert not hasattr(portfolio_engine, "FX_EUR_PER_UNIT")
-    src = (_SRC / "core" / "portfolio_engine.py").read_text()
+    src = (_SRC / "core" / "portfolio_engine.py").read_text(encoding="utf-8")
     assert "1 / 91" not in src and "1 / 1.09" not in src
     assert "fx_eur_per_unit" in inspect.signature(portfolio_engine.portfolio_backtest).parameters
 

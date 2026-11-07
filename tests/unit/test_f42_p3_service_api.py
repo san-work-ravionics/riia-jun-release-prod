@@ -271,7 +271,7 @@ def test_lot_info_from_master_shapes():
 
 def test_base_yaml_keys_equal_model_fields_and_extra_forbidden():
     root = Path(__file__).resolve().parents[2]
-    y = yaml.safe_load((root / "config/base.yaml").read_text())["trade_analysis"]
+    y = yaml.safe_load((root / "config/base.yaml").read_text(encoding="utf-8"))["trade_analysis"]
     assert set(y) == set(TradeAnalysisSettings.model_fields)
     with pytest.raises(ValidationError):
         TradeAnalysisSettings(not_a_key=1)

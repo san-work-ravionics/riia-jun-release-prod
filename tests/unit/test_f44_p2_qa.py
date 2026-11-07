@@ -521,7 +521,7 @@ def _references(name: str) -> list[str]:
     """Every code reference (name / attribute / import alias) to ``name`` in ``src/rita`` except its def."""
     hits = []
     for path in _SRC.rglob("*.py"):
-        for node in ast.walk(ast.parse(path.read_text())):
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
             if (isinstance(node, ast.Name) and node.id == name) or \
                (isinstance(node, ast.Attribute) and node.attr == name) or \
                (isinstance(node, ast.alias) and node.name.split(".")[-1] == name):
@@ -536,7 +536,7 @@ def test_refresh_fx_has_no_caller_anywhere_in_src():
     references ``refresh_fx`` — so neither ``refresh_all()`` nor any route can reach it."""
     assert _references("refresh_fx") == []
     defs = [p for p in _SRC.rglob("*.py")
-            if any(isinstance(n, ast.FunctionDef) and n.name == "refresh_fx" for n in ast.walk(ast.parse(p.read_text())))]
+            if any(isinstance(n, ast.FunctionDef) and n.name == "refresh_fx" for n in ast.walk(ast.parse(p.read_text(encoding="utf-8"))))]
     assert [p.relative_to(_SRC).as_posix() for p in defs] == ["services/data_refresh.py"]
 
 
