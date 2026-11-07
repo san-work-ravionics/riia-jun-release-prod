@@ -138,6 +138,10 @@ class BucketStatusService:
                 return pnl_svc.pnl(user_id, location, r, **kw)
             except PnlError:
                 return None
+            except (KeyError, ValueError):
+                # A malformed stored segment: degrade like the page does (no status), don't fail the tool.
+                log.exception("bucket_status.pnl_failed", location=location)
+                return None
 
         if tracked:
             perf = run(year_start=j.plan_year_start, segments=JarvisPageService._segments(j))

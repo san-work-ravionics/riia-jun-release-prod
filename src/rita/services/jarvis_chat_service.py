@@ -707,6 +707,8 @@ class JarvisChatService:
             "buckets": [self._bucket_row(b) for b in out.buckets], "n_at_risk": out.n_at_risk,
             "n_on_track": out.n_on_track, "n_no_data": out.n_no_data}}
         counts = self._wn_counts(out)
+        if out.n_buckets == 0:
+            return _Reply("wn.no_buckets")
         if out.n_at_risk + out.n_on_track == 0:
             return _Reply("wn.no_data", counts, cards=[card])
         if out.n_at_risk == 0:
@@ -721,7 +723,7 @@ class JarvisChatService:
             return _Reply("wn.no_plan", {"location": T.LOCATION_NAMES.get(out.location, out.location)})
         b = next((x for x in out.buckets if x.key == slots.bucket), None)
         if b is None:
-            return _Reply("wn.bucket.no_data", {"bucket": T.BUCKET_LABELS[slots.bucket]})
+            return _Reply("wn.bucket.not_in_plan", {"bucket": T.BUCKET_LABELS[slots.bucket]})
         label = T.BUCKET_LABELS[b.key]
         card = {"kind": "bucket_status", "data": {
             **self._bucket_row(b), "instruments": [i.instrument_id for i in b.instruments]}}
@@ -741,6 +743,8 @@ class JarvisChatService:
             "at_risk_buckets": [b.key for b in risky],
             "all_on_track": out.n_at_risk == 0 and out.n_on_track > 0, "fno_link": FNO_LINK}}
         counts = self._wn_counts(out)
+        if out.n_buckets == 0:
+            return _Reply("wn.no_buckets")
         if out.n_at_risk + out.n_on_track == 0:
             return _Reply("wn.no_data", counts, cards=[card])
         if not risky:

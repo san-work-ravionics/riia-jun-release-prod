@@ -775,6 +775,8 @@ def test_contract_mcp_fx_rate_schema_and_catalogue():
         # F44 P4 (Jarvis)
         "journey.get_current", "journey.save", "portfolio.pnl", "portfolio.sleeve_trace",
         "fno.sigma_levels", "market.asta_trace",
+        # F45 Phase D
+        "whatineed.bucket_status",
     }
     assert mt.tools_registered() == 23   # F44 P4: +6 Jarvis tools; F45 Phase D: +bucket_status
     health = TestClient(app).get("/health").json()

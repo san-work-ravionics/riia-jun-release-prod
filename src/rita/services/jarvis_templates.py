@@ -156,6 +156,8 @@ TEMPLATES: dict[str, str] = {
     "wn.on_track.risk": ("{n_at_risk} of {n_buckets} buckets are more than {threshold} behind the "
                          "return your plan needs so far: {list}. {n_on_track} are on track and "
                          "{n_no_data} have no performance data yet."),
+    "wn.no_buckets": "Your saved plan has no asset lines to track yet. Add them on What I Need.",
+    "wn.bucket.not_in_plan": "Your plan has no {bucket} line, so there is nothing to compare.",
     "wn.bucket.which": "Which bucket? Index fund, Equity, Commodities or Alternate.",
     "wn.bucket.empty": ("You hold no {bucket} instruments yet, so there is nothing to compare with "
                         "your plan."),

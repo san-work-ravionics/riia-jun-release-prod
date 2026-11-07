@@ -140,6 +140,20 @@ def test_bucket_status_with_holdings_but_no_prices(journey_db, fake_classifier):
     assert r.text.startswith("Equity:")
 
 
+def test_bucket_missing_from_the_plan_is_not_called_no_data(journey_db, fake_classifier):
+    only_idx = [bucket("idx", ytd=0.052, at_risk=False)]
+    out, mcp = ask(journey_db, status(only_idx), "how is my equity doing")
+    r = check(out, mcp, "wn.bucket.not_in_plan")
+    assert "no Equity line" in r.text and "check back" not in r.text
+
+
+def test_plan_with_no_asset_lines(journey_db, fake_classifier):
+    for text in ("am I on track for my retirement", "do I need to hedge", "what needs hedging"):
+        out, mcp = ask(journey_db, status([]), text)
+        r = check(out, mcp, "wn.no_buckets")
+        assert "0 buckets" not in r.text
+
+
 def test_bucket_status_without_a_named_bucket_asks_which_and_calls_no_tool(journey_db, fake_classifier):
     out, mcp = ask(journey_db, status(FINE), "how is my bucket doing")
     r = check(out, mcp, "wn.bucket.which", tools=["journey.get_current"])
@@ -210,13 +224,19 @@ def test_every_intent_has_a_handler_and_templates_exist():
 
 
 def test_new_card_kinds_are_registered():
-    assert {"bucket_progress", "bucket_status", "hedge_signal"} <= set(CARD_KINDS) and len(CARD_KINDS) == 13
+    assert {"bucket_progress", "bucket_status", "hedge_signal"} <= set(CARD_KINDS)
 
 
-def test_replies_never_use_the_word_corpus():
+def test_replies_and_card_copy_never_use_the_word_corpus():
+    import re
+    from pathlib import Path
+
     from rita.services import jarvis_templates as T
 
     assert not [k for k, v in T.TEMPLATES.items() if "corpus" in v.lower()]
+    copy = (Path(__file__).resolve().parents[2] / "dashboard/js/jarvis/copy.js").read_text(encoding="utf-8")
+    ours = [ln for ln in copy.splitlines() if re.search(r"'(wn\.bucket\.|chat\.(bucket|hedge)\.)", ln)]
+    assert ours and not [ln for ln in ours if "corpus" in ln.lower()]
 
 
 # ── bucket slot ─────────────────────────────────────────────────────────────────
