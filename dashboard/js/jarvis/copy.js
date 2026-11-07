@@ -406,7 +406,7 @@ export const COPY = {
   'wn.bucket.no_data': 'No data',
   'chat.bucket.progress.title': 'Plan vs portfolio, by bucket',
   'chat.hedge.title': 'Hedge signal',
-  'chat.hedge.none': 'No bucket at risk',
+  'chat.hedge.none': 'No measured bucket at risk',
   'wn.bucket.review_hedge': 'Review Hedge →',
   'wn.bucket.summary_ok': 'All buckets on track',
   'wn.bucket.summary_nodata': 'No performance data yet — status unavailable',

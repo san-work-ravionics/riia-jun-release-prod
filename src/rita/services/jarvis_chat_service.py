@@ -748,7 +748,7 @@ class JarvisChatService:
         if out.n_at_risk + out.n_on_track == 0:
             return _Reply("wn.no_data", counts, cards=[card])
         if not risky:
-            return _Reply("wn.hedge.none", counts, cards=[card])
+            return _Reply("wn.hedge.none_partial" if out.n_no_data else "wn.hedge.none", counts, cards=[card])
         if lines:
             extra = [("wn.hedge.line", {"bucket": T.BUCKET_LABELS[b.key], "ytd": T.fmt_rate(b.ytd_return),
                                         "target": T.fmt_rate(b.target_to_date), "gap": T.fmt_rate(b.gap)})
