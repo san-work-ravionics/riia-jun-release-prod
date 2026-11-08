@@ -68,6 +68,17 @@ WN_INTENTS = frozenset({"wn_on_track", "wn_bucket_status", "wn_hedge_signal", "w
 ACCEPTED: dict[str, frozenset[str]] = {state: ok | WN_INTENTS for state, ok in _ACCEPTED_JOURNEY.items()}
 FNO_LINK = "/dashboard/fno.html"
 
+# Everything the user asks about is answered from the overall saved plan and the saved portfolio
+# (every region together), never from the journey: these intents bypass the journey state gate.
+LOCATIONS = ("europe", "india", "us")
+SAVED_INTENTS = {
+    "take_goal": "_s_plan", "change_goal": "_s_plan",
+    "build_selection": "_s_portfolio", "why_this_pick": "_s_portfolio", "cant_reach": "_s_portfolio",
+    "track": "_s_portfolio", "confirm": "_s_portfolio", "decline": "_s_portfolio",
+    "progress": "_s_progress", "what_if_sl": "_s_progress",
+    "show_hedge": "_i_show_hedge",
+}
+
 
 class JarvisChatError(Exception):
     """``not_found`` (session) | ``unavailable`` (chat model)."""
@@ -357,6 +368,9 @@ class JarvisChatService:
     # ── intent plans ───────────────────────────────────────────────────────────
 
     def _dispatch(self, t: _Turn, intent: str, slots) -> _Reply:
+        if intent in SAVED_INTENTS:
+            t.get_journey()          # only so the chips follow the journey state
+            return getattr(self, SAVED_INTENTS[intent])(t, slots)
         j = t.get_journey()
         state = _state(j)
         prefix = None
@@ -667,12 +681,66 @@ class JarvisChatService:
                                             "required": T.fmt_rate(rr.required_return),
                                             "status": T.WHAT_IF_STATUS[rr.status]}, cards=[card], extra=extra)
 
+    # saved plan + saved portfolio, every region together ---------------------------------
+
+    def _overall(self, t: _Turn) -> list[tuple[str, GoalOut, PnlOut | None]]:
+        out = []
+        for loc in LOCATIONS:
+            g = t.call("whatineed.get_goal", {"location": loc}, GoalOut, missing_ok=False)
+            pnl = t.call("portfolio.pnl", {"location": loc, "goal_return": g.goal_return if g.saved else None,
+                                           "source": "saved"}, PnlOut, missing_ok=True)
+            out.append((loc, g, pnl))
+        return out
+
+    def _s_plan(self, t: _Turn, _slots) -> _Reply:
+        ov = self._overall(t)
+        have = [(loc, g) for loc, g, _p in ov if g.saved and g.goal_return is not None]
+        if not have:
+            return _Reply("saved.plan.none")
+        parts = [f"{T.LOCATION_NAMES[loc]} {T.fmt_rate(g.goal_return)} a year over {T.fmt_num(g.horizon_years)} "
+                 f"years, goal {T.fmt_money(g.currency, g.goal_value)}" for loc, g in have]
+        missing = [T.LOCATION_NAMES[loc] for loc, g, _p in ov if not g.saved]
+        note = f" No saved plan yet for {', '.join(missing)}." if missing else ""
+        return _Reply("saved.plan", {"n": T.fmt_num(len(have)), "list": "; ".join(parts), "missing": note},
+                      cards=[_goal_card(g) for _loc, g in have])
+
+    def _s_portfolio(self, t: _Turn, _slots) -> _Reply:
+        regions = [(loc, p) for loc, _g, p in self._overall(t) if p is not None and p.holdings]
+        if not regions:
+            return _Reply("saved.portfolio.none")
+        extra, n = [], 0
+        for loc, p in regions:
+            n += len(p.holdings)
+            mix = ", ".join(
+                f"{h.instrument_id} {T.fmt_num(h.allocation_pct)}%"
+                + (f" ({T.fmt_rate(h.return_since)} since saved)" if h.return_since is not None else "")
+                for h in p.holdings)
+            extra.append(("saved.portfolio.line", {"region": T.LOCATION_NAMES[loc], "mix": mix}))
+        return _Reply("saved.portfolio", {"n": T.fmt_num(n), "regions": T.fmt_num(len(regions))}, extra=extra)
+
+    def _s_progress(self, t: _Turn, _slots) -> _Reply:
+        regions = [(loc, p) for loc, _g, p in self._overall(t) if p is not None and p.holdings]
+        if not regions:
+            return _Reply("saved.portfolio.none")
+        extra = []
+        for loc, p in regions:
+            name = T.LOCATION_NAMES[loc]
+            if p.ytd_return is None:
+                extra.append(("saved.progress.line_none", {"region": name, "entry": T.fmt_date(p.entry_date)}))
+            else:
+                extra.append(("saved.progress.line", {"region": name, "ytd": T.fmt_rate(p.ytd_return),
+                                                      "target": T.fmt_rate(p.target_to_date)}))
+        return _Reply("saved.progress", extra=extra)
+
     # hedge / help ---------------------------------------------------------------
 
     def _i_show_hedge(self, t: _Turn, _slots) -> _Reply:
         plan = t.call("fno.get_hedge_plan", {}, HedgePlanOut, missing_ok=True)
         if plan is None:
-            return _Reply("show_hedge.none")
+            # No separately saved FnO hedge plan: answer from the saved plan and portfolio instead.
+            r = self._s_progress(t, None)
+            r.extra.append(("saved.hedge.pointer", {}))
+            return r
         card = {"kind": "hedge", "data": {"n_hedged": len(plan.hedged_ids), "coverage": plan.coverage,
                                           "updated_at": plan.updated_at.isoformat() if plan.updated_at else None}}
         return _Reply("show_hedge.plan", {"n": T.fmt_num(len(plan.hedged_ids)), "coverage": T.fmt_num(plan.coverage)},

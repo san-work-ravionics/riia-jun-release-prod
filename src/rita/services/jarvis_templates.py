@@ -147,6 +147,16 @@ TEMPLATES: dict[str, str] = {
     "show_hedge.plan": ("Your FnO hedge plan covers {n} instrument(s) at {coverage}% coverage. Open "
                         "FnO to change it."),
     "show_hedge.none": "You have no saved hedge plan. FnO's Hedge Workflow builds one.",
+    # Saved-data answers: the overall saved plan and the saved portfolio, every region together.
+    "saved.plan": "Your overall plan covers {n} region(s): {list}.{missing}",
+    "saved.plan.none": "You have no saved plan yet. Save one on What I Need in the Invest Game.",
+    "saved.portfolio": "Your saved portfolio holds {n} instrument(s) across {regions} region(s).",
+    "saved.portfolio.line": "{region}: {mix}.",
+    "saved.portfolio.none": "You have no saved portfolio yet. Save one in RITA.",
+    "saved.progress": "Your saved portfolio against your saved plan:",
+    "saved.progress.line": "{region}: {ytd} this year against {target} to date.",
+    "saved.progress.line_none": "{region}: no measured return yet, prices after {entry} are needed.",
+    "saved.hedge.pointer": "A hedge is built in FnO. Open it to review.",
     "wn.no_plan": ("You have no saved retirement plan for {location}. Save one on What I Need, then "
                    "ask again."),
     "wn.no_data": ("None of your {n_buckets} buckets has performance data yet — check back after the "
