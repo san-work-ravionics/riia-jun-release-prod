@@ -66,7 +66,7 @@ def _src(name: str) -> str:
 def test_all_design_modules_present():
     assert set(_MODULES) == {"main.js", "copy.js", "esc.js", "format.js", "chat.js", "plan.js",
                              "portfolio.js", "instrument.js", "concepts.js", "regions.js",
-                             "region-period.js", "what-i-need.js"}
+                             "region-period.js", "what-i-need.js", "wn-model.js", "wn-plots.js"}
 
 
 # ── stale token (A2, A3, A4, A5, A6) ───────────────────────────────────────────

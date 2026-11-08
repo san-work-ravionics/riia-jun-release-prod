@@ -1179,6 +1179,8 @@ def geography_overview(db: Session = Depends(get_db)) -> GeographyOverviewRespon
 
     # Build a lookup: instrument_id (upper) → (close, daily_return_pct, return_1y_pct, risk_score)
     price_map: dict[str, tuple[Optional[float], Optional[float], Optional[float], Optional[int]]] = {}
+    # F45: true 5-trading-day and 21-trading-day returns (Jarvis weekly / monthly panels)
+    short_returns: dict[str, tuple[Optional[float], Optional[float]]] = {}
 
     t0 = time.monotonic()
     try:
@@ -1210,6 +1212,14 @@ def geography_overview(db: Session = Depends(get_db)) -> GeographyOverviewRespon
                     daily_return_pct = None
             else:
                 daily_return_pct = None
+
+            def _n_day_return(n: int) -> Optional[float]:
+                if close is None or len(recs_sorted) <= n:
+                    return None
+                base = recs_sorted[-1 - n].close
+                return round((close / float(base) - 1) * 100, 4) if base else None
+
+            short_returns[inst_id] = (_n_day_return(5), _n_day_return(21))
 
             # 1Y return: compare latest close with close ~252 trading days ago (C2)
             return_1y_pct: Optional[float] = None
@@ -1314,6 +1324,7 @@ def geography_overview(db: Session = Depends(get_db)) -> GeographyOverviewRespon
             close, daily_return_pct, return_1y_pct, return_5y_pct, return_15y_pct, risk_score, horizons = price_map.get(
                 inst_id, (None, None, None, None, None, None, [])
             )
+            ret_1w, ret_1m = short_returns.get(inst_id, (None, None))
             geo_instruments.append(
                 GeoInstrument(
                     id=inst_id,
@@ -1322,6 +1333,8 @@ def geography_overview(db: Session = Depends(get_db)) -> GeographyOverviewRespon
                     close=close,
                     daily_return_pct=daily_return_pct,
                     signal=_signal(daily_return_pct),
+                    return_1w_pct=ret_1w,
+                    return_1m_pct=ret_1m,
                     return_1y_pct=return_1y_pct,
                     return_5y_pct=return_5y_pct,
                     return_15y_pct=return_15y_pct,

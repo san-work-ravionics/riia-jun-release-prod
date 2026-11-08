@@ -10,6 +10,8 @@ class GeoInstrument(BaseModel):
     close: float | None
     daily_return_pct: float | None
     signal: str                           # "bullish" | "bearish" | "neutral"
+    return_1w_pct:  float | None = None   # F45: 5-trading-day return, (close/close_5d_ago − 1) × 100
+    return_1m_pct:  float | None = None   # F45: 21-trading-day return, (close/close_21d_ago − 1) × 100
     return_1y_pct:  float | None = None   # Phase 2: (close_latest/close_1y_ago − 1) × 100
     return_5y_pct:  float | None = None   # Phase 3: CAGR over ~5 trading years
     return_15y_pct: float | None = None   # Phase 3: CAGR over ~15 trading years
