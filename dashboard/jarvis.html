@@ -716,36 +716,7 @@ canvas{display:block;}
       <!-- 5. plan and bucket details -->
       <details class="card jv-wn-details">
         <summary data-copy="wn.details.title"></summary>
-        <p class="jv-note"><a href="investgame-app.html" data-copy="wn.trk.edit"></a></p>
-      <!-- plan KPIs -->
-      <div class="kpi-row-4">
-        <div class="kpi kpi-sm"><div class="kpi-label" data-copy="wn.trk.kpi.need"></div><div class="kpi-value" id="jv-wn-kpi-need">—</div></div>
-        <div class="kpi kpi-sm"><div class="kpi-label" data-copy="wn.trk.kpi.ret"></div><div class="kpi-value" id="jv-wn-kpi-ret">—</div></div>
-        <div class="kpi kpi-sm"><div class="kpi-label" data-copy="wn.trk.kpi.years"></div><div class="kpi-value" id="jv-wn-kpi-years">—</div></div>
-        <div class="kpi kpi-sm"><div class="kpi-label" data-copy="wn.trk.kpi.port_ret"></div><div class="kpi-value" id="jv-wn-kpi-port-ret">—</div></div>
-      </div>
-      <!-- tracking KPIs -->
-      <div class="card">
-        <div class="card-title" data-copy="wn.trk.section.tracking"></div>
-        <div class="kpi-row-3">
-          <div class="kpi kpi-sm"><div class="kpi-label" data-copy="wn.trk.kpi.planned"></div><div class="kpi-value" id="jv-wn-kpi-planned">—</div></div>
-          <div class="kpi kpi-sm"><div class="kpi-label" data-copy="wn.trk.kpi.actual"></div><div class="kpi-value" id="jv-wn-kpi-actual">—</div></div>
-          <div class="kpi kpi-sm"><div class="kpi-label" data-copy="wn.trk.kpi.track_gap"></div><div class="kpi-value" id="jv-wn-kpi-track-gap">—</div></div>
-        </div>
-      </div>
-      <!-- bucket milestone breakdown -->
-      <div id="jv-wn-bucket-wrap" hidden>
-        <div class="sec-label" data-i18n="wn.bucket.section"></div>
-        <div id="jv-wn-bucket-summary" class="jv-wn-bucket-summary"></div>
-        <div id="jv-wn-bucket-tbl"></div>
-        <div id="jv-wn-bucket-monthly"></div>
-      </div>
-      <!-- investment plan table -->
-      <div class="card">
-        <div class="card-title" data-copy="wn.trk.section.assets"></div>
-        <div class="tbl-wrap" id="jv-wn-asset-table"></div>
-      </div>
-        <p class="jv-muted" id="jv-wn-plan-meta" hidden></p>
+        <div id="jv-wn-details-body"></div>
       </details>
     </div>
   </div>
@@ -795,7 +766,7 @@ canvas{display:block;}
     <img id="chart-modal-img" style="width:100%;max-height:88vh;display:block;border-radius:4px;object-fit:contain;" />
   </div>
 </div>
-<script type="module" src="./js/jarvis/main.js?v=10"></script>
+<script type="module" src="./js/jarvis/main.js?v=14"></script>
 <script>fetch('/health').then(r=>r.json()).then(d=>{document.querySelectorAll('.app-ver').forEach(e=>e.textContent='v'+d.version)}).catch(()=>{})</script>
 </body>
 </html>

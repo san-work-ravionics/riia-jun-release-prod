@@ -4,7 +4,7 @@
 // fetched. Only the active tab's charts are drawn (Chart.js can't size a hidden canvas).
 import { mkChart, destroyChart, chartOpts, C } from '../shared/charts.js';
 import { esc } from './esc.js?v=3';
-import { t } from './copy.js?v=13';
+import { t } from './copy.js?v=15';
 import { fmtRate, fmtMoney, fmtDate, fmtYears, isNum, locationName } from './format.js?v=3';
 import { sleeveDatasets, priceDatasets } from './instrument.js?v=3';
 

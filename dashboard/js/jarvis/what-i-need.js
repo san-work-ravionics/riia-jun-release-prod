@@ -1,22 +1,28 @@
-// Jarvis — What I Need (F43 / F45).  Layout, top to bottom (F45 UI direction, as the RITA Overview):
+// Jarvis — What I Need (F43 / F45): the OVERALL view.  Every region has its own saved plan (own inflation, risk and
+// return assumptions, own currency) and its own instruments; each region is measured against its own plan and the
+// regions are added together in EUR.  Layout, top to bottom (as the RITA Overview):
 //   1. regions, each with its instruments — yearly target and achieved instead of a bullish/bearish signal
 //   2. agent commentary
 //   3. Daily / Weekly / Monthly tabs, 8 panels with green / red indicators
-//   4. plan-vs-reality line charts (overall, investment, one per investment type)
-//   5. plan and bucket details (collapsed)
+//   4. plan-vs-reality line charts (overall, investment, one per investment type), all regions in EUR
+//   5. each region's plan and bucket details (collapsed)
 // Data shaping is in wn-model.js, charts in wn-plots.js.
 import { api } from '../shared/api.js';
-import { locCurrency, loadGeography, allInstruments } from './regions.js?v=3';
-import { t } from './copy.js?v=13';
-import { fmtMoney, fmtRate, fmtDate, fmtNum, isNum } from './format.js?v=3';
+import { loadGeography, loadEurRates, toEur, allInstruments } from './regions.js?v=5';
+import { t } from './copy.js?v=15';
+import { fmtMoney, fmtRate, fmtDate, fmtNum, isNum, locationName } from './format.js?v=3';
 import { esc } from './esc.js?v=3';
 import { loadPortfolio } from './portfolio.js?v=3';
-import { LOC_KEYS, heldInstruments, regionModel, periodPanels, commentaryText, planSeries } from './wn-model.js?v=2';
-import { renderPlots, clearPlots } from './wn-plots.js?v=2';
+import {
+  LOC_KEYS, buildRegionPlans, regionValueEur, heldInstruments, regionModel, periodPanels, commentaryText, combinedSeries,
+} from './wn-model.js?v=3';
+import { renderPlots, clearPlots } from './wn-plots.js?v=3';
 
 let _seq = 0;
 const $ = id => document.getElementById(id);
-const S = { period: 'daily', held: [], geoList: [], active: null, base: null, pf: null, ccy: 'EUR' };
+const S = { period: 'daily', regions: [], held: [], geoList: [], rates: null };
+
+const _fx = (v, ccy) => toEur(v, ccy, S.rates);
 
 function _setStatus(msg, isError) {
   const el = $('jv-wn-status');
@@ -74,11 +80,7 @@ function _typewrite(el, text) {
 }
 
 function _renderCommentary() {
-  const breakdowns = (S.active && S.active.bucketBreakdown) || [];
-  const text = commentaryText({
-    held: S.held, breakdowns, inp: S.active.plan.inputs, atRet: S.base && S.base.result && S.base.result.atRet, ccy: S.ccy,
-  });
-  _typewrite($('jv-wn-commentary'), text);
+  _typewrite($('jv-wn-commentary'), commentaryText({ regions: S.regions, held: S.held, fx: _fx }));
 }
 
 // ── 3. Daily / Weekly / Monthly panels ───────────────────────────────────────────
@@ -89,24 +91,24 @@ function _renderPeriod() {
   });
   const box = $('jv-wn-panels');
   if (!box) return;
-  box.innerHTML = periodPanels(S.held, S.geoList, S.period).map(p => `<div class="kpi">
+  const weights = {};
+  S.regions.forEach(r => { const v = regionValueEur(r, _fx); if (isNum(v)) weights[r.loc] = v; });
+  box.innerHTML = periodPanels(S.held, S.geoList, S.period, weights).map(p => `<div class="kpi">
     <div class="kpi-label">${esc(p.label)}</div>
     <div class="kpi-value ${p.cls || 'neu'}" style="font-size:16px">${esc(p.value)}</div>
     <div class="kpi-delta">${esc(p.sub || '')}</div>
   </div>`).join('');
 }
 
-// ── 4. plots ─────────────────────────────────────────────────────────────────────
+// ── 4. plots (every region's own plan, added together in EUR) ────────────────────
 
 function _renderPlots() {
-  const result = S.base && S.base.result;
-  if (!result) { clearPlots(); return; }
-  const series = planSeries(result, S.active.plan.inputs, S.active.bucketBreakdown || []);
-  const actualNow = S.pf && S.pf.perf && S.pf.perf.money ? S.pf.perf.money.value_now : null;
-  renderPlots(series, { ccy: S.ccy, actualNow });
+  const series = combinedSeries(S.regions, _fx);
+  if (!series) { clearPlots(); return; }
+  renderPlots(series);
 }
 
-// ── 5. details (the earlier KPI strip, tracking, bucket table and plan table) ────
+// ── 5. details: one block per region, in that region's own currency ──────────────
 
 const _ASSETS = [
   { key: 'idx', copyKey: 'wn.label.idx' },
@@ -115,10 +117,8 @@ const _ASSETS = [
   { key: 'alt', copyKey: 'wn.label.alt' },
 ];
 
-function _renderMonthly(breakdowns, LABEL) {
-  const box = $('jv-wn-bucket-monthly');
-  if (!box) return;
-  const sections = breakdowns.filter(b => (b.monthly || []).length).map(b => {
+function _monthlyHtml(breakdowns, LABEL) {
+  return breakdowns.filter(b => (b.monthly || []).length).map(b => {
     const rows = b.monthly.map(m => {
       const chip = m.atRisk === true ? `<span class="jv-badge warn">${t('wn.bucket.at_risk')}</span>`
         : m.atRisk === false ? `<span class="jv-badge ok">${t('wn.bucket.on_pace')}</span>`
@@ -132,16 +132,11 @@ function _renderMonthly(breakdowns, LABEL) {
       <table class="jv-table jv-table-sm"><thead><tr><th>${t('wn.bucket.monthly.col.month')}</th>
       <th class="num">${t('wn.bucket.monthly.col.target')}</th><th class="num">${t('wn.bucket.monthly.col.actual')}</th>
       <th>${t('wn.bucket.monthly.col.status')}</th></tr></thead><tbody>${rows}</tbody></table>`;
-  });
-  box.innerHTML = sections.join('');
+  }).join('');
 }
 
-function _renderBuckets(breakdowns, ccy) {
-  const wrap = $('jv-wn-bucket-wrap');
-  if (!wrap) return;
-  if (!breakdowns || !breakdowns.length) { wrap.hidden = true; return; }
-  wrap.hidden = false;
-
+function _bucketsHtml(breakdowns, ccy) {
+  if (!breakdowns || !breakdowns.length) return '';
   const LABEL = { idx: t('wn.label.idx'), eq: t('wn.label.eq'), com: t('wn.label.com'), alt: t('wn.label.alt') };
   const rows = breakdowns.map(b => {
     const chips = (b.instruments || []).map(i => `<span class="jv-hold-chip"><b class="mono">${esc(i.instrumentId)}</b>${isNum(i.allocationPct) ? ' ' + fmtNum(i.allocationPct, 0) + '%' : ''}</span>`).join('');
@@ -159,88 +154,67 @@ function _renderBuckets(breakdowns, ccy) {
       <td>${statusChip}</td>
     </tr>`;
   }).join('');
-
-  _renderMonthly(breakdowns, LABEL);
-
-  const nRisk = breakdowns.filter(b => b.atRisk === true).length;
-  const sum = $('jv-wn-bucket-summary');
-  if (sum) {
-    const nOk = breakdowns.filter(b => b.atRisk === false).length;
-    const state = nRisk ? 'risk' : nOk ? 'ok' : 'nodata';
-    sum.className = 'jv-wn-bucket-summary ' + state;
-    sum.textContent = state === 'risk' ? t('wn.bucket.summary_risk').replace('{n}', nRisk)
-      : state === 'ok' ? t('wn.bucket.summary_ok') : t('wn.bucket.summary_nodata');
-  }
-
-  const tbl = $('jv-wn-bucket-tbl');
-  if (tbl) {
-    tbl.innerHTML = `<table class="jv-table"><thead><tr>
-      <th>${t('wn.bucket.col.bucket')}</th>
-      <th class="num">${t('wn.bucket.col.monthly')}</th>
-      <th class="num">${t('wn.bucket.col.target_ytd')}</th>
-      <th class="num">${t('wn.bucket.col.actual_ytd')}</th>
-      <th class="num">${t('wn.bucket.col.gap')}</th>
-      <th>${t('wn.bucket.col.instruments')}</th>
-    </tr></thead><tbody>${rows}</tbody></table>`;
-  }
+  return `<table class="jv-table"><thead><tr>
+      <th>${t('wn.bucket.col.bucket')}</th><th class="num">${t('wn.bucket.col.monthly')}</th>
+      <th class="num">${t('wn.bucket.col.target_ytd')}</th><th class="num">${t('wn.bucket.col.actual_ytd')}</th>
+      <th class="num">${t('wn.bucket.col.gap')}</th><th>${t('wn.bucket.col.instruments')}</th>
+    </tr></thead><tbody>${rows}</tbody></table>${_monthlyHtml(breakdowns, LABEL)}`;
 }
 
-function _renderDetails() {
-  const plan = S.active.plan;
-  const inp = plan.inputs;
-  const r = S.base.result;
-  const wf = S.base.waterfall;
-  const ccy = S.ccy;
-  const set = (id, v) => { const e = $(id); if (e) e.textContent = v; };
+function _kpi(labelKey, value, cls = '') {
+  return `<div class="kpi kpi-sm"><div class="kpi-label">${esc(t(labelKey))}</div><div class="kpi-value ${cls}">${esc(value)}</div></div>`;
+}
 
+function _regionDetailsHtml(rp) {
+  const inp = rp.plan.inputs;
+  const r = rp.base.result;
+  const wf = rp.base.waterfall;
+  const ccy = rp.ccy;
   const atRet = r && r.atRet;
-  set('jv-wn-kpi-need', atRet ? fmtMoney(atRet.monthly, ccy) : '—');
-  set('jv-wn-kpi-ret', inp.ret != null ? `Age ${inp.ret}` : '—');
-  set('jv-wn-kpi-years', inp.ret != null && inp.now != null ? String(inp.ret - inp.now) : '—');
-  set('jv-wn-kpi-port-ret', fmtMoney(wf && wf.portfolioValue, ccy));
-
   const pts = (r && r.withInvesting && r.withInvesting.points) || [];
   const nowPoint = pts.find(p => p.age === inp.now);
   const plannedNow = nowPoint ? nowPoint.portfolio : null;
-  const actualNow = S.pf && S.pf.perf && S.pf.perf.money ? S.pf.perf.money.value_now : null;
-  const trackGap = actualNow != null && plannedNow != null ? actualNow - plannedNow : null;
-  set('jv-wn-kpi-planned', plannedNow != null ? fmtMoney(plannedNow, ccy) : '—');
-  set('jv-wn-kpi-actual', actualNow != null ? fmtMoney(actualNow, ccy) : '—');
-  const kGap = $('jv-wn-kpi-track-gap');
-  if (kGap) {
-    kGap.textContent = trackGap != null ? fmtMoney(trackGap, ccy) : '—';
-    kGap.className = 'kpi-value' + (trackGap != null ? (trackGap >= 0 ? ' pos' : ' neg') : '');
-  }
-
+  const actualNow = rp.pf && rp.pf.perf && rp.pf.perf.money ? rp.pf.perf.money.value_now : null;
+  const gap = isNum(actualNow) && isNum(plannedNow) ? actualNow - plannedNow : null;
   const assetMap = {};
   ((r && r.assets) || []).forEach(a => { assetMap[a.key] = a; });
-  const wrap = $('jv-wn-asset-table');
-  if (wrap) {
-    const rows = _ASSETS.map(({ key, copyKey }) => {
-      const monthly = inp[key + 'Monthly'];
-      const rate = inp[key + 'Rate'];
-      const info = assetMap[key];
-      return `<tr>
-        <td>${t(copyKey)}</td>
-        <td class="num">${monthly != null ? fmtMoney(monthly, ccy) + '/mo' : '—'}</td>
-        <td class="num">${rate != null ? fmtRate(rate) : '—'}</td>
-        <td class="num">${info ? fmtMoney(info.value, ccy) : '—'}</td>
-      </tr>`;
-    }).join('');
-    wrap.innerHTML = `<table class="jv-table"><thead><tr>
-      <th>${t('wn.trk.col.asset')}</th>
-      <th class="num">${t('wn.trk.col.monthly')}</th>
-      <th class="num">${t('wn.trk.col.rate')}</th>
-      <th class="num">${t('wn.trk.col.atret')}</th>
-    </tr></thead><tbody>${rows}</tbody></table>`;
-  }
 
-  const meta = $('jv-wn-plan-meta');
-  if (meta) {
-    meta.textContent = plan.updatedAt ? t('wn.trk.saved', { date: fmtDate(plan.updatedAt) }) : '';
-    meta.hidden = !plan.updatedAt;
-  }
-  _renderBuckets(S.active.bucketBreakdown || [], ccy);
+  const assetRows = _ASSETS.map(({ key, copyKey }) => {
+    const monthly = inp[key + 'Monthly'];
+    const rate = inp[key + 'Rate'];
+    const info = assetMap[key];
+    return `<tr><td>${t(copyKey)}</td>
+      <td class="num">${monthly != null ? fmtMoney(monthly, ccy) + '/mo' : '—'}</td>
+      <td class="num">${rate != null ? fmtRate(rate) : '—'}</td>
+      <td class="num">${info ? fmtMoney(info.value, ccy) : '—'}</td></tr>`;
+  }).join('');
+
+  return `<div class="jv-wn-region-block">
+    <div class="sec-label">${esc(t('wn.details.region', { region: locationName(rp.loc), ccy }))}
+      <a href="investgame-app.html" style="margin-left:10px;font-weight:400">${esc(t('wn.trk.edit'))}</a></div>
+    <div class="kpi-row-4">
+      ${_kpi('wn.trk.kpi.need', atRet ? fmtMoney(atRet.monthly, ccy) : '—')}
+      ${_kpi('wn.trk.kpi.ret', inp.ret != null ? `Age ${inp.ret}` : '—')}
+      ${_kpi('wn.trk.kpi.years', inp.ret != null && inp.now != null ? String(inp.ret - inp.now) : '—')}
+      ${_kpi('wn.trk.kpi.port_ret', fmtMoney(wf && wf.portfolioValue, ccy))}
+    </div>
+    <div class="kpi-row-3">
+      ${_kpi('wn.trk.kpi.planned', plannedNow != null ? fmtMoney(plannedNow, ccy) : '—')}
+      ${_kpi('wn.trk.kpi.actual', actualNow != null ? fmtMoney(actualNow, ccy) : '—')}
+      ${_kpi('wn.trk.kpi.track_gap', gap != null ? fmtMoney(gap, ccy) : '—', gap != null ? (gap >= 0 ? 'pos' : 'neg') : '')}
+    </div>
+    ${_bucketsHtml(rp.breakdowns, ccy)}
+    <table class="jv-table" style="margin-top:12px"><thead><tr>
+      <th>${t('wn.trk.col.asset')}</th><th class="num">${t('wn.trk.col.monthly')}</th>
+      <th class="num">${t('wn.trk.col.rate')}</th><th class="num">${t('wn.trk.col.atret')}</th>
+    </tr></thead><tbody>${assetRows}</tbody></table>
+    <p class="jv-muted">${rp.plan.updatedAt ? esc(t('wn.trk.saved', { date: fmtDate(rp.plan.updatedAt) })) : ''}</p>
+  </div>`;
+}
+
+function _renderDetails() {
+  const box = $('jv-wn-details-body');
+  if (box) box.innerHTML = S.regions.map(_regionDetailsHtml).join('');
 }
 
 // ── load ─────────────────────────────────────────────────────────────────────────
@@ -254,45 +228,51 @@ function _renderAll() {
 }
 
 export async function loadWhatINeed() {
-  // Overall view: not tied to the sidebar location.  The user has ONE saved plan (tagged with the location it was
-  // saved under), so find it among the locations; the regions section then shows every region.
+  // Overall view: not tied to the sidebar location.  Each region has its own saved plan; all of them are loaded.
   const seq = ++_seq;
   _setStatus(t('wn.loading'), false);
   const noPlan = $('jv-wn-no-plan');
   const content = $('jv-wn-content');
 
   try {
-    const [planList, geo] = await Promise.all([
+    const [planList, geo, rates] = await Promise.all([
       Promise.all(LOC_KEYS.map(l => api(`/api/v1/experience/jarvis/retirement-plan?location=${encodeURIComponent(l)}`).catch(() => null))),
-      loadGeography().catch(() => null),    // region / name / price / period returns; the page degrades without it
+      loadGeography().catch(() => null),       // region / name / price / period returns; the page degrades without it
+      loadEurRates().catch(() => null),        // to add the regions together in EUR
     ]);
     if (seq !== _seq) return;
 
     const plans = {};
     LOC_KEYS.forEach((l, i) => { plans[l] = planList[i]; });
-    const location = LOC_KEYS.find(l => plans[l] && plans[l].plan && plans[l].plan.saved);
+    const saved = LOC_KEYS.filter(l => plans[l] && plans[l].plan && plans[l].plan.saved);
 
-    if (!location) {
+    if (!saved.length) {
       _setStatus('', false);
       clearPlots();
       if (noPlan) noPlan.hidden = false;
       if (content) content.hidden = true;
       return;
     }
-    const active = plans[location];
 
-    const spread = active.scenarioSpread || { pessimistic: -0.02, optimistic: 0.02 };
-    const [calcData, pf] = await Promise.all([
-      api('/api/v1/experience/jarvis/retirement-plan/calculate', 'POST',
-        { inputs: active.plan.inputs, scenarios: ['base'], spread, discount_rate: null }),
-      loadPortfolio(location).catch(() => null),
+    // each saved plan is calculated on its own, and each region's portfolio is read, in parallel
+    const [calcList, pfList] = await Promise.all([
+      Promise.all(saved.map(l => api('/api/v1/experience/jarvis/retirement-plan/calculate', 'POST', {
+        inputs: plans[l].plan.inputs, scenarios: ['base'],
+        spread: plans[l].scenarioSpread || { pessimistic: -0.02, optimistic: 0.02 }, discount_rate: null,
+      }).then(d => d.scenarios.base).catch(() => null))),
+      Promise.all(saved.map(l => loadPortfolio(l).catch(() => null))),
     ]);
     if (seq !== _seq) return;
 
-    Object.assign(S, {
-      held: heldInstruments(plans), geoList: allInstruments(geo), active, pf,
-      base: calcData.scenarios.base, ccy: locCurrency(location, pf) || 'EUR',
-    });
+    const calcs = {};
+    const pfs = {};
+    saved.forEach((l, i) => { calcs[l] = calcList[i]; pfs[l] = pfList[i]; });
+
+    S.rates = rates;
+    S.regions = buildRegionPlans(plans, calcs, pfs);
+    S.held = heldInstruments(plans);
+    S.geoList = allInstruments(geo);
+    if (!S.regions.length) throw new Error(t('wn.err.load', { message: '' }));
     if (noPlan) noPlan.hidden = true;
     if (content) content.hidden = false;
     _renderAll();
@@ -307,7 +287,7 @@ export function initWhatINeed() {
   $('jv-wn-refresh')?.addEventListener('click', () => loadWhatINeed());
   $('jv-wn-period-tabs')?.addEventListener('click', e => {
     const b = e.target.closest('button[data-period]');
-    if (!b || !S.active) return;
+    if (!b || !S.regions.length) return;
     S.period = b.dataset.period;
     _renderPeriod();
   });

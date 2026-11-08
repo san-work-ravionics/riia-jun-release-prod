@@ -7,7 +7,7 @@
 // ensureDevToken(true) → one retry). The only window binding is closeChartModal (modal markup).
 import { ensureDevToken } from '../shared/dev-auth.js';
 import { closeChartModal } from '../rita/chart-modal.js';
-import { t } from './copy.js?v=13';
+import { t } from './copy.js?v=15';
 import {
   warmup, openSession, sendMessage, loadState, initChat, renderHistory, renderChips, appendBubble,
   appendPending, showChatError, setBusy,
@@ -18,11 +18,11 @@ import {
 } from './portfolio.js?v=3';
 import { loadInstrument, renderInstrument, renderInstrumentError, initInstrument } from './instrument.js?v=3';
 import { renderConcepts, initConcepts } from './concepts.js?v=5';
-import { loadWhatINeed, initWhatINeed } from './what-i-need.js?v=9';
+import { loadWhatINeed, initWhatINeed } from './what-i-need.js?v=11';
 import {
   LOCS, loadGeography, locCurrency, loadEurRates, renderTotalPanel,
   renderColumn, renderUniverse, initGeoTable,
-} from './regions.js?v=3';
+} from './regions.js?v=5';
 import { initRegionPeriod, renderRegionPeriod, clearRegionPeriod } from './region-period.js?v=3';
 
 window.closeChartModal = closeChartModal;
@@ -114,7 +114,8 @@ function showTab(tab) {
     if (_pfNeedsLoad()) loadPortfolioSection();
     else if (S.mapHidden) _renderUniverse();                        // CR-P4c-1: drawn while hidden → redraw
   } else {
-    _applyLocNavHighlight(S.loc);                                   // restore location highlight in chat/concepts
+    // chat / concepts follow the location; What I Need is the overall view, so no location is highlighted
+    _applyLocNavHighlight(tab === 'whatineed' ? null : S.loc);
   }
   if (tab === 'concepts') loadConceptsSection();
   if (tab === 'whatineed') loadWhatINeed();
@@ -125,6 +126,13 @@ function initTabs() {
     const b = e.target.closest('button[data-loc]');
     if (!b || !LOCS.includes(b.dataset.loc)) return;
     const loc = b.dataset.loc;
+    if (S.tab === 'whatineed') {
+      // the overall page has nothing per region: the region menu takes you to that region's view
+      if (loc !== S.loc) selectLocation(loc);                     // sets S.loc synchronously, before the portfolio loads
+      showTab('portfolio');
+      showRegionView(loc);
+      return;
+    }
     if (S.tab === 'portfolio') showRegionView(loc);                 // drill into single-region view
     if (loc !== S.loc) selectLocation(loc);
   });

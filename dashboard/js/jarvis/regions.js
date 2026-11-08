@@ -7,7 +7,7 @@ import { api } from '../shared/api.js';
 import { mkChart, destroyChart, C } from '../shared/charts.js';
 import { REGION_CCY, instrumentCurrency } from '../shared/portfolio-currency.js';
 import { esc } from './esc.js?v=3';
-import { t } from './copy.js?v=13';
+import { t } from './copy.js?v=15';
 import { fmtMoney, fmtNum, fmtPctPoint, isNum, locationName } from './format.js?v=3';
 import { locPortfolioHtml } from './portfolio.js?v=3';
 
@@ -31,7 +31,7 @@ export function loadEurRates() {
   }));
 }
 
-function _toEur(value, ccy, rates) {
+export function toEur(value, ccy, rates) {
   if (!isNum(value)) return null;
   if (!ccy || ccy === 'EUR') return value;
   const r = rates && rates[ccy];
@@ -153,6 +153,24 @@ export function locInstrumentsHtml(insts, pf, loc) {
   return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(72px,1fr));gap:5px;padding:2px 0">${tiles}</div>`;
 }
 
+// The all-regions page shows the user's own instruments only: the ones held or picked in that location's
+// portfolio rows (A5).  An instrument with no portfolio row, or a location whose portfolio is not loaded
+// yet, is left out.
+export function ownInstruments(insts, pf) {
+  return (insts || []).filter(i => _inKey(_a5Row(i.id, pf)) !== null);
+}
+
+export function portfolioGeo(geo, pfs = {}) {
+  if (!geo) return geo;
+  return {
+    ...geo,
+    regions: (geo.regions || []).map(g => {
+      const loc = locationOfRegion(g.region);
+      return { ...g, instruments: loc ? ownInstruments(g.instruments, pfs && pfs[loc]) : [] };
+    }).filter(g => g.instruments.length),
+  };
+}
+
 // ── sortable table ─────────────────────────────────────────────────────────────
 export const GEO_COLS = ['id', 'loc', 'ccy', 'close', 'ret', 'risk', 'signal', 'yours'];
 const _SORTABLE = new Set(['id', 'loc', 'ccy', 'close', 'ret', 'risk', 'signal']);
@@ -226,8 +244,8 @@ export function renderTotalPanel(pfs, rates) {
     const m = pf && pf.perf && pf.perf.money;
     if (!m) continue;
     const ccy = locCurrency(loc, pf);
-    const v = _toEur(m.value_now, ccy, rates);
-    const p = _toEur(m.pnl, ccy, rates);
+    const v = toEur(m.value_now, ccy, rates);
+    const p = toEur(m.pnl, ccy, rates);
     if (v !== null) totalVal = (totalVal ?? 0) + v;
     if (p !== null) totalPnl = (totalPnl ?? 0) + p;
   }
@@ -393,7 +411,8 @@ function _text(id, text) { const el = document.getElementById(id); if (el) { el.
 // A failed G or A5 only replaces its own part with err.load.
 export function renderColumn(loc, { geo = null, geoErr = null, pf = null, pfErr = null } = {}) {
   _text(`jv-loc-ccy-${loc}`, locCurrency(loc, pf));
-  const insts = geo ? groupByLocation(geo)[loc] : null;
+  const all = geo ? groupByLocation(geo)[loc] : null;
+  const insts = all ? ownInstruments(all, pf) : null;
   if (insts) {
     _text(`jv-loc-meta-${loc}`, locHeaderMeta(insts));
     _html(`jv-loc-avg-${loc}`, locAvgHtml(insts));
@@ -411,11 +430,12 @@ export function renderColumn(loc, { geo = null, geoErr = null, pf = null, pfErr 
 // Optional filter: when set to a loc key, scatter and table show only that location.
 // The performance line chart always shows all locations for comparison.
 export function renderUniverse(geo, pfs = {}, sort = { col: 'ret', asc: false }, filter = null) {
-  const allRows = allInstruments(geo);
+  const own = portfolioGeo(geo, pfs);
+  const allRows = allInstruments(own);
   const rows = filter ? allRows.filter(i => i.loc === filter) : allRows;
-  drawGeoMap(geo, pfs, filter);
+  drawGeoMap(own, pfs, filter);
   const perfWrap = document.getElementById('jv-perf-chart-wrap');
-  const hasPerf = _drawPerfChart(geo, pfs) || _drawInstChart(geo, filter);
+  const hasPerf = _drawPerfChart(geo, pfs) || _drawInstChart(own, filter);
   if (perfWrap) perfWrap.hidden = !hasPerf;
   const wrap = document.getElementById('jv-geo-table-wrap');
   _html('jv-geo-table', rows.length ? geoTableHtml(rows, sort, pfs) : '');
