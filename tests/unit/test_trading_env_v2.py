@@ -210,6 +210,24 @@ def test_static_baseline_hedges_after_drawdown_breach():
     assert result["hedged_steps"] > 0
 
 
+def test_static_baseline_releases_hedge_after_underlying_recovers():
+    """No carry death spiral: crash, then a full recovery -> the hedge must switch back off."""
+    from rita.core.trading_env_v2 import run_static_baseline_v2
+    rets = [0.0] * 5 + [-0.03] * 10 + [0.03] * 12 + [0.0] * 150
+    result = run_static_baseline_v2(_make_varying_df(rets), risk_tolerance="medium")
+    flags = result["hedge_flags"]
+    assert any(f == 1.0 for f in flags), "the crash must trip the hedge"
+    assert flags[-1] == 0.0, "hedge still on long after the underlying recovered (carry spiral)"
+    assert result["hedge_usage_pct"] < 25.0
+
+
+def test_static_baseline_carry_cannot_drag_it_far_below_the_underlying():
+    from rita.core.trading_env_v2 import run_static_baseline_v2
+    rets = [0.0] * 5 + [-0.03] * 10 + [0.03] * 12 + [0.0] * 150
+    result = run_static_baseline_v2(_make_varying_df(rets), risk_tolerance="medium")
+    assert result["portfolio_values"][-1] > 0.5 * result["benchmark_values"][-1]
+
+
 def test_golden_env_is_frozen_discrete_3():
     """Regression guard: V2 must not have altered the golden env's action space."""
     from rita.core.trading_env import RIIATradingEnv
