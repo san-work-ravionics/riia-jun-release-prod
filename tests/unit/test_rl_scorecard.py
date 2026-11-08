@@ -229,7 +229,7 @@ def test_save_scorecard_writes_valid_json_roundtrip():
         path = save_scorecard(sc, output_dir=d, instrument="NIFTY", run_id="abc123")
         assert Path(path).exists()
         assert Path(path).parent == Path(d) / "NIFTY"
-        loaded = json.loads(Path(path).read_text())
+        loaded = json.loads(Path(path).read_text(encoding="utf-8"))
         assert loaded["instrument"] == "NIFTY"
         assert loaded["run_id"] == "abc123"
         assert "functional" in loaded and "technical" in loaded
@@ -245,7 +245,7 @@ def test_save_scorecard_nan_becomes_null_in_json():
     }
     with tempfile.TemporaryDirectory() as d:
         path = save_scorecard(sc, output_dir=d, instrument="X", run_id="y")
-        raw_text = Path(path).read_text()
+        raw_text = Path(path).read_text(encoding="utf-8")
         assert "NaN" not in raw_text
         loaded = json.loads(raw_text)
         assert loaded["functional"]["F1_sharpe_test"]["value"] is None
@@ -264,7 +264,7 @@ def test_save_scorecard_inf_becomes_null_in_json():
     }
     with tempfile.TemporaryDirectory() as d:
         path = save_scorecard(sc, output_dir=d, instrument="X", run_id="y")
-        raw_text = Path(path).read_text()
+        raw_text = Path(path).read_text(encoding="utf-8")
         assert "Infinity" not in raw_text
         assert "inf" not in raw_text.lower().replace("config", "").replace("instrument", "")
         loaded = json.loads(raw_text)

@@ -31,6 +31,7 @@ INTENT_OF = {
     "how is my equity doing": "wn_bucket_status",
     "how is my bucket doing": "wn_bucket_status",
     "do I need to hedge": "wn_hedge_signal",
+    "how are my equities and commodities doing": "wn_bucket_status",
     "what needs hedging": "wn_what_needs_hedging",
 }
 TOOLS = ["journey.get_current", "whatineed.bucket_status"]
@@ -164,7 +165,8 @@ def test_bucket_status_without_a_named_bucket_asks_which_and_calls_no_tool(journ
 
 def test_hedge_signal_none_when_nothing_at_risk(journey_db, fake_classifier):
     out, mcp = ask(journey_db, status(FINE), "do I need to hedge")
-    r = check(out, mcp, "wn.hedge.none")
+    r = check(out, mcp, "wn.hedge.none_partial")
+    assert "2 bucket(s) have no data" in r.text
     assert r.cards[0].kind == "hedge_signal" and r.cards[0].data.all_on_track is True
     assert r.cards[0].data.at_risk_buckets == []
 
@@ -188,7 +190,14 @@ def test_what_needs_hedging_gives_one_line_per_bucket(journey_db, fake_classifie
 
 def test_what_needs_hedging_with_nothing_at_risk(journey_db, fake_classifier):
     out, mcp = ask(journey_db, status(FINE), "what needs hedging")
-    check(out, mcp, "wn.hedge.none")
+    check(out, mcp, "wn.hedge.none_partial")
+
+
+def test_hedge_none_without_caveat_when_every_bucket_is_measured(journey_db, fake_classifier):
+    measured = [bucket(k, ytd=0.05, at_risk=False) for k in ("idx", "eq", "com", "alt")]
+    out, mcp = ask(journey_db, status(measured), "do I need to hedge")
+    r = check(out, mcp, "wn.hedge.none")
+    assert "no data" not in r.text
 
 
 def test_hedge_without_data_does_not_claim_all_clear(journey_db, fake_classifier):
@@ -216,8 +225,8 @@ def test_every_intent_has_a_handler_and_templates_exist():
 
     for intent in C.WN_INTENTS:
         assert callable(getattr(JarvisChatService, f"_i_{intent}"))
-    for key in ("wn.no_plan", "wn.no_data", "wn.on_track.ok", "wn.on_track.risk", "wn.bucket.which",
-                "wn.bucket.empty", "wn.bucket.no_data", "wn.bucket.ok", "wn.bucket.risk", "wn.hedge.none",
+    for key in ("wn.no_plan", "wn.no_data", "wn.on_track.ok", "wn.on_track.risk", "wn.bucket.which", "wn.bucket.which_of",
+                "wn.bucket.empty", "wn.bucket.no_data", "wn.bucket.ok", "wn.bucket.risk", "wn.hedge.none", "wn.hedge.none_partial",
                 "wn.hedge.signal", "wn.hedge.list", "wn.hedge.line"):
         assert key in T.TEMPLATES
     assert set(T.BUCKET_LABELS) == {"idx", "eq", "com", "alt"}
@@ -249,6 +258,18 @@ def test_replies_and_card_copy_never_use_the_word_corpus():
 ])
 def test_bucket_slot(text, key):
     assert parse_slots(text).bucket == key
+
+
+def test_several_buckets_named_are_all_kept_and_none_is_guessed():
+    s = parse_slots("how are my equities and commodities doing")
+    assert s.buckets == ["eq", "com"] and s.bucket is None
+    assert parse_slots("equities, equity and the equity bucket").buckets == ["eq"]
+
+
+def test_bucket_status_with_two_buckets_asks_which_of_them(journey_db, fake_classifier):
+    out, mcp = ask(journey_db, status(FINE), "how are my equities and commodities doing")
+    r = check(out, mcp, "wn.bucket.which_of", tools=["journey.get_current"])
+    assert "Equity or Commodities" in r.text
 
 
 # ── the MCP tool ────────────────────────────────────────────────────────────────

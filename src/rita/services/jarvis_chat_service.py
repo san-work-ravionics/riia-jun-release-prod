@@ -114,7 +114,7 @@ def warmup() -> WarmupOut:
     try:
         n = journey_intents.build_index()
     except Exception as exc:  # noqa: BLE001 — model path missing / load failure
-        log.warning("jarvis.warmup_failed", error=type(exc).__name__)
+        log.warning("jarvis.warmup_failed", error=type(exc).__name__, detail=str(exc)[:200])
         raise JarvisChatError("unavailable", "chat model unavailable") from exc
     return WarmupOut(status="ready", intents=n)
 
@@ -717,6 +717,8 @@ class JarvisChatService:
 
     def _i_wn_bucket_status(self, t: _Turn, slots) -> _Reply:
         if slots.bucket is None:
+            if len(slots.buckets) > 1:
+                return _Reply("wn.bucket.which_of", {"list": " or ".join(T.BUCKET_LABELS[k] for k in slots.buckets)})
             return _Reply("wn.bucket.which")
         out = self._buckets(t)
         if not out.saved:
@@ -748,7 +750,7 @@ class JarvisChatService:
         if out.n_at_risk + out.n_on_track == 0:
             return _Reply("wn.no_data", counts, cards=[card])
         if not risky:
-            return _Reply("wn.hedge.none", counts, cards=[card])
+            return _Reply("wn.hedge.none_partial" if out.n_no_data else "wn.hedge.none", counts, cards=[card])
         if lines:
             extra = [("wn.hedge.line", {"bucket": T.BUCKET_LABELS[b.key], "ytd": T.fmt_rate(b.ytd_return),
                                         "target": T.fmt_rate(b.target_to_date), "gap": T.fmt_rate(b.gap)})

@@ -13,13 +13,13 @@ the plan's annual rate is pro-rated over that same period.
 """
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 from typing import Any
 
 import structlog
 from sqlalchemy.orm import Session
 
-from rita.schemas.jarvis import BucketBreakdownOut, BucketInstrumentOut
+from rita.schemas.jarvis import BucketBreakdownOut, BucketInstrumentOut, BucketMonthOut
 
 log = structlog.get_logger(__name__)
 
@@ -41,8 +41,32 @@ def classify_bucket(instrument_id: str) -> str:
     return "eq"
 
 
+def month_key(d: date, last: date) -> date:
+    """The calendar month end of ``d``, capped at ``last`` (the latest close) for the running month."""
+    nxt = date(d.year + (d.month == 12), d.month % 12 + 1, 1)
+    return min(nxt - timedelta(days=1), last)
+
+
+def _monthly_rows(insts: list[Any], series: dict[str, dict[date, float]], rate: float,
+                  period_start: date) -> list[BucketMonthOut]:
+    """Per month: weighted cumulative return of the bucket's instruments that have a value that month,
+    against the plan rate pro-rated to that month end."""
+    months = sorted({d for i in insts for d in series.get(i.instrument_id, {})})
+    rows: list[BucketMonthOut] = []
+    for d in months:
+        members = [(i.allocation_pct, series[i.instrument_id][d]) for i in insts
+                   if i.allocation_pct is not None and d in series.get(i.instrument_id, {})]
+        w = sum(a for a, _ in members)
+        actual = sum(a * r for a, r in members) / w if w > 0 else None
+        target = rate * max(0, (d - period_start).days) / 365.0
+        at_risk = (actual - target < AT_RISK_THRESHOLD) if (actual is not None and target > 0) else None
+        rows.append(BucketMonthOut(month=d, target=target, actual=actual, at_risk=at_risk))
+    return rows
+
+
 def compute_bucket_breakdown(instruments: list[Any], perf: Any, plan_inputs: Any,
-                             today: date | None = None) -> list[BucketBreakdownOut]:
+                             today: date | None = None,
+                             month_returns: dict[str, dict[date, float]] | None = None) -> list[BucketBreakdownOut]:
     """``instruments``: items with ``instrument_id``, ``allocation_pct`` and ``ret`` (return over the
     period).  ``perf``: anything with ``year_start`` and ``as_of`` (or None → calendar year to today)."""
     # The target must cover the SAME period as the actual returns (the later of 1 Jan and the
@@ -90,6 +114,7 @@ def compute_bucket_breakdown(instruments: list[Any], perf: Any, plan_inputs: Any
         result.append(BucketBreakdownOut(
             key=key, target_rate=rate, target_to_date=ttd, ytd_return=ytd, gap=gap, at_risk=at_risk,
             monthly_target=monthly, instruments=inst_outs,
+            monthly=_monthly_rows(insts, month_returns, rate, period_start) if month_returns else [],
         ))
     return result
 
@@ -117,8 +142,11 @@ class BucketStatusService:
         plan = plans.load(user_id, location)
         if not plan.saved:
             return plan, []
-        goal = plans.goal(user_id, location)
-        perf, instruments = self._portfolio(user_id, location, goal.goal_return if goal.saved else None)
+        # The plan's blended return, from the plan already loaded (plans.goal() would load it again).
+        from rita.core.goal_targets import ASSET_CLASSES, blend_goal_return
+        goal_return = blend_goal_return(
+            (getattr(plan.inputs, f"{c}_monthly"), getattr(plan.inputs, f"{c}_rate")) for c in ASSET_CLASSES)
+        perf, instruments = self._portfolio(user_id, location, goal_return)
         return plan, compute_bucket_breakdown(instruments, perf, plan.inputs)
 
     def _portfolio(self, user_id: str, location: str, plan_goal_return: float | None):

@@ -159,6 +159,7 @@ TEMPLATES: dict[str, str] = {
     "wn.no_buckets": "Your saved plan has no asset lines to track yet. Add them on What I Need.",
     "wn.bucket.not_in_plan": "Your plan has no {bucket} line, so there is nothing to compare.",
     "wn.bucket.which": "Which bucket? Index fund, Equity, Commodities or Alternate.",
+    "wn.bucket.which_of": "You named more than one bucket ({list}). Which one should I look at?",
     "wn.bucket.empty": ("You hold no {bucket} instruments yet, so there is nothing to compare with "
                         "your plan."),
     "wn.bucket.no_data": "{bucket}: no performance data yet — check back after the next close.",
@@ -167,6 +168,8 @@ TEMPLATES: dict[str, str] = {
     "wn.bucket.risk": ("{bucket}: {ytd} so far against {target} that your plan needs to date — gap "
                        "{gap}, past the {threshold} limit. Open FnO to review a hedge."),
     "wn.hedge.none": "No bucket is more than {threshold} behind your plan, so there is no hedge signal.",
+    "wn.hedge.none_partial": ("No measured bucket is more than {threshold} behind your plan, so there is no hedge signal. "
+                              "{n_no_data} bucket(s) have no data yet and could not be checked."),
     "wn.hedge.signal": ("{n_at_risk} bucket(s) at risk: {list}. A hedge is built in FnO — open it to "
                         "review. Jarvis doesn't compute one."),
     "wn.hedge.list": "{n_at_risk} of {n_buckets} buckets need a look. Open FnO to review a hedge.",

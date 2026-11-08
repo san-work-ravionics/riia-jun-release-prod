@@ -37,7 +37,7 @@ def test_every_committed_run_log_validates_as_agentout():
     files = sorted(_RUNS.glob("run-*.json"))
     assert files, "no run logs found"
     for path in files:
-        for agent in json.loads(path.read_text()).get("agents", []):
+        for agent in json.loads(path.read_text(encoding="utf-8")).get("agents", []):
             AgentOut(
                 role=agent["role"],
                 status=agent.get("status", "unknown"),

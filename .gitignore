@@ -47,5 +47,6 @@ Thumbs.db
 
 # Runtime logs (never commit — locked by server, runtime data only)
 logs/*.jsonl
+logs/*.jsonl.*
 logs/*.log
 logs/*.csv

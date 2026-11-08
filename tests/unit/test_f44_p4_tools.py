@@ -24,6 +24,19 @@ from rita.repositories.asta_artifact import AstaArtifactRepository
 
 from .test_f44_p3_mcp_tools import ALICE, STDIO, SYSTEM, _call, _err, calls, fake_models, tool_db  # noqa: F401
 
+
+_REAL_CONNECT = socket.socket.connect
+
+
+def _loopback_ok(refuse):
+    """Network guard that still lets loopback through: on Windows asyncio builds its event loop from a
+    127.0.0.1 socketpair, which is not network access."""
+    def connect(self, address, *a, **k):
+        if isinstance(address, tuple) and address and address[0] in ("127.0.0.1", "::1", "localhost"):
+            return _REAL_CONNECT(self, address, *a, **k)
+        return refuse(self, address, *a, **k)
+    return connect
+
 P4_TOOLS = {"journey.get_current", "journey.save", "portfolio.pnl", "portfolio.sleeve_trace",
             "fno.sigma_levels", "market.asta_trace"}
 AUTH = {
@@ -138,7 +151,7 @@ def test_no_network_on_any_p4_tool(tool_db, fake_models, no_asta, monkeypatch):
     def refuse(*_a, **_k):
         raise AssertionError("network access")
 
-    monkeypatch.setattr(socket.socket, "connect", refuse)
+    monkeypatch.setattr(socket.socket, "connect", _loopback_ok(refuse))
     monkeypatch.setattr(socket, "create_connection", refuse)
     monkeypatch.setattr(socket, "getaddrinfo", refuse)
     for name, args in (
@@ -152,7 +165,7 @@ def test_no_network_on_any_p4_tool(tool_db, fake_models, no_asta, monkeypatch):
         assert not res.isError, (name, res.structuredContent)
 
 
-def test_health_reports_22_tools_and_jarvis(client):
+def test_health_reports_registered_tools_and_jarvis(client):
     body = client.get("/health").json()
     assert body["mcp"] == {"tools_registered": 23, "auth": "on", "transports": ["http", "memory"]}
-    assert body["jarvis"]["intents"] == 12 and body["jarvis"]["chat_model"] in ("ready", "not_loaded")
+    assert body["jarvis"]["intents"] == 16 and body["jarvis"]["chat_model"] in ("ready", "not_loaded")

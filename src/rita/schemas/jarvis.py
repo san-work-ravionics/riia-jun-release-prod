@@ -845,6 +845,15 @@ class BucketInstrumentOut(BaseModel):
     ytd_return: float | None = None
 
 
+class BucketMonthOut(BaseModel):
+    """F45 Phase B: one calendar month of a bucket — cumulative target vs cumulative actual."""
+    model_config = _CAMEL
+    month: date                      # month end (the last row: the latest close)
+    target: float                    # cumulative, pro-rated annual rate
+    actual: float | None = None      # cumulative weighted return; None = no price data that month
+    at_risk: bool | None = None
+
+
 class BucketBreakdownOut(BaseModel):
     model_config = _CAMEL
     key: Literal["idx", "eq", "com", "alt"]
@@ -855,6 +864,7 @@ class BucketBreakdownOut(BaseModel):
     at_risk: bool | None = None
     monthly_target: float | None = None
     instruments: list[BucketInstrumentOut] = []
+    monthly: list[BucketMonthOut] = []
 
 
 class ScenarioSpreadOut(BaseModel):

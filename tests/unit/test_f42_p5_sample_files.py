@@ -70,21 +70,21 @@ def test_ledger_and_pnl_content_rules():
     assert led and all(r["particulars"].startswith("SAMPLE ") for r in led)
     lo, hi = h.WINDOW
     assert all(lo <= date.fromisoformat(r["posting_date"]) <= hi for r in led)
-    text = (h.SAMPLE_DIR / h.NAMES["pnl"]).read_text()
+    text = (h.SAMPLE_DIR / h.NAMES["pnl"]).read_text(encoding="utf-8")
     assert "SAMPLE-DEMO" in text and "not a real account" in text
     assert f"from {lo.isoformat()} to {hi.isoformat()}" in text
 
 
 def test_total_size_budget_and_no_personal_markers():
     for n in h.NAMES.values():
-        blob = (h.SAMPLE_DIR / n).read_text().lower()
+        blob = (h.SAMPLE_DIR / n).read_text(encoding="utf-8").lower()
         assert "live-data" not in blob and "zerodha console" not in blob
 
 
 # ── generator: pinned inputs, stdlib only, drift guard ─────────────────────────
 
 def test_generator_is_stdlib_only_and_has_no_live_data_reference():
-    src = SCRIPT.read_text()
+    src = SCRIPT.read_text(encoding="utf-8")
     assert "live-data" not in src and "print(" not in src
     tree = ast.parse(src)
     mods = set()

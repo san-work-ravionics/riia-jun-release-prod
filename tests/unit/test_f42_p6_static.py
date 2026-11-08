@@ -10,9 +10,9 @@ import pytest
 from rita.schemas import fno_trade_analytics as sch
 
 ROOT = Path(__file__).resolve().parents[2]
-JS = (ROOT / "dashboard/js/fno/trade-analytics.js").read_text()
-MAIN = (ROOT / "dashboard/js/fno/main.js").read_text()
-HTML = (ROOT / "dashboard/fno.html").read_text()
+JS = (ROOT / "dashboard/js/fno/trade-analytics.js").read_text(encoding="utf-8")
+MAIN = (ROOT / "dashboard/js/fno/main.js").read_text(encoding="utf-8")
+HTML = (ROOT / "dashboard/fno.html").read_text(encoding="utf-8")
 DISCLAIMER = "Observations from your own imported history, not investment advice or a forecast."
 
 
@@ -227,5 +227,5 @@ def test_followup_static_rules():
     assert "3+ days" not in HTML and "3 or more" not in JS and "1x, 1.5x or 2x" not in JS
     body = _func("_renderChainLadder")
     assert "lots_after" not in body.split("afterBody")[0] and "Position size (units)" in body
-    p3 = (ROOT / "tests/unit/test_f42_p3_static.py").read_text()
+    p3 = (ROOT / "tests/unit/test_f42_p3_static.py").read_text(encoding="utf-8")
     assert '"_html"' not in p3

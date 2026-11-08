@@ -32,6 +32,19 @@ from rita.repositories.model_run_cache import ModelRunCacheRepository
 
 from .f44_p3_helpers import FakeArtifacts, PolicyModel, indicator_frame
 
+
+_REAL_CONNECT = socket.socket.connect
+
+
+def _loopback_ok(refuse):
+    """Network guard that still lets loopback through: on Windows asyncio builds its event loop from a
+    127.0.0.1 socketpair, which is not network access."""
+    def connect(self, address, *a, **k):
+        if isinstance(address, tuple) and address and address[0] in ("127.0.0.1", "::1", "localhost"):
+            return _REAL_CONNECT(self, address, *a, **k)
+        return refuse(self, address, *a, **k)
+    return connect
+
 P3_TOOLS = {"whatineed.get_goal", "portfolio.select_for_goal", "portfolio.required_return",
             "portfolio.model_runs"}
 SYSTEM = McpIdentity(transport="memory", caller="system")
@@ -221,7 +234,7 @@ def test_no_network_on_any_p3_tool(tool_db, fake_models, monkeypatch):
     def refuse(*_a, **_k):
         raise AssertionError("network access")
 
-    monkeypatch.setattr(socket.socket, "connect", refuse)
+    monkeypatch.setattr(socket.socket, "connect", _loopback_ok(refuse))
     monkeypatch.setattr(socket, "create_connection", refuse)
     monkeypatch.setattr(socket, "getaddrinfo", refuse)
     for name, args in (

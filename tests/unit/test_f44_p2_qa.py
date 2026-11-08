@@ -59,6 +59,19 @@ from rita.repositories.user_portfolio_key import UserPortfolioKeyRepo
 from rita.schemas.user_portfolio import UserPortfolioCreate, UserPortfolioOut
 from rita.services.user_portfolio_service import UserPortfolioService, holding_cash
 
+
+_REAL_CONNECT = socket.socket.connect
+
+
+def _loopback_ok(refuse):
+    """Network guard that still lets loopback through: on Windows asyncio builds its event loop from a
+    127.0.0.1 socketpair, which is not network access."""
+    def connect(self, address, *a, **k):
+        if isinstance(address, tuple) and address and address[0] in ("127.0.0.1", "::1", "localhost"):
+            return _REAL_CONNECT(self, address, *a, **k)
+        return refuse(self, address, *a, **k)
+    return connect
+
 _ROOT = Path(__file__).resolve().parents[2]
 _SRC = _ROOT / "src" / "rita"
 _JS = _ROOT / "dashboard" / "js"
@@ -446,7 +459,7 @@ def net_guard(monkeypatch):
             raise OSError(f"network disabled in test: {kind}")
         return _boom
 
-    monkeypatch.setattr(socket.socket, "connect", _rec("socket.connect"))
+    monkeypatch.setattr(socket.socket, "connect", _loopback_ok(_rec("socket.connect")))
     monkeypatch.setattr(socket.socket, "connect_ex", _rec("socket.connect_ex"))
     monkeypatch.setattr(socket, "create_connection", _rec("socket.create_connection"))
     monkeypatch.setattr(socket, "getaddrinfo", _rec("socket.getaddrinfo"))
@@ -521,7 +534,7 @@ def _references(name: str) -> list[str]:
     """Every code reference (name / attribute / import alias) to ``name`` in ``src/rita`` except its def."""
     hits = []
     for path in _SRC.rglob("*.py"):
-        for node in ast.walk(ast.parse(path.read_text())):
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
             if (isinstance(node, ast.Name) and node.id == name) or \
                (isinstance(node, ast.Attribute) and node.attr == name) or \
                (isinstance(node, ast.alias) and node.name.split(".")[-1] == name):
@@ -536,7 +549,7 @@ def test_refresh_fx_has_no_caller_anywhere_in_src():
     references ``refresh_fx`` — so neither ``refresh_all()`` nor any route can reach it."""
     assert _references("refresh_fx") == []
     defs = [p for p in _SRC.rglob("*.py")
-            if any(isinstance(n, ast.FunctionDef) and n.name == "refresh_fx" for n in ast.walk(ast.parse(p.read_text())))]
+            if any(isinstance(n, ast.FunctionDef) and n.name == "refresh_fx" for n in ast.walk(ast.parse(p.read_text(encoding="utf-8"))))]
     assert [p.relative_to(_SRC).as_posix() for p in defs] == ["services/data_refresh.py"]
 
 

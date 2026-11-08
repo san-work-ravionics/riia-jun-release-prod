@@ -11,10 +11,10 @@ from rita.schemas import fno_trade_analytics as sch
 
 ROOT = Path(__file__).resolve().parents[2]
 JS_PATH = ROOT / "dashboard/js/fno/trade-analytics.js"
-JS = JS_PATH.read_text()
-TA = (ROOT / "dashboard/js/fno/trade-analysis.js").read_text()
-MAIN = (ROOT / "dashboard/js/fno/main.js").read_text()
-HTML = (ROOT / "dashboard/fno.html").read_text()
+JS = JS_PATH.read_text(encoding="utf-8")
+TA = (ROOT / "dashboard/js/fno/trade-analysis.js").read_text(encoding="utf-8")
+MAIN = (ROOT / "dashboard/js/fno/main.js").read_text(encoding="utf-8")
+HTML = (ROOT / "dashboard/fno.html").read_text(encoding="utf-8")
 SRC = ROOT / "src/rita"
 NEW_PY = [SRC / "services/fno_trade_fifo.py", SRC / "services/fno_trade_analytics.py",
           SRC / "services/fno_trade_suggestions.py", SRC / "services/fno_trade_analytics_service.py",
@@ -124,7 +124,7 @@ def test_fc_imp_every_import_is_exported():
             names = [n.strip().split(" as ")[0] for n in m.group(1).split(",")]
             src = (js_path.parent / m.group(2)).resolve()
             assert src.exists(), (m.group(2), "path depth")
-            code = src.read_text()
+            code = src.read_text(encoding="utf-8")
             for n in names:
                 assert re.search(rf"export\s+(async\s+)?(function|const)\s+{n}\b|export\s*\{{[^}}]*\b{n}\b", code), (n, m.group(2))
     # helpers are imported (not redefined)
@@ -211,27 +211,27 @@ def test_every_template_interpolation_is_escaped_or_numeric():
 
 
 def test_tier_read_only_and_logging_hygiene_of_new_python_modules():
-    router = (SRC / "api/experience/fno_trade_analytics.py").read_text()
+    router = (SRC / "api/experience/fno_trade_analytics.py").read_text(encoding="utf-8")
     assert "Repo" not in router and "repositories" not in router and "commit" not in router.replace("no commit", "")
     assert "kite_middleware_client as kmc" in router and router.count("kmc.fetch_instrument_master_nfo") == 1
-    svc = (SRC / "services/fno_trade_analytics_service.py").read_text()
+    svc = (SRC / "services/fno_trade_analytics_service.py").read_text(encoding="utf-8")
     assert "kite_middleware_client" not in svc and "kmc" not in svc
     for p in NEW_PY:
-        t = p.read_text()
+        t = p.read_text(encoding="utf-8")
         assert "print(" not in t, p.name
         assert not re.search(r"\b(db|_db|session|self\._\w+)\.(commit|rollback|flush|add|add_all|delete|merge|bulk_insert_mappings)\(", t), p.name
         assert "settings.instruments" not in t and "lot_size_default" not in t, p.name
         assert "localhost" not in t and "LLM" not in t.replace("no LLM", "").replace("No LLM", "")
     for p in (SRC / "services/fno_trade_fifo.py", SRC / "services/fno_trade_analytics.py",
               SRC / "services/fno_trade_suggestions.py"):
-        t = p.read_text()
+        t = p.read_text(encoding="utf-8")
         assert not re.search(r"^(from|import) (sqlalchemy|rita\.(config|database|repositories|models))", t, re.M), p.name
     # logs carry counts/codes only
     allowed = {"panel", "fills", "segments", "est_segments", "error_type"}
     for p in NEW_PY:
-        for m in re.finditer(r"log\.\w+\(\s*\"[\w.]+\"((?:,\s*\w+=[^,)]+)*)", p.read_text()):
+        for m in re.finditer(r"log\.\w+\(\s*\"[\w.]+\"((?:,\s*\w+=[^,)]+)*)", p.read_text(encoding="utf-8")):
             assert set(re.findall(r"(\w+)=", m.group(1))) <= allowed, (p.name, m.group(0))
-    repo = (SRC / "repositories/fno_import.py").read_text()
+    repo = (SRC / "repositories/fno_import.py").read_text(encoding="utf-8")
     for name in ("fills_for_analysis", "turnover", "unparsed_count", "lines_for_scope", "charge_summary", "series", "last_before"):
         m = re.search(rf"def {name}\(self, user_id: str", repo)
         assert m, name

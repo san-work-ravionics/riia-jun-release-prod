@@ -23,6 +23,19 @@ from rita.core.data_integrity import check_window
 from rita.repositories.model_artifact import REWRITE_MARKER, ModelArtifactRepository
 from rita.services import data_refresh
 
+
+_REAL_CONNECT = socket.socket.connect
+
+
+def _loopback_ok(refuse):
+    """Network guard that still lets loopback through: on Windows asyncio builds its event loop from a
+    127.0.0.1 socketpair, which is not network access."""
+    def connect(self, address, *a, **k):
+        if isinstance(address, tuple) and address and address[0] in ("127.0.0.1", "::1", "localhost"):
+            return _REAL_CONNECT(self, address, *a, **k)
+        return refuse(self, address, *a, **k)
+    return connect
+
 TRAIN_END = date(2022, 12, 31)
 
 
@@ -91,7 +104,7 @@ def data_dirs(tmp_path, monkeypatch):
 def no_network(monkeypatch):
     def refuse(*_a, **_k):
         raise AssertionError("network access in a unit test")
-    monkeypatch.setattr(socket.socket, "connect", refuse)
+    monkeypatch.setattr(socket.socket, "connect", _loopback_ok(refuse))
     monkeypatch.setattr(socket, "create_connection", refuse)
     monkeypatch.setattr(socket, "getaddrinfo", refuse)
 
@@ -142,7 +155,7 @@ def test_rewrite_only_for_a_failing_instrument_and_marker(data_dirs, no_network)
     assert kw["start"] == str(broken.index[0].date())          # full history
     stored = pd.read_csv(p_bad, index_col=0, parse_dates=True)["Close"]
     assert np.allclose(stored.to_numpy(), fixed.to_numpy())
-    marker = json.loads((data_dirs / "BRK" / REWRITE_MARKER).read_text())
+    marker = json.loads((data_dirs / "BRK" / REWRITE_MARKER).read_text(encoding="utf-8"))
     assert marker["lineages_invalidated"] == ["f34p25"]
     assert marker["integrity_after_passed"] is True and "2024-11-12" in marker["integrity_before"]["f34p25"]
     # the repository reads it back (→ retrain_needed in the service)
@@ -156,7 +169,7 @@ def test_rewrite_that_is_still_broken_is_recorded(data_dirs, no_network):
     _write_raw(data_dirs, "ATX", broken)
     res = data_refresh.rewrite_history_if_broken("ATX", "ATX.PA", downloader=_Downloader(broken))
     assert res["rewritten"] and res["integrity_after_passed"] is False
-    marker = json.loads((data_dirs / "ATX" / REWRITE_MARKER).read_text())
+    marker = json.loads((data_dirs / "ATX" / REWRITE_MARKER).read_text(encoding="utf-8"))
     assert marker["integrity_after_passed"] is False and marker["integrity_after"]["f34p25"]
     assert marker["lineages_invalidated"] == ["f34p25"]       # excluded either way (N10)
 

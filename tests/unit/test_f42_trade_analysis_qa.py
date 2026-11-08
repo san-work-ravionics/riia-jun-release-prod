@@ -306,8 +306,8 @@ def test_route_requires_auth(client):
 
 # ── static contract extras ─────────────────────────────────────────────────────
 ROOT = Path(__file__).resolve().parents[2] / "dashboard"
-JS = (ROOT / "js/fno/trade-analysis.js").read_text()
-HTML = (ROOT / "fno.html").read_text()
+JS = (ROOT / "js/fno/trade-analysis.js").read_text(encoding="utf-8")
+HTML = (ROOT / "fno.html").read_text(encoding="utf-8")
 SRC = Path(__file__).resolve().parents[2] / "src/rita"
 
 
@@ -345,7 +345,7 @@ def test_every_schema_field_is_consumed_or_documented():
 def test_no_io_or_commit_in_route_and_service():
     for f in ("api/experience/fno_trade_analysis.py", "services/fno_trade_analysis_service.py"):
         import ast
-        tree = ast.parse((SRC / f).read_text())
+        tree = ast.parse((SRC / f).read_text(encoding="utf-8"))
         for n in ast.walk(tree):  # drop docstrings
             if isinstance(n, (ast.Module, ast.FunctionDef)) and ast.get_docstring(n):
                 n.body = n.body[1:]
@@ -355,5 +355,5 @@ def test_no_io_or_commit_in_route_and_service():
 
 
 def test_main_registers_router_once():
-    s = (SRC / "main.py").read_text()
+    s = (SRC / "main.py").read_text(encoding="utf-8")
     assert s.count("fno_trade_analysis") >= 2 and s.count("include_router(fno_trade_analysis_router)") == 1
