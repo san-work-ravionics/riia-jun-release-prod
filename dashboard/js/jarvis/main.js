@@ -7,7 +7,7 @@
 // ensureDevToken(true) → one retry). The only window binding is closeChartModal (modal markup).
 import { ensureDevToken } from '../shared/dev-auth.js';
 import { closeChartModal } from '../rita/chart-modal.js';
-import { t } from './copy.js?v=15';
+import { t } from './copy.js?v=17';
 import {
   warmup, openSession, sendMessage, loadState, initChat, renderHistory, renderChips, appendBubble,
   appendPending, showChatError, setBusy,
@@ -17,7 +17,7 @@ import {
   loadPortfolio, renderPortfolio, renderDetailHeader, initGrid, markSelected,
 } from './portfolio.js?v=3';
 import { loadInstrument, renderInstrument, renderInstrumentError, initInstrument } from './instrument.js?v=3';
-import { renderConcepts, initConcepts } from './concepts.js?v=5';
+import { renderConcepts, initConcepts } from './concepts.js?v=7';
 import { loadWhatINeed, initWhatINeed } from './what-i-need.js?v=11';
 import {
   LOCS, loadGeography, locCurrency, loadEurRates, renderTotalPanel,
@@ -396,10 +396,10 @@ async function openInstrument(inst) {
 // ── concepts: the user's own numbers from A4 / A5 / A6 (loaded here only when not yet loaded) ──
 async function loadConceptsSection() {
   const loc = S.loc;
-  renderConcepts({ state: S.state, pf: S.pfs[loc] || null, inst: S.inst }, loc);
-  if (S.state && (S.pfStale[loc] || !S.pfs[loc] || S.detailLoc !== loc)) {
+  renderConcepts({ state: S.state, pf: S.pfs[loc] || null, pfs: S.pfs, inst: S.inst }, loc);
+  if (S.state && (S.pfStale[loc] || LOCS.some(l => !S.pfs[l]) || S.detailLoc !== loc)) {
     await loadPortfolioSection();
-    if (S.loc === loc && S.tab === 'concepts') renderConcepts({ state: S.state, pf: S.pfs[loc] || null, inst: S.inst }, loc);
+    if (S.loc === loc && S.tab === 'concepts') renderConcepts({ state: S.state, pf: S.pfs[loc] || null, pfs: S.pfs, inst: S.inst }, loc);
   }
 }
 

@@ -271,7 +271,8 @@ class JarvisPageService:
                     (x.allocation_pct for x in (perf.holdings if perf else []) if x.instrument_id == inst), None),
                 shares=h.shares if h else None, last_close=(h.last_close if h else None) or (tr.last_close if ok else None),
                 pnl=h.pnl if h else None, ret=held_ret.get(inst),
-                model_action=tr.today_action if ok else None, sl_distance=tr.sl_distance if ok else None,
+                model_action=tr.today_action if ok else None,
+                invested_fraction=tr.invested_fraction if ok else None, sl_distance=tr.sl_distance if ok else None,
                 sl_hit=tr.sl_hit if ok else None, engines_available=available))
 
         engines: list[EngineRowOut] = []

@@ -3,7 +3,7 @@
 // Period tabs drive the instrument returns chart and hedge assessment.
 import { mkChart, destroyChart, C } from '../shared/charts.js';
 import { esc } from './esc.js?v=3';
-import { t } from './copy.js?v=15';
+import { t } from './copy.js?v=17';
 import { fmtPctPoint, fmtRate, isNum } from './format.js?v=3';
 import { allInstruments } from './regions.js?v=5';
 

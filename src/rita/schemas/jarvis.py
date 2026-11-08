@@ -737,6 +737,7 @@ class InstrumentRowOut(BaseModel):
     pnl: float | None = None
     ret: float | None = None
     model_action: ModelAction | None = None
+    invested_fraction: float | None = None
     sl_distance: float | None = None
     sl_hit: bool | None = None
     engines_available: list[Literal["rita", "fno", "asta"]] = []
