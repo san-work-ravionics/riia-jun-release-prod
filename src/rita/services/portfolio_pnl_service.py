@@ -185,6 +185,30 @@ class PortfolioPnlService:
         values = frame.sum(axis=1) + cash
         return _from_base(values, start, end)
 
+    @staticmethod
+    def _alloc_only(row: _SavedRow) -> bool:
+        """True when no holding of the row carries shares (e.g. index holdings saved by allocation % only)."""
+        def has_shares(h: dict) -> bool:
+            sh = h.get("shares")
+            return isinstance(sh, (int, float)) and not isinstance(sh, bool) and sh > 0
+        return bool(row.holdings) and not any(has_shares(h) for h in row.holdings)
+
+    def _alloc_values(self, row: _SavedRow, start: date, end: date) -> pd.Series:
+        """Return path for a row saved by allocation % only: Σ w_i × close_t / close_start, w = allocation / 100
+        (buy-and-hold from the entry date), base 1.0.  Drives return % only — never money (no shares, no amount)."""
+        if not self._alloc_only(row):
+            return pd.Series(dtype=float)
+        series = []
+        for h in row.holdings:
+            w = float(h.get("allocation_pct") or 0.0) / 100.0
+            c = _from_base(self._closes(str(h["instrument_id"]), start, end), start, end)
+            if w > 0 and not c.empty:
+                series.append(c / float(c.iloc[0]) * w)
+        if not series:
+            return pd.Series(dtype=float)
+        frame = pd.concat(series, axis=1).sort_index().ffill().dropna()
+        return frame.sum(axis=1)
+
     def _sleeve_values(self, seg: _Segment, start: date, end: date) -> tuple[pd.Series, float]:
         """Buy-and-drift of the segment's sleeves over bars in (start, end]; returns the value
         path and the covered weight fraction."""
@@ -270,6 +294,8 @@ class PortfolioPnlService:
             if end <= start and k + 1 < len(relevant):
                 continue
             vals = self._saved_values(r, start, end)
+            if not len(vals):
+                vals = self._alloc_values(r, start, end)
             if len(vals) >= 1:
                 periods.append(_Period(start, end, "saved", vals))
         periods.sort(key=lambda p: p.start)
@@ -352,7 +378,9 @@ class PortfolioPnlService:
             iid = str(h.get("instrument_id", "")).upper()
             shares = h.get("shares")
             c = _from_base(self._closes(iid, row.created, as_of), row.created, as_of)
-            if not isinstance(shares, (int, float)) or isinstance(shares, bool) or shares <= 0:
+            if self._alloc_only(row):
+                status, ret = ("ok", float(c.iloc[-1] / c.iloc[0] - 1.0)) if len(c) else ("no_price_data", None)
+            elif not isinstance(shares, (int, float)) or isinstance(shares, bool) or shares <= 0:
                 status, ret = "no_shares", None
             elif len(c) == 0:
                 status, ret = "no_price_data", None
@@ -384,7 +412,9 @@ class PortfolioPnlService:
 
     @staticmethod
     def _saved_coverage(money: MoneyOut, row: _SavedRow) -> float:
-        priced = {h.instrument_id for h in money.holdings if h.last_close is not None and h.shares}
+        alloc_only = PortfolioPnlService._alloc_only(row)
+        priced = {h.instrument_id for h in money.holdings
+                  if h.last_close is not None and (h.shares or alloc_only)}
         total = sum(float(h.get("allocation_pct") or 0.0) for h in row.holdings) or 1.0
         covered = sum(float(h.get("allocation_pct") or 0.0) for h in row.holdings
                       if str(h.get("instrument_id", "")).upper() in priced)
