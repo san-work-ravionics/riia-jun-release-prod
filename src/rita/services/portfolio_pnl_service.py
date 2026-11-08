@@ -43,6 +43,7 @@ from rita.schemas.jarvis import (
     TargetPointOut,
 )
 from rita.services.goal_selection_service import GoalSelectionService
+from rita.services.fx_service import FxService
 from rita.services.user_portfolio_service import UserPortfolioService, holding_cash, location_currency
 
 _LOOKBACK_DAYS = 15     # closes fetched before a period start to find its base close
@@ -62,6 +63,7 @@ class _SavedRow:
     created: date
     holdings: list[dict]
     legacy: bool
+    total_eur: float | None = None   # the saved portfolio's total in EUR (allocation-only value basis)
 
 
 @dataclass
@@ -143,14 +145,15 @@ class PortfolioPnlService:
             return []
         rows = self._rows.list_by_key_and_location(key.key_id, location)
         if rows:
-            return [_SavedRow(r.portfolio_id, r.name, _created(r), list(r.holdings or []), False)
+            return [_SavedRow(r.portfolio_id, r.name, _created(r), list(r.holdings or []), False,
+                             r.total_value_eur)
                     for r in rows]
         out = []
         for r in self._rows.list_by_key_and_location(key.key_id, None):
             hs = [h for h in (r.holdings or [])
                   if self._ups.instrument_location(str(h.get("instrument_id", ""))) == location]
             if hs:
-                out.append(_SavedRow(r.portfolio_id, r.name, _created(r), hs, True))
+                out.append(_SavedRow(r.portfolio_id, r.name, _created(r), hs, True, r.total_value_eur))
         return out
 
     def _closes(self, instrument: str, start: date, end: date) -> pd.Series:
@@ -208,6 +211,19 @@ class PortfolioPnlService:
             return pd.Series(dtype=float)
         frame = pd.concat(series, axis=1).sort_index().ffill().dropna()
         return frame.sum(axis=1)
+
+    def _alloc_money(self, row: _SavedRow, currency: str, start: date, end: date) -> pd.Series:
+        """Value path for an allocation-only row: the saved total (EUR) × the row's allocation share, grown
+        by the allocation-weighted return, in the location currency at the EUR rate on the entry date
+        (so P&L is the instruments' move, not FX).  Empty when the row has no saved total or no rate."""
+        growth = self._alloc_values(row, start, end)
+        if growth.empty or not row.total_eur:
+            return pd.Series(dtype=float)
+        fx = FxService(self._db).rate("EUR", currency, row.created)
+        if fx is None:
+            return pd.Series(dtype=float)
+        share = sum(float(h.get("allocation_pct") or 0.0) for h in row.holdings) / 100.0
+        return growth / float(growth.iloc[0]) * (row.total_eur * share * fx.rate)
 
     def _sleeve_values(self, seg: _Segment, start: date, end: date) -> tuple[pd.Series, float]:
         """Buy-and-drift of the segment's sleeves over bars in (start, end]; returns the value
@@ -327,7 +343,7 @@ class PortfolioPnlService:
         if rows and label in ("saved", "mixed"):
             active = relevant[-1] if relevant else rows[-1]
             out.entry_date = active.created
-            out.money = self._money(active, path_as_of)
+            out.money = self._money(active, path_as_of, currency)
             out.holdings = self._saved_holdings(active, path_as_of)
             out.coverage = self._saved_coverage(out.money, active)
         elif segs:
@@ -349,8 +365,10 @@ class PortfolioPnlService:
                 dates.append(d)
         return max(dates) if dates else None
 
-    def _money(self, row: _SavedRow, as_of: date) -> MoneyOut:
+    def _money(self, row: _SavedRow, as_of: date, currency: str) -> MoneyOut:
         vals = self._saved_values(row, row.created, as_of)
+        if not len(vals):
+            vals = self._alloc_money(row, currency, row.created, as_of)
         cash = float(sum(holding_cash(h) or 0.0 for h in row.holdings))
         money = MoneyOut(portfolio_id=row.portfolio_id, name=row.name, legacy_note=row.legacy, cash=cash)
         if len(vals):
