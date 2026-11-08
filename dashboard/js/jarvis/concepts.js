@@ -53,22 +53,6 @@ function _slLimit(j) {
 }
 
 // ── static HTML ────────────────────────────────────────────────────────────────
-export function flowTableHtml() {
-  const rows = STEPS.map((s, i) => `<tr><td><strong>${i + 1} · ${esc(t(`cx.${s}.tab`))}</strong></td>
-    <td class="mono" style="font-size:11px">${esc(t(`cx.${s}.who`))}</td><td>${esc(t(`cx.${s}.kind`))}</td></tr>`).join('');
-  return `<table class="jv-table"><thead><tr><th>${esc(t('cx.flow.col.step'))}</th><th>${esc(t('cx.flow.col.who'))}</th>
-    <th>${esc(t('cx.flow.col.kind'))}</th></tr></thead><tbody>${rows}</tbody></table>`;
-}
-
-export function stepBarHtml(state) {
-  const order = { no_goal: 0, goal_loaded: 1, selected: 4, cant_reach: 4, tracking: 5, reselect_proposed: 6, back_to_plan: 6 };
-  const reached = state in order ? order[state] : -1;
-  return STEPS.map((s, i) => {
-    const cls = i < reached ? 'done' : i === reached ? 'active' : '';
-    return `<div class="step-seg ${cls}">${i + 1} ${esc(t(`cx.${s}.tab`))}</div>`;
-  }).join('');
-}
-
 export function tabBarHtml(active) {
   return STEPS.map((s, i) => `<button type="button" class="concept-tab${s === active ? ' active' : ''}" data-step="${s}">${i + 1} · ${esc(t(`cx.${s}.tab`))}</button>`).join('');
 }
@@ -170,7 +154,8 @@ export function panelHtml(step, data = {}) {
       return '';
   }
   const ttl = k => t(`cx.${step}.${k}`, { instrument: instId || '—' });
-  return `<p class="concept-desc">${esc(_desc(step, j))}</p>
+  const meta = `<div class="cx-meta"><span><b>${esc(t('cx.flow.col.who'))}</b><span class="mono">${esc(t(`cx.${step}.who`))}</span></span><span><b>${esc(t('cx.flow.col.kind'))}</b>${esc(t(`cx.${step}.kind`))}</span></div>`;
+  return `${meta}<p class="concept-desc">${esc(_desc(step, j))}</p>
     <div class="concept-chart-grid">${_wrap(step, 'a', ttl('c1'), a)}${_wrap(step, 'b', ttl('c2'), b)}</div>`;
 }
 
@@ -298,11 +283,6 @@ function _el(id) { return document.getElementById(id); }
 
 export function renderConcepts(data, location) {
   _data = data || {};
-  const j = _data.state && _data.state.journey;
-  const bar = _el('jv-cx-steps');
-  if (bar) bar.innerHTML = stepBarHtml(j ? j.state : 'no_goal');
-  const tbl = _el('jv-cx-flow');
-  if (tbl) tbl.innerHTML = flowTableHtml();
   const st = _el('jv-cx-status');
   if (st) st.textContent = statusText(_data.state, _data.pf, location);
   showStep(_active);

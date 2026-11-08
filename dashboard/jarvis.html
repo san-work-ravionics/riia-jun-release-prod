@@ -149,6 +149,8 @@ canvas{display:block;}
 .jv-wn-bucket-summary.nodata{border-color:var(--border);background:transparent;color:var(--t3);}
 .jv-wn-bucket-summary.ok{border-color:var(--run-bd);background:var(--run-bg);color:var(--run);}
 .jv-wn-hedge-cta{font-size:11px;margin-left:6px;color:var(--warn);text-decoration:underline;}
+.cx-meta{display:flex;flex-wrap:wrap;gap:4px 28px;font-size:12px;color:var(--t2);margin:0 0 10px;}
+.cx-meta b{font-family:var(--fm);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-right:8px;}
 .card-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px;}
 .card-row>.card{margin-bottom:0;}
 .ms-tab{background:transparent;border:none;border-bottom:2px solid transparent;padding:8px 16px;font-family:var(--fd);font-size:12px;font-weight:600;color:var(--t3);cursor:pointer;margin-bottom:-1.5px;transition:color .12s,border-color .12s;}
@@ -653,17 +655,12 @@ canvas{display:block;}
       </div>
     </div>
 
-    <div class="step-bar" id="jv-cx-steps"></div>
-
     <div class="card">
       <div class="card-hdr"><span class="card-title" data-copy="cx.flow.title"></span></div>
-      <div class="card-row-2" style="align-items:start;margin-bottom:0">
-        <div class="tbl-wrap" id="jv-cx-flow" style="box-shadow:none"></div>
-        <div class="concept-text">
-          <p data-copy="cx.flow.p1"></p>
-          <p data-copy="cx.flow.p2"></p>
-          <p data-copy="cx.flow.p3"></p>
-        </div>
+      <div class="concept-text">
+        <p data-copy="cx.flow.p1"></p>
+        <p data-copy="cx.flow.p2"></p>
+        <p data-copy="cx.flow.p3"></p>
       </div>
     </div>
 
@@ -798,7 +795,7 @@ canvas{display:block;}
     <img id="chart-modal-img" style="width:100%;max-height:88vh;display:block;border-radius:4px;object-fit:contain;" />
   </div>
 </div>
-<script type="module" src="./js/jarvis/main.js?v=8"></script>
+<script type="module" src="./js/jarvis/main.js?v=10"></script>
 <script>fetch('/health').then(r=>r.json()).then(d=>{document.querySelectorAll('.app-ver').forEach(e=>e.textContent='v'+d.version)}).catch(()=>{})</script>
 </body>
 </html>

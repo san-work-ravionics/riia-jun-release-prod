@@ -404,7 +404,7 @@ for (const state of ['tracking', 'selected', 'reselect_proposed']) {{
   const st = clone(FX.A4_state); st.journey.state = state;
   const data = {{ state: rec('A4', st), pf: rec('A5', clone(FX.A5_portfolio)), inst: rec('A6', clone(FX.A6_instrument)) }};
   for (const step of cx.STEPS) cx.panelHtml(step, data);
-  cx.statusText(data.state, data.pf, 'europe'); cx.stepBarHtml(data.state.journey.state);
+  cx.statusText(data.state, data.pf, 'europe');
 }}
 console.log(JSON.stringify(Object.fromEntries(Object.entries(seen).map(([k, v]) => [k, [...v].sort()]))));""")
 
@@ -498,7 +498,7 @@ def test_charts_sit_in_chart_wraps_with_titles():
 def test_html_concepts_view_ids():
     html = _HTML.read_text(encoding="utf-8")
     ids = re.findall(r'\bid="([^"]+)"', html)
-    for i in ("jv-tab-concepts", "jv-view-concepts", "jv-cx-steps", "jv-cx-flow", "jv-cx-status", "jv-cx-tabs", "jv-cx-panel"):
+    for i in ("jv-tab-concepts", "jv-view-concepts", "jv-cx-status", "jv-cx-tabs", "jv-cx-panel"):
         assert ids.count(i) == 1, i
 
 
@@ -521,7 +521,7 @@ for (const s of cx.STEPS) {{
 const hostile = JSON.parse(JSON.stringify(FX.A4_state));
 hostile.journey.selection.ladder[0].tolerance = {json.dumps(HOSTILE)};
 hostile.live_holdings[0].instrument_id = {json.dumps(HOSTILE)};
-out.escaped = !cx.panelHtml('s1', {{ state: hostile }}).includes('<img') && !cx.flowTableHtml().includes('<img');
+out.escaped = cx.STEPS.every(s => !cx.panelHtml(s, {{ state: hostile }}).includes('<img'));
 console.log(JSON.stringify(out));""")
     assert r.pop("escaped") is True
     for step, v in r.items():
