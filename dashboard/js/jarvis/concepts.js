@@ -219,9 +219,10 @@ export function panelHtml(step, data = {}) {
     <div class="concept-chart-grid"${c ? ' style="grid-template-columns:repeat(3,minmax(0,1fr))"' : ''}>${_wrap(step, 'a', titleA, a)}${_wrap(step, 'b', ttl('c2'), b)}${c ? _wrap(step, 'c', ttl('c3'), c) : ''}</div>`;
 }
 
-export function statusText(state, pf, location) {
-  const as_of = (pf && pf.as_of) || (state && (state.live_holdings || []).map(h => h.as_of).filter(Boolean).sort().pop());
-  return t('cx.tabs.status', { location: locationName(location), as_of: fmtDate(as_of) });
+// The date of the data behind the page: the latest A5 as-of across every region's saved portfolio.
+export function statusText(pf, pfs = null) {
+  const dates = [pf && pf.as_of, ...Object.values(pfs || {}).map(p => p && p.as_of)].filter(Boolean).sort();
+  return t('cx.tabs.status', { as_of: fmtDate(dates.length ? dates[dates.length - 1] : null) });
 }
 
 // ── charts ─────────────────────────────────────────────────────────────────────
@@ -358,7 +359,7 @@ function _el(id) { return document.getElementById(id); }
 export function renderConcepts(data, location) {
   _data = data || {};
   const st = _el('jv-cx-status');
-  if (st) st.textContent = statusText(_data.state, _data.pf, location);
+  if (st) st.textContent = statusText(_data.pf, _data.pfs);
   showStep(_active);
 }
 

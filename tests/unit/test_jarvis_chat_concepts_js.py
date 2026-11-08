@@ -369,7 +369,7 @@ console.log(JSON.stringify({{ two: html({{ pf: null, pfs }}), single: html({{ pf
     assert "DJI" in r["single"] and "US" in r["single"] and r["dji"] in r["single"]      # a lone portfolio still works
     assert r["empties"] in r["empty"] and "<td" not in r["empty"].split("cx-empty")[-1]    # no rows → the empty note
     assert "<img" not in r["hostile"]
-    assert "<td>X</td>" not in r["noClose"] and "X" not in r["noClose"].replace("tex", "")  # no price → no row
+    assert r["empties"] in r["noClose"] and "<td>X</td>" not in r["noClose"]            # no price → no row, the empty note
     assert "<canvas" not in two                                              # this stage is tables only
 
 

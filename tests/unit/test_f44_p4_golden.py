@@ -82,12 +82,28 @@ def _walk(x, nums: list, strs: list):
 _TOKEN = re.compile(r"\d{4}-\d{2}-\d{2}|(?<![A-Za-z])[A-Z]{3} -?[\d,]+(?:\.\d+)?|-?\d[\d,]*(?:\.\d+)?%?")
 
 
+def _instrument_ids(x, out: set) -> set:
+    """Every ``instrument_id`` value in a tool result (DJI, E1, ...): ids, never numbers or currencies."""
+    if isinstance(x, dict):
+        for k, v in x.items():
+            if k == "instrument_id" and isinstance(v, str):
+                out.add(v)
+            _instrument_ids(v, out)
+    elif isinstance(x, list):
+        for v in x:
+            _instrument_ids(v, out)
+    return out
+
+
 def assert_numbers_from_tools(text: str, results: list[dict]):
     nums, strs = [], []
     for r in results:
         _walk(r, nums, strs)
     allowed = T.number_tokens(nums + strs, currencies=set(CCY.values()))
-    ids = sorted({s for s in strs if re.fullmatch(r"[A-Z][A-Z0-9_]*\d[A-Z0-9_]*", s)}, key=len, reverse=True)
+    named = set()
+    for r in results:
+        _instrument_ids(r, named)
+    ids = sorted({s for s in strs if re.fullmatch(r"[A-Z][A-Z0-9_]*\d[A-Z0-9_]*", s)} | named, key=len, reverse=True)
     scrub = text
     for i in ids:
         scrub = re.sub(rf"\b{re.escape(i)}\b", "ID", scrub)

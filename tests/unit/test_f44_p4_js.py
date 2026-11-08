@@ -158,6 +158,13 @@ const out = {{}};
 for (const [kind, card] of Object.entries(FX.cards)) out['card_' + kind] = chat.cardHtml(hostile(card));
 out.bubble_user = chat.bubbleHtml('user', H);
 out.bubble_assistant = chat.bubbleHtml('assistant', H, [hostile(FX.cards.goal)]);
+// the bucket cards carry a bucket key / instrument ids / a link from the server: hostile there too
+const bs = hostile(FX.cards.bucket_status); bs.data.key = H; bs.data.instruments = [H];
+out.card_bucket_status = chat.cardHtml(bs);
+const bp = hostile(FX.cards.bucket_progress); bp.data.buckets[0].key = H;
+out.card_bucket_progress = chat.cardHtml(bp);
+const hs = hostile(FX.cards.hedge_signal); hs.data.at_risk_buckets = [H]; hs.data.fno_link = H;
+out.card_hedge_signal = chat.cardHtml(hs);
 out.chips = chat.chipsHtml([{{ label: H, text: H }}]);
 const st = hostile(FX.A4_state);
 out.plan = plan.goalHtml(st.journey) + plan.selectionHtml(st.journey, st.live_holdings) + plan.excludedHtml(
@@ -184,7 +191,8 @@ for (const e of a6.engines) {{
 console.log(JSON.stringify(out));""")
     for key, html in r.items():
         assert "<img" not in html, key
-    for key in (*(f"card_{kind}" for kind in _FIXTURE["cards"]),          # every card kind the chat can emit
+    for key in (*(f"card_{kind}" for kind in _FIXTURE["cards"] if kind != "hedge"),   # every card with server strings
+                # (the hedge card renders two numbers only)
                 "bubble_user", "bubble_assistant", "chips", "plan", "grid",
                 "engines", "levels_rita", "rationale_rita", "toggle_rita", "loc_inst", "loc_pf", "loc_pick",
                 "geo_table"):
@@ -406,7 +414,7 @@ for (const state of ['tracking', 'selected', 'reselect_proposed']) {{
   const data = {{ state: rec('A4', st), pf: pfs.europe, pfs, inst: rec('A6', clone(FX.A6_instrument)),
                  mcp: [{{ timestamp: '2026-11-08T10:00:00', tool_name: 'portfolio.pnl', status: 'ok' }}] }};
   for (const step of cx.STEPS) cx.panelHtml(step, data);
-  cx.statusText(data.state, data.pf, 'europe');
+  cx.statusText(data.pf, data.pfs);
   chat.highlightsHtml(data.state, data.pf, 'europe');
 }}
 {{
@@ -658,7 +666,7 @@ console.log(JSON.stringify({{
     assert r["sortRetDesc"] == ["C", "A", "B", "D"] and r["sortRetAsc"] == ["B", "A", "C", "D"]
     assert r["sortId"] == ["D", "C", "B", "A"]
     assert r["label"] == ["+10.0%", "+2.0% (est.)", "—"]
-    assert "No instruments for India yet." in r["empty"]
+    assert "No portfolio instruments for India yet." in r["empty"]          # the page lists the user's instruments only
     assert r["meta"] == "1 instruments"
 
 
@@ -777,10 +785,13 @@ console.log(JSON.stringify({{ before, a6, charts,
     eur, ind, us = r["pf"]
     assert "My portfolio" in eur and "My portfolio" in us
     assert ind == "Couldn't load — india down"
-    assert all("jv-loc-row" in h for h in r["inst"])                     # G still rendered for every column
+    # the page lists the user's own (held or picked) instruments only: Europe's A5 holds E1; India's A5 failed
+    # and the US A5 has no row for a US instrument, so those columns show the portfolio-empty note
+    assert "jv-loc-row" in r["inst"][0] and all("jv-loc-row" not in h for h in r["inst"][1:])
+    assert "No portfolio instruments for India yet." in r["inst"][1] and "No portfolio instruments for US yet." in r["inst"][2]
     assert r["ccy"] == ["EUR", "INR", "USD"]
     assert ["jv-geo-map", "scatter"] in r["charts"]
-    assert "E1" in r["table"] and "NVIDIA" in r["table"] and "AEX" in r["table"]
+    assert "E1" in r["table"] and "NVIDIA" not in r["table"] and "AEX" not in r["table"]   # portfolio instruments only
     assert r["status"] == ["", True]
     assert r["title"] == "Europe in detail · EUR" and r["active"] is True
     assert r["stale"] == {"europe": False, "india": True, "us": False}

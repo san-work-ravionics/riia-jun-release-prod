@@ -213,10 +213,10 @@ console.log(JSON.stringify({{ meta: e('jv-loc-meta-india').textContent, avg: e('
   tableEmpty: e('jv-geo-table-empty').textContent, tableWrapHidden: e('jv-geo-table-wrap').hidden }}));""")
     assert r["meta"] == "0 instruments"
     assert ">—<" in r["avg"]
-    assert "No instruments for India yet." in r["inst"]
+    assert "No portfolio instruments for India yet." in r["inst"]
     assert "jv-loc-kpis" in r["pf"]
     assert r["mapEmpty"] == ["No price data available.", False] and r["mapWrapHidden"] is True
-    assert r["tableEmpty"] == "No instruments available." and r["tableWrapHidden"] is True
+    assert r["tableEmpty"] == "No portfolio instruments yet." and r["tableWrapHidden"] is True
 
 
 # ── 3. main.js orchestration edge cases (node DOM stub) ───────────────────────
@@ -288,11 +288,11 @@ console.log(JSON.stringify({ first, retry: log.filter(u => !u.includes('/instrum
     f = r["first"]
     assert f["inst"] == ["Couldn't load — geo down"] * 3
     assert all("jv-loc-kpis" in h for h in f["pf"])                     # A5 blocks still render
-    assert f["map"] == "No price data available." and f["table"] == "No instruments available."
+    assert f["map"] == "No price data available." and f["table"] == "No portfolio instruments yet."
     assert f["title"] == "Europe in detail · EUR"
     assert f["geoErr"] == "geo down" and f["geo"] is None
     assert r["retry"] == ["/api/v1/experience/rita/geography-overview"]  # G retried; A5 cached, not re-fetched
-    assert "jv-loc-row" in r["inst2"] and "NVIDIA" in r["table2"]
+    assert "jv-loc-row" in r["inst2"] and "E1" in r["table2"] and "NVIDIA" not in r["table2"]   # the user's instruments only
 
 
 @_needs_node
