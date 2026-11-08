@@ -384,17 +384,6 @@ class AstaTraceOut(BaseModel):
 
 # ── chat cards (rev 1 B3: discriminated union on ``kind``) ─────────────────────
 
-class CardHoldingOut(BaseModel):
-    instrument_id: str
-    allocation_pct: int
-    model_action: ModelAction | None = None
-
-
-class WindowDatesOut(BaseModel):
-    start: date
-    end: date
-
-
 class GoalCardData(BaseModel):
     location: str
     currency: str
@@ -404,107 +393,10 @@ class GoalCardData(BaseModel):
     plan_updated_at: datetime | None = None
 
 
-class SelectionCardData(BaseModel):
-    location: str
-    currency: str
-    target_return: float
-    meets_goal: bool
-    tolerance: Tolerance | None = None
-    n_tolerances: int
-    holdings: list[CardHoldingOut]
-    fit_return: float | None = None
-    test_return: float | None = None
-    test_mdd: float | None = None
-    gap: float | None = None
-    test_window: WindowDatesOut
-    method_weights: str
-
-
-class ClosestCardData(BaseModel):
-    target_return: float
-    holdings: list[CardHoldingOut]
-    fit_return: float | None = None
-    test_return: float | None = None
-    gap: float | None = None
-    cap_fit: float
-    cap_test: float
-
-
-class WhyRowOut(BaseModel):
-    instrument_id: str
-    allocation_pct: int
-    fit_return: float | None = None
-    test_return: float | None = None
-    test_mdd: float | None = None
-    today_action: ModelAction | None = None
-
-
-class ExcludedRowOut(BaseModel):
-    instrument_id: str
-    reason: str
-
-
-class WhyCardData(BaseModel):
-    tolerance: Tolerance | None = None
-    n_tolerances: int
-    rows: list[WhyRowOut]
-    excluded: list[ExcludedRowOut] = []
-
-
-class TrackingCardHoldingOut(BaseModel):
-    instrument_id: str
-    entry_close: float | None = None
-    today_action: ModelAction | None = None
-
-
-class TrackingCardData(BaseModel):
-    entry_date: date
-    sl_drawdown_limit: float | None = None
-    next_reset: date | None = None
-    holdings: list[TrackingCardHoldingOut]
-
-
-class ProgressCardData(BaseModel):
-    source: Literal["saved", "model_sleeves", "mixed"]
-    as_of: date | None = None
-    year_start: date
-    ytd_return: float | None = None
-    target_to_date: float | None = None
-    required_return: float | None = None
-    status: str | None = None
-    reason: str | None = None
-
-
-class ProposalCardData(BaseModel):
-    required_return: float | None = None
-    effective_return: float | None = None
-    holdings: list[CardHoldingOut]
-    test_return: float | None = None
-    reselections_next: int
-    max_reselections: int
-
-
-class WhatIfRowOut(BaseModel):
-    instrument_id: str
-    sl_distance: float | None = None
-
-
-class WhatIfCardData(BaseModel):
-    ytd_return: float
-    required_return: float | None = None
-    status: str
-    reason: str
-    rows: list[WhatIfRowOut]
-
-
 class HedgeCardData(BaseModel):
     n_hedged: int
     coverage: int
     updated_at: datetime | None = None
-
-
-class ExcludedCardData(BaseModel):
-    rows: list[ExcludedRowOut]
 
 
 class BucketRowOut(BaseModel):
@@ -548,49 +440,9 @@ class GoalCard(BaseModel):
     data: GoalCardData
 
 
-class SelectionCard(BaseModel):
-    kind: Literal["selection"] = "selection"
-    data: SelectionCardData
-
-
-class ClosestCard(BaseModel):
-    kind: Literal["closest"] = "closest"
-    data: ClosestCardData
-
-
-class WhyCard(BaseModel):
-    kind: Literal["why"] = "why"
-    data: WhyCardData
-
-
-class TrackingCard(BaseModel):
-    kind: Literal["tracking"] = "tracking"
-    data: TrackingCardData
-
-
-class ProgressCard(BaseModel):
-    kind: Literal["progress"] = "progress"
-    data: ProgressCardData
-
-
-class ProposalCard(BaseModel):
-    kind: Literal["proposal"] = "proposal"
-    data: ProposalCardData
-
-
-class WhatIfCard(BaseModel):
-    kind: Literal["what_if"] = "what_if"
-    data: WhatIfCardData
-
-
 class HedgeCard(BaseModel):
     kind: Literal["hedge"] = "hedge"
     data: HedgeCardData
-
-
-class ExcludedCard(BaseModel):
-    kind: Literal["excluded"] = "excluded"
-    data: ExcludedCardData
 
 
 class BucketProgressCard(BaseModel):
@@ -609,12 +461,11 @@ class HedgeSignalCard(BaseModel):
 
 
 CardOut = Annotated[
-    Union[GoalCard, SelectionCard, ClosestCard, WhyCard, TrackingCard, ProgressCard, ProposalCard,
-          WhatIfCard, HedgeCard, ExcludedCard, BucketProgressCard, BucketStatusCard, HedgeSignalCard],
+    Union[GoalCard, HedgeCard, BucketProgressCard, BucketStatusCard, HedgeSignalCard],
     Field(discriminator="kind"),
 ]
-CARD_KINDS = ("goal", "selection", "closest", "why", "tracking", "progress", "proposal",
-              "what_if", "hedge", "excluded", "bucket_progress", "bucket_status", "hedge_signal")
+# the cards the chat can emit: the saved plan, the FnO hedge plan and the F45 bucket cards
+CARD_KINDS = ("goal", "hedge", "bucket_progress", "bucket_status", "hedge_signal")
 
 
 # ── A1–A3 (Workflow) ───────────────────────────────────────────────────────────

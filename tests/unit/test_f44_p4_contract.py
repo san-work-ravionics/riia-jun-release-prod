@@ -41,7 +41,7 @@ def test_f44_p4_contract_fixture_validates():
     for key, model in MODELS.items():
         assert model.model_validate(data[key]).model_dump(mode="json") == data[key], key
     adapter = TypeAdapter(CardOut)
-    assert set(data["cards"]) == set(CARD_KINDS) and len(CARD_KINDS) == 13
+    assert set(data["cards"]) == set(CARD_KINDS) and len(CARD_KINDS) == 5     # goal, hedge, 3 bucket cards
     for kind, card in data["cards"].items():
         assert adapter.validate_python(card).kind == kind
 
@@ -58,3 +58,14 @@ def test_unknown_card_kind_is_rejected():
 
     with pytest.raises(ValidationError):
         TypeAdapter(CardOut).validate_python({"kind": "chart", "data": {}})
+
+
+def test_retired_card_kinds_are_rejected():
+    """The journey cards (selection, closest, why, tracking, progress, proposal, what_if, excluded) are gone:
+    the chat answers from saved data and cannot emit them."""
+    import pytest
+    from pydantic import ValidationError
+
+    for kind in ("selection", "closest", "why", "tracking", "progress", "proposal", "what_if", "excluded"):
+        with pytest.raises(ValidationError):
+            TypeAdapter(CardOut).validate_python({"kind": kind, "data": {}})

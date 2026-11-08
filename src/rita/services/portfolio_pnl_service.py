@@ -190,11 +190,9 @@ class PortfolioPnlService:
 
     @staticmethod
     def _alloc_only(row: _SavedRow) -> bool:
-        """True when no holding of the row carries shares (e.g. index holdings saved by allocation % only)."""
-        def has_shares(h: dict) -> bool:
-            sh = h.get("shares")
-            return isinstance(sh, (int, float)) and not isinstance(sh, bool) and sh > 0
-        return bool(row.holdings) and not any(has_shares(h) for h in row.holdings)
+        """True when no holding of the row has a share count at all (``shares`` missing or null, e.g. index
+        holdings saved by allocation % only).  An explicit 0 is a cash holding, not an unknown count."""
+        return bool(row.holdings) and all(h.get("shares") is None for h in row.holdings)
 
     def _alloc_values(self, row: _SavedRow, start: date, end: date) -> pd.Series:
         """Return path for a row saved by allocation % only: Σ w_i × close_t / close_start, w = allocation / 100

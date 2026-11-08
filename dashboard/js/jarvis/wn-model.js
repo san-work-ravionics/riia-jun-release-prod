@@ -2,7 +2,7 @@
 // its own saved plan (its own inflation, risk and return assumptions, in its own currency) and its own
 // instruments; here each region is measured against its own plan and the regions are then added together in EUR.
 import { fmtMoney, fmtPctPoint, isNum, locationName } from './format.js?v=3';
-import { t } from './copy.js?v=18';
+import { t } from './copy.js?v=19';
 
 export const LOC_KEYS = ['europe', 'india', 'us'];
 

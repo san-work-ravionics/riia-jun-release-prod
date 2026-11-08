@@ -141,7 +141,9 @@ def test_state_live_holdings_from_sleeve_trace(journey_db):
     assert h.model_action == "full" and h.invested_fraction == 1.0 and h.next_reset == date(2026, 12, 18)
     entry = [a.get("entry_date") for n, a in mcp.calls if n == "portfolio.sleeve_trace"]
     assert entry == [S.isoformat(), S.isoformat()]
-    assert st.plan_stale is False and [c.text for c in st.chips][0] == "how am I doing"
+    assert st.plan_stale is False
+    from rita.services import jarvis_templates as T
+    assert [(c.label, c.text) for c in st.chips] == [(c["label"], c["text"]) for c in T.chips()]   # fixed, not per state
 
 
 # ── A6 levels per engine (rev 1 A2) ────────────────────────────────────────────
@@ -210,3 +212,41 @@ def test_experience_tier_never_writes():
     for f in (SRC / "api" / "experience" / "jarvis.py", SRC / "services" / "jarvis_page_service.py"):
         text = f.read_text(encoding="utf-8")
         assert not re.search(r"\.commit\(|\.add\(|upsert|\.delete\(", text), f
+
+
+# ── portfolio rows carry the sleeve's invested fraction (Concepts "invested now") ────────────────
+
+def test_instrument_rows_carry_the_sleeves_invested_fraction(journey_db):
+    mcp = FakeMcp(_payloads(_journey("tracking"), saved=False))
+    out = JarvisPageService(journey_db, mcp, User()).portfolio("europe")
+    assert {i.instrument_id: i.invested_fraction for i in out.instruments} == {"E1": 1.0, "E2": 1.0}
+
+
+def test_invested_fraction_is_none_when_the_sleeve_is_not_ok(journey_db):
+    """An excluded / failed sleeve has no model view today: the row must not show a stale fraction."""
+    payloads = _payloads(_journey("tracking"), saved=False)
+    payloads["portfolio.sleeve_trace"] = lambda a: trace(a["instrument"], as_of=AS_OF).model_copy(
+        update={"status": "excluded"})
+    out = JarvisPageService(journey_db, FakeMcp(payloads), User()).portfolio("europe")
+    assert out.instruments and all(i.invested_fraction is None and i.model_action is None for i in out.instruments)
+
+
+def test_saved_allocation_only_portfolio_lists_its_instruments_without_a_model(journey_db):
+    """No journey and no model: the saved portfolio's holdings still make rows (held, with their return)."""
+    from rita.schemas.jarvis import MoneyHoldingOut, MoneyOut, PnlHoldingOut, PnlOut
+
+    def pnl(a):
+        return PnlOut(location="india", currency="INR", source="saved", as_of=AS_OF, year_start=S, entry_date=S,
+                      ytd_return=-0.003, coverage=1.0,
+                      money=MoneyOut(portfolio_id="pf", holdings=[MoneyHoldingOut(instrument_id="NIFTY", last_close=25000.0)]),
+                      holdings=[PnlHoldingOut(instrument_id="NIFTY", allocation_pct=20.0, return_since=-0.034,
+                                              status="ok")])
+
+    payloads = {"whatineed.get_goal": goal("india", saved=False), "journey.get_current": None, "portfolio.pnl": pnl,
+                "portfolio.sleeve_trace": lambda a: trace(a["instrument"], as_of=AS_OF).model_copy(
+                    update={"status": "excluded"}),
+                "market.asta_trace": lambda a: AstaTraceOut(instrument_id=a["instrument"], status="no_model")}
+    out = JarvisPageService(journey_db, FakeMcp(payloads), User()).portfolio("india")
+    assert out.pnl_source == "saved" and out.perf.ytd_return == -0.003
+    row = next(i for i in out.instruments if i.instrument_id == "NIFTY")
+    assert row.allocation_pct == 20.0 and row.invested_fraction is None and row.model_action is None

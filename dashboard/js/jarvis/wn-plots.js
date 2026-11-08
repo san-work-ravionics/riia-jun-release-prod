@@ -4,7 +4,7 @@
 // actual by month).  Ages run from the start age to the retirement age; milestones every 5 years and at retirement.
 import { mkChart, destroyChart, C } from '../shared/charts.js';
 import { esc } from './esc.js?v=3';
-import { t } from './copy.js?v=18';
+import { t } from './copy.js?v=19';
 import { fmtDate, fmtMoney, fmtNum, isNum, locationName } from './format.js?v=3';
 import { isMilestone } from './wn-model.js?v=3';
 

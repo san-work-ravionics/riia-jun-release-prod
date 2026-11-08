@@ -157,7 +157,7 @@ const hostile = o => JSON.parse(JSON.stringify(o), (k, v) =>
 const out = {{}};
 for (const [kind, card] of Object.entries(FX.cards)) out['card_' + kind] = chat.cardHtml(hostile(card));
 out.bubble_user = chat.bubbleHtml('user', H);
-out.bubble_assistant = chat.bubbleHtml('assistant', H, [hostile(FX.cards.selection)]);
+out.bubble_assistant = chat.bubbleHtml('assistant', H, [hostile(FX.cards.goal)]);
 out.chips = chat.chipsHtml([{{ label: H, text: H }}]);
 const st = hostile(FX.A4_state);
 out.plan = plan.goalHtml(st.journey) + plan.selectionHtml(st.journey, st.live_holdings) + plan.excludedHtml(
@@ -184,8 +184,8 @@ for (const e of a6.engines) {{
 console.log(JSON.stringify(out));""")
     for key, html in r.items():
         assert "<img" not in html, key
-    for key in ("card_goal", "card_selection", "card_closest", "card_why", "card_tracking", "card_proposal",
-                "card_what_if", "card_excluded", "bubble_user", "bubble_assistant", "chips", "plan", "grid",
+    for key in (*(f"card_{kind}" for kind in _FIXTURE["cards"]),          # every card kind the chat can emit
+                "bubble_user", "bubble_assistant", "chips", "plan", "grid",
                 "engines", "levels_rita", "rationale_rita", "toggle_rita", "loc_inst", "loc_pf", "loc_pick",
                 "geo_table"):
         _assert_escaped(r[key])
@@ -402,9 +402,18 @@ for (const key of ['A6_instrument', 'A6_instrument_excluded']) {{
 }}
 for (const state of ['tracking', 'selected', 'reselect_proposed']) {{
   const st = clone(FX.A4_state); st.journey.state = state;
-  const data = {{ state: rec('A4', st), pf: rec('A5', clone(FX.A5_portfolio)), inst: rec('A6', clone(FX.A6_instrument)) }};
+  const pfs = Object.fromEntries(['europe', 'india', 'us'].map(l => [l, rec('A5', clone(FX.A5_portfolio))]));
+  const data = {{ state: rec('A4', st), pf: pfs.europe, pfs, inst: rec('A6', clone(FX.A6_instrument)),
+                 mcp: [{{ timestamp: '2026-11-08T10:00:00', tool_name: 'portfolio.pnl', status: 'ok' }}] }};
   for (const step of cx.STEPS) cx.panelHtml(step, data);
   cx.statusText(data.state, data.pf, 'europe');
+  chat.highlightsHtml(data.state, data.pf, 'europe');
+}}
+{{
+  const noJourney = clone(FX.A4_state); noJourney.journey = null;                 // plan saved, no journey
+  chat.highlightsHtml(rec('A4', noJourney), rec('A5', clone(FX.A5_portfolio)), 'india');
+  chat.highlightsHtml(null, null, 'us');
+  chat.groupsHtml();
 }}
 console.log(JSON.stringify(Object.fromEntries(Object.entries(seen).map(([k, v]) => [k, [...v].sort()]))));""")
 
@@ -454,7 +463,8 @@ jv-pnl-chart jv-pnl-empty jv-target-kpis jv-target-chart jv-target-required jv-g
 jv-engine-table jv-engine-chart jv-engine-note sec-jv-instrument jv-inst-title jv-inst-engines jv-inst-chart
 jv-sleeve-chart jv-sleeve-wrap jv-inst-levels jv-rationale jv-inst-status chart-modal chart-modal-title
 chart-modal-img jv-pf-status sec-jv-locations sec-jv-universe jv-geo-map jv-geo-map-empty jv-geo-map-note
-jv-geo-table-wrap jv-geo-table jv-geo-table-empty jv-pf-detail-title""".split() + [
+jv-geo-table-wrap jv-geo-table jv-geo-table-empty jv-pf-detail-title
+jv-chat-highlights jv-chat-groups sec-jv-questions jv-chat-mic jv-chat-speak jv-chat-voice-status""".split() + [
     f"jv-loc-{k}-{loc}" for loc in ("europe", "india", "us") for k in ("col", "ccy", "meta", "avg", "pf", "inst")]
 
 
@@ -509,24 +519,31 @@ def test_concepts_every_step_renders_with_and_without_data():
 const FX = {fx};
 const cx = await import(base + 'jarvis/concepts.js?v=3');
 const {{ COPY }} = await import(base + 'jarvis/copy.js?v=3');
-const full = {{ state: FX.A4_state, pf: FX.A5_portfolio, inst: FX.A6_instrument }};
+const mcp = [{{ timestamp: '2026-11-08T10:00:00', tool_name: 'portfolio.pnl', status: 'ok' }}];
+const full = {{ state: FX.A4_state, pf: FX.A5_portfolio, pfs: {{ europe: FX.A5_portfolio, india: FX.A5_portfolio, us: FX.A5_portfolio }},
+               inst: FX.A6_instrument, mcp }};
 const out = {{}};
 for (const s of cx.STEPS) {{
   const a = cx.panelHtml(s, full), b = cx.panelHtml(s, {{}});
-  out[s] = {{ full: a.includes('concept-desc') && (a.match(/chart-wrap/g) || []).length === 2,
-              empty: b.includes('cx-empty') || s === 's2' || s === 's8',
+  out[s] = {{ wraps: (a.match(/chart-wrap/g) || []).length, desc: a.includes('concept-desc'),
+              empty: b.includes('cx-empty'),
               canvas: (a.match(/<canvas id="([^"]+)"/g) || []).length,
               copy: ['tab', 'who', 'kind', 'desc', 'c1', 'c2'].every(k => COPY[`cx.${{s}}.${{k}}`]) }};
 }}
-const hostile = JSON.parse(JSON.stringify(FX.A4_state));
-hostile.journey.selection.ladder[0].tolerance = {json.dumps(HOSTILE)};
-hostile.live_holdings[0].instrument_id = {json.dumps(HOSTILE)};
-out.escaped = cx.STEPS.every(s => !cx.panelHtml(s, {{ state: hostile }}).includes('<img'));
+const hostile = JSON.parse(JSON.stringify(FX.A5_portfolio));
+hostile.instruments[0].instrument_id = {json.dumps(HOSTILE)};
+const hostileState = JSON.parse(JSON.stringify(FX.A4_state));
+hostileState.journey.selection.ladder[0].tolerance = {json.dumps(HOSTILE)};
+const hostileMcp = [{{ timestamp: {json.dumps(HOSTILE)}, tool_name: {json.dumps(HOSTILE)}, status: {json.dumps(HOSTILE)} }}];
+out.escaped = cx.STEPS.every(s => !cx.panelHtml(s, {{ state: hostileState, pf: hostile, pfs: {{ europe: hostile }}, mcp: hostileMcp }}).includes('<img'));
 console.log(JSON.stringify(out));""")
     assert r.pop("escaped") is True
     for step, v in r.items():
-        assert v["full"] and v["empty"] and v["copy"], (step, v)
-    assert sum(v["canvas"] for v in r.values()) >= 9
+        assert v["desc"] and v["empty"] and v["copy"], (step, v)
+    assert {k: v["wraps"] for k, v in r.items()} == {"s1": 2, "s2": 2, "s3": 2, "s4": 2, "s5": 2, "s6": 2,
+                                                       "s7": 2, "s8": 3}                # the MCP stage has three panels
+    assert {k: v["canvas"] for k, v in r.items()} == {"s1": 1, "s2": 0, "s3": 2, "s4": 2, "s5": 2, "s6": 1,
+                                                        "s7": 2, "s8": 1}
 
 
 # ── P4c: portfolio page on the RITA Portfolio Builder layout ───────────────────

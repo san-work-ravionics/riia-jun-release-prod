@@ -1,35 +1,32 @@
-// Jarvis — Concepts page: how the flow works (RITA Concepts card + "Agents & Linked Analytics" tabs).
-// One tab per flow step: a summary of how Jarvis arrives at it, then two panels with the user's own
-// numbers for the selected location — from the saved plan (A4 goal), the saved portfolio (A5) and the
-// opened instrument (A6), plus the MCP call log.  Chat is not used here. Only the active tab's charts are drawn (Chart.js can't size a hidden canvas).
+// Jarvis — Concepts page: the data science and AI concepts behind the Jarvis flow, stage by stage
+// (RITA Concepts card + "Agents & Linked Analytics" tabs).  One tab per stage: what the concept is and
+// whether it is a model or a rule, then panels with the user's own numbers — from the saved plan (A4 goal),
+// the saved portfolio of every region (A5) and the opened instrument (A6), plus the MCP call log.  It
+// explains the flow, not the chat.  Only the active tab's charts are drawn (Chart.js can't size a hidden canvas).
 import { api } from '../shared/api.js';
 import { mkChart, destroyChart, chartOpts, C } from '../shared/charts.js';
 import { esc } from './esc.js?v=3';
-import { t } from './copy.js?v=18';
-import { fmtRate, fmtMoney, fmtDate, fmtYears, isNum, locationName } from './format.js?v=3';
+import { t } from './copy.js?v=19';
+import { fmtRate, fmtMoney, fmtNum, fmtDate, fmtYears, isNum, locationName } from './format.js?v=3';
 import { sleeveDatasets, priceDatasets } from './instrument.js?v=3';
 
 export const STEPS = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8'];
 
-// What you say → which MCP tools run (jarvis_chat_service.py intent handlers; every turn also reads
-// journey.get_current).
-const INTENT_TOOLS = [
-  ['use my goal', 'whatineed.get_goal · journey.save'],
-  ['build my portfolio', 'portfolio.select_for_goal · journey.save'],
-  ['why these instruments', 'portfolio.model_runs · portfolio.sleeve_trace'],
-  ['show the closest mix', 'journey.get_current'],
-  ['track it', 'portfolio.sleeve_trace · journey.save'],
-  ['how am I doing', 'portfolio.pnl · portfolio.required_return · journey.save'],
-  ['what if a stop loss hits', 'portfolio.sleeve_trace · portfolio.required_return'],
-  ['yes / no (a proposal)', 'portfolio.sleeve_trace · journey.save'],
-  ['how do I protect it', 'fno.get_hedge_plan'],
+// Stage 2: how raw market data becomes the features and returns every later stage reads.
+const DATA_STAGES = [
+  ['Daily prices', 'Delta refresh of OHLCV from the data provider into local files and the price cache; insert-only, run on demand, never from a request'],
+  ['Returns', 'Daily, 5-day, 21-day and 1-year price returns per instrument'],
+  ['Indicators', 'RSI-14 · MACD · Bollinger %B · ATR-14 · EMA 5/13/26'],
+  ['Regions', 'Country → Europe, India or US; each region in its own currency'],
+  ['FX rates', 'EUR→INR and EUR→USD daily, used to add regions together in EUR'],
 ];
 
+// Stage 8: the namespaced MCP tools, by module (all read-only except the journey record).
 const MODULE_TOOLS = [
-  ['What I Need', 'whatineed.get_goal'],
-  ['Portfolio (RITA)', 'portfolio.select_for_goal · portfolio.model_runs · portfolio.sleeve_trace · portfolio.pnl · portfolio.required_return'],
-  ['FnO', 'fno.sigma_levels · fno.get_hedge_plan'],
-  ['Market', 'market.asta_trace'],
+  ['What I Need', 'whatineed.get_goal · whatineed.get_plan · whatineed.bucket_status'],
+  ['Portfolio (RITA)', 'portfolio.get_holdings · portfolio.pnl · portfolio.select_for_goal · portfolio.model_runs · portfolio.sleeve_trace · portfolio.required_return · portfolio.optimal_allocation'],
+  ['FnO', 'fno.sigma_levels · fno.position_value · fno.get_hedge_plan'],
+  ['Market', 'market.overview · market.monitor · market.asta_trace · market.fx_rate · market.ask'],
   ['Journey', 'journey.get_current · journey.save'],
 ];
 
@@ -57,7 +54,9 @@ function _mine(data) {
 // Each region's own perf (return this year, target to date, plan goal) from its saved plan and portfolio.
 function _regionPerf(data) {
   const pfs = (data && data.pfs) || {};
-  return Object.keys(pfs).filter(l => pfs[l] && pfs[l].perf).map(l => ({ loc: l, perf: pfs[l].perf }));
+  const out = Object.keys(pfs).filter(l => pfs[l] && pfs[l].perf).map(l => ({ loc: l, perf: pfs[l].perf }));
+  if (!out.length && data && data.pf && data.pf.perf) out.push({ loc: data.pf.location, perf: data.pf.perf });
+  return out;
 }
 
 // Target path from the saved plan: (1+r)^(m/12) - 1 at month starts, Jan to Dec of this year.
@@ -72,6 +71,28 @@ function _planPath(goal) {
 
 function _targetPath(goal, perf) {
   return perf && (perf.target_path || []).length ? perf.target_path : _planPath(goal);
+}
+
+// Stage 2, the user's side: each held instrument across every region with its latest close and data date.
+function _dataRows(data) {
+  const pfs = (data && data.pfs) || {};
+  const rows = [];
+  for (const loc of Object.keys(pfs)) {
+    const pf = pfs[loc];
+    for (const r of (pf && pf.instruments) || []) {
+      if ((r.held || r.selected) && isNum(r.last_close)) {
+        rows.push([r.instrument_id, locationName(loc), fmtNum(r.last_close), fmtDate(pf.as_of)]);
+      }
+    }
+  }
+  if (!rows.length && data && data.pf) {
+    for (const r of data.pf.instruments || []) {
+      if ((r.held || r.selected) && isNum(r.last_close)) {
+        rows.push([r.instrument_id, locationName(data.pf.location), fmtNum(r.last_close), fmtDate(data.pf.as_of)]);
+      }
+    }
+  }
+  return rows;
 }
 
 function _window(w) {
@@ -127,7 +148,7 @@ function _tableHtml(head, rows) {
 
 // Panel bodies: a canvas when the data is there, else a table / tiles / empty note.
 export function panelHtml(step, data = {}) {
-  const { state, pf, inst } = data;
+  const { state, pf, inst, mcp } = data;
   const j = state && state.journey;
   const goal = j || (state && state.goal);
   const mine = _mine(data);
@@ -146,9 +167,9 @@ export function panelHtml(step, data = {}) {
       b = _targetPath(goal, perf).length ? _canvas('jv-cx-s1b') : _empty();
       break;
     case 's2': {
-      a = _tableHtml([t('cx.s2.col.intent'), t('cx.s2.col.tools')], INTENT_TOOLS);
-      b = _canvas('jv-cx-s2b');
-      c = _mcp && _mcp.length ? _canvas('jv-cx-s2c') : _empty(_mcp ? t('cx.empty.mcp') : t('cx.loading'));
+      a = _tableHtml([t('cx.s2.col.stage'), t('cx.s2.col.what')], DATA_STAGES);
+      const rows = _dataRows(data);
+      b = rows.length ? _tableHtml([t('cx.s2.col.inst'), t('cx.s2.col.region'), t('cx.s2.col.close'), t('cx.s2.col.asof')], rows) : _empty();
       break;
     }
     case 's3':
@@ -166,11 +187,10 @@ export function panelHtml(step, data = {}) {
     case 's6': {
       a = perf && (perf.series || []).length ? _canvas('jv-cx-s6a') : _empty();
       const req = pf && pf.required;
-      const used = j && isNum(j.reselect_count) ? `${j.reselect_count} / ${j.max_reselections}` : '—';
       b = perf
         ? `<div class="kpi-row-2">${_tile(t('target.kpi.to_date'), fmtRate(perf.target_to_date))}
            ${_tile(t('target.kpi.actual'), fmtRate(perf.ytd_return), isNum(perf.ytd_return) ? (perf.ytd_return >= 0 ? 'pos' : 'neg') : '')}
-           ${_tile(t('target.kpi.required'), fmtRate(req && req.required_return))}${_tile(t('cx.s6.used'), used)}</div>`
+           ${_tile(t('target.kpi.required'), fmtRate(req && req.required_return))}</div>`
         : _empty();
       break;
     }
@@ -180,10 +200,12 @@ export function panelHtml(step, data = {}) {
       break;
     case 's8': {
       a = _tableHtml([t('cx.s8.col.module'), t('cx.s8.col.tools')], MODULE_TOOLS);
-      b = _mcp && _mcp.length
+      const wait = mcp ? t('cx.empty.mcp') : t('cx.loading');
+      b = mcp && mcp.length ? _canvas('jv-cx-s8b') : _empty(wait);
+      c = mcp && mcp.length
         ? _tableHtml([t('cx.s8.col.time'), t('cx.s8.col.tool'), t('cx.s8.col.status')],
-          _mcp.slice(0, 12).map(r => [String(r.timestamp || '').slice(0, 19), r.tool_name, r.status]))
-        : _empty(_mcp ? t('cx.empty.mcp') : t('cx.loading'));
+          mcp.slice(0, 12).map(r => [String(r.timestamp || '').slice(0, 19), r.tool_name, r.status]))
+        : _empty(wait);
       break;
     }
     default:
@@ -210,15 +232,15 @@ function _barOpts(tick, labels) {
   return o;
 }
 
-export const CHART_IDS = ['jv-cx-s1b', 'jv-cx-s2b', 'jv-cx-s2c', 'jv-cx-s3a', 'jv-cx-s3b', 'jv-cx-s4a', 'jv-cx-s4b',
-                          'jv-cx-s5a', 'jv-cx-s5b', 'jv-cx-s6a', 'jv-cx-s7a', 'jv-cx-s7b'];
+export const CHART_IDS = ['jv-cx-s1b', 'jv-cx-s3a', 'jv-cx-s3b', 'jv-cx-s4a', 'jv-cx-s4b',
+                          'jv-cx-s5a', 'jv-cx-s5b', 'jv-cx-s6a', 'jv-cx-s7a', 'jv-cx-s7b', 'jv-cx-s8b'];
 
 function _has(id) {
   return typeof document !== 'undefined' && !!document.getElementById(id);
 }
 
 export function drawStep(step, data = {}) {
-  const { state, pf, inst } = data;
+  const { state, pf, inst, mcp } = data;
   const j = state && state.journey;
   const goal = j || (state && state.goal);
   const mine = _mine(data);
@@ -231,17 +253,12 @@ export function drawStep(step, data = {}) {
     mkChart('jv-cx-s1b', { type: 'line', data: { labels, datasets: [{ label: t('target.kpi.to_date'), data: path.map(p => p.target), borderColor: C.t3, borderDash: [5, 4], borderWidth: 1.6, pointRadius: labels.length < 3 ? 3 : 0 }] },
       options: chartOpts('', _pct, labels) });
   }
-  if (step === 's2' && _has('jv-cx-s2b')) {
-    const labels = INTENT_TOOLS.map(r => r[0]);
-    mkChart('jv-cx-s2b', { type: 'bar', data: { labels, datasets: [{ data: INTENT_TOOLS.map(r => r[1].split(' · ').length), backgroundColor: '#BE185D', borderRadius: 3, maxBarThickness: 36 }] },
-      options: _barOpts(v => (Number.isInteger(v) ? v : ''), labels) });
-  }
-  if (step === 's2' && _has('jv-cx-s2c') && _mcp && _mcp.length) {
+  if (step === 's8' && _has('jv-cx-s8b') && mcp && mcp.length) {
     const counts = {};
-    for (const r of _mcp) counts[r.tool_name] = (counts[r.tool_name] || 0) + 1;
+    for (const r of mcp) counts[r.tool_name] = (counts[r.tool_name] || 0) + 1;
     const top = Object.entries(counts).sort((x, y) => y[1] - x[1]).slice(0, 10);
     const labels = top.map(r => r[0]);
-    mkChart('jv-cx-s2c', { type: 'bar', data: { labels, datasets: [{ data: top.map(r => r[1]), backgroundColor: C.mon, borderRadius: 3, maxBarThickness: 36 }] },
+    mkChart('jv-cx-s8b', { type: 'bar', data: { labels, datasets: [{ data: top.map(r => r[1]), backgroundColor: C.mon, borderRadius: 3, maxBarThickness: 36 }] },
       options: _barOpts(v => (Number.isInteger(v) ? v : ''), labels) });
   }
   if (step === 's3') {
@@ -333,7 +350,7 @@ function _loadMcp() {
   api('/api/v1/mcp-calls?limit=200')
     .then(rows => { _mcp = Array.isArray(rows) ? rows : []; })
     .catch(() => { _mcp = []; })
-    .finally(() => { _mcpReq = false; if (_active === 's2' || _active === 's8') showStep(_active); });
+    .finally(() => { _mcpReq = false; if (_active === 's8') showStep('s8'); });
 }
 
 function _el(id) { return document.getElementById(id); }
@@ -349,10 +366,11 @@ export function showStep(step) {
   _active = STEPS.includes(step) ? step : 's1';
   const tabs = _el('jv-cx-tabs');
   if (tabs) tabs.innerHTML = tabBarHtml(_active);
+  const data = { ..._data, mcp: _mcp };
   const panel = _el('jv-cx-panel');
-  if (panel) panel.innerHTML = panelHtml(_active, _data);
-  drawStep(_active, _data);
-  if (_active === 's2' || _active === 's8') _loadMcp();
+  if (panel) panel.innerHTML = panelHtml(_active, data);
+  drawStep(_active, data);
+  if (_active === 's8') _loadMcp();
 }
 
 // Delegated on the tab bar (data-step).

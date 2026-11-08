@@ -25,7 +25,7 @@ from rita.schemas.jarvis import (
 )
 from rita.services import jarvis_chat_service as C
 
-from .f44_p4_helpers import goal, holding, required, selection, trace
+from .f44_p4_helpers import goal, holding, required, selection
 
 FIXTURE = Path(__file__).parent / "fixtures" / "f44_p4_contract.json"
 TS = datetime(2026, 10, 27, 9, 0, tzinfo=timezone.utc)
@@ -33,30 +33,10 @@ D = date(2026, 10, 23)
 
 
 def cards() -> dict[str, dict]:
-    sel = selection()
-    prop = selection(target=0.0913, holdings=[holding("E3", 100)])
-    rr = required("reselect_proposed", "ok", ytd=-0.041, proposal=prop)
-    tr = trace("E1")
+    """One example per card kind the chat can emit (saved-data answers + the F45 bucket cards)."""
     return {
         "goal": C._goal_card(goal()),
-        "selection": C._selection_card(sel),
-        "closest": C._closest_card(selection(closest=True)),
-        "why": {"kind": "why", "data": {"tolerance": "medium", "n_tolerances": 3, "rows": [{
-            "instrument_id": "E1", "allocation_pct": 60, "fit_return": 0.1012, "test_return": 0.0856,
-            "test_mdd": -0.1043, "today_action": "full"}], "excluded": [{"instrument_id": "ATO",
-                                                                         "reason": "retrain_needed"}]}},
-        "tracking": {"kind": "tracking", "data": {"entry_date": D.isoformat(), "sl_drawdown_limit": -0.1,
-                                                  "next_reset": "2026-12-18", "holdings": [{
-                                                      "instrument_id": "E1", "entry_close": 123.45,
-                                                      "today_action": "full"}]}},
-        "progress": C.JarvisChatService._progress_card("saved", D, date(2026, 3, 2), 0.031, 0.0412,
-                                                        required(ytd=0.031)),
-        "proposal": C.JarvisChatService._proposal_reply(_journey(), rr).cards[0],
-        "what_if": {"kind": "what_if", "data": {"ytd_return": -0.04, "required_return": 0.12, "status": "on_track",
-                                                "reason": "on_track", "rows": [{"instrument_id": "E1",
-                                                                                "sl_distance": tr.sl_distance}]}},
         "hedge": {"kind": "hedge", "data": {"n_hedged": 2, "coverage": 50, "updated_at": TS.isoformat()}},
-        "excluded": C._excluded_card([("ATO", "retrain_needed")]),
         "bucket_progress": {"kind": "bucket_progress", "data": {
             "buckets": [{"key": "idx", "ytd_return": None, "target_to_date": 0.0021, "gap": None, "at_risk": None},
                         {"key": "eq", "ytd_return": -0.031, "target_to_date": 0.0412, "gap": -0.0722,
@@ -154,6 +134,7 @@ def payloads() -> dict:
           "journey_state": "tracking",
           "instruments": [{"instrument_id": "E1", "held": True, "selected": True, "allocation_pct": 60.0,
                            "shares": 40, "last_close": 154.0, "pnl": 160.0, "ret": 0.02, "model_action": "full",
+                           "invested_fraction": 1.0,
                            "sl_distance": -0.0747, "sl_hit": False, "engines_available": ["rita", "fno", "asta"]}],
           "engines": [{"engine": "rita", "label": "RITA model (DDQN)", "model_based": True, "coverage": 1.0,
                        "return_since": 0.021, "target_to_date": 0.0412, "gap": -0.0202, "on_pace": False,

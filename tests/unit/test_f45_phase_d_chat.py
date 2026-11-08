@@ -34,7 +34,7 @@ INTENT_OF = {
     "how are my equities and commodities doing": "wn_bucket_status",
     "what needs hedging": "wn_what_needs_hedging",
 }
-TOOLS = ["journey.get_current", "whatineed.bucket_status"]
+TOOLS = ["whatineed.bucket_status"]
 
 
 @pytest.fixture
@@ -157,7 +157,7 @@ def test_plan_with_no_asset_lines(journey_db, fake_classifier):
 
 def test_bucket_status_without_a_named_bucket_asks_which_and_calls_no_tool(journey_db, fake_classifier):
     out, mcp = ask(journey_db, status(FINE), "how is my bucket doing")
-    r = check(out, mcp, "wn.bucket.which", tools=["journey.get_current"])
+    r = check(out, mcp, "wn.bucket.which", tools=[])
     assert r.cards == []
 
 
@@ -214,10 +214,11 @@ def test_tool_down_gives_the_unavailable_reply(journey_db, fake_classifier):
     assert "whatineed.bucket_status" in out.reply.text
 
 
-def test_every_journey_state_accepts_the_four_intents():
+def test_the_four_intents_have_their_own_handlers_and_no_journey_gate():
+    """Nothing is gated by a journey state any more: each bucket intent is dispatched straight to its handler."""
     assert C.WN_INTENTS == {"wn_on_track", "wn_bucket_status", "wn_hedge_signal", "wn_what_needs_hedging"}
-    assert all(C.WN_INTENTS <= accepted for accepted in C.ACCEPTED.values())
-    assert set(C.ACCEPTED) == set(C._ACCEPTED_JOURNEY)
+    assert C.WN_INTENTS <= set(ji.INTENT_NAMES) and not C.WN_INTENTS & set(C.SAVED_INTENTS)
+    assert not hasattr(C, "ACCEPTED") and not hasattr(C, "_ACCEPTED_JOURNEY")
 
 
 def test_every_intent_has_a_handler_and_templates_exist():
@@ -268,7 +269,7 @@ def test_several_buckets_named_are_all_kept_and_none_is_guessed():
 
 def test_bucket_status_with_two_buckets_asks_which_of_them(journey_db, fake_classifier):
     out, mcp = ask(journey_db, status(FINE), "how are my equities and commodities doing")
-    r = check(out, mcp, "wn.bucket.which_of", tools=["journey.get_current"])
+    r = check(out, mcp, "wn.bucket.which_of", tools=[])
     assert "Equity or Commodities" in r.text
 
 

@@ -103,10 +103,11 @@ def _closes(db, inst: str, path: np.ndarray):
     db.commit()
 
 
-def _portfolio(db, pid: str, created: date, holdings: list[dict], active: bool = True):
+def _portfolio(db, pid: str, created: date, holdings: list[dict], active: bool = True, *,
+               location: str = "europe", total_value_eur: float | None = None):
     db.add(UserPortfolioModel(portfolio_id=pid, key_id="k1", name=pid, holdings=holdings, currency="EUR",
-                              location="europe", total_value=10000.0, created_at=datetime.combine(created, datetime.min.time()),
-                              is_active=active))
+                              location=location, total_value=10000.0, total_value_eur=total_value_eur,
+                              created_at=datetime.combine(created, datetime.min.time()), is_active=active))
     db.commit()
 
 
@@ -263,9 +264,136 @@ def test_resave_to_all_cash_keeps_the_year_path_to_as_of(pnl_db):
     assert out.money.pnl == pytest.approx(0.0)
 
 
-def test_row_without_share_counts_still_has_no_value_path(pnl_db):
-    """Pre-P2 rows with no ``shares`` key stay unpriced (unknown, not cash)."""
-    _closes(pnl_db, "E1", _path(14))
-    _portfolio(pnl_db, "old", date(YEAR, 1, 20), [{"instrument_id": "E1", "allocation_pct": 100, "cash": 10.0}])
+def test_row_without_share_counts_gets_a_return_from_allocation_but_no_money(pnl_db):
+    """Pre-P2 rows with no ``shares`` key: the share count is unknown (not cash), so there is no money
+    value — but the return since the save comes from the allocation (here 100 % in one instrument)."""
+    p1 = _path(14)
+    _closes(pnl_db, "E1", p1)
+    created = date(YEAR, 1, 20)
+    _portfolio(pnl_db, "old", created, [{"instrument_id": "E1", "allocation_pct": 100, "cash": 10.0}])
     out = PortfolioPnlService(pnl_db, goal=FakeGoal({})).pnl("alice", "europe")
-    assert out.ytd_return is None and out.money.value_now is None
+    c = pd.Series(p1, index=DATES)
+    assert out.ytd_return == pytest.approx(c.iloc[-1] / c[c.index <= pd.Timestamp(created)].iloc[-1] - 1, rel=1e-9)
+    assert out.money.value_now is None and out.money.pnl is None      # unknown share count → no amount
+    assert {h.instrument_id: h.status for h in out.holdings} == {"E1": "ok"}
+
+
+# ── allocation-only rows (index holdings saved by allocation % only) ────────────
+
+def _alloc_rows(*pairs):
+    return [{"instrument_id": i, "allocation_pct": pct, "shares": None, "cash": None} for i, pct in pairs]
+
+
+def _since(c: pd.Series, created: date) -> float:
+    return float(c.iloc[-1] / c[c.index <= pd.Timestamp(created)].iloc[-1])
+
+
+@pytest.mark.parametrize("holdings,expected", [
+    ([], False),                                                                   # nothing to value
+    ([{"instrument_id": "X", "allocation_pct": 100}], True),                       # shares key missing
+    ([{"instrument_id": "X", "allocation_pct": 50, "shares": None},
+      {"instrument_id": "Y", "allocation_pct": 50, "shares": None}], True),
+    ([{"instrument_id": "X", "allocation_pct": 100, "shares": 0, "cash": 750.0}], False),   # explicit 0 = cash
+    ([{"instrument_id": "X", "allocation_pct": 60, "shares": 5},
+      {"instrument_id": "Y", "allocation_pct": 40, "shares": None}], False),                # one counted holding
+])
+def test_alloc_only_means_no_holding_has_a_share_count(holdings, expected):
+    from rita.services.portfolio_pnl_service import _SavedRow
+    row = _SavedRow("p", "p", date(YEAR, 2, 10), holdings, False)
+    assert PortfolioPnlService._alloc_only(row) is expected
+
+
+def test_allocation_only_return_is_the_weighted_buy_and_hold_path(pnl_db):
+    p1, p2 = _path(21), _path(22, 40.0)
+    _closes(pnl_db, "I1", p1)
+    _closes(pnl_db, "I2", p2)
+    created = date(YEAR, 2, 10)
+    _portfolio(pnl_db, "ix", created, _alloc_rows(("I1", 60), ("I2", 40)), location="india")
+    out = PortfolioPnlService(pnl_db, goal=FakeGoal({})).pnl("alice", "india", goal_return=0.08, source="saved")
+    c1, c2 = pd.Series(p1, index=DATES), pd.Series(p2, index=DATES)
+    exp = 0.6 * _since(c1, created) + 0.4 * _since(c2, created) - 1
+    assert out.source == "saved" and out.currency == "INR" and out.entry_date == created
+    assert out.ytd_return == pytest.approx(exp, rel=1e-9)
+    assert out.series[0].ret == 0.0 and out.series[-1].ret == pytest.approx(exp, rel=1e-9)
+    assert out.target_to_date == pytest.approx(target_to_date(0.08, created, out.as_of))
+    assert out.coverage == 1.0
+    assert {h.instrument_id: (h.status, h.return_since) for h in out.holdings} == {
+        "I1": ("ok", pytest.approx(_since(c1, created) - 1)), "I2": ("ok", pytest.approx(_since(c2, created) - 1))}
+
+
+def test_allocation_only_value_is_the_saved_total_times_the_allocation_share_in_the_location_currency(pnl_db):
+    p1, p2 = _path(23), _path(24, 40.0)
+    _closes(pnl_db, "I1", p1)
+    _closes(pnl_db, "I2", p2)
+    _closes(pnl_db, "FX_EURINR", np.full(len(DATES), 90.0))
+    created = date(YEAR, 2, 10)
+    # 20 % + 20 % of a EUR 10,000 portfolio belong to this location: EUR 4,000 = INR 360,000 at 90
+    _portfolio(pnl_db, "ix", created, _alloc_rows(("I1", 20), ("I2", 20)), location="india", total_value_eur=10000.0)
+    out = PortfolioPnlService(pnl_db, goal=FakeGoal({})).pnl("alice", "india", source="saved")
+    c1, c2 = pd.Series(p1, index=DATES), pd.Series(p2, index=DATES)
+    growth = 0.5 * _since(c1, created) + 0.5 * _since(c2, created)
+    m = out.money
+    assert m.value_entry == pytest.approx(360000.0)
+    assert m.value_now == pytest.approx(360000.0 * growth, rel=1e-9)
+    assert m.pnl == pytest.approx(m.value_now - m.value_entry) and m.cash == 0.0
+    assert m.return_since_entry == pytest.approx(growth - 1, rel=1e-9)
+    assert m.return_since_entry == pytest.approx(out.ytd_return, rel=1e-9)     # money and return agree
+    assert [h.shares for h in m.holdings] == [None, None] and [h.pnl for h in m.holdings] == [None, None]
+
+
+def test_allocation_only_value_uses_the_rate_on_the_entry_date_not_today(pnl_db):
+    """P&L is the instruments' move: a later EUR/INR change must not move the value."""
+    _closes(pnl_db, "I1", _path(25))
+    rate = np.where(DATES <= pd.Timestamp(date(YEAR, 2, 10)), 90.0, 120.0)
+    _closes(pnl_db, "FX_EURINR", rate)
+    _portfolio(pnl_db, "ix", date(YEAR, 2, 10), _alloc_rows(("I1", 100)), location="india", total_value_eur=1000.0)
+    out = PortfolioPnlService(pnl_db, goal=FakeGoal({})).pnl("alice", "india", source="saved")
+    assert out.money.value_entry == pytest.approx(90000.0)
+
+
+def test_allocation_only_without_an_fx_rate_has_a_return_but_no_value(pnl_db):
+    _closes(pnl_db, "I1", _path(26))
+    _portfolio(pnl_db, "ix", date(YEAR, 2, 10), _alloc_rows(("I1", 100)), location="india", total_value_eur=1000.0)
+    out = PortfolioPnlService(pnl_db, goal=FakeGoal({})).pnl("alice", "india", source="saved")
+    assert out.ytd_return is not None
+    assert out.money.value_now is None and out.money.value_entry is None and out.money.pnl is None
+
+
+def test_allocation_only_without_a_saved_total_has_a_return_but_no_value(pnl_db):
+    _closes(pnl_db, "I1", _path(27))
+    _closes(pnl_db, "FX_EURINR", np.full(len(DATES), 90.0))
+    _portfolio(pnl_db, "ix", date(YEAR, 2, 10), _alloc_rows(("I1", 100)), location="india", total_value_eur=None)
+    out = PortfolioPnlService(pnl_db, goal=FakeGoal({})).pnl("alice", "india", source="saved")
+    assert out.ytd_return is not None and out.money.value_now is None
+
+
+def test_allocation_only_instrument_without_prices_is_flagged_and_lowers_coverage(pnl_db):
+    _closes(pnl_db, "I1", _path(28))
+    _portfolio(pnl_db, "ix", date(YEAR, 2, 10), _alloc_rows(("I1", 50), ("GONE", 50)), location="india")
+    out = PortfolioPnlService(pnl_db, goal=FakeGoal({})).pnl("alice", "india", source="saved")
+    st = {h.instrument_id: h.status for h in out.holdings}
+    assert st == {"I1": "ok", "GONE": "no_price_data"} and out.coverage == 0.5
+
+
+def test_a_row_with_any_share_count_keeps_the_share_based_rules(pnl_db):
+    """Mixed row: the counted holding is valued from shares; the uncounted one stays ``no_shares`` — the
+    allocation path is only for rows where nothing has a share count."""
+    p1, p2 = _path(29), _path(30)
+    _closes(pnl_db, "I1", p1)
+    _closes(pnl_db, "I2", p2)
+    created = date(YEAR, 2, 10)
+    _portfolio(pnl_db, "mx", created, [{"instrument_id": "I1", "allocation_pct": 60, "shares": 10},
+                                       {"instrument_id": "I2", "allocation_pct": 40, "shares": None}], location="india")
+    out = PortfolioPnlService(pnl_db, goal=FakeGoal({})).pnl("alice", "india", source="saved")
+    c1 = pd.Series(p1, index=DATES)
+    assert out.ytd_return == pytest.approx(_since(c1, created) - 1, rel=1e-9)         # I1 only
+    assert {h.instrument_id: h.status for h in out.holdings} == {"I1": "ok", "I2": "no_shares"}
+
+
+def test_an_all_cash_row_is_not_treated_as_allocation_only(pnl_db):
+    _closes(pnl_db, "I1", _path(31))
+    _portfolio(pnl_db, "cash", date(YEAR, 2, 10),
+               [{"instrument_id": "I1", "allocation_pct": 100, "shares": 0, "cash": 500.0}], location="india")
+    out = PortfolioPnlService(pnl_db, goal=FakeGoal({})).pnl("alice", "india", source="saved")
+    assert out.money.value_now == pytest.approx(500.0) and out.ytd_return == pytest.approx(0.0)
+    assert {h.instrument_id: h.status for h in out.holdings} == {"I1": "no_shares"}

@@ -113,7 +113,7 @@ def test_session_owner_404_and_message_flow(api):
     r = client.post(A3, json={"session_id": sid, "text": "use my goal", "location": "europe"}, headers=_h("alice"))
     assert r.status_code == 200, r.text
     out = MessageOut(**r.json())
-    assert out.reply.template_id == "take_goal.no_plan.v1" and out.journey.state == "no_goal"
+    assert out.reply.template_id == "saved.plan.none.v1" and out.journey is None       # chat creates no journey
     ids = [c.mcp_call_id for c in out.reply.tool_calls]
     logged = {row["call_id"] for row in calls}
     assert ids and set(ids) <= logged                     # tool_calls resolve to mcp_calls rows
@@ -126,7 +126,7 @@ def test_session_owner_404_and_message_flow(api):
     st = StateOut(**client.get(A4 + "?location=europe", headers=_h("bob")).json())
     assert st.session is None and st.journey is None
     st = StateOut(**client.get(A4 + "?location=europe", headers=_h("alice")).json())
-    assert st.session.session_id == sid and len(st.messages) == 2 and st.journey.state == "no_goal"
+    assert st.session.session_id == sid and len(st.messages) == 2 and st.journey is None
     assert st.currency == "EUR" and st.location_name == "Europe"
 
 

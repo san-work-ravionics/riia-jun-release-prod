@@ -174,7 +174,7 @@ class JarvisPageService:
             goal=goal, plan_stale=stale, journey=j,
             session=SessionStateOut(session_id=sess.session_id, status=sess.status,
                                     last_activity_at=sess.last_activity_at) if sess else None,
-            messages=msgs, chips=[ChipOut(**c) for c in T.chips_for(j.state if j else None)],
+            messages=msgs, chips=[ChipOut(**c) for c in T.chips()],
             chat_model="ready" if journey_intents.is_ready() else "not_loaded", live_holdings=live)
 
     # ── A5 ─────────────────────────────────────────────────────────────────────
