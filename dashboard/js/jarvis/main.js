@@ -7,7 +7,7 @@
 // ensureDevToken(true) → one retry). The only window binding is closeChartModal (modal markup).
 import { ensureDevToken } from '../shared/dev-auth.js';
 import { closeChartModal } from '../rita/chart-modal.js';
-import { t } from './copy.js?v=9';
+import { t } from './copy.js?v=13';
 import {
   warmup, openSession, sendMessage, loadState, initChat, renderHistory, renderChips, appendBubble,
   appendPending, showChatError, setBusy,
@@ -18,7 +18,7 @@ import {
 } from './portfolio.js?v=3';
 import { loadInstrument, renderInstrument, renderInstrumentError, initInstrument } from './instrument.js?v=3';
 import { renderConcepts, initConcepts } from './concepts.js?v=3';
-import { loadWhatINeed, initWhatINeed } from './what-i-need.js?v=5';
+import { loadWhatINeed, initWhatINeed } from './what-i-need.js?v=9';
 import {
   LOCS, loadGeography, locCurrency, loadEurRates, renderTotalPanel,
   renderColumn, renderUniverse, initGeoTable,
@@ -117,7 +117,7 @@ function showTab(tab) {
     _applyLocNavHighlight(S.loc);                                   // restore location highlight in chat/concepts
   }
   if (tab === 'concepts') loadConceptsSection();
-  if (tab === 'whatineed') loadWhatINeed(S.loc);
+  if (tab === 'whatineed') loadWhatINeed();
 }
 
 function initTabs() {
@@ -150,13 +150,14 @@ function initTabs() {
 }
 
 // ── location / chat section ────────────────────────────────────────────────────
-async function selectLocation(loc) {
+async function selectLocation(loc, { writeUrl = true } = {}) {
   const seq = ++S.seq;
   S.loc = loc;
   S.state = null;
   S.sessionId = null;
   S.inst = null;
-  try { history.replaceState(null, '', `#${loc}`); } catch { /* file:// or sandboxed */ }
+  // The URL only gets a #location when the user picks one (not for the default chosen at first load).
+  if (writeUrl) { try { history.replaceState(null, '', `#${loc}`); } catch { /* file:// or sandboxed */ } }
   document.querySelectorAll('#jv-loc-tabs button[data-loc]').forEach(b => b.classList.toggle('is-active', b.dataset.loc === loc));
   _markActiveColumn(loc);
   if (S.tab === 'portfolio') _renderDetail(loc, { openFirst: false });   // from cache, no request
@@ -408,13 +409,13 @@ async function boot() {
   initGeoTable(_onSort);
   initInstrument();
   initConcepts();
-  initWhatINeed(() => S.loc);
+  initWhatINeed();
   initRegionPeriod();
   showTab('chat');
   await ensureDevToken();                                           // localhost: dev token (prod: login gate)
   warmup().then(r => setModel(r && r.status === 'ready' ? 'ready' : 'unavailable'))
           .catch(() => setModel('unavailable'));                     // A1, non-blocking
-  await selectLocation(_initialLoc());
+  await selectLocation(_initialLoc(), { writeUrl: false });
 }
 
 if (typeof document !== 'undefined' && document.addEventListener) {

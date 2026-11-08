@@ -149,6 +149,21 @@ canvas{display:block;}
 .jv-wn-bucket-summary.nodata{border-color:var(--border);background:transparent;color:var(--t3);}
 .jv-wn-bucket-summary.ok{border-color:var(--run-bd);background:var(--run-bg);color:var(--run);}
 .jv-wn-hedge-cta{font-size:11px;margin-left:6px;color:var(--warn);text-decoration:underline;}
+.card-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px;}
+.card-row>.card{margin-bottom:0;}
+.ms-tab{background:transparent;border:none;border-bottom:2px solid transparent;padding:8px 16px;font-family:var(--fd);font-size:12px;font-weight:600;color:var(--t3);cursor:pointer;margin-bottom:-1.5px;transition:color .12s,border-color .12s;}
+.ms-tab:hover{color:var(--text);}
+.ms-tab.active{color:var(--build);border-bottom-color:var(--build);}
+.kpi-value.neu{color:var(--run);}
+.jv-wn-kpis{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;margin-bottom:14px;}
+.jv-wn-kpis .kpi{padding:10px 12px;}
+@media(max-width:1100px){.card-row{grid-template-columns:repeat(2,1fr);}.jv-wn-kpis{grid-template-columns:repeat(4,1fr);}}
+@media(max-width:700px){.card-row{grid-template-columns:1fr;}.jv-wn-kpis{grid-template-columns:repeat(2,1fr);}}
+.jv-wn-commentary{font-size:13px;line-height:1.6;color:var(--t2);min-height:3.2em;white-space:pre-wrap;}
+.jv-wn-tile-off{opacity:.55;}
+.jv-wn-tile-held{border-color:var(--run);}
+.jv-wn-plot-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}
+.jv-wn-details>summary{cursor:pointer;font-weight:600;font-size:13px;margin-bottom:10px;}
 .jv-badge{display:inline-flex;align-items:center;font-family:var(--fm);font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;padding:1px 6px;border-radius:3px;border:1px solid var(--warn-bd);background:var(--warn-bg);color:var(--warn);}
 .jv-list{list-style:none;font-size:12px;color:var(--t2);}
 .jv-list li{padding:3px 0;border-bottom:1px dashed var(--border);}
@@ -667,7 +682,7 @@ canvas{display:block;}
         <div class="page-title" data-copy="wn.title"></div>
         <div class="page-sub" data-copy="wn.sub"></div>
       </div>
-      <a class="btn btn-ghost btn-sm" href="investgame-app.html" data-copy="wn.trk.edit"></a>
+      <button type="button" id="jv-wn-refresh" class="btn btn-ghost btn-sm" data-copy="wn.refresh"></button>
     </div>
 
     <div id="jv-wn-status" class="wn-status"></div>
@@ -681,6 +696,30 @@ canvas{display:block;}
     <!-- tracking content (shown when plan is saved) -->
     <div id="jv-wn-content" hidden>
 
+      <!-- 1. regions side by side (RITA Overview #geo-panels), instruments as tiles -->
+      <div id="jv-wn-regions" class="card-row" style="margin-bottom:16px"></div>
+
+      <!-- 2. agent commentary (RITA overview narrator box) -->
+      <div class="card" style="margin-bottom:12px;padding:12px 16px">
+        <div data-copy="wn.comm.title" style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px"></div>
+        <div id="jv-wn-commentary" style="font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap"></div>
+      </div>
+
+      <!-- 3. Daily / Weekly / Monthly tabs + 8 tiles (RITA timeframe tabs and signal strip) -->
+      <div id="jv-wn-period-tabs" style="display:flex;align-items:center;gap:4px;margin-bottom:18px;border-bottom:1.5px solid var(--border);padding-bottom:0">
+        <button type="button" class="ms-tab active" data-period="daily" data-copy="wn.period.daily"></button>
+        <button type="button" class="ms-tab" data-period="weekly" data-copy="wn.period.weekly"></button>
+        <button type="button" class="ms-tab" data-period="monthly" data-copy="wn.period.monthly"></button>
+      </div>
+      <div id="jv-wn-panels" class="jv-wn-kpis"></div>
+
+      <!-- 4. plan vs reality charts -->
+      <div id="jv-wn-plots"></div>
+
+      <!-- 5. plan and bucket details -->
+      <details class="card jv-wn-details">
+        <summary data-copy="wn.details.title"></summary>
+        <p class="jv-note"><a href="investgame-app.html" data-copy="wn.trk.edit"></a></p>
       <!-- plan KPIs -->
       <div class="kpi-row-4">
         <div class="kpi kpi-sm"><div class="kpi-label" data-copy="wn.trk.kpi.need"></div><div class="kpi-value" id="jv-wn-kpi-need">—</div></div>
@@ -688,7 +727,6 @@ canvas{display:block;}
         <div class="kpi kpi-sm"><div class="kpi-label" data-copy="wn.trk.kpi.years"></div><div class="kpi-value" id="jv-wn-kpi-years">—</div></div>
         <div class="kpi kpi-sm"><div class="kpi-label" data-copy="wn.trk.kpi.port_ret"></div><div class="kpi-value" id="jv-wn-kpi-port-ret">—</div></div>
       </div>
-
       <!-- tracking KPIs -->
       <div class="card">
         <div class="card-title" data-copy="wn.trk.section.tracking"></div>
@@ -698,7 +736,6 @@ canvas{display:block;}
           <div class="kpi kpi-sm"><div class="kpi-label" data-copy="wn.trk.kpi.track_gap"></div><div class="kpi-value" id="jv-wn-kpi-track-gap">—</div></div>
         </div>
       </div>
-
       <!-- bucket milestone breakdown -->
       <div id="jv-wn-bucket-wrap" hidden>
         <div class="sec-label" data-i18n="wn.bucket.section"></div>
@@ -706,14 +743,13 @@ canvas{display:block;}
         <div id="jv-wn-bucket-tbl"></div>
         <div id="jv-wn-bucket-monthly"></div>
       </div>
-
       <!-- investment plan table -->
       <div class="card">
         <div class="card-title" data-copy="wn.trk.section.assets"></div>
         <div class="tbl-wrap" id="jv-wn-asset-table"></div>
       </div>
-
-      <p class="jv-muted" id="jv-wn-plan-meta" hidden></p>
+        <p class="jv-muted" id="jv-wn-plan-meta" hidden></p>
+      </details>
     </div>
   </div>
 
@@ -762,7 +798,7 @@ canvas{display:block;}
     <img id="chart-modal-img" style="width:100%;max-height:88vh;display:block;border-radius:4px;object-fit:contain;" />
   </div>
 </div>
-<script type="module" src="./js/jarvis/main.js?v=7"></script>
+<script type="module" src="./js/jarvis/main.js?v=8"></script>
 <script>fetch('/health').then(r=>r.json()).then(d=>{document.querySelectorAll('.app-ver').forEach(e=>e.textContent='v'+d.version)}).catch(()=>{})</script>
 </body>
 </html>
