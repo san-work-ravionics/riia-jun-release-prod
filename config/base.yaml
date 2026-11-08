@@ -212,6 +212,17 @@ goal_selection:
       val_start: 2023-01-01
       val_end: 2024-12-31
       backtest_start: 2025-01-01
+    # Models the DS pipeline builds (/api/v1/pipeline, ml_dispatch): rita_ddqn_v2_<inst>_<run id>.zip, trained
+    # on trading_env_v2.temporal_split (70 / 15 / 15 by rows).  Jarvis consumes them as they are built: the
+    # windows are reproduced per model from its training date (training_history.csv, else the file time).
+    # An exact-name lineage above wins when its file exists.
+    - name: pipeline_v2
+      engine: ddqn_v2
+      pattern: "rita_ddqn_v2_{inst}_*.zip"
+      split_rule: fractions
+      train_frac: 0.70
+      val_frac: 0.15
+      margin_bars: 5
 
 # F44 P4 Jarvis module (JarvisSettings). Classifier + UX settings only — no dates, no levels.
 # intent_threshold = the existing chat classifier's cosine-confidence threshold

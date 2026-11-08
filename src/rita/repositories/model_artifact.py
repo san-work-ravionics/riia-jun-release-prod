@@ -15,11 +15,13 @@ repositories; a file-backed repository is constructed from directories instead.
 """
 from __future__ import annotations
 
+import fnmatch
 import hashlib
 import json
 import os
 import threading
 from dataclasses import dataclass
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -27,7 +29,7 @@ import pandas as pd
 import structlog
 
 from rita.config import ModelLineage, get_settings
-from rita.core.goal_model_runs import LineageSplit, parse_lineage_split
+from rita.core.goal_model_runs import LineageSplit, fraction_split, parse_lineage_split
 
 log = structlog.get_logger(__name__)
 
@@ -60,8 +62,45 @@ class ModelArtifactRepository:
     # ── model zip ──────────────────────────────────────────────────────────────
 
     def find(self, instrument: str, lineage: ModelLineage) -> Path | None:
-        path = self._model_dir / instrument.upper() / lineage.pattern.format(inst=instrument.lower())
-        return path if path.is_file() else None
+        """The lineage's model zip.  An exact-name pattern is one file; a pattern with ``*`` takes the newest
+        match, leaving out the exact files other lineages own (so ``..._f34p25.zip`` stays with F34)."""
+        folder = self._model_dir / instrument.upper()
+        pat = lineage.pattern.format(inst=instrument.lower())
+        if not any(ch in pat for ch in "*?["):
+            path = folder / pat
+            return path if path.is_file() else None
+        if not folder.is_dir():
+            return None
+        owned = {o.pattern.format(inst=instrument.lower()) for o in get_settings().goal_selection.model_lineages
+                 if o.name != lineage.name and not any(ch in o.pattern for ch in "*?[")}
+        files = [p for p in folder.iterdir()
+                 if p.is_file() and fnmatch.fnmatch(p.name, pat) and p.name not in owned]
+        return max(files, key=lambda p: p.stat().st_mtime) if files else None
+
+    def trained_on(self, instrument: str, model_path: Path) -> date:
+        """The day a pipeline model was trained: its first ``training_history.csv`` row (the run id in the
+        file name, ``notes`` ``run_id=<8 hex>``), else the file's modification time.  A later date can only
+        move the reconstructed training end later, which is the safe side."""
+        run8 = model_path.stem.rsplit("_", 1)[-1]
+        history = self._model_dir / instrument.upper() / "training_history.csv"
+        if history.is_file():
+            try:
+                df = pd.read_csv(history)
+                rows = df[df["notes"].astype(str).str.contains(f"run_id={run8}", regex=False)]
+                stamps = pd.to_datetime(rows["timestamp"], errors="coerce").dropna()
+                if len(stamps):
+                    return stamps.min().date()
+            except (KeyError, ValueError, OSError):
+                pass
+        return datetime.fromtimestamp(model_path.stat().st_mtime).date()
+
+    def split_for(self, lineage: ModelLineage, instrument: str, model_path: Path, index) -> LineageSplit:
+        """The windows this model was trained / reported on: the lineage's fixed dates, or the pipeline's
+        fractional split reproduced on the bars that existed when the model was trained."""
+        if lineage.split_rule == "dates":
+            return self.lineage_split(lineage)
+        return fraction_split(index, self.trained_on(instrument, model_path), lineage.train_frac,
+                              lineage.val_frac, lineage.margin_bars)
 
     def sha256(self, path: Path) -> str:
         st = path.stat()

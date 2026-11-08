@@ -27,6 +27,7 @@ from sqlalchemy.orm import Session
 from rita.config import ModelLineage, get_settings
 from rita.core.data_integrity import check_window
 from rita.core.goal_model_runs import (
+    common_split,
     ACTION_ALLOCATION,
     REPLAY_VERSION,
     TOLERANCE_LEVELS,
@@ -110,13 +111,15 @@ class _Prepared:
     runs: dict[str, ModelRun] | None = None      # τ → run
     excluded: ExcludedOut | None = None
     last_date: date | None = None
+    lineage: ModelLineage | None = None          # the lineage the instrument's model belongs to
+    split: LineageSplit | None = None            # that model's own windows
 
 
 @dataclass
 class LocationRuns:
     location: str
-    lineage: ModelLineage
-    split: LineageSplit
+    lineage_name: str = ""                       # the lineage(s) of the included models, "+"-joined
+    split: LineageSplit | None = None            # windows every included sleeve is out-of-sample on
     runs: dict[str, dict[str, ModelRun]] = field(default_factory=dict)   # inst → τ → run
     excluded: list[ExcludedOut] = field(default_factory=list)
     as_of: date | None = None
@@ -129,7 +132,7 @@ class InstrumentRuns:
 
     instrument: str
     lineage: ModelLineage
-    split: LineageSplit
+    split: LineageSplit | None                   # this model's own windows (None when excluded)
     runs: dict[str, ModelRun] | None = None
     excluded: ExcludedOut | None = None
     frame: Any = None
@@ -161,18 +164,29 @@ class GoalSelectionService:
         return sorted(i for i in ids if pf.instrument_location(i) == location)
 
     @staticmethod
-    def active_lineage() -> ModelLineage:
+    def lineages() -> list[ModelLineage]:
         lineages = get_settings().goal_selection.model_lineages
         if not lineages:
             raise GoalSelectionError("unavailable", "no model lineage is registered")
-        return lineages[0]
+        return list(lineages)
+
+    def _resolve(self, inst: str):
+        """``(lineage, model zip)``: the first registered lineage that has a model for the instrument
+        (registration order: an exact-name lineage before the pipeline's)."""
+        for lineage in self.lineages():
+            path = self._artifacts.find(inst, lineage)
+            if path is not None:
+                return lineage, path
+        return None
 
     # ── replays ────────────────────────────────────────────────────────────────
 
-    def _prepare(self, inst: str, lineage: ModelLineage, split: LineageSplit) -> _Prepared:
-        path = self._artifacts.find(inst, lineage)
-        if path is None:
-            return _Prepared(excluded=_excl(inst, "no_model", f"no {lineage.name} model"))
+    def _prepare(self, inst: str) -> _Prepared:
+        found = self._resolve(inst)
+        if found is None:
+            return _Prepared(excluded=_excl(inst, "no_model",
+                                            f"no {' or '.join(lin.name for lin in self.lineages())} model"))
+        lineage, path = found
         marker = self._artifacts.rewrite_marker(inst)
         if marker is not None:
             invalid = marker.get("lineages_invalidated") or []
@@ -190,6 +204,10 @@ class GoalSelectionService:
         if frame is None:
             return _Prepared(excluded=_excl(inst, "no_data"))
         df = frame.df
+        try:
+            split = self._artifacts.split_for(lineage, inst, path, df.index)
+        except ValueError as exc:
+            return _Prepared(excluded=_excl(inst, "no_data", str(exc)))
         if window_frame(df, split.train_end).shape[0] < 2:
             return _Prepared(excluded=_excl(inst, "no_data", f"no bars after {split.train_end}"))
         integ = check_window(df["Close"], split.train_end)
@@ -243,29 +261,25 @@ class GoalSelectionService:
                     runs[tau] = run
                 log.info("goal_selection.replayed", instrument=inst, lineage=lineage.name,
                          tolerances=len(missing))
-        return _Prepared(runs=runs, last_date=frame.last_date)
+        return _Prepared(runs=runs, last_date=frame.last_date, lineage=lineage, split=split)
 
     def instrument_runs(self, instrument: str) -> InstrumentRuns:
         """F44 P4: one instrument's replays at every τ through the same ``_prepare`` (P3 cache,
         per-instrument lock), plus the indicator frame the model read.  No change to the
         location-level behaviour."""
-        lineage = self.active_lineage()
-        split = self._artifacts.lineage_split(lineage)
-        p = self._prepare(instrument.upper(), lineage, split)
+        p = self._prepare(instrument.upper())
         if p.excluded is not None:
-            return InstrumentRuns(instrument=instrument.upper(), lineage=lineage, split=split,
+            return InstrumentRuns(instrument=instrument.upper(), lineage=self.lineages()[0], split=None,
                                   excluded=p.excluded)
         frame = self._artifacts.load_indicator_frame(instrument.upper())
-        return InstrumentRuns(instrument=instrument.upper(), lineage=lineage, split=split,
+        return InstrumentRuns(instrument=instrument.upper(), lineage=p.lineage, split=p.split,
                               runs=p.runs, frame=frame.df if frame is not None else None)
 
     def location_runs(self, location: str) -> LocationRuns:
-        lineage = self.active_lineage()
-        split = self._artifacts.lineage_split(lineage)
-        out = LocationRuns(location=location, lineage=lineage, split=split)
+        out = LocationRuns(location=location)
         prepared: dict[str, _Prepared] = {}
         for inst in self.universe(location):
-            p = self._prepare(inst, lineage, split)
+            p = self._prepare(inst)
             if p.excluded is not None:
                 out.excluded.append(p.excluded)
             else:
@@ -281,6 +295,12 @@ class GoalSelectionService:
             out.as_of = latest
             if out.runs:
                 out.window_start = min(r["medium"].window_start for r in out.runs.values())
+                kept = [prepared[i] for i in out.runs]
+                out.lineage_name = "+".join(sorted({p.lineage.name for p in kept}))
+                try:
+                    out.split = common_split(p.split for p in kept)
+                except ValueError as exc:
+                    raise GoalSelectionError("unavailable", str(exc)) from exc
         out.excluded.sort(key=lambda e: e.instrument_id)
         return out
 
@@ -325,7 +345,7 @@ class GoalSelectionService:
         fit_w, test_w = sel.fit_window, sel.test_window
         out = GoalSelectionOut(
             location=lr.location, currency=location_currency(lr.location),
-            target_return=sel.target_return, meets_goal=sel.meets_goal, lineage=lr.lineage.name,
+            target_return=sel.target_return, meets_goal=sel.meets_goal, lineage=lr.lineage_name,
             fit_window=WindowOut(start=fit_w.start, end=fit_w.end),
             test_window=WindowOut(start=test_w.start, end=test_w.end),
             cap_fit=sel.cap_fit, cap_test=sel.cap_test,
@@ -432,7 +452,7 @@ class GoalSelectionService:
                 rf_annual=float(med.rf_daily) * TRADING_DAYS, episode_length=med.episode_length,
                 runs=runs_out))
         return ModelRunsOut(
-            location=location, lineage=lr.lineage.name, as_of=lr.as_of,
+            location=location, lineage=lr.lineage_name, as_of=lr.as_of,
             window_start=lr.window_start,
             fit_window=WindowOut(start=fit_w.start, end=fit_w.end),
             test_window=WindowOut(start=test_w.start, end=test_w.end),

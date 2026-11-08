@@ -7,7 +7,7 @@
 // ensureDevToken(true) → one retry). The only window binding is closeChartModal (modal markup).
 import { ensureDevToken } from '../shared/dev-auth.js';
 import { closeChartModal } from '../rita/chart-modal.js';
-import { t } from './copy.js?v=19';
+import { t } from './copy.js?v=20';
 import {
   warmup, openSession, sendMessage, loadState, initChat, renderHistory, renderChips, appendBubble,
   initGroups, initVoice, speakReply, renderHighlights,

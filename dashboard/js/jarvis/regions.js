@@ -7,7 +7,7 @@ import { api } from '../shared/api.js';
 import { mkChart, destroyChart, C } from '../shared/charts.js';
 import { REGION_CCY, instrumentCurrency } from '../shared/portfolio-currency.js';
 import { esc } from './esc.js?v=3';
-import { t } from './copy.js?v=19';
+import { t } from './copy.js?v=20';
 import { fmtMoney, fmtNum, fmtPctPoint, isNum, locationName } from './format.js?v=3';
 import { locPortfolioHtml } from './portfolio.js?v=3';
 

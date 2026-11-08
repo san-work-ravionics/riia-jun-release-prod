@@ -219,8 +219,10 @@ def _integrity(instrument_id: str) -> list[tuple[str, Any]]:
     from rita.core.data_loader import load_instrument_data
 
     close = load_instrument_data(instrument_id)["Close"]
+    # only lineages with a fixed training end have a window to check here; a fractional (pipeline)
+    # lineage is checked per model, from its own derived split, when Jarvis prepares it
     return [(lin.name, check_window(close, lin.train_end))
-            for lin in get_settings().goal_selection.model_lineages]
+            for lin in get_settings().goal_selection.model_lineages if lin.train_end is not None]
 
 
 def rewrite_history_if_broken(

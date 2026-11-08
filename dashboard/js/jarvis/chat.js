@@ -3,7 +3,7 @@
 // from the journey (plan.js). Every server string goes through esc() or textContent.
 import { api } from '../shared/api.js';
 import { esc } from './esc.js?v=3';
-import { t } from './copy.js?v=19';
+import { t } from './copy.js?v=20';
 import { fmtRate, fmtMoney, fmtDate, fmtYears, isNum, locationName } from './format.js?v=3';
 
 // ── API (every call through api(): 401 → ensureDevToken(true) → one retry) ─────

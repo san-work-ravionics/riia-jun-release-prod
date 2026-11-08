@@ -6,7 +6,7 @@
 import { api } from '../shared/api.js';
 import { mkChart, destroyChart, chartOpts, C } from '../shared/charts.js';
 import { esc } from './esc.js?v=3';
-import { t } from './copy.js?v=19';
+import { t } from './copy.js?v=20';
 import { fmtRate, fmtMoney, fmtNum, fmtDate, fmtYears, isNum, locationName } from './format.js?v=3';
 import { sleeveDatasets, priceDatasets } from './instrument.js?v=3';
 

@@ -263,7 +263,7 @@ export const COPY = {
   'cx.label.step': 'Step',
   'cx.label.linked': 'Linked Analytics',
   'cx.empty': 'Save your plan on What I Need and your portfolio in RITA to see your numbers here.',
-  'cx.empty.model': 'No RITA model sleeve is available for these instruments on this server (needs the trained DDQN v2 model files).',
+  'cx.empty.model': 'No RITA model sleeve is available for these instruments.',
   'cx.empty.engines': 'No engine return yet. RITA and ASTA need trained models on this server; Your holdings needs a price after the day you saved.',
   'cx.empty.mcp': 'No MCP tool calls recorded yet.',
   'cx.loading': 'Loading…',

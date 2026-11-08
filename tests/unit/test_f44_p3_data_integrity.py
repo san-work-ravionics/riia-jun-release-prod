@@ -156,7 +156,9 @@ def test_rewrite_only_for_a_failing_instrument_and_marker(data_dirs, no_network)
     stored = pd.read_csv(p_bad, index_col=0, parse_dates=True)["Close"]
     assert np.allclose(stored.to_numpy(), fixed.to_numpy())
     marker = json.loads((data_dirs / "BRK" / REWRITE_MARKER).read_text(encoding="utf-8"))
-    assert marker["lineages_invalidated"] == ["f34p25"]
+    # a history rewrite invalidates EVERY registered lineage: models built on the old prices, whichever way
+    assert marker["lineages_invalidated"] == [lin.name for lin in get_settings().goal_selection.model_lineages]
+    assert {"f34p25", "pipeline_v2"} <= set(marker["lineages_invalidated"])
     assert marker["integrity_after_passed"] is True and "2024-11-12" in marker["integrity_before"]["f34p25"]
     # the repository reads it back (→ retrain_needed in the service)
     repo = ModelArtifactRepository(data_dirs, data_dirs)
@@ -171,7 +173,7 @@ def test_rewrite_that_is_still_broken_is_recorded(data_dirs, no_network):
     assert res["rewritten"] and res["integrity_after_passed"] is False
     marker = json.loads((data_dirs / "ATX" / REWRITE_MARKER).read_text(encoding="utf-8"))
     assert marker["integrity_after_passed"] is False and marker["integrity_after"]["f34p25"]
-    assert marker["lineages_invalidated"] == ["f34p25"]       # excluded either way (N10)
+    assert marker["lineages_invalidated"] == [lin.name for lin in get_settings().goal_selection.model_lineages]   # excluded either way (N10)
 
 
 def test_refresh_all_runs_step0_after_the_append_and_never_aborts():

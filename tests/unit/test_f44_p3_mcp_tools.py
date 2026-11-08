@@ -162,7 +162,7 @@ def test_portfolio_tools_answer_the_system_identity_without_require_user(tool_db
     assert req.structuredContent["status"] == "on_track"
     assert [i["instrument_id"] for i in runs.structuredContent["instruments"]] == ["E1", "E2"]
     assert runs.structuredContent["excluded"] == [
-        {"instrument_id": "E3", "reason": "no_model", "detail": "no f34p25 model"}]
+        {"instrument_id": "E3", "reason": "no_model", "detail": "no f34p25 or pipeline_v2 model"}]
 
 
 def test_anonymous_caller_is_forbidden(tool_db):
