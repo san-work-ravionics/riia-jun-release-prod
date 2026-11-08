@@ -3,8 +3,8 @@
 // from the journey (plan.js). Every server string goes through esc() or textContent.
 import { api } from '../shared/api.js';
 import { esc } from './esc.js?v=3';
-import { t } from './copy.js?v=17';
-import { fmtRate, fmtMoney, fmtDate, fmtYears, isNum } from './format.js?v=3';
+import { t } from './copy.js?v=18';
+import { fmtRate, fmtMoney, fmtDate, fmtYears, isNum, locationName } from './format.js?v=3';
 
 // ── API (every call through api(): 401 → ensureDevToken(true) → one retry) ─────
 export function warmup() {
@@ -228,6 +228,7 @@ export function setBusy(busy) {
   const inp = document.getElementById('jv-chat-input');
   if (btn) btn.disabled = busy;
   if (inp) inp.disabled = busy;
+  document.querySelectorAll('#jv-chat-groups .jv-q').forEach(b => { b.disabled = busy; });
 }
 
 // onSend(text) → Promise. Chips are delegated on the container (data-idx, never ids in onclick).
@@ -247,5 +248,124 @@ export function initChat(onSend) {
     if (!b || b.disabled) return;
     const chip = _chips[Number(b.dataset.idx)];
     if (chip) onSend(chip.text);
+  });
+}
+
+
+// ── key highlights (top panel): the saved plan + this year's return, region-neutral wording ──────────
+export function highlightsHtml(state, pf, location) {
+  const goal = state && ((state.journey) || state.goal);
+  const perf = pf && pf.perf;
+  const tile = (label, value, cls = '') =>
+    `<div class="kpi kpi-sm"><div class="kpi-label">${esc(label)}</div><div class="kpi-value ${cls}">${esc(value)}</div></div>`;
+  const has = goal && isNum(goal.goal_return);
+  const ytd = perf && isNum(perf.ytd_return) ? perf.ytd_return : null;
+  return [
+    tile(t('hl.region'), locationName(location)),
+    tile(t('hl.plan_return'), has ? fmtRate(goal.goal_return) : t('hl.no_plan')),
+    tile(t('hl.horizon'), has ? fmtYears(goal.horizon_years) : '—'),
+    tile(t('hl.goal_value'), has ? fmtMoney(goal.goal_value, goal.currency) : '—'),
+    tile(t('hl.saved'), has ? fmtDate(goal.plan_updated_at) : '—'),
+    tile(t('hl.journey'), state && state.journey ? t(`state.${state.journey.state}`) : t('state.no_goal')),
+    tile(t('hl.ytd'), ytd === null ? '—' : fmtRate(ytd), ytd === null ? '' : (ytd >= 0 ? 'pos' : 'neg')),
+    tile(t('hl.target'), perf && isNum(perf.target_to_date) ? fmtRate(perf.target_to_date) : '—'),
+  ].join('');
+}
+
+export function renderHighlights(state, pf, location) {
+  const el = document.getElementById('jv-chat-highlights');
+  if (el) el.innerHTML = highlightsHtml(state, pf, location);
+}
+
+// ── question groups (left panel) ─────────────────────────────────────────────────────────────
+export const QUESTION_GROUPS = [
+  { key: 'g1', badge: 'p1', qs: ['goal'] },
+  { key: 'g3', badge: 'p3', qs: ['build', 'why', 'closest'] },
+  { key: 'g4', badge: 'p4', qs: ['track', 'doing', 'stop'] },
+  { key: 'g5', badge: 'p5', qs: ['protect'] },
+];
+
+export function groupsHtml() {
+  return QUESTION_GROUPS.map(g => `<div class="phase-group">
+    <div class="phase-hdr"><span class="phase-step-badge ${g.badge}">${esc(t(`chat.${g.key}.tag`))}</span><span class="phase-name">${esc(t(`chat.${g.key}`))}</span></div>
+    ${g.qs.map(q => `<button type="button" class="jv-q" data-q="${q}">${esc(t(`chat.q.${q}`))}</button>`).join('')}
+  </div>`).join('');
+}
+
+export function initGroups(onSend) {
+  const el = document.getElementById('jv-chat-groups');
+  if (!el) return;
+  el.innerHTML = groupsHtml();
+  el.addEventListener('click', e => {
+    const b = e.target.closest('button[data-q]');
+    if (!b || b.disabled) return;
+    onSend(t(`chat.q.${b.dataset.q}`).replace(/\?$/, ''));
+  });
+}
+
+// ── voice: talk (browser SpeechRecognition) and listen (browser speechSynthesis) ────────────────
+let _speakOn = false;
+
+export function speakReply(text) {
+  if (!_speakOn || typeof window === 'undefined' || !window.speechSynthesis || !text) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(String(text));
+  u.lang = navigator.language || 'en-US';
+  window.speechSynthesis.speak(u);
+}
+
+export function initVoice(onSend) {
+  const mic = document.getElementById('jv-chat-mic');
+  const spk = document.getElementById('jv-chat-speak');
+  const status = document.getElementById('jv-chat-voice-status');
+  const inp = document.getElementById('jv-chat-input');
+  if (!mic) return;
+  const setStatus = txt => { if (status) status.textContent = txt || ''; };
+  try { _speakOn = localStorage.getItem('jvSpeak') === '1'; } catch { /* storage blocked */ }
+  if (spk) {
+    spk.checked = _speakOn;
+    spk.addEventListener('change', () => {
+      _speakOn = spk.checked;
+      try { localStorage.setItem('jvSpeak', _speakOn ? '1' : '0'); } catch { /* storage blocked */ }
+      if (!_speakOn && window.speechSynthesis) window.speechSynthesis.cancel();
+    });
+  }
+  const SR = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
+  mic.title = SR ? t('voice.mic') : t('voice.unsupported');
+  if (!SR) { mic.disabled = true; return; }
+  const rec = new SR();
+  rec.lang = navigator.language || 'en-US';
+  rec.interimResults = true;
+  rec.continuous = false;
+  let listening = false;
+  const setListening = on => {
+    listening = on;
+    mic.classList.toggle('is-listening', on);
+    mic.setAttribute('aria-pressed', on ? 'true' : 'false');
+    mic.title = on ? t('voice.stop') : t('voice.mic');
+    setStatus(on ? t('voice.listening') : '');
+  };
+  rec.onresult = e => {
+    let text = '';
+    let final = false;
+    for (let i = e.resultIndex; i < e.results.length; i += 1) {
+      text += e.results[i][0].transcript;
+      if (e.results[i].isFinal) final = true;
+    }
+    if (inp) inp.value = text;
+    if (final && text.trim()) {
+      if (inp) inp.value = '';
+      onSend(text.trim());
+    }
+  };
+  rec.onend = () => setListening(false);
+  rec.onerror = e => {
+    setListening(false);
+    if (e.error && e.error !== 'no-speech' && e.error !== 'aborted') setStatus(t('voice.error', { message: e.error }));
+  };
+  mic.addEventListener('click', () => {
+    if (listening) { rec.stop(); return; }
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    try { rec.start(); setListening(true); } catch { /* already started */ }
   });
 }

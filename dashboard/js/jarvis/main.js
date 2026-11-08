@@ -7,11 +7,12 @@
 // ensureDevToken(true) → one retry). The only window binding is closeChartModal (modal markup).
 import { ensureDevToken } from '../shared/dev-auth.js';
 import { closeChartModal } from '../rita/chart-modal.js';
-import { t } from './copy.js?v=17';
+import { t } from './copy.js?v=18';
 import {
   warmup, openSession, sendMessage, loadState, initChat, renderHistory, renderChips, appendBubble,
+  initGroups, initVoice, speakReply, renderHighlights,
   appendPending, showChatError, setBusy,
-} from './chat.js?v=4';
+} from './chat.js?v=5';
 import { renderPlan } from './plan.js?v=3';
 import {
   loadPortfolio, renderPortfolio, renderDetailHeader, initGrid, markSelected,
@@ -185,6 +186,7 @@ async function selectLocation(loc, { writeUrl = true } = {}) {
   renderHistory(state.messages);
   renderChips(state.chips);
   renderPlan(state);
+  renderHighlights(state, S.pfs[loc] || null, loc);
   try {
     const sess = await openSession(loc);                            // A2
     if (seq === S.seq) S.sessionId = sess.session_id;
@@ -200,6 +202,7 @@ function _refreshState(loc) {
     if (S.loc !== loc) return;
     S.state = st;
     renderPlan(st);
+    renderHighlights(st, S.pfs[loc] || null, loc);
   }).catch(() => { /* the reply's journey is already rendered */ });
 }
 
@@ -223,6 +226,7 @@ async function onSend(text) {
     if (S.loc !== loc) return;
     setModel('ready');
     appendBubble('assistant', res.reply.text, res.reply.cards);
+    speakReply(res.reply.text);
     renderChips(res.reply.chips);
     renderPlan(S.state, res.journey || null);
     _invalidatePf(loc);                                             // only this location's A5
@@ -413,6 +417,8 @@ async function boot() {
   applyStaticCopy();
   initTabs();
   initChat(onSend);
+  initGroups(onSend);
+  initVoice(onSend);
   initGrid(openInstrument);
   initGeoTable(_onSort);
   initInstrument();

@@ -172,7 +172,29 @@ canvas{display:block;}
 .jv-list li:last-child{border-bottom:none;}
 
 /* Panels (Market Analysis layout) */
-.jv-chat-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,4fr);gap:14px;height:calc(100vh - 52px - 120px);min-height:520px;}
+.jv-chat-grid{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,8fr);gap:14px;height:calc(100vh - 52px - 215px);min-height:420px;}
+.jv-hl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:6px;margin-bottom:14px;}
+.jv-hl-grid .kpi-sm{padding:7px 10px;}
+.jv-hl-grid .kpi-value{font-size:13px;}
+.phase-group{margin-bottom:14px;}
+.phase-group:last-child{margin-bottom:0;}
+.phase-hdr{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+.phase-step-badge{font-family:var(--fm);font-size:9px;font-weight:600;text-transform:uppercase;padding:2px 6px;border-radius:3px;letter-spacing:.05em;white-space:nowrap;}
+.phase-step-badge.p1{background:var(--run-bg);color:var(--run);border:1px solid var(--run-bd);}
+.phase-step-badge.p3{background:var(--build-bg);color:var(--build);border:1px solid var(--build-bd);}
+.phase-step-badge.p4{background:var(--mon-bg);color:var(--mon);border:1px solid var(--mon-bd);}
+.phase-step-badge.p5{background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger-bd);}
+.phase-name{font-size:11px;font-weight:600;color:var(--t2);}
+.jv-q{display:block;width:100%;text-align:left;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;margin-bottom:5px;font-size:11px;font-family:var(--fd);color:var(--t2);cursor:pointer;}
+.jv-q:hover{background:var(--chat-bg);border-color:var(--chat-bd);color:var(--chat);}
+.jv-q:disabled{opacity:.5;cursor:not-allowed;}
+#jv-chat-mic{width:32px;height:32px;border-radius:var(--r);border:1.5px solid var(--border);background:var(--surface2);color:var(--t2);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+#jv-chat-mic:hover{border-color:var(--chat);color:var(--chat);}
+#jv-chat-mic:disabled{opacity:.45;cursor:not-allowed;}
+#jv-chat-mic.is-listening{background:var(--danger);border-color:var(--danger);color:#fff;animation:jv-pulse 1.1s infinite;}
+@keyframes jv-pulse{0%,100%{opacity:1}50%{opacity:.55}}
+.jv-voice-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;font-size:11px;color:var(--t3);}
+.jv-voice-row label{display:flex;align-items:center;gap:5px;cursor:pointer;}
 .mpanel{display:flex;flex-direction:column;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;min-height:0;}
 .mpanel-hdr{padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:12px;}
 .mpanel-title{font-size:12px;font-weight:700;color:var(--text);}
@@ -408,7 +430,15 @@ canvas{display:block;}
         <div class="page-sub" data-copy="page.lead"></div>
       </div>
     </div>
+    <div class="jv-hl-grid" id="jv-chat-highlights"></div>
     <div class="jv-chat-grid">
+      <section class="mpanel" id="sec-jv-questions">
+        <div class="mpanel-hdr">
+          <div class="mpanel-title" data-copy="chat.groups.title"></div>
+        </div>
+        <div class="mpanel-body" id="jv-chat-groups"></div>
+      </section>
+
       <section class="mpanel" id="sec-jv-chat">
         <div class="mpanel-hdr">
           <div>
@@ -421,27 +451,32 @@ canvas{display:block;}
           <div id="jv-chat-chips"></div>
           <form id="jv-chat-form" autocomplete="off">
             <input id="jv-chat-input" type="text" maxlength="500">
+            <button id="jv-chat-mic" type="button" aria-pressed="false">
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="5.5" y="1.5" width="5" height="8" rx="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5V15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </button>
             <button id="jv-chat-send" type="submit">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
           </form>
+          <div class="jv-voice-row">
+            <span id="jv-chat-voice-status" aria-live="polite"></span>
+            <label><input type="checkbox" id="jv-chat-speak"><span data-copy="voice.speak"></span></label>
+          </div>
           <div id="jv-chat-error" hidden></div>
         </div>
       </section>
+    </div>
 
-      <section class="mpanel" id="sec-jv-plan">
-        <div class="mpanel-hdr">
-          <div class="mpanel-title" data-copy="panel.plan"></div>
-        </div>
-        <div class="mpanel-body">
-          <div id="jv-plan-empty" hidden></div>
-          <div id="jv-plan-goal" hidden></div>
-          <div id="jv-plan-selection" hidden></div>
-          <div id="jv-plan-tracking" hidden></div>
-          <div id="jv-plan-proposal" hidden></div>
-          <div id="jv-plan-excluded" hidden></div>
-          <div id="jv-plan-method" hidden></div>
-        </div>
+    <!-- plan view (written by plan.js; the chat page no longer shows it) -->
+    <div hidden style="display:none">
+      <section id="sec-jv-plan">
+        <div id="jv-plan-empty" hidden></div>
+        <div id="jv-plan-goal" hidden></div>
+        <div id="jv-plan-selection" hidden></div>
+        <div id="jv-plan-tracking" hidden></div>
+        <div id="jv-plan-proposal" hidden></div>
+        <div id="jv-plan-excluded" hidden></div>
+        <div id="jv-plan-method" hidden></div>
       </section>
     </div>
   </div>
