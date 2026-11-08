@@ -60,7 +60,8 @@ class HedgeHolding(BaseModel):
     duration: str             # '1m' | '3m' | '1y'
     # EUR-denominated fields (None when portfolio has no total_value_eur stored)
     position_eur: float | None = None        # allocation_pct/100 * total_value_eur
-    put_cost_eur: float | None = None        # full-duration put premium in EUR
+    put_cost_eur: float | None = None        # 12-month ATM put premium in EUR (reference; used by the savings table)
+    monthly_cost_eur: float | None = None    # position_eur * cost_pct/100 — the EUR value of cost_pct (same basis, per month)
     var_95_eur: float | None = None          # 1σ downside EUR
     # Quarterly risk fields
     quarterly_var_pct: float | None = None   # 1σ quarterly VaR as %
@@ -312,12 +313,14 @@ def get_portfolio_hedge(
 
         pos_eur: float | None = None
         put_cost_eur: float | None = None
+        monthly_cost_eur: float | None = None
         var_95_eur: float | None = None
         q_var_eur: float | None = None
         if total_eur is not None:
             pos_eur = round(total_eur * alloc / 100.0, 2)
             atm_cost_pct = _bs_put_pct(vol, 0.0, t_months=t_months)
             put_cost_eur = round(pos_eur * atm_cost_pct / 100.0, 2)
+            monthly_cost_eur = round(pos_eur * cost_pct / 100.0, 2)
             sigma_eur = pos_eur * vol / 100.0 * (t_months / 12.0) ** 0.5
             var_95_eur = round(sigma_eur, 2)
             if q_var_pct is not None:
@@ -341,6 +344,7 @@ def get_portfolio_hedge(
             duration="1y",
             position_eur=pos_eur,
             put_cost_eur=put_cost_eur,
+            monthly_cost_eur=monthly_cost_eur,
             var_95_eur=var_95_eur,
             quarterly_var_pct=q_var_pct,
             quarterly_var_eur=q_var_eur,

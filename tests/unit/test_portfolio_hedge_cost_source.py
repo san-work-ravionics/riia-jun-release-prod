@@ -40,6 +40,30 @@ def _get(client, *, live, snap):
     return {h["instrument_id"]: h for h in resp.json()["holdings"]}, fl, fc
 
 
+def test_monthly_cost_eur_is_the_eur_value_of_cost_pct_and_put_cost_eur_unchanged(client):
+    pf = MagicMock()
+    pf.holdings = [{"instrument_id": "RELIANCE", "allocation_pct": 60.0}, {"instrument_id": "NVIDIA", "allocation_pct": 40.0}]
+    pf.total_value_eur = 10000.0
+    with patch(f"{_P}.UserPortfolioKeyRepo") as k, patch(f"{_P}.UserPortfolioRepo") as p, \
+         patch(f"{_P}.MarketDataCacheRepository") as m, \
+         patch(f"{_P}.fetch_put_premium", return_value={"cost_pct": 0.9, "detail": "live"}), \
+         patch(f"{_P}.put_premium_from_csv", return_value=None):
+        k.return_value.find_by_user_id.return_value = MagicMock(key_id="k")
+        p.return_value.find_active_by_key_id.return_value = pf
+        m.return_value.read_all.return_value = []
+        resp = client.get("/api/v1/experience/fno/portfolio-hedge?coverage=50")
+    assert resp.status_code == 200, resp.text
+    for h in resp.json()["holdings"]:
+        assert h["position_eur"] == pytest.approx(10000.0 * h["weight"] / 100.0, abs=0.01)
+        assert h["monthly_cost_eur"] == pytest.approx(h["position_eur"] * h["cost_pct"] / 100.0, abs=0.01)
+        assert h["put_cost_eur"] is not None  # 12-month reference figure still present for the savings table
+
+
+def test_monthly_cost_eur_none_without_portfolio_value(client):
+    h, _, _ = _get(client, live=None, snap=None)
+    assert h["RELIANCE"]["monthly_cost_eur"] is None
+
+
 def test_live_kite_wins_and_csv_not_consulted(client):
     h, _, fc = _get(client, live={"cost_pct": 0.9, "detail": "live"}, snap={"cost_pct": 1.1, "detail": "csv"})
     assert h["RELIANCE"]["cost_source"] == "kite" and h["RELIANCE"]["cost_pct"] == 0.9
