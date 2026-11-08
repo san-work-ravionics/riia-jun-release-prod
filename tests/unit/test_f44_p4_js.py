@@ -37,7 +37,7 @@ HOSTILE = "<img src=x onerror=\"alert(1)\">'\""
 
 def _node(script: str):
     r = subprocess.run(["node", "--input-type=module", "-e", script], cwd=_JS,
-                       capture_output=True, text=True, timeout=60)
+                       capture_output=True, text=True, encoding="utf-8", timeout=60)
     assert r.returncode == 0, r.stderr[-3000:]
     return json.loads(r.stdout.strip().splitlines()[-1])
 
@@ -479,7 +479,7 @@ def test_html_keeps_the_stub_login_gate_verbatim():
     assert "window.location.href = '/auth/google/login';" in gate
     assert "sessionStorage.setItem('post_login_redirect', window.location.href);" in gate
     stub = subprocess.run(["git", "-C", str(_ROOT), "show", "9ddb068:dashboard/jarvis.html"],
-                          capture_output=True, text=True)
+                          capture_output=True, text=True, encoding="utf-8")
     if stub.returncode == 0:                                             # history available
         s = stub.stdout
         assert gate == s[s.index("<script>"):s.index("</script>") + len("</script>")]
