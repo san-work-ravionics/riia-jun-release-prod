@@ -766,6 +766,11 @@ for (const p of pending.splice(0)) {{
 for (let i = 0; i < 20 && !pending.length; i++) await new Promise(r => setTimeout(r, 5));
 const a6 = pending.map(p => p.url);
 for (const p of pending.splice(0)) p.res(jr({{ detail: 'no A6 here' }}, 500));
+let settled = false; done.then(() => {{ settled = true; }});
+for (let i = 0; i < 40 && !settled; i++) {{            // the auto-open retries a failed grid A6 once: answer it too
+  for (const p of pending.splice(0)) p.res(jr({{ detail: 'no A6 here' }}, 500));
+  await new Promise(r => setTimeout(r, 5));
+}}
 await done;
 const g = id => els[id] || {{}};
 console.log(JSON.stringify({{ before, a6, charts,
