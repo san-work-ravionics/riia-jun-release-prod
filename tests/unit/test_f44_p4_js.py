@@ -150,7 +150,7 @@ const H = {json.dumps(HOSTILE)};
 const chat = await import(base + 'jarvis/chat.js?v=3');
 const plan = await import(base + 'jarvis/plan.js?v=3');
 const pf = await import(base + 'jarvis/portfolio.js?v=4');
-const inst = await import(base + 'jarvis/instrument.js?v=4');
+const inst = await import(base + 'jarvis/instrument.js?v=5');
 const hostile = o => JSON.parse(JSON.stringify(o), (k, v) =>
   (['instrument_id','text','label','basis','note','name','setup','reason','live_replay_note','currency'].includes(k)
    && typeof v === 'string') ? H : v);
@@ -219,7 +219,7 @@ store.auth_token = 'fresh';
 const urls = [];
 globalThis.fetch = async (url) => {{ urls.push(url); return jr({{ instrument_id: 'x', engines: [] }}); }};
 const pf = await import(base + 'jarvis/portfolio.js?v=4');
-const inst = await import(base + 'jarvis/instrument.js?v=4');
+const inst = await import(base + 'jarvis/instrument.js?v=5');
 let picked = null;
 pf.initGrid(id => {{ picked = id; }});
 const H = {json.dumps(HOSTILE)};
@@ -357,7 +357,7 @@ const clone = o => JSON.parse(JSON.stringify(o));
 const chat = await import(base + 'jarvis/chat.js?v=3');
 const plan = await import(base + 'jarvis/plan.js?v=3');
 const pf = await import(base + 'jarvis/portfolio.js?v=4');
-const inst = await import(base + 'jarvis/instrument.js?v=4');
+const inst = await import(base + 'jarvis/instrument.js?v=5');
 const cx = await import(base + 'jarvis/concepts.js?v=3');
 for (const [kind, card] of Object.entries(FX.cards)) chat.cardHtml({{ kind, data: rec('card.' + kind, clone(card.data)) }});
 for (const state of ['tracking', 'selected', 'cant_reach', 'reselect_proposed', 'back_to_plan']) {{

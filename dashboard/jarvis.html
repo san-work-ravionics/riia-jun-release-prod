@@ -89,7 +89,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
 .jv-chart-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-bottom:10px;}
 .jv-chart-row>.chart-wrap{margin-bottom:0;padding:10px 12px;}
 .jv-chart-row .chart-title{margin-bottom:6px;}
-#sec-jv-portfolio .kpi-row-4,#sec-jv-portfolio .kpi-row-3{gap:10px;margin-bottom:10px;}
+#sec-jv-portfolio .kpi-row-4,#sec-jv-portfolio .kpi-row-3{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;}
+#sec-jv-portfolio .kpi-row-4>.kpi,#sec-jv-portfolio .kpi-row-3>.kpi{flex:0 1 190px;min-width:150px;}
 #sec-jv-portfolio .card{padding:12px 14px;margin-bottom:10px;}
 #sec-jv-portfolio .card-hdr{margin-bottom:8px;}
 #sec-jv-portfolio .card-row-2{gap:10px;margin-bottom:10px;}

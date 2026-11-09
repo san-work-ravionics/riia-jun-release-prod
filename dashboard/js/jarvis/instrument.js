@@ -220,7 +220,16 @@ export function renderInstrument(data, engineKey, ctx = {}) {
   if (e) _drawSleeve(e);
 }
 
+// Empty the panel (region without instruments, failed load): no sleeve chart left over from another region.
+export function clearInstrument() {
+  _data = null;
+  destroyChart('jv-sleeve-chart');
+  const wrap = document.getElementById('jv-sleeve-wrap');
+  if (wrap) wrap.hidden = true;
+}
+
 export function renderInstrumentError(message) {
+  clearInstrument();
   const status = document.getElementById('jv-inst-status');
   if (status) { status.textContent = t('err.load', { message }); status.hidden = false; }
 }

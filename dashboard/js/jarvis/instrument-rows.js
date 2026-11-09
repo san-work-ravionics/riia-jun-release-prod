@@ -5,7 +5,7 @@ import { esc } from './esc.js?v=3';
 import { t } from './copy.js?v=21';
 import { fmtNum, fmtDate, isNum } from './format.js?v=3';
 import { actionText } from './chat.js?v=5';
-import { pickDefaultEngine, statusText } from './instrument.js?v=4';
+import { pickDefaultEngine, statusText } from './instrument.js?v=5';
 
 function _levelCell(l) {
   if (!l || !isNum(l.value)) return '—';
@@ -16,10 +16,12 @@ function _levelCell(l) {
 function _comment(e, instrumentId) {
   const r = e.rationale;
   if (!r) return esc(statusText(e, instrumentId) || '—');
-  const act = r.action || r.prev_action
-    ? ` ${esc(actionText(r.prev_action))} → ${esc(actionText(r.action))}` : '';
+  const head = r.date ? `<b>${esc(t('rationale.short', { date: fmtDate(r.date) }))}</b> · ` : '';
+  let act = '';
+  if (r.action && r.prev_action) act = ` ${esc(actionText(r.prev_action))} → ${esc(actionText(r.action))}`;
+  else if (r.action || r.prev_action) act = ` ${esc(actionText(r.action || r.prev_action))}`;
   const note = r.note ? ` — ${esc(r.note)}` : '';
-  return `<b>${esc(t('rationale.short', { date: fmtDate(r.date) }))}</b> · ${esc(t(`inst.engine.${e.engine}`))}:${act}${note}`;
+  return `${head}${esc(t(`inst.engine.${e.engine}`))}:${act}${note}`;
 }
 
 // {entry, exit, comment} as HTML strings for one A6 payload, or null when the payload has no engine.

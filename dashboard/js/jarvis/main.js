@@ -15,9 +15,9 @@ import {
 } from './chat.js?v=5';
 import { renderPlan } from './plan.js?v=3';
 import {
-  loadPortfolio, renderPortfolio, renderDetailHeader, initGrid, markSelected,
+  loadPortfolio, renderPortfolio, renderDetailHeader, initGrid, markSelected, sortInstruments,
 } from './portfolio.js?v=4';
-import { loadInstrument, renderInstrument, renderInstrumentError, initInstrument } from './instrument.js?v=4';
+import { loadInstrument, renderInstrument, renderInstrumentError, initInstrument, clearInstrument } from './instrument.js?v=5';
 import { rowCells, fillRowCells } from './instrument-rows.js?v=1';
 import { renderConcepts, initConcepts } from './concepts.js?v=8';
 import { loadWhatINeed, initWhatINeed } from './what-i-need.js?v=11';
@@ -266,20 +266,29 @@ function _invalidatePf(loc) {
   S.instRows[loc] = {};
 }
 
-// One A6 per instrument of this location, in parallel and shared with openInstrument; each answer fills its
-// grid row (Entry, Exit, Comments) as it lands. A failed call only blanks its own row.
+// One A6 per instrument of this location, at most 4 at a time (largest weight first), shared with the first
+// openInstrument; each answer fills its grid row (Entry, Exit, Comments). A failed call is not cached: that row
+// shows "—" and fills in when the row is clicked.
+const _DASH = { entry: '—', exit: '—', comment: '—' };
+
+async function _rowCell(loc, cache, id) {
+  if (S.instRows[loc][id]) return;
+  let p = cache[id];
+  if (!p) { p = loadInstrument(loc, id); cache[id] = p; }
+  let data = null;
+  try { data = await p; } catch { if (cache[id] === p) delete cache[id]; }
+  if (S.instData[loc] !== cache) return;                            // invalidated while in flight
+  const cells = rowCells(data);
+  if (cells) S.instRows[loc][id] = cells;
+  if (S.detailLoc === loc) fillRowCells(id, cells || _DASH);
+}
+
 function _loadRowCells(loc, pf) {
   const cache = S.instData[loc];
-  for (const r of pf.instruments || []) {
-    const id = r.instrument_id;
-    if (!cache[id]) cache[id] = loadInstrument(loc, id).catch(() => null);
-    cache[id].then(data => {
-      if (S.instData[loc] !== cache) return;                        // invalidated while in flight
-      const cells = rowCells(data) || { entry: '—', exit: '—', comment: '—' };
-      S.instRows[loc][id] = cells;
-      if (S.detailLoc === loc) fillRowCells(id, cells);
-    });
-  }
+  const ids = sortInstruments(pf.instruments).map(r => r.instrument_id);
+  let next = 0;
+  const worker = async () => { while (next < ids.length) await _rowCell(loc, cache, ids[next++]); };
+  for (let k = 0; k < 4; k += 1) worker();
 }
 
 // One A5 request per location at a time; a response that an invalidation overtook is dropped.
@@ -354,18 +363,20 @@ async function _renderDetail(loc, { openFirst = true } = {}) {
     renderDetailHeader(loc, locCurrency(loc, null));
     if (S.pfErr[loc]) _byIdText('jv-pf-source', t('err.load', { message: S.pfErr[loc] }));
     if (sec) sec.hidden = true;
+    clearInstrument();
     S.detailLoc = null;
     return;
   }
   const first = renderPortfolio(pf, loc, S.instRows[loc]);
   S.detailLoc = loc;
   _loadRowCells(loc, pf);
-  if (!openFirst) { if (sec) sec.hidden = true; return; }
+  if (!openFirst) { if (sec) sec.hidden = true; clearInstrument(); return; }
   if (first) {
     if (sec) sec.hidden = false;
-    await openInstrument(first);
+    await openInstrument(first, true);
   } else if (sec) {
     sec.hidden = true;
+    clearInstrument();
   }
 }
 
@@ -404,16 +415,19 @@ export async function loadPortfolioSection() {
   if (detail) await detail;
 }
 
-async function openInstrument(inst) {
+// A grid click always fetches fresh; only the first auto-open reuses the grid's request.
+async function openInstrument(inst, useCache = false) {
   const loc = S.loc;
   markSelected(inst);
   const title = _byId('jv-inst-title');
   if (title) title.textContent = `${inst} · …`;
   try {
-    const cached = S.instData[loc] && S.instData[loc][inst];        // shared with the grid cells
-    const data = (cached && await cached) || await loadInstrument(loc, inst);   // A6
+    const cached = useCache && S.instData[loc] && S.instData[loc][inst];
+    const data = (cached && await cached.catch(() => null)) || await loadInstrument(loc, inst);   // A6
     if (S.loc !== loc) return;
     S.inst = data;
+    const cells = rowCells(data);
+    if (cells && S.instRows[loc]) { S.instRows[loc][inst] = cells; fillRowCells(inst, cells); }
     renderInstrument(data, null, { slLimit: _slLimit(inst) });
   } catch (e) {
     if (S.loc === loc) renderInstrumentError(e.message);
