@@ -25,7 +25,7 @@ import {
   LOCS, loadGeography, locCurrency, loadEurRates, renderTotalPanel,
   renderColumn, renderUniverse, initGeoTable,
 } from './regions.js?v=5';
-import { initRegionPeriod, renderRegionPeriod, clearRegionPeriod } from './region-period.js?v=3';
+import { initRegionPeriod, renderRegionPeriod, clearRegionPeriod } from './region-period.js?v=4';
 
 window.closeChartModal = closeChartModal;
 

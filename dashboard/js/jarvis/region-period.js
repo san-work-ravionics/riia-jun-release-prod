@@ -1,7 +1,6 @@
 // Jarvis — F44 P4c: Daily / Weekly / Monthly period returns card shown in single-region drill-down.
 // KPIs: Actual | Target | Gap | Status (period-scaled from goal_return and geo data).
 // Period tabs drive the instrument returns chart and hedge assessment.
-import { mkChart, destroyChart, C } from '../shared/charts.js';
 import { esc } from './esc.js?v=3';
 import { t } from './copy.js?v=21';
 import { fmtPctPoint, fmtRate, isNum } from './format.js?v=3';
@@ -69,32 +68,6 @@ function _renderKpis(actual, target) {
   </div>`;
 }
 
-function _renderChart(insts, period) {
-  const wrap = document.getElementById('jv-period-chart-wrap');
-  const titleEl = document.getElementById('jv-period-chart-title');
-  if (titleEl) titleEl.textContent = t('period.chart.title');
-  const relevant = insts.filter(r => period === 'monthly' ? isNum(r.y1) : isNum(r.daily)).slice(0, 12);
-  if (!relevant.length) { destroyChart('jv-period-chart'); if (wrap) wrap.hidden = true; return; }
-  const labels = relevant.map(r => r.id);
-  const data = relevant.map(r => period === 'monthly' ? r.y1 / 12 : period === 'weekly' ? r.daily * 5 : r.daily);
-  if (wrap) wrap.hidden = false;
-  const mono = { family: C.mono, size: 10 };
-  mkChart('jv-period-chart', {
-    type: 'line',
-    data: { labels, datasets: [{ data, borderColor: 'rgba(140,135,122,0.4)', backgroundColor: 'transparent',
-      fill: false, tension: 0, borderWidth: 1.5, spanGaps: true,
-      pointRadius: 5, pointHoverRadius: 7, pointBackgroundColor: C.run, pointBorderColor: C.run, pointBorderWidth: 0 }] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.label}: ${fmtPctPoint(ctx.raw)}` } } },
-      scales: {
-        x: { grid: { display: false }, ticks: { font: { family: C.mono, size: 9 }, maxRotation: 45 } },
-        y: { grid: { color: 'rgba(0,0,0,.05)' }, ticks: { font: mono, callback: v => `${v}%` } },
-      },
-    },
-  });
-}
-
 function _renderHedge(pf, loc) {
   const el = document.getElementById('jv-period-hedge');
   if (!el) return;
@@ -122,7 +95,6 @@ function _render() {
   });
   const insts = _portInsts(_pf, _geo, _loc);
   _renderKpis(_actual(insts, _period), _target(_pf, _period));
-  _renderChart(insts, _period);
   _renderHedge(_pf, _loc);
 }
 

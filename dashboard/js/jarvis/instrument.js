@@ -215,7 +215,6 @@ export function renderInstrument(data, engineKey, ctx = {}) {
   const status = document.getElementById('jv-inst-status');
   if (status) { status.textContent = st; status.hidden = !st; }
   _html('jv-inst-perf', e ? performanceHtml(e) : '');
-  _html('jv-inst-levels', e && HAS_CHART.has(e.status) ? levelsHtml(e, ctx, ['stop_loss', 'target']) : '');
   _html('jv-rationale', e ? rationaleHtml(e) : '');
   if (e) _drawSleeve(e);
 }

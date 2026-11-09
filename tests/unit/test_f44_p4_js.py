@@ -469,7 +469,7 @@ jv-chat-input jv-chat-send jv-chat-chips jv-chat-error sec-jv-plan jv-plan-goal 
 jv-plan-excluded jv-plan-tracking jv-plan-proposal jv-plan-empty sec-jv-portfolio jv-pf-source jv-pf-kpis
 jv-pnl-chart jv-pnl-empty jv-target-kpis jv-target-chart jv-target-required jv-grid jv-grid-body jv-grid-empty
 jv-engine-table jv-engine-chart jv-engine-note sec-jv-instrument jv-inst-title jv-inst-engines
-jv-sleeve-chart jv-sleeve-wrap jv-inst-levels jv-rationale jv-inst-status chart-modal chart-modal-title
+jv-sleeve-chart jv-sleeve-wrap jv-rationale jv-inst-status chart-modal chart-modal-title
 chart-modal-img jv-pf-status sec-jv-locations sec-jv-universe jv-geo-map jv-geo-map-empty jv-geo-map-note
 jv-geo-table-wrap jv-geo-table jv-geo-table-empty jv-pf-detail-title
 jv-chat-highlights jv-chat-groups sec-jv-questions jv-chat-mic jv-chat-speak jv-chat-voice-status""".split() + [
