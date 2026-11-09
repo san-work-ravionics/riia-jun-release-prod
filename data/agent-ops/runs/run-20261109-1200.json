@@ -1,0 +1,39 @@
+{
+  "run_id": "20261109-1200",
+  "app": "rita",
+  "request": "Repo housekeeping: check commits, remove stale branches/worktree and stale notes files, check and push all three repos",
+  "skill_file": "n/a",
+  "agents": [
+    {
+      "role": "engineer",
+      "status": "pass",
+      "steps_required": 3,
+      "steps_completed": 3,
+      "adherence_score": 1.0,
+      "token_estimate": 40000,
+      "grounding_checks": {
+        "branch_created": false,
+        "code_changed": false,
+        "spec_updated": false,
+        "ruff_passed": true,
+        "contract_matches_architect": true
+      },
+      "failure_modes": [],
+      "notes": "Direct housekeeping, no /enhance run. Removed merged agent worktree+branch (verified patch-equivalent via git cherry), deleted 3 stale notes files (3818872 pushed), deleted 6 merged feature branches in riia-jun-release-prod, pushed riia-agentic-firm main, riia-aug-release-dev main (61a541f) and riia-jun-release-prod master (2037be7). Data files in the Jun repo deliberately left untouched. token_estimate and duration are rough estimates."
+    }
+  ],
+  "overall_status": "pass",
+  "total_tokens_estimated": 40000,
+  "duration_minutes": 15,
+  "branch": "main",
+  "merge_status": "merged",
+  "merge_commit": "3818872",
+  "human_score": {
+    "accuracy": 2,
+    "relevance": 4,
+    "csat": 2,
+    "planning_ok": true,
+    "time_saved_hours": 0.5,
+    "notes": ""
+  }
+}

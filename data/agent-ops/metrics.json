@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-11-08T16:25:11",
-  "total_runs": 26,
+  "generated_at": "2026-11-09T10:35:11",
+  "total_runs": 27,
   "status_counts": {
     "pass_with_warnings": 14,
-    "pass": 12
+    "pass": 13
   },
   "app_counts": {
     "rl": 2,
-    "rita": 7,
+    "rita": 8,
     "ops": 1,
     "fno": 16
   },
-  "total_estimated_tokens": 7748800,
+  "total_estimated_tokens": 7788800,
   "total_actual_tokens": 8711406,
-  "total_duration_minutes": 2779,
-  "avg_duration_minutes": 106.9,
+  "total_duration_minutes": 2794,
+  "avg_duration_minutes": 103.5,
   "per_agent": {
     "pm": {
       "runs": 19,
@@ -43,11 +43,11 @@
       }
     },
     "engineer": {
-      "runs": 25,
-      "avg_adherence": 0.974,
-      "total_estimated_tokens": 3043000,
+      "runs": 26,
+      "avg_adherence": 0.975,
+      "total_estimated_tokens": 3083000,
       "total_actual_tokens": 1699976,
-      "token_overrun_ratio": 0.56,
+      "token_overrun_ratio": 0.55,
       "top_failure_modes": {
         "FC-LINT: unused import shipped, caught by CI ruff gate": 1,
         "FC-COV: new 538-line module shipped without coverage omit entry": 1,
