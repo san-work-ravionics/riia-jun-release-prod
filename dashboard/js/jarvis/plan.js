@@ -2,7 +2,7 @@
 // N2: "Model today", "Invested now", next_reset). The journey selection is the selection-time
 // snapshot and is labelled "at selection".
 import { esc } from './esc.js?v=3';
-import { t } from './copy.js?v=20';
+import { t } from './copy.js?v=21';
 import { fmtRate, fmtMoney, fmtDate, fmtYears, isNum } from './format.js?v=3';
 import { actionText, reasonText } from './chat.js?v=5';
 

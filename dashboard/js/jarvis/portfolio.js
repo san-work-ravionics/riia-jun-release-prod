@@ -5,7 +5,7 @@ import { api } from '../shared/api.js';
 import { mkChart, destroyChart, chartOpts, C } from '../shared/charts.js';
 import { portfolioCurrency } from '../shared/portfolio-currency.js';
 import { esc } from './esc.js?v=3';
-import { t } from './copy.js?v=20';
+import { t } from './copy.js?v=21';
 import { fmtRate, fmtPp, fmtMoney, fmtNum, fmtDate, isNum, locationName } from './format.js?v=3';
 import { actionText } from './chat.js?v=5';
 
@@ -79,9 +79,12 @@ export function sortInstruments(rows) {
   return (rows || []).slice().sort((a, b) => (isNum(b.allocation_pct) ? b.allocation_pct : -1) - (isNum(a.allocation_pct) ? a.allocation_pct : -1));
 }
 
-export function gridRowsHtml(rows, currency, selectedId) {
+// `extras` = {INSTRUMENT_ID: {entry, exit, comment}} (HTML from instrument-rows.js); a row without one shows "…"
+// until its A6 answer is filled in.
+export function gridRowsHtml(rows, currency, selectedId, extras = {}) {
   return sortInstruments(rows).map(r => {
     const sl = isNum(r.sl_distance) ? `${fmtRate(r.sl_distance)}` : '—';
+    const x = extras[r.instrument_id] || { entry: '…', exit: '…', comment: '…' };
     return `<tr data-inst="${esc(r.instrument_id)}" class="${r.instrument_id === selectedId ? 'is-selected' : ''}">
       <td class="mono">${esc(r.instrument_id)}</td>
       <td>${esc(_inText(r))}</td>
@@ -91,7 +94,10 @@ export function gridRowsHtml(rows, currency, selectedId) {
       <td class="num ${_sign(r.pnl)}">${esc(fmtMoney(r.pnl, currency))}</td>
       <td class="num ${_sign(r.ret)}">${esc(fmtRate(r.ret))}</td>
       <td>${esc(r.model_action ? actionText(r.model_action) : '—')}</td>
-      <td class="num">${esc(sl)}${r.sl_hit ? ` <span class="jv-badge warn">${esc(t('plan.selection.col.sl'))}</span>` : ''}</td></tr>`;
+      <td class="num">${esc(sl)}${r.sl_hit ? ` <span class="jv-badge warn">${esc(t('plan.selection.col.sl'))}</span>` : ''}</td>
+      <td class="num" data-cell="entry">${x.entry}</td>
+      <td class="num" data-cell="exit">${x.exit}</td>
+      <td class="jv-cmt" data-cell="comment">${x.comment}</td></tr>`;
   }).join('');
 }
 
@@ -268,7 +274,7 @@ export function renderDetailHeader(location, currency) {
   if (div) div.textContent = detailDivider(location);
 }
 
-export function renderPortfolio(pf, location) {
+export function renderPortfolio(pf, location, extras = {}) {
   renderDetailHeader(location, pf.currency);
   _text('jv-pf-source', sourceText(pf, location));
   _html('jv-pf-kpis', kpisHtml(pf));
@@ -278,7 +284,7 @@ export function renderPortfolio(pf, location) {
   _drawTarget(pf);
   const rows = sortInstruments(pf.instruments);
   const first = rows.length ? rows[0].instrument_id : null;
-  _html('jv-grid-body', gridRowsHtml(rows, pf.currency, first));
+  _html('jv-grid-body', gridRowsHtml(rows, pf.currency, first, extras));
   const empty = document.getElementById('jv-grid-empty');
   if (empty) { empty.textContent = rows.length ? '' : t('grid.empty', { location: locationName(location) }); empty.hidden = !!rows.length; }
   _html('jv-engine-table', engineTableHtml(pf.engines, location));

@@ -7,7 +7,7 @@
 // ensureDevToken(true) → one retry). The only window binding is closeChartModal (modal markup).
 import { ensureDevToken } from '../shared/dev-auth.js';
 import { closeChartModal } from '../rita/chart-modal.js';
-import { t } from './copy.js?v=20';
+import { t } from './copy.js?v=21';
 import {
   warmup, openSession, sendMessage, loadState, initChat, renderHistory, renderChips, appendBubble,
   initGroups, initVoice, speakReply, renderHighlights,
@@ -16,8 +16,9 @@ import {
 import { renderPlan } from './plan.js?v=3';
 import {
   loadPortfolio, renderPortfolio, renderDetailHeader, initGrid, markSelected,
-} from './portfolio.js?v=3';
-import { loadInstrument, renderInstrument, renderInstrumentError, initInstrument } from './instrument.js?v=3';
+} from './portfolio.js?v=4';
+import { loadInstrument, renderInstrument, renderInstrumentError, initInstrument } from './instrument.js?v=4';
+import { rowCells, fillRowCells } from './instrument-rows.js?v=1';
 import { renderConcepts, initConcepts } from './concepts.js?v=8';
 import { loadWhatINeed, initWhatINeed } from './what-i-need.js?v=11';
 import {
@@ -34,6 +35,8 @@ export const S = {
   geo: null, geoErr: null,                                    // G — cached once per page session
   pfs: {}, pfErr: {}, pfStale: _perLoc(true), pfGen: _perLoc(0), // A5 per location
   sort: { col: 'ret', asc: false }, pfSeq: 0, detailLoc: null, mapHidden: false,
+  instData: Object.fromEntries(LOCS.map(l => [l, {}])),        // A6 promise per location + instrument (grid Entry/Exit/Comments)
+  instRows: Object.fromEntries(LOCS.map(l => [l, {}])),        // the grid cells built from each resolved A6
   regionMode: false,                                          // P4c: single-region drill-down
   eurRates: {}, geoFilter: null,                             // total EUR panel + scatter/table filter
 };
@@ -259,6 +262,24 @@ function _pfNeedsLoad() {
 function _invalidatePf(loc) {
   S.pfStale[loc] = true;
   S.pfGen[loc] += 1;                                                // an in-flight A5 for loc is dropped
+  S.instData[loc] = {};                                             // the per-instrument A6 answers go with it
+  S.instRows[loc] = {};
+}
+
+// One A6 per instrument of this location, in parallel and shared with openInstrument; each answer fills its
+// grid row (Entry, Exit, Comments) as it lands. A failed call only blanks its own row.
+function _loadRowCells(loc, pf) {
+  const cache = S.instData[loc];
+  for (const r of pf.instruments || []) {
+    const id = r.instrument_id;
+    if (!cache[id]) cache[id] = loadInstrument(loc, id).catch(() => null);
+    cache[id].then(data => {
+      if (S.instData[loc] !== cache) return;                        // invalidated while in flight
+      const cells = rowCells(data) || { entry: '—', exit: '—', comment: '—' };
+      S.instRows[loc][id] = cells;
+      if (S.detailLoc === loc) fillRowCells(id, cells);
+    });
+  }
 }
 
 // One A5 request per location at a time; a response that an invalidation overtook is dropped.
@@ -336,8 +357,9 @@ async function _renderDetail(loc, { openFirst = true } = {}) {
     S.detailLoc = null;
     return;
   }
-  const first = renderPortfolio(pf, loc);
+  const first = renderPortfolio(pf, loc, S.instRows[loc]);
   S.detailLoc = loc;
+  _loadRowCells(loc, pf);
   if (!openFirst) { if (sec) sec.hidden = true; return; }
   if (first) {
     if (sec) sec.hidden = false;
@@ -388,7 +410,8 @@ async function openInstrument(inst) {
   const title = _byId('jv-inst-title');
   if (title) title.textContent = `${inst} · …`;
   try {
-    const data = await loadInstrument(loc, inst);                   // A6
+    const cached = S.instData[loc] && S.instData[loc][inst];        // shared with the grid cells
+    const data = (cached && await cached) || await loadInstrument(loc, inst);   // A6
     if (S.loc !== loc) return;
     S.inst = data;
     renderInstrument(data, null, { slLimit: _slLimit(inst) });

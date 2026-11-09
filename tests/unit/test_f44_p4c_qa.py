@@ -79,7 +79,7 @@ def p4c_reads():
     return _node(_PRELUDE + _RECORDER + f"""
 const FX = {fx};
 const clone = o => JSON.parse(JSON.stringify(o));
-const pf = await import(base + 'jarvis/portfolio.js?v=3');
+const pf = await import(base + 'jarvis/portfolio.js?v=4');
 const rg = await import(base + 'jarvis/regions.js?v=3');
 for (const src of ['saved', 'mixed', 'model_sleeves', 'model_sleeves_preview', 'none']) {{
   for (const variant of ['full', 'legacy', 'no_money', 'no_perf']) {{

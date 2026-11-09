@@ -5,10 +5,10 @@
 import { api } from '../shared/api.js';
 import { mkChart, destroyChart, chartOpts, C } from '../shared/charts.js';
 import { esc } from './esc.js?v=3';
-import { t } from './copy.js?v=20';
+import { t } from './copy.js?v=21';
 import { fmtRate, fmtPp, fmtNum, fmtDate, isNum } from './format.js?v=3';
 import { reasonText } from './chat.js?v=5';
-import { engineStatusText } from './portfolio.js?v=3';
+import { engineStatusText } from './portfolio.js?v=4';
 
 export function loadInstrument(location, instrument) {
   return api(`/api/v1/experience/jarvis/instrument?location=${encodeURIComponent(location)}&instrument=${encodeURIComponent(instrument)}`);
@@ -55,9 +55,9 @@ function _slNote(e, ctx) {
   return '';
 }
 
-export function levelsHtml(e, ctx = {}) {
+// Entry and Exit now live in the instrument grid (instrument-rows.js); this table keeps the rest.
+export function levelsHtml(e, ctx = {}, keys = ['entry', 'exit', 'stop_loss', 'target']) {
   const lv = e.levels || {};
-  const keys = ['entry', 'exit', 'stop_loss', 'target'];
   const rows = keys.map(k => {
     const l = lv[k];
     const note = k === 'stop_loss' && l ? _slNote(e, ctx) : '';
@@ -182,24 +182,6 @@ export function sleeveDatasets(e) {
   };
 }
 
-function _wrap(id) {
-  return document.getElementById(id)?.closest('.chart-wrap');
-}
-
-function _drawPrice(e) {
-  const wrap = _wrap('jv-inst-chart');
-  if (!(e.prices || []).length) {
-    destroyChart('jv-inst-chart');
-    if (wrap) wrap.hidden = true;
-    return;
-  }
-  if (wrap) wrap.hidden = false;
-  const { labels, datasets } = priceDatasets(e);
-  const opts = chartOpts('', v => fmtNum(v, 0), labels);
-  opts.plugins.legend.labels.filter = item => !['derisk', 'rerisk'].includes(item.text);
-  mkChart('jv-inst-chart', { type: 'line', data: { labels, datasets }, options: opts });
-}
-
 function _drawSleeve(e) {
   const wrap = document.getElementById('jv-sleeve-wrap');
   if (e.engine !== 'rita' || !((e.series || {}).sleeve_value || []).length) {
@@ -233,12 +215,9 @@ export function renderInstrument(data, engineKey, ctx = {}) {
   const status = document.getElementById('jv-inst-status');
   if (status) { status.textContent = st; status.hidden = !st; }
   _html('jv-inst-perf', e ? performanceHtml(e) : '');
-  _html('jv-inst-levels', e && HAS_CHART.has(e.status) ? levelsHtml(e, ctx) : '');
+  _html('jv-inst-levels', e && HAS_CHART.has(e.status) ? levelsHtml(e, ctx, ['stop_loss', 'target']) : '');
   _html('jv-rationale', e ? rationaleHtml(e) : '');
-  if (e) {
-    _drawPrice(e);
-    _drawSleeve(e);
-  }
+  if (e) _drawSleeve(e);
 }
 
 export function renderInstrumentError(message) {

@@ -85,6 +85,20 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
 .nav-item.is-active.p00{border-left-color:var(--text);background:var(--surface2);}
 .nav-item.is-active.p03{border-left-color:var(--run);background:var(--run-bg);}
 .nav-item.is-active.p05{border-left-color:var(--chat);background:var(--chat-bg);}
+/* Region detail — compact: tighter gaps, 3 charts in one row, no full-width plot */
+.jv-chart-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-bottom:10px;}
+.jv-chart-row>.chart-wrap{margin-bottom:0;padding:10px 12px;}
+.jv-chart-row .chart-title{margin-bottom:6px;}
+#sec-jv-portfolio .kpi-row-4,#sec-jv-portfolio .kpi-row-3{gap:10px;margin-bottom:10px;}
+#sec-jv-portfolio .card{padding:12px 14px;margin-bottom:10px;}
+#sec-jv-portfolio .card-hdr{margin-bottom:8px;}
+#sec-jv-portfolio .card-row-2{gap:10px;margin-bottom:10px;}
+#sec-jv-portfolio .chart-box{height:170px;}
+#sec-jv-portfolio .jv-table th,#sec-jv-portfolio .jv-table td{padding:5px 8px;}
+#sec-jv-instrument #jv-inst-perf{max-width:560px;}
+#jv-grid td.jv-cmt{min-width:220px;max-width:340px;white-space:normal;font-size:11px;color:var(--t3);}
+.nav-sub{margin:0 0 2px 14px;border-left:1px solid var(--border);}
+.nav-item.nav-sub-item{padding:5px 14px 5px 12px;font-size:11.5px;}
 .nav-icon{width:14px;text-align:center;flex-shrink:0;font-size:12px;}
 .sidebar-footer{margin-top:auto;padding:12px 16px;border-top:1px solid var(--border);}
 .sidebar-footer .lbl{font-family:var(--fm);font-size:10px;color:var(--t4);}
@@ -407,15 +421,14 @@ canvas{display:block;}
   <div class="nav-section">
     <div class="nav-label" style="color:var(--t3)" data-copy="nav.view"></div>
     <button type="button" class="nav-item p05" id="jv-tab-chat"><span class="nav-icon">◈</span><span data-copy="tab.chat"></span></button>
-    <button type="button" class="nav-item p03" id="jv-tab-portfolio"><span class="nav-icon">⊞</span><span data-copy="tab.portfolio"></span></button>
-    <button type="button" class="nav-item p00" id="jv-tab-concepts"><span class="nav-icon">◎</span><span data-copy="tab.concepts"></span></button>
     <button type="button" class="nav-item p00" id="jv-tab-whatineed"><span class="nav-icon">◇</span><span data-copy="tab.whatineed"></span></button>
-  </div>
-  <div class="nav-section" id="jv-loc-tabs">
-    <div class="nav-label" style="color:var(--t3)" data-copy="nav.location"></div>
-    <button type="button" class="nav-item p00" data-loc="europe"><span class="nav-icon">🇪🇺</span><span data-copy="loc.europe"></span></button>
-    <button type="button" class="nav-item p00" data-loc="india"><span class="nav-icon">🇮🇳</span><span data-copy="loc.india"></span></button>
-    <button type="button" class="nav-item p00" data-loc="us"><span class="nav-icon">🇺🇸</span><span data-copy="loc.us"></span></button>
+    <button type="button" class="nav-item p03" id="jv-tab-portfolio"><span class="nav-icon">⊞</span><span data-copy="tab.portfolio"></span></button>
+    <div class="nav-sub" id="jv-loc-tabs">
+      <button type="button" class="nav-item nav-sub-item p00" data-loc="europe"><span class="nav-icon">🇪🇺</span><span data-copy="loc.europe"></span></button>
+      <button type="button" class="nav-item nav-sub-item p00" data-loc="india"><span class="nav-icon">🇮🇳</span><span data-copy="loc.india"></span></button>
+      <button type="button" class="nav-item nav-sub-item p00" data-loc="us"><span class="nav-icon">🇺🇸</span><span data-copy="loc.us"></span></button>
+    </div>
+    <button type="button" class="nav-item p00" id="jv-tab-concepts"><span class="nav-icon">◎</span><span data-copy="tab.concepts"></span></button>
   </div>
 </nav>
 
@@ -623,10 +636,22 @@ canvas{display:block;}
           <div class="card-hdr"><span class="card-title" data-copy="target.title"></span></div>
           <div id="jv-target-required" hidden></div>
           <div class="kpi-row-4" id="jv-target-kpis"></div>
-          <div class="chart-wrap" hidden>
-            <div class="chart-title" data-copy="target.chart"></div>
-            <div class="chart-box"><canvas id="jv-target-chart"></canvas></div>
-          </div>
+        </div>
+      </div>
+
+      <!-- three charts in one row: engines, model sleeve, return this year vs target -->
+      <div class="jv-chart-row" id="jv-chart-row">
+        <div class="chart-wrap" hidden>
+          <div class="chart-title" data-copy="engine.title"></div>
+          <div class="chart-box-sm"><canvas id="jv-engine-chart"></canvas></div>
+        </div>
+        <div class="chart-wrap" id="jv-sleeve-wrap" hidden>
+          <div class="chart-title" data-copy="inst.sleeve.title"></div>
+          <div class="chart-box-sm"><canvas id="jv-sleeve-chart"></canvas></div>
+        </div>
+        <div class="chart-wrap" hidden>
+          <div class="chart-title" data-copy="target.chart_year"></div>
+          <div class="chart-box-sm"><canvas id="jv-target-chart"></canvas></div>
         </div>
       </div>
 
@@ -643,6 +668,8 @@ canvas{display:block;}
               <th class="num" data-copy="grid.col.last_close"></th><th class="num" data-copy="grid.col.pnl"></th>
               <th class="num" data-copy="grid.col.return"></th><th data-copy="grid.col.model"></th>
               <th class="num" data-copy="grid.col.sl"></th>
+              <th class="num" data-copy="grid.col.entry"></th><th class="num" data-copy="grid.col.exit"></th>
+              <th data-copy="grid.col.comments"></th>
             </tr></thead>
             <tbody id="jv-grid-body"></tbody>
           </table>
@@ -652,18 +679,13 @@ canvas{display:block;}
 
       <!-- ── Instrument (click-to-chart) ─────────────────────── -->
       <section class="card" id="sec-jv-instrument" hidden>
-        <div id="jv-inst-engines"></div>
+        <div class="card-hdr">
+          <span class="card-title" id="jv-inst-title"></span>
+          <div id="jv-inst-engines"></div>
+        </div>
         <div id="jv-inst-status" hidden></div>
         <div class="kpi-row-3" id="jv-inst-perf" hidden></div>
-        <div class="chart-wrap" hidden>
-          <div class="chart-title" id="jv-inst-title"></div>
-          <div class="chart-box" style="height:280px"><canvas id="jv-inst-chart"></canvas></div>
-        </div>
-        <div class="chart-wrap" id="jv-sleeve-wrap" hidden style="margin-top:14px">
-          <div class="chart-title" data-copy="inst.sleeve.title"></div>
-          <div class="chart-box-sm"><canvas id="jv-sleeve-chart"></canvas></div>
-        </div>
-        <div class="card-row-2" style="margin:14px 0 0">
+        <div class="jv-chart-row" style="margin:0">
           <div id="jv-inst-levels" hidden></div>
           <div id="jv-rationale" hidden></div>
         </div>
@@ -673,10 +695,6 @@ canvas{display:block;}
         <div class="card-hdr"><span class="card-title" data-copy="engine.title"></span></div>
         <div class="tbl-wrap" id="jv-engine-table"></div>
         <p class="jv-muted" id="jv-engine-note" hidden style="margin-top:8px"></p>
-        <div class="chart-wrap" hidden style="margin-top:14px">
-          <div class="chart-title" data-copy="engine.col.return"></div>
-          <div class="chart-box-sm"><canvas id="jv-engine-chart"></canvas></div>
-        </div>
       </section>
     </section>
   </div>
