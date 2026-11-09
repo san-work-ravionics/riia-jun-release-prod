@@ -8,7 +8,7 @@ import { mkChart, destroyChart, chartOpts, C } from '../shared/charts.js';
 import { esc } from './esc.js?v=3';
 import { t } from './copy.js?v=21';
 import { fmtRate, fmtMoney, fmtNum, fmtDate, fmtYears, isNum, locationName } from './format.js?v=3';
-import { sleeveDatasets, priceDatasets } from './instrument.js?v=5';
+import { sleeveDatasets, priceDatasets } from './instrument.js?v=6';
 
 export const STEPS = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8'];
 

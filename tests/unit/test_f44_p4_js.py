@@ -149,8 +149,8 @@ const FX = {fx};
 const H = {json.dumps(HOSTILE)};
 const chat = await import(base + 'jarvis/chat.js?v=3');
 const plan = await import(base + 'jarvis/plan.js?v=3');
-const pf = await import(base + 'jarvis/portfolio.js?v=4');
-const inst = await import(base + 'jarvis/instrument.js?v=5');
+const pf = await import(base + 'jarvis/portfolio.js?v=5');
+const inst = await import(base + 'jarvis/instrument.js?v=6');
 const hostile = o => JSON.parse(JSON.stringify(o), (k, v) =>
   (['instrument_id','text','label','basis','note','name','setup','reason','live_replay_note','currency'].includes(k)
    && typeof v === 'string') ? H : v);
@@ -218,8 +218,8 @@ def test_delegated_grid_click_passes_raw_id_and_url_encodes_it():
 store.auth_token = 'fresh';
 const urls = [];
 globalThis.fetch = async (url) => {{ urls.push(url); return jr({{ instrument_id: 'x', engines: [] }}); }};
-const pf = await import(base + 'jarvis/portfolio.js?v=4');
-const inst = await import(base + 'jarvis/instrument.js?v=5');
+const pf = await import(base + 'jarvis/portfolio.js?v=5');
+const inst = await import(base + 'jarvis/instrument.js?v=6');
 let picked = null;
 pf.initGrid(id => {{ picked = id; }});
 const H = {json.dumps(HOSTILE)};
@@ -356,8 +356,8 @@ const FX = {fx};
 const clone = o => JSON.parse(JSON.stringify(o));
 const chat = await import(base + 'jarvis/chat.js?v=3');
 const plan = await import(base + 'jarvis/plan.js?v=3');
-const pf = await import(base + 'jarvis/portfolio.js?v=4');
-const inst = await import(base + 'jarvis/instrument.js?v=5');
+const pf = await import(base + 'jarvis/portfolio.js?v=5');
+const inst = await import(base + 'jarvis/instrument.js?v=6');
 const cx = await import(base + 'jarvis/concepts.js?v=3');
 for (const [kind, card] of Object.entries(FX.cards)) chat.cardHtml({{ kind, data: rec('card.' + kind, clone(card.data)) }});
 for (const state of ['tracking', 'selected', 'cant_reach', 'reselect_proposed', 'back_to_plan']) {{
@@ -468,8 +468,8 @@ _DESIGN_IDS = """jv-loc-tabs jv-tab-chat jv-tab-portfolio jv-status-model sec-jv
 jv-chat-input jv-chat-send jv-chat-chips jv-chat-error sec-jv-plan jv-plan-goal jv-plan-selection jv-plan-method
 jv-plan-excluded jv-plan-tracking jv-plan-proposal jv-plan-empty sec-jv-portfolio jv-pf-source jv-pf-kpis
 jv-pnl-chart jv-pnl-empty jv-target-kpis jv-target-chart jv-target-required jv-grid jv-grid-body jv-grid-empty
-jv-engine-table jv-engine-chart jv-engine-note sec-jv-instrument jv-inst-title jv-inst-engines
-jv-sleeve-chart jv-sleeve-wrap jv-rationale jv-inst-status chart-modal chart-modal-title
+jv-engine-table jv-engine-chart jv-engine-note sec-jv-instrument
+jv-sleeve-chart jv-sleeve-wrap jv-rationale chart-modal chart-modal-title
 chart-modal-img jv-pf-status sec-jv-locations sec-jv-universe jv-geo-map jv-geo-map-empty jv-geo-map-note
 jv-geo-table-wrap jv-geo-table jv-geo-table-empty jv-pf-detail-title
 jv-chat-highlights jv-chat-groups sec-jv-questions jv-chat-mic jv-chat-speak jv-chat-voice-status""".split() + [
@@ -676,7 +676,7 @@ def test_columns_each_in_own_currency_and_kpi_fields():
     fx = json.dumps(_FIXTURE)
     r = _node(_PRELUDE + f"""
 const FX = {fx};
-const pf = await import(base + 'jarvis/portfolio.js?v=4');
+const pf = await import(base + 'jarvis/portfolio.js?v=5');
 const rg = await import(base + 'jarvis/regions.js?v=3');
 const clone = o => JSON.parse(JSON.stringify(o));
 const inr = clone(FX.A5_portfolio); inr.location = 'india'; inr.currency = 'INR';

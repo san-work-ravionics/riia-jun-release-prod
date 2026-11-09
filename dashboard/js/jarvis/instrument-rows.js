@@ -5,7 +5,7 @@ import { esc } from './esc.js?v=3';
 import { t } from './copy.js?v=21';
 import { fmtNum, fmtDate, isNum } from './format.js?v=3';
 import { actionText } from './chat.js?v=5';
-import { pickDefaultEngine, statusText } from './instrument.js?v=5';
+import { pickDefaultEngine, modelEngines } from './instrument.js?v=6';
 
 function _levelCell(l) {
   if (!l || !isNum(l.value)) return '—';
@@ -15,7 +15,7 @@ function _levelCell(l) {
 
 function _comment(e, instrumentId) {
   const r = e.rationale;
-  if (!r) return esc(statusText(e, instrumentId) || '—');
+  if (!r) return '—';
   const head = r.date ? `<b>${esc(t('rationale.short', { date: fmtDate(r.date) }))}</b> · ` : '';
   let act = '';
   if (r.action && r.prev_action) act = ` ${esc(actionText(r.prev_action))} → ${esc(actionText(r.action))}`;
@@ -26,9 +26,10 @@ function _comment(e, instrumentId) {
 
 // {entry, exit, comment} as HTML strings for one A6 payload, or null when the payload has no engine.
 export function rowCells(data) {
-  if (!data || !(data.engines || []).length) return null;
-  const key = pickDefaultEngine(data);
-  const e = data.engines.find(x => x.engine === key) || data.engines[0];
+  const engines = data ? modelEngines(data) : [];
+  if (!engines.length) return null;
+  const key = pickDefaultEngine({ engines });
+  const e = engines.find(x => x.engine === key) || engines[0];
   const lv = e.levels || {};
   return { entry: _levelCell(lv.entry), exit: _levelCell(lv.exit), comment: _comment(e, data.instrument_id) };
 }

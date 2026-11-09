@@ -107,7 +107,7 @@ export function engineStatusText(status, { instrument, reason } = {}) {
 }
 
 export function engineTableHtml(engines, location) {
-  const rows = (engines || []).map(e => {
+  const rows = (engines || []).filter(e => e.engine !== 'fno').map(e => {
     const st = engineStatusText(e.status, { instrument: locationName(location) });
     const ok = e.status === 'ok';
     const pace = isNum(e.return_since) && e.on_pace !== null && e.on_pace !== undefined
@@ -235,7 +235,7 @@ function _drawTarget(pf) {
 }
 
 function _drawEngines(pf) {
-  const rows = (pf.engines || []).filter(e => isNum(e.return_since));
+  const rows = (pf.engines || []).filter(e => e.engine !== 'fno' && isNum(e.return_since));
   const wrap = document.getElementById('jv-engine-chart')?.closest('.chart-wrap');
   if (!rows.length) {
     destroyChart('jv-engine-chart');

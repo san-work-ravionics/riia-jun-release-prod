@@ -16,8 +16,8 @@ import {
 import { renderPlan } from './plan.js?v=3';
 import {
   loadPortfolio, renderPortfolio, renderDetailHeader, initGrid, markSelected, sortInstruments,
-} from './portfolio.js?v=4';
-import { loadInstrument, renderInstrument, renderInstrumentError, initInstrument, clearInstrument } from './instrument.js?v=5';
+} from './portfolio.js?v=5';
+import { loadInstrument, renderInstrument, renderInstrumentError, initInstrument, clearInstrument } from './instrument.js?v=6';
 import { rowCells, fillRowCells } from './instrument-rows.js?v=1';
 import { renderConcepts, initConcepts } from './concepts.js?v=8';
 import { loadWhatINeed, initWhatINeed } from './what-i-need.js?v=11';

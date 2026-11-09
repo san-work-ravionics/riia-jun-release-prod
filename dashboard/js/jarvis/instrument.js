@@ -8,7 +8,7 @@ import { esc } from './esc.js?v=3';
 import { t } from './copy.js?v=21';
 import { fmtRate, fmtPp, fmtNum, fmtDate, isNum } from './format.js?v=3';
 import { reasonText } from './chat.js?v=5';
-import { engineStatusText } from './portfolio.js?v=4';
+import { engineStatusText } from './portfolio.js?v=5';
 
 export function loadInstrument(location, instrument) {
   return api(`/api/v1/experience/jarvis/instrument?location=${encodeURIComponent(location)}&instrument=${encodeURIComponent(instrument)}`);
@@ -20,7 +20,6 @@ const HAS_CHART = new Set(['ok', 'levels_only', 'no_recorded_window']);
 export function pickDefaultEngine(data) {
   const by = Object.fromEntries((data.engines || []).map(e => [e.engine, e]));
   if (by.rita && by.rita.status === 'ok') return 'rita';
-  if (by.fno && HAS_CHART.has(by.fno.status)) return 'fno';
   if (by.asta && HAS_CHART.has(by.asta.status)) return 'asta';
   return 'rita';
 }
@@ -203,19 +202,21 @@ function _html(id, html) {
   if (el) { el.innerHTML = html; el.hidden = !html; }
 }
 
+// FnO σ levels are statistics, not a model: they are not shown on the region view at all.
+export function modelEngines(data) {
+  return (data.engines || []).filter(x => x.engine !== 'fno');
+}
+
 export function renderInstrument(data, engineKey, ctx = {}) {
-  _data = data;
+  const engines = modelEngines(data);
+  _data = { ...data, engines };
   _ctx = ctx;
-  const engine = engineKey || pickDefaultEngine(data);
-  const e = (data.engines || []).find(x => x.engine === engine);
-  const title = document.getElementById('jv-inst-title');
-  if (title) title.textContent = `${data.instrument_id}${e ? ` · ${e.label}` : ''}${data.as_of ? ` · ${fmtDate(data.as_of)}` : ''}`;
-  _html('jv-inst-engines', enginesToggleHtml(data, engine));
-  const st = statusText(e, data.instrument_id);
-  const status = document.getElementById('jv-inst-status');
-  if (status) { status.textContent = st; status.hidden = !st; }
+  const engine = engineKey || pickDefaultEngine(_data);
+  const e = engines.find(x => x.engine === engine);
   _html('jv-inst-perf', e ? performanceHtml(e) : '');
   _html('jv-rationale', e ? rationaleHtml(e) : '');
+  const sec = document.getElementById('sec-jv-instrument');
+  if (sec) sec.hidden = !(e && (e.performance || e.rationale));
   if (e) _drawSleeve(e);
 }
 
@@ -229,8 +230,8 @@ export function clearInstrument() {
 
 export function renderInstrumentError(message) {
   clearInstrument();
-  const status = document.getElementById('jv-inst-status');
-  if (status) { status.textContent = t('err.load', { message }); status.hidden = false; }
+  _html('jv-inst-perf', '');
+  _html('jv-rationale', `<p class="jv-muted">${esc(t('err.load', { message }))}</p>`);
 }
 
 // Delegated on the toggle container (data-engine).
