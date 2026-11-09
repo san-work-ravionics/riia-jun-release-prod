@@ -37,7 +37,8 @@ export function rowCells(data) {
 // Write the three cells into one grid row (the row exists once renderPortfolio has drawn the grid).
 export function fillRowCells(instrumentId, cells) {
   if (!cells) return;
-  const tr = document.querySelector(`#jv-grid-body tr[data-inst="${CSS.escape(instrumentId)}"]`);
+  const esc = (typeof CSS !== 'undefined' && CSS.escape) ? CSS.escape : (v) => String(v).replace(/["\\]/g, '\\$&');
+  const tr = document.querySelector(`#jv-grid-body tr[data-inst="${esc(instrumentId)}"]`);
   if (!tr) return;
   for (const k of ['entry', 'exit', 'comment']) {
     const td = tr.querySelector(`td[data-cell="${k}"]`);

@@ -285,7 +285,7 @@ async function _rowCell(loc, cache, id) {
 
 function _loadRowCells(loc, pf) {
   const cache = S.instData[loc];
-  const ids = sortInstruments(pf.instruments).map(r => r.instrument_id);
+  const ids = sortInstruments(pf.instruments).map(row => row.instrument_id);
   let next = 0;
   const worker = async () => { while (next < ids.length) await _rowCell(loc, cache, ids[next++]); };
   for (let k = 0; k < 4; k += 1) worker();
