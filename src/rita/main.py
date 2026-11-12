@@ -155,6 +155,10 @@ async def lifespan(app: FastAPI):
             # India — added 2026-05-20
             _Instrument(instrument_id="RELIANCE",  name="Reliance Industries",          exchange="NSE",    country_code="IN", lot_size=None, is_available=True,  yf_ticker="RELIANCE.NS", created_at=_dt.datetime.now(_dt.timezone.utc)),
             _Instrument(instrument_id="SBIN",      name="State Bank of India",          exchange="NSE",    country_code="IN", lot_size=None, is_available=True,  yf_ticker="SBIN.NS",     created_at=_dt.datetime.now(_dt.timezone.utc)),
+            # India — onboarded 2026-11-12 (new lineages)
+            _Instrument(instrument_id="ATHER",     name="Ather Energy",                 exchange="NSE",    country_code="IN", lot_size=None, is_available=True,  yf_ticker="ATHERENERG.NS", created_at=_dt.datetime.now(_dt.timezone.utc)),
+            _Instrument(instrument_id="JIOFIN",    name="Jio Financial Services",       exchange="NSE",    country_code="IN", lot_size=None, is_available=True,  yf_ticker="JIOFIN.NS",   created_at=_dt.datetime.now(_dt.timezone.utc)),
+            _Instrument(instrument_id="ZEEL",      name="Zee Entertainment Enterprises",exchange="NSE",    country_code="IN", lot_size=None, is_available=True,  yf_ticker="ZEEL.NS",     created_at=_dt.datetime.now(_dt.timezone.utc)),
             # EU — added 2026-05-20
             _Instrument(instrument_id="ASRNL",     name="ASR Nederland",                exchange="AMS",    country_code="NL", lot_size=None, is_available=True,  yf_ticker="ASRNL.AS",   created_at=_dt.datetime.now(_dt.timezone.utc)),
             _Instrument(instrument_id="ATO",       name="Atos SE",                      exchange="PAR",    country_code="FR", lot_size=None, is_available=True,  yf_ticker="ATO.PA",      created_at=_dt.datetime.now(_dt.timezone.utc)),
@@ -205,10 +209,6 @@ async def lifespan(app: FastAPI):
                     text("UPDATE instruments SET is_available = 1 WHERE instrument_id = :id"),
                     {"id": _aid},
                 )
-            _db.commit()
-
-            # Disable ATHER — no yfinance data available; remove from active instrument list
-            _db.execute(text("UPDATE instruments SET is_available = 0 WHERE instrument_id = 'ATHER'"))
             _db.commit()
 
             # Upsert any seed instruments not yet in DB (runs on every startup, not just fresh)
