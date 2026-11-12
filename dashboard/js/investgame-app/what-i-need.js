@@ -63,13 +63,10 @@ function readInputs() {
   return p;
 }
 
-// How long it is sustainable: 'Sustainable until 71' or 'Sustainable beyond 85'
-function outcome(p, port) {
-  return port.savingsOut === null ? `Sustainable beyond ${p.end}` : `Sustainable until ${port.savingsOut}`;
-}
-// Where the invested portfolio is fully sold from the exit age on
-function portfolioOutcome(port, maxAge) {
-  return port.portfolioOut === null ? `Portfolio never runs out (still growing at ${maxAge})` : `Portfolio runs out at ${port.portfolioOut}`;
+// Age the plan survives to; with investment prefers portfolioOut over savingsOut
+function lastsUntil(p, port, usePortfolioOut = false) {
+  const age = usePortfolioOut ? (port.portfolioOut ?? port.savingsOut) : port.savingsOut;
+  return age === null ? `beyond ${p.end}` : age;
 }
 // Event copy for the chart tooltip (backend returns kind + amount only)
 function fmtEvent(e) {
@@ -187,12 +184,12 @@ function render(p, r) {
   // Feedback under Mortgage: how close the monthly available is to the need
   const fb = document.getElementById('wn-h-fb');
   const c0 = r.atRet;
-  fb.innerHTML = `Monthly available at ${c0.age}: <b>${fmt(c0.monthly)}</b> of ${fmt(c0.need)} needed (<b>${pct(c0.share)}</b>) · ${outcome(p, r.withInvesting)} · ${portfolioOutcome(r.withInvesting, r.maxAge)}`;
+  fb.innerHTML = `With investment lasts till ${lastsUntil(p, r.withInvesting, true)} · Without, till ${lastsUntil(p, r.withoutInvesting)}`;
   fb.className = 'wn-fb' + (c0.share >= 1 ? ' ok' : '');
 
   // Without vs with investment in one chart — same plan, house and one time events in both
-  set('wn-c1-badge', `With: ${outcome(p, r.withInvesting)}`);
-  set('wn-c0-badge', `Without: ${outcome(p, r.withoutInvesting)}`);
+  set('wn-c1-badge', `With investment — portfolio lasts till ${lastsUntil(p, r.withInvesting, true)}`);
+  set('wn-c0-badge', `Without investment — till ${lastsUntil(p, r.withoutInvesting)}`);
   renderCompare(p, r);
 
   // Year table — plain-sum need next to savings with and without investment

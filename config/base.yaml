@@ -212,6 +212,30 @@ goal_selection:
       val_start: 2023-01-01
       val_end: 2024-12-31
       backtest_start: 2025-01-01
+    - name: jiofin_v1
+      engine: ddqn_v2
+      pattern: "rita_ddqn_v2_{inst}_jiofin_v1.zip"
+      source: scripts/train_instrument_lineage.py
+      train_end: 2025-07-31
+      val_start: 2025-08-01
+      val_end: 2026-03-31
+      backtest_start: 2026-04-01
+    - name: zeel_v1
+      engine: ddqn_v2
+      pattern: "rita_ddqn_v2_{inst}_zeel_v1.zip"
+      source: scripts/train_instrument_lineage.py
+      train_end: 2024-07-31
+      val_start: 2024-08-01
+      val_end: 2025-09-30
+      backtest_start: 2025-10-01
+    - name: ather_v1
+      engine: ddqn_v2
+      pattern: "rita_ddqn_v2_{inst}_ather_v1.zip"
+      source: scripts/train_instrument_lineage.py
+      train_end: 2026-01-31
+      val_start: 2026-02-01
+      val_end: 2026-06-30
+      backtest_start: 2026-07-01
 
 # F44 P4 Jarvis module (JarvisSettings). Classifier + UX settings only — no dates, no levels.
 # intent_threshold = the existing chat classifier's cosine-confidence threshold

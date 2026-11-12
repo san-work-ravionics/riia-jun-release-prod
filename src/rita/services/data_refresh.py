@@ -51,7 +51,7 @@ YF_TICKER_MAP: dict[str, str] = {
     "DJI":        "^DJI",
     "IXIC":       "^IXIC",
     "ANANTRAJ":   "ANANTRAJ.NS",
-    "ATHERENERG": "ATHERENERG.NS",
+    "ATHER":      "ATHERENERG.NS",
     "HATHWAY":    "HATHWAY.NS",
     "JIOFIN":     "JIOFIN.NS",
     "NETWORK18":  "NETWORK18.NS",
@@ -62,7 +62,7 @@ YF_TICKER_MAP: dict[str, str] = {
 COMPANION_FILE_INSTRUMENTS: set[str] = {"NIFTY", "BANKNIFTY"}
 
 # Instruments excluded from refresh (newly listed, data gaps expected)
-SKIP_INSTRUMENTS: set[str] = {"ATHER"}
+SKIP_INSTRUMENTS: set[str] = set()
 
 # ── check_gap ─────────────────────────────────────────────────────────────────
 
