@@ -271,7 +271,7 @@ export function renderDetailHeader(location, currency) {
 export function renderPortfolio(pf, location) {
   renderDetailHeader(location, pf.currency);
   _text('jv-pf-source', sourceText(pf, location));
-  _html('jv-pf-kpis', kpisHtml(pf));
+  _html('jv-pf-kpis', locKpisHtml(pf));
   _html('jv-target-kpis', targetKpisHtml(pf));
   _text('jv-target-required', requiredText(pf, location));
   _drawPnl(pf);

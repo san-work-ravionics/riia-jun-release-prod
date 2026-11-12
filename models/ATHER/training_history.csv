@@ -1,0 +1,2 @@
+round,timestamp,timesteps,source,val_sharpe,val_mdd_pct,val_cagr_pct,val_constraints_met,backtest_sharpe,backtest_mdd_pct,backtest_return_pct,backtest_cagr_pct,backtest_trade_count,backtest_constraints_met,notes
+1,2026-11-12 18:55:38,50000,trained,1.076,-7.96,33.99,True,2.672,-11.7,52.28,212.52,21,False,atherenerg_v1 50k seed42 rita_ddqn_v2_atherenerg_atherenerg_v1

@@ -273,14 +273,13 @@ await wf.loadHedgeWorkflow('save');
 await new Promise(r => setTimeout(r, 50));
 const imp = document.getElementById('hw-save-impact-table').innerHTML;
 const ch = charts.filter(c => c.id === 'hw-save-impact-chart').at(-1);
-console.log(JSON.stringify({ step: hw.step, imp, kpis: document.getElementById('hw-save-impact-kpis').innerHTML,
-  labels: ch?.cfg.data.labels, summary: document.getElementById('hw-save-summary').innerHTML.length > 0 }));""")
-    assert r["step"] == "save" and r["summary"] is True
+console.log(JSON.stringify({ step: hw.step, imp,
+  labels: ch?.cfg.data.labels }));""")
+    assert r["step"] == "save"
     assert r["labels"] == ["Flat", "−1σ", "−2σ", "−3σ"]
     # merged portfolio + per-instrument table: one row each, Unhedged/Hedged per monthly move
     assert "Unhedged" in r["imp"] and "Hedged" in r["imp"] and "Premium / mo" in r["imp"]
-    assert ">Portfolio<" in r["imp"] and "Monthly −1σ" in r["imp"] and "What a typical bad month" in r["imp"]
-    assert "Max drawdown" in r["kpis"] and "Premium cost" in r["kpis"]
+    assert ">Portfolio<" in r["imp"] and "Monthly −1σ" in r["imp"]
 
 
 def test_sigma_line_within_candle_value_range_scale_and_equity_chart_unchanged(jsroot):

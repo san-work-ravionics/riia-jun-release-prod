@@ -112,31 +112,35 @@ export function renderStdDevTable() {
       : { minimumFractionDigits: 2, maximumFractionDigits: 2 };
     return sym + v.toLocaleString('en-US', opts);
   };
+  const fmtMove = (move, sym, isPort) => {
+    const opts = { maximumFractionDigits: 0 };
+    const sign = move < 0 ? '−' : '+';
+    return sign + sym + Math.abs(move).toLocaleString('en-US', opts);
+  };
 
   // F41: padding comes from the scoped .rk-sd-tbl CSS; ±3σ cells carry .rk-sd-x (hidden <=900px)
   const tdNeg = (html, cls = '') =>
     `<td class="${cls}" style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--neg);">${html}</td>`;
-  const tdPos = (html, cls = '') =>
-    `<td class="${cls}" style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--pos);">${html}</td>`;
-  const tdCtr = (html) =>
-    `<td style="font-size:12px;font-family:'IBM Plex Mono',monospace;border-left:1px solid var(--border);border-right:1px solid var(--border);">${html}</td>`;
+  const tdPos = (html, cls = '', extra = '') =>
+    `<td class="${cls}" style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--pos);${extra}">${html}</td>`;
 
   const renderRow = (inst, isPortfolio) => {
     const isSelected = sel === inst.id || (!sel && isPortfolio);
-    const m1 = inst.vol * 1, m2 = inst.vol * 2, m3 = inst.vol * 3;
+    const mVol = inst.vol / Math.sqrt(12);
+    const m1 = inst.price * mVol, m2 = inst.price * mVol * 2, m3 = inst.price * mVol * 3;
     const selStyle = isSelected
       ? 'background:color-mix(in srgb,var(--p02) 12%,transparent);outline:1px solid color-mix(in srgb,var(--p02) 30%,transparent);'
       : '';
     return `<tr style="cursor:pointer;${selStyle}" data-inst="${_esc(inst.id)}" class="stddev-row">
       <td style="font-size:12px;font-weight:${isPortfolio ? '700' : '600'};${isPortfolio ? 'color:var(--p02)' : ''}">${_esc(inst.full)}</td>
       <td style="font-size:11px;color:var(--t3);font-family:'IBM Plex Mono',monospace">${(inst.vol * 100).toFixed(1)}%</td>
-      ${tdNeg(fmtPrice(inst.price * (1 - m3), inst.sym, isPortfolio), 'rk-sd-x')}
-      ${tdNeg(fmtPrice(inst.price * (1 - m2), inst.sym, isPortfolio))}
-      ${tdNeg(fmtPrice(inst.price * (1 - m1), inst.sym, isPortfolio))}
-      ${tdCtr(fmtPrice(inst.price, inst.sym, isPortfolio))}
-      ${tdPos(fmtPrice(inst.price * (1 + m1), inst.sym, isPortfolio))}
-      ${tdPos(fmtPrice(inst.price * (1 + m2), inst.sym, isPortfolio))}
-      ${tdPos(fmtPrice(inst.price * (1 + m3), inst.sym, isPortfolio), 'rk-sd-x')}
+      ${tdNeg(fmtMove(-m3, inst.sym, isPortfolio), 'rk-sd-x')}
+      ${tdNeg(fmtMove(-m2, inst.sym, isPortfolio))}
+      ${tdNeg(fmtMove(-m1, inst.sym, isPortfolio))}
+      <td style="font-size:12px;font-family:'IBM Plex Mono',monospace;border-left:1px solid var(--border);border-right:1px solid var(--border);">${fmtPrice(inst.price, inst.sym, isPortfolio)}</td>
+      ${tdPos(fmtMove(+m1, inst.sym, isPortfolio))}
+      ${tdPos(fmtMove(+m2, inst.sym, isPortfolio))}
+      ${tdPos(fmtMove(+m3, inst.sym, isPortfolio), 'rk-sd-x')}
     </tr>`;
   };
 
@@ -147,25 +151,33 @@ export function renderStdDevTable() {
 
   el.innerHTML = `
     <div class="card-hdr">
-      <span class="card-title">Standard Deviation Price Ranges</span>
+      <span class="card-title">Monthly Move Ranges</span>
       <span class="card-sub">Click a row to filter Risk &amp; Greeks · Portfolio row uses allocation-weighted vol in ${_esc(getPortfolioCurrency())}</span>
     </div>
     <div class="card-body" style="padding:0">
       <div class="tbl-wrap">
         <table class="rk-sd-tbl">
           <thead><tr>
-            <th>Instrument</th><th>Ann Vol</th>
+            <th rowspan="2">Instrument</th><th rowspan="2">Ann Vol</th>
             <th class="rk-sd-x" style="color:var(--neg)">−3σ</th>
             <th style="color:var(--neg)">−2σ</th>
             <th style="color:var(--neg)">−1σ</th>
-            <th style="border-left:1px solid var(--border);border-right:1px solid var(--border)">Current</th>
+            <th rowspan="2" style="border-left:1px solid var(--border);border-right:1px solid var(--border)">Current</th>
             <th style="color:var(--pos)">+1σ</th>
             <th style="color:var(--pos)">+2σ</th>
             <th class="rk-sd-x" style="color:var(--pos)">+3σ</th>
+          </tr>
+          <tr style="opacity:.65;font-size:10px;font-weight:normal">
+            <th class="rk-sd-x" style="color:var(--neg)">0.1%/mo</th>
+            <th style="color:var(--neg)">2.3%/mo</th>
+            <th style="color:var(--neg)">16%/mo</th>
+            <th style="color:var(--pos)">16%/mo</th>
+            <th style="color:var(--pos)">2.3%/mo</th>
+            <th class="rk-sd-x" style="color:var(--pos)">0.1%/mo</th>
           </tr></thead>
           <tbody>${allRows}</tbody>
           <tfoot><tr>
-            <td colspan="9" style="font-size:10px;color:var(--t4);font-family:'IBM Plex Mono',monospace">1σ 68.3% · 2σ 95.5% · 3σ 99.7% probability price stays within range</td>
+            <td colspan="9" style="font-size:10px;color:var(--t4);font-family:'IBM Plex Mono',monospace">Monthly σ = Ann Vol ÷ √12 · absolute move from current price · % probability of exceeding that σ level in one direction per month</td>
           </tr></tfoot>
         </table>
       </div>

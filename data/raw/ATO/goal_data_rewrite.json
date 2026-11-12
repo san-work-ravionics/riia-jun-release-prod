@@ -1,0 +1,20 @@
+{
+  "first_date": "2009-09-01",
+  "instrument": "ATO",
+  "integrity_after": {
+    "f34p25": "2024-02-05 |ln r|=0.342, 2024-06-19 |ln r|=0.416, 2024-06-21 |ln r|=0.394 (+12 more) > pre-train_end max 0.266"
+  },
+  "integrity_after_passed": false,
+  "integrity_before": {
+    "f34p25": "2024-02-05 |ln r|=0.342, 2024-06-19 |ln r|=0.416, 2024-06-21 |ln r|=0.394 (+12 more) > pre-train_end max 0.266"
+  },
+  "last_date": "2026-11-12",
+  "lineages_invalidated": [
+    "f34p25"
+  ],
+  "raw_file": "ato_daily.csv",
+  "reason": "data_integrity",
+  "rewritten_at": "2026-11-12T17:37:12.560217+00:00",
+  "rows": 4403,
+  "ticker": "ATO.PA"
+}

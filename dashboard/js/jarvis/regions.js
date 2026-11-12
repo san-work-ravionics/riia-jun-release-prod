@@ -8,7 +8,7 @@ import { mkChart, destroyChart, C } from '../shared/charts.js';
 import { REGION_CCY, instrumentCurrency } from '../shared/portfolio-currency.js';
 import { esc } from './esc.js?v=3';
 import { t } from './copy.js?v=3';
-import { fmtMoney, fmtNum, fmtPctPoint, isNum, locationName } from './format.js?v=3';
+import { fmtMoney, fmtNum, fmtPctPoint, fmtRate, isNum, locationName } from './format.js?v=3';
 import { locPortfolioHtml } from './portfolio.js?v=3';
 
 export const LOCS = ['europe', 'india', 'us'];
@@ -221,23 +221,36 @@ export function renderTotalPanel(pfs, rates) {
   const noteEl = document.getElementById('jv-loc-total-note');
   if (!kpisEl) return;
   let totalVal = null, totalPnl = null;
+  let ytdWeighted = null, ytdBase = null, ytdSum = null, ytdCount = 0;
+  let goalSum = null, goalCount = 0;
   for (const loc of LOCS) {
     const pf = pfs[loc];
-    const m = pf && pf.perf && pf.perf.money;
-    if (!m) continue;
+    const p = pf && pf.perf;
+    if (!p) continue;
+    const m = p.money;
     const ccy = locCurrency(loc, pf);
-    const v = _toEur(m.value_now, ccy, rates);
-    const p = _toEur(m.pnl, ccy, rates);
-    if (v !== null) totalVal = (totalVal ?? 0) + v;
-    if (p !== null) totalPnl = (totalPnl ?? 0) + p;
+    if (m) {
+      const v = _toEur(m.value_now, ccy, rates);
+      const pl = _toEur(m.pnl, ccy, rates);
+      if (v !== null) totalVal = (totalVal ?? 0) + v;
+      if (pl !== null) totalPnl = (totalPnl ?? 0) + pl;
+      if (isNum(p.ytd_return) && v !== null) { ytdWeighted = (ytdWeighted ?? 0) + p.ytd_return * v; ytdBase = (ytdBase ?? 0) + v; }
+    }
+    if (isNum(p.ytd_return)) { ytdSum = (ytdSum ?? 0) + p.ytd_return; ytdCount += 1; }
+    if (isNum(p.goal_return)) { goalSum = (goalSum ?? 0) + p.goal_return; goalCount += 1; }
   }
   const hasRates = rates && (rates.INR !== null || rates.USD !== null);
   if (noteEl) { noteEl.textContent = hasRates ? t('loc.total.note') : ''; noteEl.hidden = !hasRates; }
-  const _s = v => (v !== null && v > 0 ? 'pos' : v !== null && v < 0 ? 'neg' : '');
-  kpisEl.innerHTML = totalVal !== null
+  const totalYtd = ytdBase ? ytdWeighted / ytdBase : (ytdCount ? ytdSum / ytdCount : null);
+  const totalGoal = goalCount ? goalSum / goalCount : null;
+  const _s = v => (isNum(v) ? (v > 0 ? 'pos' : v < 0 ? 'neg' : '') : '');
+  const _kpi = (label, val, cls = '') => `<div class="kpi kpi-sm"><div class="kpi-label">${esc(label)}</div><div class="kpi-value ${cls}">${esc(val)}</div></div>`;
+  kpisEl.innerHTML = totalVal !== null || totalYtd !== null
     ? `<div class="jv-loc-kpis">
-        <div class="kpi kpi-sm"><div class="kpi-label">${esc(t('pf.kpi.value'))}</div><div class="kpi-value">${esc(fmtMoney(totalVal, 'EUR'))}</div></div>
-        ${totalPnl !== null ? `<div class="kpi kpi-sm"><div class="kpi-label">${esc(t('pf.kpi.pnl'))}</div><div class="kpi-value ${_s(totalPnl)}">${esc(fmtMoney(totalPnl, 'EUR'))}</div></div>` : ''}
+        ${totalVal !== null ? _kpi(t('pf.kpi.value'), fmtMoney(totalVal, 'EUR')) : ''}
+        ${totalPnl !== null ? _kpi(t('pf.kpi.pnl'), fmtMoney(totalPnl, 'EUR'), _s(totalPnl)) : ''}
+        ${totalYtd !== null ? _kpi(t('pf.kpi.this_year'), fmtRate(totalYtd), _s(totalYtd)) : ''}
+        ${totalGoal !== null ? _kpi(t('loc.kpi.target'), fmtRate(totalGoal)) : ''}
       </div>`
     : `<p class="jv-muted" style="font-size:11px">${esc(t('loc.total.empty'))}</p>`;
 }
@@ -292,18 +305,19 @@ function _drawInstChart(geo, filter) {
   const colors = top.map(i => _LOC_COLOR[i.loc || 'other']);
   const mono = { family: C.mono, size: 10 };
   mkChart('jv-geo-inst-chart', {
-    type: 'bar',
-    data: { labels, datasets: [{ data, backgroundColor: colors.map(c => `${c}B0`), borderColor: colors, borderWidth: 1, borderRadius: 2 }] },
+    type: 'line',
+    data: { labels, datasets: [{ data, borderColor: 'rgba(140,135,122,0.4)', backgroundColor: 'transparent',
+      fill: false, tension: 0, borderWidth: 1.5, spanGaps: true,
+      pointRadius: 5, pointHoverRadius: 7, pointBackgroundColor: colors, pointBorderColor: colors, pointBorderWidth: 0 }] },
     options: {
       responsive: true, maintainAspectRatio: false,
-      indexAxis: 'y',
       plugins: {
         legend: { display: false },
         tooltip: { callbacks: { label: ctx => `${ctx.label}: ${fmtPctPoint(ctx.raw)}` } },
       },
       scales: {
-        x: { grid: { color: 'rgba(0,0,0,.05)' }, ticks: { font: mono, callback: v => `${v}%` } },
-        y: { grid: { display: false }, ticks: { font: { family: C.mono, size: 9 }, autoSkip: false } },
+        x: { grid: { display: false }, ticks: { font: { family: C.mono, size: 9 }, maxRotation: 45 } },
+        y: { grid: { color: 'rgba(0,0,0,.05)' }, ticks: { font: mono, callback: v => `${v}%` } },
       },
     },
   });
@@ -313,8 +327,9 @@ function _drawInstChart(geo, filter) {
 // Kept exported for backward compatibility; callers should prefer renderUniverse.
 export function drawPerfChart(geo, pfs = {}) {
   const wrap = document.getElementById('jv-perf-chart-wrap');
-  const has = _drawPerfChart(geo, pfs) || _drawInstChart(geo, null);
-  if (wrap) wrap.hidden = !has;
+  const pHas = _drawPerfChart(geo, pfs);
+  const iHas = _drawInstChart(geo, null);
+  if (wrap) wrap.hidden = !pHas && !iHas;
 }
 
 // ── risk vs return map ─────────────────────────────────────────────────────────
@@ -415,8 +430,9 @@ export function renderUniverse(geo, pfs = {}, sort = { col: 'ret', asc: false },
   const rows = filter ? allRows.filter(i => i.loc === filter) : allRows;
   drawGeoMap(geo, pfs, filter);
   const perfWrap = document.getElementById('jv-perf-chart-wrap');
-  const hasPerf = _drawPerfChart(geo, pfs) || _drawInstChart(geo, filter);
-  if (perfWrap) perfWrap.hidden = !hasPerf;
+  const pHas = _drawPerfChart(geo, pfs);
+  const iHas = _drawInstChart(geo, filter);
+  if (perfWrap) perfWrap.hidden = !pHas && !iHas;
   const wrap = document.getElementById('jv-geo-table-wrap');
   _html('jv-geo-table', rows.length ? geoTableHtml(rows, sort, pfs) : '');
   if (wrap) wrap.hidden = !rows.length;

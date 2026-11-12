@@ -13,7 +13,6 @@ import { setEl } from '../shared/utils.js';
 import { mkChart } from '../shared/charts.js';
 import { state } from './state.js';
 import { buildRows, hedgeImpact, buildVolMap, portfolioVolPct } from './hedge-calc.js';
-import { pSym } from '../shared/portfolio-currency.js';
 
 const _SAVE_DEBOUNCE_MS = 400;
 let _saveTimer = null;
@@ -160,23 +159,14 @@ function _renderSummary() {
   const noHoldings = !(hw.portfolioHoldings || []).length;
   const btn = document.getElementById('hw-save-btn');
   if (btn) btn.disabled = noHoldings || hw.saveStatus === 'saving';
+  const el = document.getElementById('hw-save-summary');
   if (noHoldings) {
+    if (el) { el.className = 'kpi'; el.style.marginBottom = '16px'; }
     setEl('hw-save-summary', _noHoldingsCta());
     return;
   }
-  const known = new Set(hw.portfolioHoldings.map((h) => h.instrument_id));
-  const hedgedN = hw.hedgedIds.filter((id) => known.has(id)).length;
-  const heldN = known.size;
-  const m = hw.marginImpact;
-  const marginTxt = m
-    ? `${_esc(m.currency || '')} ${Number(m.amount).toLocaleString('en-US', { maximumFractionDigits: 0 })} (${m.source === 'kite' ? 'Live' : 'Estimated'}, ${_esc(m.instrumentId)})`
-    : '—';
-  setEl(
-    'hw-save-summary',
-    `<div class="kpi-sub">${heldN} instrument${heldN !== 1 ? 's' : ''} held · ${hedgedN ? `${hedgedN} hedged` : 'none hedged'}</div>
-     <div class="kpi-sub">Coverage: <strong>${hw.coverage}%</strong> &middot; Duration: <strong>1y</strong> &middot; Payoff view: <strong>${TAB_LABELS[hw.scenarioTab] || '—'}</strong></div>
-     <div class="kpi-sub">Margin impact: ${marginTxt}</div>`
-  );
+  if (el) { el.className = ''; el.style.marginBottom = ''; }
+  setEl('hw-save-summary', '');
 }
 
 function _renderSaveStatus() {
@@ -227,19 +217,13 @@ function _renderHistoryTable() {
 }
 
 // ── How this hedge helps (before Save) ───────────────────────────────────────
-// Before/after of the chosen hedge (coverage + payoff view + hedged set) at monthly
-// -1σ/-2σ/-3σ and flat. Same pure calc as the What-if step (hedgedPL / aggregates /
-// buildRows); only the move inputs are σ-scaled. % are of total portfolio value, as in
-// the What-if scenario table; amounts use the portfolio total (portfolio currency) when known.
 function _pct(v, d = 1) {
   return v == null || Number.isNaN(Number(v)) ? '—' : `${Number(v) > 0 ? '+' : ''}${Number(v).toFixed(d)}%`;
 }
 function _eur(v) {
-  return v == null || Number.isNaN(Number(v)) ? '—' : (v < 0 ? '−' : '') + pSym() + Math.abs(Number(v)).toLocaleString('en-US', { maximumFractionDigits: 0 });
+  return v == null || Number.isNaN(Number(v)) ? '—' : (v < 0 ? '−' : '') + Math.abs(Number(v)).toLocaleString('en-US', { maximumFractionDigits: 0 });
 }
 
-// Rows of the merged table by key ('PORTFOLIO' or instrument id) so a row click can redraw
-// the chart below for that row. _impactSel is the selected key (defaults to Portfolio).
 let _impactRows = {};
 let _impactSel = 'PORTFOLIO';
 
@@ -265,7 +249,6 @@ function _drawImpactChart() {
   });
 }
 
-// window.hwSaveSelectRow(key) — row click in the merged table redraws the chart below.
 export function hwSaveSelectRow(key) {
   if (!_impactRows[key]) return;
   _impactSel = key;
@@ -283,23 +266,13 @@ function _renderImpact() {
   const vol = portfolioVolPct(hw.greeks, hw.portfolioHoldings, vm);
   const imp = hedgeImpact(rows, hw.apiHedge, hw.scenarioTab || 'pp', vol, hw.totalValueEur);
   if (!imp) {
-    setEl('hw-save-impact-kpis', `<div class="kpi-sub">No instruments hedged — nothing to compare yet.</div>`);
-    setEl('hw-save-impact-table', '');
+    setEl('hw-save-impact-table', '<div class="kpi-sub">No instruments hedged — nothing to compare yet.</div>');
     setEl('hw-save-impact-note', '');
     _impactRows = {};
     setEl('hw-save-impact-chart-title', '');
     mkChart('hw-save-impact-chart', { type: 'bar', data: { labels: [], datasets: [] } });
     return;
   }
-  setEl(
-    'hw-save-impact-kpis',
-    `<div class="kpi"><div class="kpi-label">Max drawdown</div>
-       <div class="kpi-value">${imp.agg.maxDdHedged.toFixed(0)}%</div>
-       <div class="kpi-sub">vs ${imp.agg.maxDdUnhedged.toFixed(0)}% unhedged (${_pct(imp.maxDdProtectedPct, 0)} protected)</div></div>
-     <div class="kpi"><div class="kpi-label">Premium cost</div>
-       <div class="kpi-value">${imp.premiumPct.toFixed(2)}%/mo</div>
-       <div class="kpi-sub">${_eur(imp.premiumEur)} per month</div></div>`
-  );
   // One merged table, one line per row: Portfolio first, then each hedged instrument.
   // Instrument rows reuse the same pure calc on that single row at weight 100 (its own
   // strike/cost/vol), with amounts on the instrument's position value; the Portfolio row is
@@ -334,13 +307,7 @@ function _renderImpact() {
   const subs = imp.scenarios.map(() => `<th style="${th};border-left:1px solid var(--border)">Unhedged</th><th style="${th}">Hedged</th>`).join('');
   setEl(
     'hw-save-impact-table',
-    `<div class="kpi-sub" style="margin-bottom:8px;line-height:1.5">
-       What a typical bad month would do to your money, with and without the hedge. One row for the whole portfolio and one per hedged instrument.
-       <strong>Monthly −1σ / −2σ / −3σ</strong> are a normal, a bad and a very bad month (about 1 in 6, 1 in 40 and 1 in 700 months).
-       <strong>Unhedged</strong> is the P&amp;L (% of position, ${pSym()} in brackets) if you do nothing; <strong>Hedged</strong> is the P&amp;L with the ${TAB_LABELS[hw.scenarioTab] || 'hedge'}, including the monthly premium.
-       <strong>Premium</strong> is the monthly cost of the hedge. <strong>Exposure</strong> is the position value the ${pSym()} figures apply to.
-     </div>
-     <div style="overflow-x:auto"><table style="width:100%;font-family:var(--fm);font-size:12px;border-collapse:collapse;">
+    `<div style="overflow-x:auto"><table style="width:100%;font-family:var(--fm);font-size:12px;border-collapse:collapse;">
        <thead>
          <tr style="text-align:left;opacity:.7;"><th rowspan="2" style="vertical-align:bottom">Level</th><th rowspan="2" style="vertical-align:bottom">Strategy</th><th rowspan="2" style="${th};vertical-align:bottom">Exposure</th><th rowspan="2" style="${th};vertical-align:bottom">Premium / mo</th>${groups}</tr>
          <tr style="opacity:.7;">${subs}</tr>
