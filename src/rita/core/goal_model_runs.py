@@ -84,6 +84,39 @@ def parse_lineage_split(source: str) -> LineageSplit:
                         val_end=d["VAL_END"], backtest_start=d["BACKTEST_START"])
 
 
+def fraction_split(index, trained_on: date, train_frac: float = 0.70, val_frac: float = 0.15,
+                   margin_bars: int = 0) -> LineageSplit:
+    """The DS pipeline's ``temporal_split`` (train / val / test by row count) of the bars that existed on
+    ``trained_on``: the windows a pipeline-built model was trained and evaluated on.
+
+    ``index`` is the indicator frame's date index (the frame the pipeline splits).  The training end and
+    the start of the fit window move ``margin_bars`` later, so a reconstruction that is a few bars early
+    never counts in-sample bars as out-of-sample.  ``ValueError`` when too few bars exist."""
+    days = [ts.date() for ts in index if ts.date() <= trained_on]
+    n = len(days)
+    i_tr = int(n * train_frac)
+    i_va = int(n * (train_frac + val_frac))
+    first_val = i_tr + margin_bars
+    if i_tr < 2 or first_val >= i_va or i_va >= n:
+        raise ValueError(f"only {n} bars up to {trained_on}: cannot reproduce the model's windows")
+    return LineageSplit(train_end=days[i_tr - 1 + margin_bars], val_start=days[first_val],
+                        val_end=days[i_va - 1], backtest_start=days[i_va])
+
+
+def common_split(splits) -> LineageSplit:
+    """The windows every listed sleeve is out-of-sample on: the latest training end, fit start and test
+    start, and the earliest fit end.  Identical splits come back unchanged.  ``ValueError`` when the fit
+    windows share no day."""
+    ss = list(splits)
+    if not ss:
+        raise ValueError("no split to combine")
+    c = LineageSplit(train_end=max(s.train_end for s in ss), val_start=max(s.val_start for s in ss),
+                     val_end=min(s.val_end for s in ss), backtest_start=max(s.backtest_start for s in ss))
+    if c.val_start > c.val_end:
+        raise ValueError("the models' fit windows do not overlap")
+    return c
+
+
 def env_config_hash(env_config: InstrumentEnvConfig) -> str:
     return hashlib.sha256(env_config.model_dump_json().encode()).hexdigest()
 

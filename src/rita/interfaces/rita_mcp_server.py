@@ -73,6 +73,19 @@ structlog.configure(
     logger_factory=structlog.PrintLoggerFactory(file=sys.stderr),
 )
 
+# ── Import the C-extension stack on the MAIN thread ───────────────────────────
+#    Tool handlers run in anyio worker threads.  The first `import numpy` inside a worker thread
+#    deadlocks on Windows (hangs in numpy._core.multiarray's DLL load while stdio is attached), so
+#    every call that reached a numpy-using tool never returned.  The same happens for scipy/sklearn
+#    (pulled in lazily by the market tools).  Import them here, once, up front.
+import numpy  # noqa: E402,F401
+import pandas  # noqa: E402,F401
+import scipy.special  # noqa: E402,F401
+import sklearn.base  # noqa: E402,F401
+
+import rita.core.data_understanding  # noqa: E402,F401  (imports sklearn at module level)
+import rita.core.technical_analyzer  # noqa: E402,F401
+
 from mcp.server.stdio import stdio_server  # noqa: E402
 
 # Import the shared server instance (tools + handlers defined in mcp_tools.py)

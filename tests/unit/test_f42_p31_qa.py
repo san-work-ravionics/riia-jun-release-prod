@@ -856,9 +856,9 @@ def test_api_is_get_only_and_unauthenticated_is_rejected(client):
 
 # ── frontend static contract and hostile-string rendering ──────────────────────────────────────────
 
-JS = (ROOT / "dashboard/js/fno/trade-analytics.js").read_text()
-HTML = (ROOT / "dashboard/fno.html").read_text()
-MAIN = (ROOT / "dashboard/js/fno/main.js").read_text()
+JS = (ROOT / "dashboard/js/fno/trade-analytics.js").read_text(encoding="utf-8")
+HTML = (ROOT / "dashboard/fno.html").read_text(encoding="utf-8")
+MAIN = (ROOT / "dashboard/js/fno/main.js").read_text(encoding="utf-8")
 _SPOT_JS = JS[JS.index("// ── F42 P4: Spot vs P&L"):JS.index("const _RENDER = {")]
 
 

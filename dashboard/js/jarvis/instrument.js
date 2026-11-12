@@ -5,10 +5,10 @@
 import { api } from '../shared/api.js';
 import { mkChart, destroyChart, chartOpts, C } from '../shared/charts.js';
 import { esc } from './esc.js?v=3';
-import { t } from './copy.js?v=3';
+import { t } from './copy.js?v=21';
 import { fmtRate, fmtPp, fmtNum, fmtDate, isNum } from './format.js?v=3';
-import { reasonText } from './chat.js?v=3';
-import { engineStatusText } from './portfolio.js?v=3';
+import { reasonText } from './chat.js?v=5';
+import { engineStatusText } from './portfolio.js?v=5';
 
 export function loadInstrument(location, instrument) {
   return api(`/api/v1/experience/jarvis/instrument?location=${encodeURIComponent(location)}&instrument=${encodeURIComponent(instrument)}`);
@@ -20,7 +20,6 @@ const HAS_CHART = new Set(['ok', 'levels_only', 'no_recorded_window']);
 export function pickDefaultEngine(data) {
   const by = Object.fromEntries((data.engines || []).map(e => [e.engine, e]));
   if (by.rita && by.rita.status === 'ok') return 'rita';
-  if (by.fno && HAS_CHART.has(by.fno.status)) return 'fno';
   if (by.asta && HAS_CHART.has(by.asta.status)) return 'asta';
   return 'rita';
 }
@@ -55,9 +54,9 @@ function _slNote(e, ctx) {
   return '';
 }
 
-export function levelsHtml(e, ctx = {}) {
+// Entry and Exit now live in the instrument grid (instrument-rows.js); this table keeps the rest.
+export function levelsHtml(e, ctx = {}, keys = ['entry', 'exit', 'stop_loss', 'target']) {
   const lv = e.levels || {};
-  const keys = ['entry', 'exit', 'stop_loss', 'target'];
   const rows = keys.map(k => {
     const l = lv[k];
     const note = k === 'stop_loss' && l ? _slNote(e, ctx) : '';
@@ -182,24 +181,6 @@ export function sleeveDatasets(e) {
   };
 }
 
-function _wrap(id) {
-  return document.getElementById(id)?.closest('.chart-wrap');
-}
-
-function _drawPrice(e) {
-  const wrap = _wrap('jv-inst-chart');
-  if (!(e.prices || []).length) {
-    destroyChart('jv-inst-chart');
-    if (wrap) wrap.hidden = true;
-    return;
-  }
-  if (wrap) wrap.hidden = false;
-  const { labels, datasets } = priceDatasets(e);
-  const opts = chartOpts('', v => fmtNum(v, 0), labels);
-  opts.plugins.legend.labels.filter = item => !['derisk', 'rerisk'].includes(item.text);
-  mkChart('jv-inst-chart', { type: 'line', data: { labels, datasets }, options: opts });
-}
-
 function _drawSleeve(e) {
   const wrap = document.getElementById('jv-sleeve-wrap');
   if (e.engine !== 'rita' || !((e.series || {}).sleeve_value || []).length) {
@@ -221,29 +202,36 @@ function _html(id, html) {
   if (el) { el.innerHTML = html; el.hidden = !html; }
 }
 
+// FnO σ levels are statistics, not a model: they are not shown on the region view at all.
+export function modelEngines(data) {
+  return (data.engines || []).filter(x => x.engine !== 'fno');
+}
+
 export function renderInstrument(data, engineKey, ctx = {}) {
-  _data = data;
+  const engines = modelEngines(data);
+  _data = { ...data, engines };
   _ctx = ctx;
-  const engine = engineKey || pickDefaultEngine(data);
-  const e = (data.engines || []).find(x => x.engine === engine);
-  const title = document.getElementById('jv-inst-title');
-  if (title) title.textContent = `${data.instrument_id}${e ? ` · ${e.label}` : ''}${data.as_of ? ` · ${fmtDate(data.as_of)}` : ''}`;
-  _html('jv-inst-engines', enginesToggleHtml(data, engine));
-  const st = statusText(e, data.instrument_id);
-  const status = document.getElementById('jv-inst-status');
-  if (status) { status.textContent = st; status.hidden = !st; }
+  const engine = engineKey || pickDefaultEngine(_data);
+  const e = engines.find(x => x.engine === engine);
   _html('jv-inst-perf', e ? performanceHtml(e) : '');
-  _html('jv-inst-levels', e && HAS_CHART.has(e.status) ? levelsHtml(e, ctx) : '');
   _html('jv-rationale', e ? rationaleHtml(e) : '');
-  if (e) {
-    _drawPrice(e);
-    _drawSleeve(e);
-  }
+  const sec = document.getElementById('sec-jv-instrument');
+  if (sec) sec.hidden = !(e && (e.performance || e.rationale));
+  if (e) _drawSleeve(e);
+}
+
+// Empty the panel (region without instruments, failed load): no sleeve chart left over from another region.
+export function clearInstrument() {
+  _data = null;
+  destroyChart('jv-sleeve-chart');
+  const wrap = document.getElementById('jv-sleeve-wrap');
+  if (wrap) wrap.hidden = true;
 }
 
 export function renderInstrumentError(message) {
-  const status = document.getElementById('jv-inst-status');
-  if (status) { status.textContent = t('err.load', { message }); status.hidden = false; }
+  clearInstrument();
+  _html('jv-inst-perf', '');
+  _html('jv-rationale', `<p class="jv-muted">${esc(t('err.load', { message }))}</p>`);
 }
 
 // Delegated on the toggle container (data-engine).

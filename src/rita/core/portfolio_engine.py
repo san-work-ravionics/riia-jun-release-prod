@@ -106,6 +106,18 @@ NSE_LOT_SIZE: dict[str, int] = {
     "NTPC":      2750,
 }
 
+def nse_lot_size(instrument: str) -> int | None:
+    """Lot size for an instrument id, tolerant of exchange suffixes and the ``M&M`` spelling
+    (``"M&M.NS"`` -> ``"MM"``).  ``None`` when the instrument has no F&O lot size."""
+    uid = instrument.upper().strip()
+    for suffix in (".NS", ".BO"):
+        if uid.endswith(suffix):
+            uid = uid[: -len(suffix)]
+    if uid == "M&M":
+        uid = "MM"
+    return NSE_LOT_SIZE.get(uid)
+
+
 INSTRUMENT_NAMES: dict[str, str] = {
     "NIFTY":     "NIFTY 50",
     "BANKNIFTY": "BANKNIFTY",
@@ -638,7 +650,7 @@ def equity_hedge_scenarios(
             f"Verify strike availability on exchange."
         )
 
-    lot_size   = NSE_LOT_SIZE.get(uid)
+    lot_size   = nse_lot_size(uid)
     n_contracts = round(n_shares / lot_size, 2) if lot_size else None
 
     return {

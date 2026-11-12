@@ -11,9 +11,9 @@ from rita.schemas.fno_trade_analysis import (
 )
 
 ROOT = Path(__file__).resolve().parents[2] / "dashboard"
-JS = (ROOT / "js/fno/trade-analysis.js").read_text()
-MAIN = (ROOT / "js/fno/main.js").read_text()
-HTML = (ROOT / "fno.html").read_text()
+JS = (ROOT / "js/fno/trade-analysis.js").read_text(encoding="utf-8")
+MAIN = (ROOT / "js/fno/main.js").read_text(encoding="utf-8")
+HTML = (ROOT / "fno.html").read_text(encoding="utf-8")
 
 # variable prefix used in trade-analysis.js -> schema model it reads
 _PREFIXES = {
@@ -58,7 +58,7 @@ def test_section_nav_loader_and_bindings():
 def test_imports_resolve_and_no_banned_patterns():
     for m in re.finditer(r"import \{([^}]+)\} from '([^']+)'", JS):
         names = [n.strip() for n in m.group(1).split(",")]
-        src = (ROOT / "js/fno" / m.group(2)).resolve().read_text()
+        src = (ROOT / "js/fno" / m.group(2)).resolve().read_text(encoding="utf-8")
         for n in names:
             assert re.search(rf"export\s+(async\s+)?(function|const)\s+{n}\b|export\s*\{{[^}}]*\b{n}\b", src), (n, m.group(2))
     for banned in ("kiteFetch", "KITE_API_BASE", "kiteBase", "localhost", "127.0.0.1", "new Chart("):

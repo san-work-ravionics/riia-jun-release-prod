@@ -85,6 +85,21 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
 .nav-item.is-active.p00{border-left-color:var(--text);background:var(--surface2);}
 .nav-item.is-active.p03{border-left-color:var(--run);background:var(--run-bg);}
 .nav-item.is-active.p05{border-left-color:var(--chat);background:var(--chat-bg);}
+/* Region detail — compact: tighter gaps, 3 charts in one row, no full-width plot */
+.jv-chart-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-bottom:10px;}
+.jv-chart-row>.chart-wrap{margin-bottom:0;padding:10px 12px;}
+.jv-chart-row .chart-title{margin-bottom:6px;}
+#sec-jv-portfolio .kpi-row-4,#sec-jv-portfolio .kpi-row-3{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;}
+#sec-jv-portfolio .kpi-row-4>.kpi,#sec-jv-portfolio .kpi-row-3>.kpi{flex:0 1 190px;min-width:150px;}
+#sec-jv-portfolio .card{padding:12px 14px;margin-bottom:10px;}
+#sec-jv-portfolio .card-hdr{margin-bottom:8px;}
+#sec-jv-portfolio .card-row-2{gap:10px;margin-bottom:10px;}
+#sec-jv-portfolio .chart-box{height:170px;}
+#sec-jv-portfolio .jv-table th,#sec-jv-portfolio .jv-table td{padding:5px 8px;}
+#sec-jv-instrument #jv-inst-perf{max-width:560px;}
+#jv-grid td.jv-cmt{min-width:220px;max-width:340px;white-space:normal;font-size:11px;color:var(--t3);}
+.nav-sub{margin:0 0 2px 14px;border-left:1px solid var(--border);}
+.nav-item.nav-sub-item{padding:5px 14px 5px 12px;font-size:11.5px;}
 .nav-icon{width:14px;text-align:center;flex-shrink:0;font-size:12px;}
 .sidebar-footer{margin-top:auto;padding:12px 16px;border-top:1px solid var(--border);}
 .sidebar-footer .lbl{font-family:var(--fm);font-size:10px;color:var(--t4);}
@@ -145,13 +160,56 @@ canvas{display:block;}
 .jv-note{color:var(--t2);font-size:12px;margin:4px 0 8px;line-height:1.6;}
 .jv-note.ok{color:var(--build);} .jv-note.warn{color:var(--warn);}
 .jv-method{color:var(--t3);font-size:11px;margin-top:12px;line-height:1.6;padding-top:10px;border-top:1px solid var(--border);}
+.jv-wn-bucket-summary{font-size:12px;padding:6px 10px;border-radius:4px;margin:6px 0;border:1px solid var(--warn-bd);background:var(--warn-bg);color:var(--warn);}
+.jv-wn-bucket-summary.nodata{border-color:var(--border);background:transparent;color:var(--t3);}
+.jv-wn-bucket-summary.ok{border-color:var(--run-bd);background:var(--run-bg);color:var(--run);}
+.jv-wn-hedge-cta{font-size:11px;margin-left:6px;color:var(--warn);text-decoration:underline;}
+.cx-meta{display:flex;flex-wrap:wrap;gap:4px 28px;font-size:12px;color:var(--t2);margin:0 0 10px;}
+.cx-meta b{font-family:var(--fm);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-right:8px;}
+.card-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px;}
+.card-row>.card{margin-bottom:0;}
+.ms-tab{background:transparent;border:none;border-bottom:2px solid transparent;padding:8px 16px;font-family:var(--fd);font-size:12px;font-weight:600;color:var(--t3);cursor:pointer;margin-bottom:-1.5px;transition:color .12s,border-color .12s;}
+.ms-tab:hover{color:var(--text);}
+.ms-tab.active{color:var(--build);border-bottom-color:var(--build);}
+.kpi-value.neu{color:var(--run);}
+.jv-wn-kpis{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;margin-bottom:14px;}
+.jv-wn-kpis .kpi{padding:10px 12px;}
+@media(max-width:1100px){.card-row{grid-template-columns:repeat(2,1fr);}.jv-wn-kpis{grid-template-columns:repeat(4,1fr);}}
+@media(max-width:700px){.card-row{grid-template-columns:1fr;}.jv-wn-kpis{grid-template-columns:repeat(2,1fr);}}
+.jv-wn-commentary{font-size:13px;line-height:1.6;color:var(--t2);min-height:3.2em;white-space:pre-wrap;}
+.jv-wn-tile-off{opacity:.55;}
+.jv-wn-tile-held{border-color:var(--run);}
+.jv-wn-plot-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}
+.jv-wn-details>summary{cursor:pointer;font-weight:600;font-size:13px;margin-bottom:10px;}
 .jv-badge{display:inline-flex;align-items:center;font-family:var(--fm);font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;padding:1px 6px;border-radius:3px;border:1px solid var(--warn-bd);background:var(--warn-bg);color:var(--warn);}
 .jv-list{list-style:none;font-size:12px;color:var(--t2);}
 .jv-list li{padding:3px 0;border-bottom:1px dashed var(--border);}
 .jv-list li:last-child{border-bottom:none;}
 
 /* Panels (Market Analysis layout) */
-.jv-chat-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,4fr);gap:14px;height:calc(100vh - 52px - 120px);min-height:520px;}
+.jv-chat-grid{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,8fr);gap:14px;height:calc(100vh - 52px - 215px);min-height:420px;}
+.jv-hl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:6px;margin-bottom:14px;}
+.jv-hl-grid .kpi-sm{padding:7px 10px;}
+.jv-hl-grid .kpi-value{font-size:13px;}
+.phase-group{margin-bottom:14px;}
+.phase-group:last-child{margin-bottom:0;}
+.phase-hdr{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+.phase-step-badge{font-family:var(--fm);font-size:9px;font-weight:600;text-transform:uppercase;padding:2px 6px;border-radius:3px;letter-spacing:.05em;white-space:nowrap;}
+.phase-step-badge.p1{background:var(--run-bg);color:var(--run);border:1px solid var(--run-bd);}
+.phase-step-badge.p3{background:var(--build-bg);color:var(--build);border:1px solid var(--build-bd);}
+.phase-step-badge.p4{background:var(--mon-bg);color:var(--mon);border:1px solid var(--mon-bd);}
+.phase-step-badge.p5{background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger-bd);}
+.phase-name{font-size:11px;font-weight:600;color:var(--t2);}
+.jv-q{display:block;width:100%;text-align:left;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;margin-bottom:5px;font-size:11px;font-family:var(--fd);color:var(--t2);cursor:pointer;}
+.jv-q:hover{background:var(--chat-bg);border-color:var(--chat-bd);color:var(--chat);}
+.jv-q:disabled{opacity:.5;cursor:not-allowed;}
+#jv-chat-mic{width:32px;height:32px;border-radius:var(--r);border:1.5px solid var(--border);background:var(--surface2);color:var(--t2);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+#jv-chat-mic:hover{border-color:var(--chat);color:var(--chat);}
+#jv-chat-mic:disabled{opacity:.45;cursor:not-allowed;}
+#jv-chat-mic.is-listening{background:var(--danger);border-color:var(--danger);color:#fff;animation:jv-pulse 1.1s infinite;}
+@keyframes jv-pulse{0%,100%{opacity:1}50%{opacity:.55}}
+.jv-voice-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;font-size:11px;color:var(--t3);}
+.jv-voice-row label{display:flex;align-items:center;gap:5px;cursor:pointer;}
 .mpanel{display:flex;flex-direction:column;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;min-height:0;}
 .mpanel-hdr{padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:12px;}
 .mpanel-title{font-size:12px;font-weight:700;color:var(--text);}
@@ -233,6 +291,8 @@ canvas{display:block;}
 .jv-hold-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;}
 .jv-hold-chip{font-family:var(--fm);font-size:10px;background:var(--run-bg);border:1px solid var(--run-bd);color:var(--t2);border-radius:100px;padding:2px 8px;}
 .jv-hold-chip b{color:var(--run);font-weight:600;}
+.jv-card .jv-badge.ok{border-color:var(--build-bd);background:var(--build-bg);color:var(--build);}
+.jv-card .jv-badge.none{border-color:var(--border);background:var(--surface2);color:var(--t3);}
 .jv-loc-cash{font-size:11px;}
 .jv-loc-inst{max-height:420px;overflow-y:auto;}
 .jv-loc-row{display:flex;align-items:center;gap:8px;padding:6px 6px;border-radius:var(--r);border:1px solid transparent;font-size:12px;}
@@ -326,6 +386,10 @@ canvas{display:block;}
   .concept-chart-grid{grid-template-columns:1fr;}
   .jv-loc-grid{grid-template-columns:1fr;}
 }
+
+/* ── What I Need tab (F43 P5) ──────────────────────────────────────────────── */
+#jv-view-whatineed .wn-status{font-family:var(--fm);font-size:11px;color:var(--t3);min-height:16px;margin-bottom:8px;}
+#jv-view-whatineed .wn-status.wn-err{color:var(--danger);}
 </style>
 <link rel="stylesheet" href="css/responsive.css">
 </head>
@@ -358,14 +422,14 @@ canvas{display:block;}
   <div class="nav-section">
     <div class="nav-label" style="color:var(--t3)" data-copy="nav.view"></div>
     <button type="button" class="nav-item p05" id="jv-tab-chat"><span class="nav-icon">◈</span><span data-copy="tab.chat"></span></button>
+    <button type="button" class="nav-item p00" id="jv-tab-whatineed"><span class="nav-icon">◇</span><span data-copy="tab.whatineed"></span></button>
     <button type="button" class="nav-item p03" id="jv-tab-portfolio"><span class="nav-icon">⊞</span><span data-copy="tab.portfolio"></span></button>
+    <div class="nav-sub" id="jv-loc-tabs">
+      <button type="button" class="nav-item nav-sub-item p00" data-loc="europe"><span class="nav-icon">🇪🇺</span><span data-copy="loc.europe"></span></button>
+      <button type="button" class="nav-item nav-sub-item p00" data-loc="india"><span class="nav-icon">🇮🇳</span><span data-copy="loc.india"></span></button>
+      <button type="button" class="nav-item nav-sub-item p00" data-loc="us"><span class="nav-icon">🇺🇸</span><span data-copy="loc.us"></span></button>
+    </div>
     <button type="button" class="nav-item p00" id="jv-tab-concepts"><span class="nav-icon">◎</span><span data-copy="tab.concepts"></span></button>
-  </div>
-  <div class="nav-section" id="jv-loc-tabs">
-    <div class="nav-label" style="color:var(--t3)" data-copy="nav.location"></div>
-    <button type="button" class="nav-item p00" data-loc="europe"><span class="nav-icon">🇪🇺</span><span data-copy="loc.europe"></span></button>
-    <button type="button" class="nav-item p00" data-loc="india"><span class="nav-icon">🇮🇳</span><span data-copy="loc.india"></span></button>
-    <button type="button" class="nav-item p00" data-loc="us"><span class="nav-icon">🇺🇸</span><span data-copy="loc.us"></span></button>
   </div>
 </nav>
 
@@ -380,7 +444,15 @@ canvas{display:block;}
         <div class="page-sub" data-copy="page.lead"></div>
       </div>
     </div>
+    <div class="jv-hl-grid" id="jv-chat-highlights"></div>
     <div class="jv-chat-grid">
+      <section class="mpanel" id="sec-jv-questions">
+        <div class="mpanel-hdr">
+          <div class="mpanel-title" data-copy="chat.groups.title"></div>
+        </div>
+        <div class="mpanel-body" id="jv-chat-groups"></div>
+      </section>
+
       <section class="mpanel" id="sec-jv-chat">
         <div class="mpanel-hdr">
           <div>
@@ -393,27 +465,32 @@ canvas{display:block;}
           <div id="jv-chat-chips"></div>
           <form id="jv-chat-form" autocomplete="off">
             <input id="jv-chat-input" type="text" maxlength="500">
+            <button id="jv-chat-mic" type="button" aria-pressed="false">
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="5.5" y="1.5" width="5" height="8" rx="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5V15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </button>
             <button id="jv-chat-send" type="submit">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
           </form>
+          <div class="jv-voice-row">
+            <span id="jv-chat-voice-status" aria-live="polite"></span>
+            <label><input type="checkbox" id="jv-chat-speak"><span data-copy="voice.speak"></span></label>
+          </div>
           <div id="jv-chat-error" hidden></div>
         </div>
       </section>
+    </div>
 
-      <section class="mpanel" id="sec-jv-plan">
-        <div class="mpanel-hdr">
-          <div class="mpanel-title" data-copy="panel.plan"></div>
-        </div>
-        <div class="mpanel-body">
-          <div id="jv-plan-empty" hidden></div>
-          <div id="jv-plan-goal" hidden></div>
-          <div id="jv-plan-selection" hidden></div>
-          <div id="jv-plan-tracking" hidden></div>
-          <div id="jv-plan-proposal" hidden></div>
-          <div id="jv-plan-excluded" hidden></div>
-          <div id="jv-plan-method" hidden></div>
-        </div>
+    <!-- plan view (written by plan.js; the chat page no longer shows it) -->
+    <div hidden style="display:none">
+      <section id="sec-jv-plan">
+        <div id="jv-plan-empty" hidden></div>
+        <div id="jv-plan-goal" hidden></div>
+        <div id="jv-plan-selection" hidden></div>
+        <div id="jv-plan-tracking" hidden></div>
+        <div id="jv-plan-proposal" hidden></div>
+        <div id="jv-plan-excluded" hidden></div>
+        <div id="jv-plan-method" hidden></div>
       </section>
     </div>
   </div>
@@ -538,10 +615,6 @@ canvas{display:block;}
           </div>
         </div>
         <div class="kpi-row-4" id="jv-period-kpis"></div>
-        <div class="chart-wrap" id="jv-period-chart-wrap" hidden style="margin-top:12px">
-          <div class="chart-title" id="jv-period-chart-title"></div>
-          <div class="chart-box" style="height:180px"><canvas id="jv-period-chart"></canvas></div>
-        </div>
         <div id="jv-period-hedge" hidden style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border)"></div>
       </div>
 
@@ -560,10 +633,22 @@ canvas{display:block;}
           <div class="card-hdr"><span class="card-title" data-copy="target.title"></span></div>
           <div id="jv-target-required" hidden></div>
           <div class="kpi-row-4" id="jv-target-kpis"></div>
-          <div class="chart-wrap" hidden>
-            <div class="chart-title" data-copy="target.chart"></div>
-            <div class="chart-box"><canvas id="jv-target-chart"></canvas></div>
-          </div>
+        </div>
+      </div>
+
+      <!-- three charts in one row: engines, model sleeve, return this year vs target -->
+      <div class="jv-chart-row" id="jv-chart-row">
+        <div class="chart-wrap" hidden>
+          <div class="chart-title" data-copy="engine.title"></div>
+          <div class="chart-box-sm"><canvas id="jv-engine-chart"></canvas></div>
+        </div>
+        <div class="chart-wrap" id="jv-sleeve-wrap" hidden>
+          <div class="chart-title" data-copy="inst.sleeve.title"></div>
+          <div class="chart-box-sm"><canvas id="jv-sleeve-chart"></canvas></div>
+        </div>
+        <div class="chart-wrap" hidden>
+          <div class="chart-title" data-copy="target.chart_year"></div>
+          <div class="chart-box-sm"><canvas id="jv-target-chart"></canvas></div>
         </div>
       </div>
 
@@ -580,6 +665,8 @@ canvas{display:block;}
               <th class="num" data-copy="grid.col.last_close"></th><th class="num" data-copy="grid.col.pnl"></th>
               <th class="num" data-copy="grid.col.return"></th><th data-copy="grid.col.model"></th>
               <th class="num" data-copy="grid.col.sl"></th>
+              <th class="num" data-copy="grid.col.entry"></th><th class="num" data-copy="grid.col.exit"></th>
+              <th data-copy="grid.col.comments"></th>
             </tr></thead>
             <tbody id="jv-grid-body"></tbody>
           </table>
@@ -589,19 +676,8 @@ canvas{display:block;}
 
       <!-- ── Instrument (click-to-chart) ─────────────────────── -->
       <section class="card" id="sec-jv-instrument" hidden>
-        <div id="jv-inst-engines"></div>
-        <div id="jv-inst-status" hidden></div>
         <div class="kpi-row-3" id="jv-inst-perf" hidden></div>
-        <div class="chart-wrap" hidden>
-          <div class="chart-title" id="jv-inst-title"></div>
-          <div class="chart-box" style="height:280px"><canvas id="jv-inst-chart"></canvas></div>
-        </div>
-        <div class="chart-wrap" id="jv-sleeve-wrap" hidden style="margin-top:14px">
-          <div class="chart-title" data-copy="inst.sleeve.title"></div>
-          <div class="chart-box-sm"><canvas id="jv-sleeve-chart"></canvas></div>
-        </div>
-        <div class="card-row-2" style="margin:14px 0 0">
-          <div id="jv-inst-levels" hidden></div>
+        <div class="jv-chart-row" style="margin:0">
           <div id="jv-rationale" hidden></div>
         </div>
       </section>
@@ -610,10 +686,6 @@ canvas{display:block;}
         <div class="card-hdr"><span class="card-title" data-copy="engine.title"></span></div>
         <div class="tbl-wrap" id="jv-engine-table"></div>
         <p class="jv-muted" id="jv-engine-note" hidden style="margin-top:8px"></p>
-        <div class="chart-wrap" hidden style="margin-top:14px">
-          <div class="chart-title" data-copy="engine.col.return"></div>
-          <div class="chart-box-sm"><canvas id="jv-engine-chart"></canvas></div>
-        </div>
       </section>
     </section>
   </div>
@@ -627,26 +699,61 @@ canvas{display:block;}
       </div>
     </div>
 
-    <div class="step-bar" id="jv-cx-steps"></div>
-
-    <div class="card">
-      <div class="card-hdr"><span class="card-title" data-copy="cx.flow.title"></span></div>
-      <div class="card-row-2" style="align-items:start;margin-bottom:0">
-        <div class="tbl-wrap" id="jv-cx-flow" style="box-shadow:none"></div>
-        <div class="concept-text">
-          <p data-copy="cx.flow.p1"></p>
-          <p data-copy="cx.flow.p2"></p>
-          <p data-copy="cx.flow.p3"></p>
-        </div>
-      </div>
-    </div>
-
-    <div style="display:flex;justify-content:space-between;align-items:center;margin:20px 0 8px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:4px 0 8px">
       <span style="font-size:12px;font-weight:700;color:var(--t2)" data-copy="cx.tabs.title"></span>
       <span id="jv-cx-status" style="font-size:11px;color:var(--t3)"></span>
     </div>
     <div class="concept-tab-bar" id="jv-cx-tabs"></div>
     <div class="concept-panel" id="jv-cx-panel"></div>
+  </div>
+
+  <!-- ════════════════ WHAT I NEED (F43 Phase 5) ════════════════ -->
+  <div id="jv-view-whatineed" hidden>
+    <div class="page-hdr">
+      <div>
+        <div class="page-title" data-copy="wn.title"></div>
+        <div class="page-sub" data-copy="wn.sub"></div>
+      </div>
+      <button type="button" id="jv-wn-refresh" class="btn btn-ghost btn-sm" data-copy="wn.refresh"></button>
+    </div>
+
+    <div id="jv-wn-status" class="wn-status"></div>
+
+    <!-- no plan saved -->
+    <div id="jv-wn-no-plan" class="jv-note" hidden>
+      <span data-copy="wn.trk.no_plan"></span>
+      &nbsp;<a href="investgame-app.html" data-copy="wn.trk.no_plan_cta"></a>
+    </div>
+
+    <!-- tracking content (shown when plan is saved) -->
+    <div id="jv-wn-content" hidden>
+
+      <!-- 1. regions side by side (RITA Overview #geo-panels), instruments as tiles -->
+      <div id="jv-wn-regions" class="card-row" style="margin-bottom:16px"></div>
+
+      <!-- 2. agent commentary (RITA overview narrator box) -->
+      <div class="card" style="margin-bottom:12px;padding:12px 16px">
+        <div data-copy="wn.comm.title" style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px"></div>
+        <div id="jv-wn-commentary" style="font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap"></div>
+      </div>
+
+      <!-- 3. Daily / Weekly / Monthly tabs + 8 tiles (RITA timeframe tabs and signal strip) -->
+      <div id="jv-wn-period-tabs" style="display:flex;align-items:center;gap:4px;margin-bottom:18px;border-bottom:1.5px solid var(--border);padding-bottom:0">
+        <button type="button" class="ms-tab active" data-period="daily" data-copy="wn.period.daily"></button>
+        <button type="button" class="ms-tab" data-period="weekly" data-copy="wn.period.weekly"></button>
+        <button type="button" class="ms-tab" data-period="monthly" data-copy="wn.period.monthly"></button>
+      </div>
+      <div id="jv-wn-panels" class="jv-wn-kpis"></div>
+
+      <!-- 4. plan vs reality charts -->
+      <div id="jv-wn-plots"></div>
+
+      <!-- 5. plan and bucket details -->
+      <details class="card jv-wn-details">
+        <summary data-copy="wn.details.title"></summary>
+        <div id="jv-wn-details-body"></div>
+      </details>
+    </div>
   </div>
 
 </main>
@@ -694,7 +801,7 @@ canvas{display:block;}
     <img id="chart-modal-img" style="width:100%;max-height:88vh;display:block;border-radius:4px;object-fit:contain;" />
   </div>
 </div>
-<script type="module" src="./js/jarvis/main.js?v=3"></script>
+<script type="module" src="./js/jarvis/main.js?v=14"></script>
 <script>fetch('/health').then(r=>r.json()).then(d=>{document.querySelectorAll('.app-ver').forEach(e=>e.textContent='v'+d.version)}).catch(()=>{})</script>
 </body>
 </html>

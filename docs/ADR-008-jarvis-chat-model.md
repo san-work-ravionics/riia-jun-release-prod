@@ -143,7 +143,7 @@ generative model is not needed to *produce* answers — only to *understand* the
 - **Journey intent set** (`core/journey_intents.py`, separate index on the shared MiniLM singleton
   `classifier._get_model()`; the 23 RITA intents are unchanged): take_goal, change_goal,
   build_selection, cant_reach, why_this_pick, track, **progress**, **confirm**, **decline**,
-  what_if_sl, show_hedge, help. Below `CONFIDENCE_THRESHOLD` (0.42) the reply is state chips; in
+  what_if_sl, show_hedge, help. **F45 Phase D adds four (16 in all):** wn_on_track, wn_bucket_status, wn_hedge_signal, wn_what_needs_hedging - accepted in every journey state, each reading `whatineed.bucket_status`; a bucket slot (`idx|eq|com|alt`) comes from the rule-based slot parser. Below `CONFIDENCE_THRESHOLD` (0.42) the reply is state chips; in
   `reselect_proposed` a yes/no slot maps to confirm/decline.
 - **`tracking` shape.** `user_journeys.tracking` is a list of per-holding rows
   (`instrument_id, allocation_pct, tolerance, entry_date, entry_close, sl_drawdown_limit,

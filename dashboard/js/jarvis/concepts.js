@@ -1,43 +1,98 @@
-// Jarvis — Concepts page: how the flow works (RITA Concepts card + "Agents & Linked Analytics" tabs).
-// One tab per flow step: a summary of how Jarvis arrives at it, then two panels with the user's own
-// numbers for the selected location — from A4 state, A5 portfolio and A6 instrument, nothing new
-// fetched. Only the active tab's charts are drawn (Chart.js can't size a hidden canvas).
+// Jarvis — Concepts page: the data science and AI concepts behind the Jarvis flow, stage by stage
+// (RITA Concepts card + "Agents & Linked Analytics" tabs).  One tab per stage: what the concept is and
+// whether it is a model or a rule, then panels with the user's own numbers — from the saved plan (A4 goal),
+// the saved portfolio of every region (A5) and the opened instrument (A6), plus the MCP call log.  It
+// explains the flow, not the chat.  Only the active tab's charts are drawn (Chart.js can't size a hidden canvas).
+import { api } from '../shared/api.js';
 import { mkChart, destroyChart, chartOpts, C } from '../shared/charts.js';
 import { esc } from './esc.js?v=3';
-import { t } from './copy.js?v=3';
-import { fmtRate, fmtMoney, fmtDate, fmtYears, isNum, locationName } from './format.js?v=3';
-import { sleeveDatasets, priceDatasets } from './instrument.js?v=3';
+import { t } from './copy.js?v=21';
+import { fmtRate, fmtMoney, fmtNum, fmtDate, fmtYears, isNum, locationName } from './format.js?v=3';
+import { sleeveDatasets, priceDatasets } from './instrument.js?v=6';
 
 export const STEPS = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8'];
 
-// What you say → which MCP tools run (jarvis_chat_service.py intent handlers; every turn also reads
-// journey.get_current).
-const INTENT_TOOLS = [
-  ['use my goal', 'whatineed.get_goal · journey.save'],
-  ['build my portfolio', 'portfolio.select_for_goal · journey.save'],
-  ['why these instruments', 'portfolio.model_runs · portfolio.sleeve_trace'],
-  ['show the closest mix', 'journey.get_current'],
-  ['track it', 'portfolio.sleeve_trace · journey.save'],
-  ['how am I doing', 'portfolio.pnl · portfolio.required_return · journey.save'],
-  ['what if a stop loss hits', 'portfolio.sleeve_trace · portfolio.required_return'],
-  ['yes / no (a proposal)', 'portfolio.sleeve_trace · journey.save'],
-  ['how do I protect it', 'fno.get_hedge_plan'],
+// Stage 2: how raw market data becomes the features and returns every later stage reads.
+const DATA_STAGES = [
+  ['Daily prices', 'Delta refresh of OHLCV from the data provider into local files and the price cache; insert-only, run on demand, never from a request'],
+  ['Returns', 'Daily, 5-day, 21-day and 1-year price returns per instrument'],
+  ['Indicators', 'RSI-14 · MACD · Bollinger %B · ATR-14 · EMA 5/13/26'],
+  ['Regions', 'Country → Europe, India or US; each region in its own currency'],
+  ['FX rates', 'EUR→INR and EUR→USD daily, used to add regions together in EUR'],
 ];
 
+// Stage 8: the namespaced MCP tools, by module (all read-only except the journey record).
 const MODULE_TOOLS = [
-  ['What I Need', 'whatineed.get_goal'],
-  ['Portfolio (RITA)', 'portfolio.select_for_goal · portfolio.model_runs · portfolio.sleeve_trace · portfolio.pnl · portfolio.required_return'],
-  ['FnO', 'fno.sigma_levels · fno.get_hedge_plan'],
-  ['Market', 'market.asta_trace'],
+  ['What I Need', 'whatineed.get_goal · whatineed.get_plan · whatineed.bucket_status'],
+  ['Portfolio (RITA)', 'portfolio.get_holdings · portfolio.pnl · portfolio.select_for_goal · portfolio.model_runs · portfolio.sleeve_trace · portfolio.required_return · portfolio.optimal_allocation'],
+  ['FnO', 'fno.sigma_levels · fno.position_value · fno.get_hedge_plan'],
+  ['Market', 'market.overview · market.monitor · market.asta_trace · market.fx_rate · market.ask'],
   ['Journey', 'journey.get_current · journey.save'],
 ];
-
-const STATES = ['no_goal', 'goal_loaded', 'selected', 'cant_reach', 'tracking', 'reselect_proposed', 'back_to_plan'];
 
 const _pct = v => `${(v * 100).toFixed(1)}%`;
 
 function _sel(j) {
   return j && (j.selection || null);
+}
+
+const _LOC_COLOR = { europe: C.run, india: C.warn, us: C.mon };
+
+// The user's saved portfolio rows (held / picked) across every region, each tagged with its region.
+function _mine(data) {
+  const pfs = (data && data.pfs) || {};
+  const out = [];
+  for (const loc of Object.keys(pfs)) {
+    for (const r of (pfs[loc] && pfs[loc].instruments) || []) if (r.held || r.selected) out.push({ ...r, loc });
+  }
+  if (!out.length && data && data.pf) {
+    for (const r of data.pf.instruments || []) if (r.held || r.selected) out.push({ ...r });
+  }
+  return out;
+}
+
+// Each region's own perf (return this year, target to date, plan goal) from its saved plan and portfolio.
+function _regionPerf(data) {
+  const pfs = (data && data.pfs) || {};
+  const out = Object.keys(pfs).filter(l => pfs[l] && pfs[l].perf).map(l => ({ loc: l, perf: pfs[l].perf }));
+  if (!out.length && data && data.pf && data.pf.perf) out.push({ loc: data.pf.location, perf: data.pf.perf });
+  return out;
+}
+
+// Target path from the saved plan: (1+r)^(m/12) - 1 at month starts, Jan to Dec of this year.
+function _planPath(goal) {
+  if (!goal || !isNum(goal.goal_return)) return [];
+  const y = new Date().getFullYear();
+  return Array.from({ length: 13 }, (_, m) => ({
+    date: m < 12 ? `${y}-${String(m + 1).padStart(2, '0')}-01` : `${y}-12-31`,
+    target: Math.pow(1 + goal.goal_return, m / 12) - 1,
+  }));
+}
+
+function _targetPath(goal, perf) {
+  return perf && (perf.target_path || []).length ? perf.target_path : _planPath(goal);
+}
+
+// Stage 2, the user's side: each held instrument across every region with its latest close and data date.
+function _dataRows(data) {
+  const pfs = (data && data.pfs) || {};
+  const rows = [];
+  for (const loc of Object.keys(pfs)) {
+    const pf = pfs[loc];
+    for (const r of (pf && pf.instruments) || []) {
+      if ((r.held || r.selected) && isNum(r.last_close)) {
+        rows.push([r.instrument_id, locationName(loc), fmtNum(r.last_close), fmtDate(pf.as_of)]);
+      }
+    }
+  }
+  if (!rows.length && data && data.pf) {
+    for (const r of data.pf.instruments || []) {
+      if ((r.held || r.selected) && isNum(r.last_close)) {
+        rows.push([r.instrument_id, locationName(data.pf.location), fmtNum(r.last_close), fmtDate(data.pf.as_of)]);
+      }
+    }
+  }
+  return rows;
 }
 
 function _window(w) {
@@ -53,22 +108,6 @@ function _slLimit(j) {
 }
 
 // ── static HTML ────────────────────────────────────────────────────────────────
-export function flowTableHtml() {
-  const rows = STEPS.map((s, i) => `<tr><td><strong>${i + 1} · ${esc(t(`cx.${s}.tab`))}</strong></td>
-    <td class="mono" style="font-size:11px">${esc(t(`cx.${s}.who`))}</td><td>${esc(t(`cx.${s}.kind`))}</td></tr>`).join('');
-  return `<table class="jv-table"><thead><tr><th>${esc(t('cx.flow.col.step'))}</th><th>${esc(t('cx.flow.col.who'))}</th>
-    <th>${esc(t('cx.flow.col.kind'))}</th></tr></thead><tbody>${rows}</tbody></table>`;
-}
-
-export function stepBarHtml(state) {
-  const order = { no_goal: 0, goal_loaded: 1, selected: 4, cant_reach: 4, tracking: 5, reselect_proposed: 6, back_to_plan: 6 };
-  const reached = state in order ? order[state] : -1;
-  return STEPS.map((s, i) => {
-    const cls = i < reached ? 'done' : i === reached ? 'active' : '';
-    return `<div class="step-seg ${cls}">${i + 1} ${esc(t(`cx.${s}.tab`))}</div>`;
-  }).join('');
-}
-
 export function tabBarHtml(active) {
   return STEPS.map((s, i) => `<button type="button" class="concept-tab${s === active ? ' active' : ''}" data-step="${s}">${i + 1} · ${esc(t(`cx.${s}.tab`))}</button>`).join('');
 }
@@ -109,74 +148,81 @@ function _tableHtml(head, rows) {
 
 // Panel bodies: a canvas when the data is there, else a table / tiles / empty note.
 export function panelHtml(step, data = {}) {
-  const { state, pf, inst } = data;
+  const { state, pf, inst, mcp } = data;
   const j = state && state.journey;
   const goal = j || (state && state.goal);
-  const sel = _sel(j);
-  const live = (state && state.live_holdings) || [];
+  const mine = _mine(data);
   const perf = pf && pf.perf;
   const instId = inst && inst.instrument_id;
   const rita = inst && (inst.engines || []).find(e => e.engine === 'rita');
   let a = '';
   let b = '';
+  let c = '';
   switch (step) {
     case 's1':
       a = goal && isNum(goal.goal_return)
         ? `<div class="kpi-row-2">${_tile(t('plan.goal.return'), fmtRate(goal.goal_return))}${_tile(t('plan.goal.horizon'), fmtYears(goal.horizon_years))}
            ${_tile(t('plan.goal.value'), fmtMoney(goal.goal_value, goal.currency))}${_tile(t('plan.goal.saved'), fmtDate(goal.plan_updated_at))}</div>`
         : _empty();
-      b = perf && (perf.target_path || []).length ? _canvas('jv-cx-s1b') : _empty();
+      b = _targetPath(goal, perf).length ? _canvas('jv-cx-s1b') : _empty();
       break;
     case 's2': {
-      a = _tableHtml([t('cx.s2.col.intent'), t('cx.s2.col.tools')], INTENT_TOOLS);
-      const has = ((state && state.messages) || []).some(m => m.role === 'assistant' && m.intent);
-      b = has ? _canvas('jv-cx-s2b') : _empty();
+      a = _tableHtml([t('cx.s2.col.stage'), t('cx.s2.col.what')], DATA_STAGES);
+      const rows = _dataRows(data);
+      b = rows.length ? _tableHtml([t('cx.s2.col.inst'), t('cx.s2.col.region'), t('cx.s2.col.close'), t('cx.s2.col.asof')], rows) : _empty();
       break;
     }
     case 's3':
-      a = rita && ((rita.series || {}).sleeve_value || []).length ? _canvas('jv-cx-s3a') : _empty(inst ? null : t('cx.empty.inst'));
-      b = live.some(h => isNum(h.invested_fraction)) ? _canvas('jv-cx-s3b') : _empty();
+      a = rita && ((rita.series || {}).sleeve_value || []).length ? _canvas('jv-cx-s3a') : _empty(inst ? t('cx.empty.model') : t('cx.empty.inst'));
+      b = mine.some(h => isNum(h.invested_fraction)) ? _canvas('jv-cx-s3b') : _empty(mine.length ? t('cx.empty.model') : null);
       break;
     case 's4':
-      a = sel && (sel.ladder || []).length ? _canvas('jv-cx-s4a') : _empty();
-      b = sel && (isNum(sel.fit_return) || isNum(sel.test_return)) ? _canvas('jv-cx-s4b') : _empty();
+      a = mine.some(h => isNum(h.allocation_pct)) ? _canvas('jv-cx-s4a') : _empty();
+      b = _regionPerf(data).some(r => isNum(r.perf.goal_return) || isNum(r.perf.ytd_return)) ? _canvas('jv-cx-s4b') : _empty();
       break;
     case 's5':
-      a = live.some(h => isNum(h.sl_distance)) ? _canvas('jv-cx-s5a') : _empty();
-      b = rita && (rita.prices || []).length ? _canvas('jv-cx-s5b') : _empty(inst ? null : t('cx.empty.inst'));
+      a = mine.some(h => isNum(h.sl_distance) || isNum(h.ret)) ? _canvas('jv-cx-s5a') : _empty();
+      b = rita && (rita.prices || []).length ? _canvas('jv-cx-s5b') : _empty(inst ? t('cx.empty.model') : t('cx.empty.inst'));
       break;
     case 's6': {
       a = perf && (perf.series || []).length ? _canvas('jv-cx-s6a') : _empty();
       const req = pf && pf.required;
-      const used = j && isNum(j.reselect_count) ? `${j.reselect_count} / ${j.max_reselections}` : '—';
       b = perf
         ? `<div class="kpi-row-2">${_tile(t('target.kpi.to_date'), fmtRate(perf.target_to_date))}
            ${_tile(t('target.kpi.actual'), fmtRate(perf.ytd_return), isNum(perf.ytd_return) ? (perf.ytd_return >= 0 ? 'pos' : 'neg') : '')}
-           ${_tile(t('target.kpi.required'), fmtRate(req && req.required_return))}${_tile(t('cx.s6.used'), used)}</div>`
+           ${_tile(t('target.kpi.required'), fmtRate(req && req.required_return))}</div>`
         : _empty();
       break;
     }
     case 's7':
-      a = pf && (pf.engines || []).some(e => isNum(e.return_since)) ? _canvas('jv-cx-s7a') : _empty();
+      a = pf && (pf.engines || []).some(e => isNum(e.return_since)) ? _canvas('jv-cx-s7a') : _empty(t('cx.empty.engines'));
       b = pf && (pf.engines || []).some(e => isNum(e.coverage)) ? _canvas('jv-cx-s7b') : _empty();
       break;
     case 's8': {
       a = _tableHtml([t('cx.s8.col.module'), t('cx.s8.col.tools')], MODULE_TOOLS);
-      const cur = j ? j.state : 'no_goal';
-      b = `<div class="cx-states">${STATES.map(s => `<span class="cx-state${s === cur ? ' is-current' : ''}">${esc(t(`state.${s}`))}</span>`).join('<span class="cx-arrow">→</span>')}</div>`;
+      const wait = mcp ? t('cx.empty.mcp') : t('cx.loading');
+      b = mcp && mcp.length ? _canvas('jv-cx-s8b') : _empty(wait);
+      c = mcp && mcp.length
+        ? _tableHtml([t('cx.s8.col.time'), t('cx.s8.col.tool'), t('cx.s8.col.status')],
+          mcp.slice(0, 12).map(r => [String(r.timestamp || '').slice(0, 19), r.tool_name, r.status]))
+        : _empty(wait);
       break;
     }
     default:
       return '';
   }
   const ttl = k => t(`cx.${step}.${k}`, { instrument: instId || '—' });
-  return `<p class="concept-desc">${esc(_desc(step, j))}</p>
-    <div class="concept-chart-grid">${_wrap(step, 'a', ttl('c1'), a)}${_wrap(step, 'b', ttl('c2'), b)}</div>`;
+  const slOn = mine.some(h => isNum(h.sl_distance));
+  const titleA = step === 's5' && !slOn ? t('cx.s5.c1alt') : ttl('c1');
+  const meta = `<div class="cx-meta"><span><b>${esc(t('cx.flow.col.who'))}</b><span class="mono">${esc(t(`cx.${step}.who`))}</span></span><span><b>${esc(t('cx.flow.col.kind'))}</b>${esc(t(`cx.${step}.kind`))}</span></div>`;
+  return `${meta}<p class="concept-desc">${esc(_desc(step, j))}</p>
+    <div class="concept-chart-grid"${c ? ' style="grid-template-columns:repeat(3,minmax(0,1fr))"' : ''}>${_wrap(step, 'a', titleA, a)}${_wrap(step, 'b', ttl('c2'), b)}${c ? _wrap(step, 'c', ttl('c3'), c) : ''}</div>`;
 }
 
-export function statusText(state, pf, location) {
-  const as_of = (pf && pf.as_of) || (state && (state.live_holdings || []).map(h => h.as_of).filter(Boolean).sort().pop());
-  return t('cx.tabs.status', { location: locationName(location), as_of: fmtDate(as_of) });
+// The date of the data behind the page: the latest A5 as-of across every region's saved portfolio.
+export function statusText(pf, pfs = null) {
+  const dates = [pf && pf.as_of, ...Object.values(pfs || {}).map(p => p && p.as_of)].filter(Boolean).sort();
+  return t('cx.tabs.status', { as_of: fmtDate(dates.length ? dates[dates.length - 1] : null) });
 }
 
 // ── charts ─────────────────────────────────────────────────────────────────────
@@ -187,31 +233,33 @@ function _barOpts(tick, labels) {
   return o;
 }
 
-export const CHART_IDS = ['jv-cx-s1b', 'jv-cx-s2b', 'jv-cx-s3a', 'jv-cx-s3b', 'jv-cx-s4a', 'jv-cx-s4b',
-                          'jv-cx-s5a', 'jv-cx-s5b', 'jv-cx-s6a', 'jv-cx-s7a', 'jv-cx-s7b'];
+export const CHART_IDS = ['jv-cx-s1b', 'jv-cx-s3a', 'jv-cx-s3b', 'jv-cx-s4a', 'jv-cx-s4b',
+                          'jv-cx-s5a', 'jv-cx-s5b', 'jv-cx-s6a', 'jv-cx-s7a', 'jv-cx-s7b', 'jv-cx-s8b'];
 
 function _has(id) {
   return typeof document !== 'undefined' && !!document.getElementById(id);
 }
 
 export function drawStep(step, data = {}) {
-  const { state, pf, inst } = data;
+  const { state, pf, inst, mcp } = data;
   const j = state && state.journey;
-  const sel = _sel(j);
-  const live = (state && state.live_holdings) || [];
+  const goal = j || (state && state.goal);
+  const mine = _mine(data);
   const perf = pf && pf.perf;
   const rita = inst && (inst.engines || []).find(e => e.engine === 'rita');
   CHART_IDS.forEach(destroyChart);
   if (step === 's1' && _has('jv-cx-s1b')) {
-    const labels = perf.target_path.map(p => fmtDate(p.date));
-    mkChart('jv-cx-s1b', { type: 'line', data: { labels, datasets: [{ label: t('target.kpi.to_date'), data: perf.target_path.map(p => p.target), borderColor: C.t3, borderDash: [5, 4], borderWidth: 1.6, pointRadius: labels.length < 3 ? 3 : 0 }] },
+    const path = _targetPath(goal, perf);
+    const labels = path.map(p => fmtDate(p.date));
+    mkChart('jv-cx-s1b', { type: 'line', data: { labels, datasets: [{ label: t('target.kpi.to_date'), data: path.map(p => p.target), borderColor: C.t3, borderDash: [5, 4], borderWidth: 1.6, pointRadius: labels.length < 3 ? 3 : 0 }] },
       options: chartOpts('', _pct, labels) });
   }
-  if (step === 's2' && _has('jv-cx-s2b')) {
+  if (step === 's8' && _has('jv-cx-s8b') && mcp && mcp.length) {
     const counts = {};
-    for (const m of state.messages || []) if (m.role === 'assistant' && m.intent) counts[m.intent] = (counts[m.intent] || 0) + 1;
-    const labels = Object.keys(counts);
-    mkChart('jv-cx-s2b', { type: 'bar', data: { labels, datasets: [{ data: labels.map(k => counts[k]), backgroundColor: '#BE185D', borderRadius: 3, maxBarThickness: 36 }] },
+    for (const r of mcp) counts[r.tool_name] = (counts[r.tool_name] || 0) + 1;
+    const top = Object.entries(counts).sort((x, y) => y[1] - x[1]).slice(0, 10);
+    const labels = top.map(r => r[0]);
+    mkChart('jv-cx-s8b', { type: 'bar', data: { labels, datasets: [{ data: top.map(r => r[1]), backgroundColor: C.mon, borderRadius: 3, maxBarThickness: 36 }] },
       options: _barOpts(v => (Number.isInteger(v) ? v : ''), labels) });
   }
   if (step === 's3') {
@@ -220,7 +268,7 @@ export function drawStep(step, data = {}) {
       mkChart('jv-cx-s3a', { type: 'line', data: { labels, datasets }, options: chartOpts('', v => v.toFixed(2), labels) });
     }
     if (_has('jv-cx-s3b')) {
-      const rows = live.filter(h => isNum(h.invested_fraction));
+      const rows = mine.filter(h => isNum(h.invested_fraction));
       const labels = rows.map(h => h.instrument_id);
       mkChart('jv-cx-s3b', { type: 'bar', data: { labels, datasets: [{ data: rows.map(h => h.invested_fraction), backgroundColor: C.run, borderRadius: 3, maxBarThickness: 36 }] },
         options: _barOpts(v => `${Math.round(v * 100)}%`, labels) });
@@ -228,29 +276,30 @@ export function drawStep(step, data = {}) {
   }
   if (step === 's4') {
     if (_has('jv-cx-s4a')) {
-      const lad = sel.ladder;
-      const labels = lad.map(r => `τ ${r.tolerance}`);
-      const o = _barOpts(_pct, labels);
-      o.plugins.legend = { display: true, labels: { generateLabels: () => [
-        { text: t('cx.s4.feasible'), fillStyle: C.build, strokeStyle: C.build }, { text: t('cx.s4.infeasible'), fillStyle: C.t4, strokeStyle: C.t4 }] } };
-      mkChart('jv-cx-s4a', { type: 'bar', data: { labels, datasets: [{ data: lad.map(r => r.fit_vol), backgroundColor: lad.map(r => (r.feasible ? C.build : C.t4)), borderRadius: 3, maxBarThickness: 48 }] }, options: o });
+      const rows = mine.filter(h => isNum(h.allocation_pct));
+      const labels = rows.map(h => h.instrument_id);
+      mkChart('jv-cx-s4a', { type: 'bar', data: { labels, datasets: [{ data: rows.map(h => h.allocation_pct / 100), backgroundColor: rows.map(h => _LOC_COLOR[h.loc] || C.build), borderRadius: 3, maxBarThickness: 48 }] },
+        options: _barOpts(_pct, labels) });
     }
     if (_has('jv-cx-s4b')) {
-      const labels = [t('cx.s4.fit'), t('cx.s4.test')];
-      const goal = isNum(sel.target_return) ? sel.target_return : j.goal_return;
+      const regs = _regionPerf(data);
+      const labels = regs.map(r => locationName(r.loc));
       const o = _barOpts(_pct, labels);
       o.plugins.legend.display = true;
       mkChart('jv-cx-s4b', { type: 'bar', data: { labels, datasets: [
-        { type: 'bar', label: t('plan.selection.title'), data: [sel.fit_return, sel.test_return], backgroundColor: [C.run, sel.meets_goal ? C.build : C.warn], borderRadius: 3, maxBarThickness: 64 },
-        { type: 'line', label: t('cx.s4.goal'), data: labels.map(() => goal), borderColor: C.danger, borderDash: [5, 4], borderWidth: 1.4, pointRadius: 0 },
+        { label: t('cx.s4.mine'), data: regs.map(r => r.perf.ytd_return), backgroundColor: C.run, borderRadius: 3, maxBarThickness: 40 },
+        { label: t('cx.s4.todate'), data: regs.map(r => r.perf.target_to_date), backgroundColor: C.t3, borderRadius: 3, maxBarThickness: 40 },
+        { label: t('cx.s4.plan'), data: regs.map(r => r.perf.goal_return), backgroundColor: C.danger, borderRadius: 3, maxBarThickness: 40 },
       ] }, options: o });
     }
   }
   if (step === 's5') {
     if (_has('jv-cx-s5a')) {
-      const rows = live.filter(h => isNum(h.sl_distance));
+      const useSl = mine.some(h => isNum(h.sl_distance));
+      const val = h => (useSl ? h.sl_distance : h.ret);
+      const rows = mine.filter(h => isNum(val(h)));
       const labels = rows.map(h => h.instrument_id);
-      mkChart('jv-cx-s5a', { type: 'bar', data: { labels, datasets: [{ data: rows.map(h => h.sl_distance), backgroundColor: rows.map(h => (h.sl_hit ? C.danger : C.build)), borderRadius: 3, maxBarThickness: 36 }] },
+      mkChart('jv-cx-s5a', { type: 'bar', data: { labels, datasets: [{ data: rows.map(val), backgroundColor: rows.map(h => (useSl ? (h.sl_hit ? C.danger : C.build) : (val(h) >= 0 ? C.build : C.danger))), borderRadius: 3, maxBarThickness: 36 }] },
         options: _barOpts(_pct, labels) });
     }
     if (_has('jv-cx-s5b')) {
@@ -293,18 +342,24 @@ export function drawStep(step, data = {}) {
 // ── DOM ────────────────────────────────────────────────────────────────────────
 let _active = 's1';
 let _data = {};
+let _mcp = null;        // MCP call log rows (null = not loaded yet)
+let _mcpReq = false;
+
+function _loadMcp() {
+  if (_mcp !== null || _mcpReq) return;
+  _mcpReq = true;
+  api('/api/v1/mcp-calls?limit=200')
+    .then(rows => { _mcp = Array.isArray(rows) ? rows : []; })
+    .catch(() => { _mcp = []; })
+    .finally(() => { _mcpReq = false; if (_active === 's8') showStep('s8'); });
+}
 
 function _el(id) { return document.getElementById(id); }
 
 export function renderConcepts(data, location) {
   _data = data || {};
-  const j = _data.state && _data.state.journey;
-  const bar = _el('jv-cx-steps');
-  if (bar) bar.innerHTML = stepBarHtml(j ? j.state : 'no_goal');
-  const tbl = _el('jv-cx-flow');
-  if (tbl) tbl.innerHTML = flowTableHtml();
   const st = _el('jv-cx-status');
-  if (st) st.textContent = statusText(_data.state, _data.pf, location);
+  if (st) st.textContent = statusText(_data.pf, _data.pfs);
   showStep(_active);
 }
 
@@ -312,9 +367,11 @@ export function showStep(step) {
   _active = STEPS.includes(step) ? step : 's1';
   const tabs = _el('jv-cx-tabs');
   if (tabs) tabs.innerHTML = tabBarHtml(_active);
+  const data = { ..._data, mcp: _mcp };
   const panel = _el('jv-cx-panel');
-  if (panel) panel.innerHTML = panelHtml(_active, _data);
-  drawStep(_active, _data);
+  if (panel) panel.innerHTML = panelHtml(_active, data);
+  drawStep(_active, data);
+  if (_active === 's8') _loadMcp();
 }
 
 // Delegated on the tab bar (data-step).

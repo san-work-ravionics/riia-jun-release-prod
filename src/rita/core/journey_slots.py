@@ -18,6 +18,13 @@ LOCATION_WORDS: dict[str, str] = {
     "india": "india", "inr": "india", "nse": "india",
     "us": "us", "usa": "us", "usd": "us", "america": "us",
 }
+# F45 Phase D: the retirement-plan bucket a message names (keys match the What I Need assets).
+BUCKET_WORDS: dict[str, str] = {
+    "index": "idx", "indices": "idx", "indexes": "idx",
+    "equity": "eq", "equities": "eq", "stocks": "eq",
+    "commodity": "com", "commodities": "com",
+    "alternate": "alt", "alternates": "alt", "alternative": "alt", "alternatives": "alt",
+}
 YES_WORDS = frozenset({"yes", "yeah", "yep", "sure", "ok", "okay", "switch"})
 NO_WORDS = frozenset({"no", "nope", "keep", "don't", "dont"})
 
@@ -28,6 +35,8 @@ class Slots:
     location: str | None = None
     instruments: list[str] = field(default_factory=list)
     yes_no: str | None = None             # "yes" | "no" | None
+    bucket: str | None = None             # "idx" | "eq" | "com" | "alt"; None when none OR several are named
+    buckets: list[str] = field(default_factory=list)   # every distinct bucket named, in order of mention
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -44,6 +53,9 @@ def parse_slots(text: str, universe: Iterable[str] = ()) -> Slots:
     for w in words:
         if out.location is None and w in LOCATION_WORDS:
             out.location = LOCATION_WORDS[w]
+        if w in BUCKET_WORDS and BUCKET_WORDS[w] not in out.buckets:
+            out.buckets.append(BUCKET_WORDS[w])
+    out.bucket = out.buckets[0] if len(out.buckets) == 1 else None   # several named → ask, don't guess
     ids = {i.lower(): i for i in universe}
     for w in words:
         inst = ids.get(w)

@@ -293,139 +293,6 @@
     },
     {
      "data": {
-      "currency": "EUR",
-      "fit_return": 0.0912,
-      "gap": null,
-      "holdings": [
-       {
-        "allocation_pct": 60,
-        "instrument_id": "E1",
-        "model_action": "full"
-       },
-       {
-        "allocation_pct": 40,
-        "instrument_id": "E2",
-        "model_action": "full"
-       }
-      ],
-      "location": "europe",
-      "meets_goal": true,
-      "method_weights": "min-variance solver over model sleeves, μ ≥ target (not a model)",
-      "n_tolerances": 3,
-      "target_return": 0.0775,
-      "test_mdd": -0.0874,
-      "test_return": 0.0855,
-      "test_window": {
-       "end": "2026-06-30",
-       "start": "2025-01-01"
-      },
-      "tolerance": "medium"
-     },
-     "kind": "selection"
-    },
-    {
-     "data": {
-      "cap_fit": 0.0612,
-      "cap_test": 0.0534,
-      "fit_return": 0.0612,
-      "gap": 0.0241,
-      "holdings": [
-       {
-        "allocation_pct": 100,
-        "instrument_id": "E1",
-        "model_action": "full"
-       }
-      ],
-      "target_return": 0.0775,
-      "test_return": 0.0534
-     },
-     "kind": "closest"
-    },
-    {
-     "data": {
-      "excluded": [
-       {
-        "instrument_id": "ATO",
-        "reason": "retrain_needed"
-       }
-      ],
-      "n_tolerances": 3,
-      "rows": [
-       {
-        "allocation_pct": 60,
-        "fit_return": 0.1012,
-        "instrument_id": "E1",
-        "test_mdd": -0.1043,
-        "test_return": 0.0856,
-        "today_action": "full"
-       }
-      ],
-      "tolerance": "medium"
-     },
-     "kind": "why"
-    },
-    {
-     "data": {
-      "entry_date": "2026-10-23",
-      "holdings": [
-       {
-        "entry_close": 123.45,
-        "instrument_id": "E1",
-        "today_action": "full"
-       }
-      ],
-      "next_reset": "2026-12-18",
-      "sl_drawdown_limit": -0.1
-     },
-     "kind": "tracking"
-    },
-    {
-     "data": {
-      "as_of": "2026-10-23",
-      "reason": "on_track",
-      "required_return": 0.0913,
-      "source": "saved",
-      "status": "on_track",
-      "target_to_date": 0.0412,
-      "year_start": "2026-03-02",
-      "ytd_return": 0.031
-     },
-     "kind": "progress"
-    },
-    {
-     "data": {
-      "effective_return": 0.0913,
-      "holdings": [
-       {
-        "allocation_pct": 100,
-        "instrument_id": "E3",
-        "model_action": "full"
-       }
-      ],
-      "max_reselections": 2,
-      "required_return": 0.0913,
-      "reselections_next": 1,
-      "test_return": 0.0855
-     },
-     "kind": "proposal"
-    },
-    {
-     "data": {
-      "reason": "on_track",
-      "required_return": 0.12,
-      "rows": [
-       {
-        "instrument_id": "E1",
-        "sl_distance": -0.0747
-       }
-      ],
-      "status": "on_track",
-      "ytd_return": -0.04
-     },
-     "kind": "what_if"
-    },
-    {
-     "data": {
       "coverage": 50,
       "n_hedged": 2,
       "updated_at": "2026-10-27T09:00:00Z"
@@ -434,14 +301,51 @@
     },
     {
      "data": {
-      "rows": [
+      "buckets": [
        {
-        "instrument_id": "ATO",
-        "reason": "retrain_needed"
+        "at_risk": null,
+        "gap": null,
+        "key": "idx",
+        "target_to_date": 0.0021,
+        "ytd_return": null
+       },
+       {
+        "at_risk": true,
+        "gap": -0.0722,
+        "key": "eq",
+        "target_to_date": 0.0412,
+        "ytd_return": -0.031
        }
-      ]
+      ],
+      "n_at_risk": 1,
+      "n_no_data": 1,
+      "n_on_track": 0
      },
-     "kind": "excluded"
+     "kind": "bucket_progress"
+    },
+    {
+     "data": {
+      "at_risk": true,
+      "gap": -0.0722,
+      "instruments": [
+       "E1",
+       "E2"
+      ],
+      "key": "eq",
+      "target_to_date": 0.0412,
+      "ytd_return": -0.031
+     },
+     "kind": "bucket_status"
+    },
+    {
+     "data": {
+      "all_on_track": false,
+      "at_risk_buckets": [
+       "eq"
+      ],
+      "fno_link": "/dashboard/fno.html"
+     },
+     "kind": "hedge_signal"
     }
    ],
    "chips": [
@@ -811,6 +715,7 @@
     ],
     "held": true,
     "instrument_id": "E1",
+    "invested_fraction": 1.0,
     "last_close": 154.0,
     "model_action": "full",
     "pnl": 160.0,
@@ -1392,6 +1297,8 @@
       "id": "E1",
       "name": "Euro One",
       "return_15y_pct": 8.2,
+      "return_1m_pct": null,
+      "return_1w_pct": null,
       "return_1y_pct": 12.34,
       "return_5y_pct": 9.1,
       "risk_score": 3,
@@ -1415,6 +1322,8 @@
       "id": "NIFTY",
       "name": "Nifty 50",
       "return_15y_pct": 8.2,
+      "return_1m_pct": null,
+      "return_1w_pct": null,
       "return_1y_pct": 12.34,
       "return_5y_pct": 9.1,
       "risk_score": 3,
@@ -1438,6 +1347,8 @@
       "id": "NVIDIA",
       "name": "Nvidia",
       "return_15y_pct": 8.2,
+      "return_1m_pct": null,
+      "return_1w_pct": null,
       "return_1y_pct": 12.34,
       "return_5y_pct": 9.1,
       "risk_score": 3,
@@ -1461,6 +1372,8 @@
       "id": "AEX",
       "name": "AEX index",
       "return_15y_pct": 8.2,
+      "return_1m_pct": null,
+      "return_1w_pct": null,
       "return_1y_pct": 12.34,
       "return_5y_pct": 9.1,
       "risk_score": 3,
@@ -1473,34 +1386,43 @@
   ]
  },
  "cards": {
-  "closest": {
+  "bucket_progress": {
    "data": {
-    "cap_fit": 0.0612,
-    "cap_test": 0.0534,
-    "fit_return": 0.0612,
-    "gap": 0.0241,
-    "holdings": [
+    "buckets": [
      {
-      "allocation_pct": 100,
-      "instrument_id": "E1",
-      "model_action": "full"
+      "at_risk": null,
+      "gap": null,
+      "key": "idx",
+      "target_to_date": 0.0021,
+      "ytd_return": null
+     },
+     {
+      "at_risk": true,
+      "gap": -0.0722,
+      "key": "eq",
+      "target_to_date": 0.0412,
+      "ytd_return": -0.031
      }
     ],
-    "target_return": 0.0775,
-    "test_return": 0.0534
+    "n_at_risk": 1,
+    "n_no_data": 1,
+    "n_on_track": 0
    },
-   "kind": "closest"
+   "kind": "bucket_progress"
   },
-  "excluded": {
+  "bucket_status": {
    "data": {
-    "rows": [
-     {
-      "instrument_id": "ATO",
-      "reason": "retrain_needed"
-     }
-    ]
+    "at_risk": true,
+    "gap": -0.0722,
+    "instruments": [
+     "E1",
+     "E2"
+    ],
+    "key": "eq",
+    "target_to_date": 0.0412,
+    "ytd_return": -0.031
    },
-   "kind": "excluded"
+   "kind": "bucket_status"
   },
   "goal": {
    "data": {
@@ -1521,120 +1443,15 @@
    },
    "kind": "hedge"
   },
-  "progress": {
+  "hedge_signal": {
    "data": {
-    "as_of": "2026-10-23",
-    "reason": "on_track",
-    "required_return": 0.0913,
-    "source": "saved",
-    "status": "on_track",
-    "target_to_date": 0.0412,
-    "year_start": "2026-03-02",
-    "ytd_return": 0.031
-   },
-   "kind": "progress"
-  },
-  "proposal": {
-   "data": {
-    "effective_return": 0.0913,
-    "holdings": [
-     {
-      "allocation_pct": 100,
-      "instrument_id": "E3",
-      "model_action": "full"
-     }
+    "all_on_track": false,
+    "at_risk_buckets": [
+     "eq"
     ],
-    "max_reselections": 2,
-    "required_return": 0.0913,
-    "reselections_next": 1,
-    "test_return": 0.0855
+    "fno_link": "/dashboard/fno.html"
    },
-   "kind": "proposal"
-  },
-  "selection": {
-   "data": {
-    "currency": "EUR",
-    "fit_return": 0.0912,
-    "gap": null,
-    "holdings": [
-     {
-      "allocation_pct": 60,
-      "instrument_id": "E1",
-      "model_action": "full"
-     },
-     {
-      "allocation_pct": 40,
-      "instrument_id": "E2",
-      "model_action": "full"
-     }
-    ],
-    "location": "europe",
-    "meets_goal": true,
-    "method_weights": "min-variance solver over model sleeves, μ ≥ target (not a model)",
-    "n_tolerances": 3,
-    "target_return": 0.0775,
-    "test_mdd": -0.0874,
-    "test_return": 0.0855,
-    "test_window": {
-     "end": "2026-06-30",
-     "start": "2025-01-01"
-    },
-    "tolerance": "medium"
-   },
-   "kind": "selection"
-  },
-  "tracking": {
-   "data": {
-    "entry_date": "2026-10-23",
-    "holdings": [
-     {
-      "entry_close": 123.45,
-      "instrument_id": "E1",
-      "today_action": "full"
-     }
-    ],
-    "next_reset": "2026-12-18",
-    "sl_drawdown_limit": -0.1
-   },
-   "kind": "tracking"
-  },
-  "what_if": {
-   "data": {
-    "reason": "on_track",
-    "required_return": 0.12,
-    "rows": [
-     {
-      "instrument_id": "E1",
-      "sl_distance": -0.0747
-     }
-    ],
-    "status": "on_track",
-    "ytd_return": -0.04
-   },
-   "kind": "what_if"
-  },
-  "why": {
-   "data": {
-    "excluded": [
-     {
-      "instrument_id": "ATO",
-      "reason": "retrain_needed"
-     }
-    ],
-    "n_tolerances": 3,
-    "rows": [
-     {
-      "allocation_pct": 60,
-      "fit_return": 0.1012,
-      "instrument_id": "E1",
-      "test_mdd": -0.1043,
-      "test_return": 0.0856,
-      "today_action": "full"
-     }
-    ],
-    "tolerance": "medium"
-   },
-   "kind": "why"
+   "kind": "hedge_signal"
   }
  },
  "journey": {

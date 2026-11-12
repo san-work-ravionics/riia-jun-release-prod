@@ -25,9 +25,9 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 JS_PATH = ROOT / "dashboard/js/fno/trade-analytics.js"
-JS = JS_PATH.read_text()
-HTML = (ROOT / "dashboard/fno.html").read_text()
-MAIN_JS = (ROOT / "dashboard/js/fno/main.js").read_text()
+JS = JS_PATH.read_text(encoding="utf-8")
+HTML = (ROOT / "dashboard/fno.html").read_text(encoding="utf-8")
+MAIN_JS = (ROOT / "dashboard/js/fno/main.js").read_text(encoding="utf-8")
 HARNESS = Path(__file__).with_name("f42_p6_qa_harness.mjs")
 NODE = shutil.which("node")
 needs_node = pytest.mark.skipif(NODE is None, reason="node not installed")
@@ -284,7 +284,7 @@ def test_invalid_value_in_yaml_fails_config_load(key, val, monkeypatch, tmp_path
     import yaml
     from pydantic import ValidationError
     from rita import config as cfgmod
-    base = yaml.safe_load((ROOT / "config/base.yaml").read_text())
+    base = yaml.safe_load((ROOT / "config/base.yaml").read_text(encoding="utf-8"))
     base["trade_analysis"][key] = val
     (tmp_path / "base.yaml").write_text(yaml.safe_dump(base))
     monkeypatch.setattr(cfgmod, "_CONFIG_DIR", tmp_path)
@@ -762,7 +762,7 @@ def harness(tmp_path_factory):
     }
     (d / "fixtures.json").write_text(json.dumps({"ok": _ok()}))
     (d / "inputs.json").write_text(json.dumps(inputs))
-    (d / "harness.mjs").write_text(HARNESS.read_text())
+    (d / "harness.mjs").write_text(HARNESS.read_text(encoding="utf-8"))
     r = subprocess.run([NODE, "harness.mjs"], cwd=d, capture_output=True, text=True, timeout=600)
     assert r.returncode == 0, r.stderr[-3000:]
     out = json.loads(r.stdout.strip().splitlines()[-1])
@@ -1228,7 +1228,7 @@ def test_rule_copy_keys_equal_server_ids_and_every_emitted_rule_is_covered():
     cm = _copy_map()
     assert set(cm) == set(sg.RULE_IDS) and len(cm) == len(sg.RULE_IDS) == len(set(sg.RULE_IDS))
     assert all(len(v) == 2 and all(x.strip() for x in v) for v in cm.values())
-    emitted = set(re.findall(r'\b(?:_rule|insufficient|finish|_spot_rule)\(\s*"([a-z_]+)"', (ROOT / "src/rita/services/fno_trade_suggestions.py").read_text()))
+    emitted = set(re.findall(r'\b(?:_rule|insufficient|finish|_spot_rule)\(\s*"([a-z_]+)"', (ROOT / "src/rita/services/fno_trade_suggestions.py").read_text(encoding="utf-8")))
     assert emitted <= set(cm), emitted - set(cm)
 
 
@@ -1293,7 +1293,7 @@ def test_p5_sample_banner_and_empty_state_handlers_untouched():
         assert d == 0, f"{rel} changed by P6"
     for needle in ("ta-empty-cta", "ta-sample-banner"):
         assert needle in HTML
-    imp = (ROOT / "dashboard/js/fno/trade-import.js").read_text()
+    imp = (ROOT / "dashboard/js/fno/trade-import.js").read_text(encoding="utf-8")
     assert "console-import/sample" in imp and "ta-sample-banner" in imp
 
 

@@ -10,7 +10,9 @@ from __future__ import annotations
 
 import logging
 import logging.handlers
+import os
 import pathlib
+import time
 from datetime import datetime, timezone
 
 import structlog
@@ -56,6 +58,35 @@ class _PrefixFilter(logging.Filter):
         return any(event.startswith(p) for p in self._prefixes)
 
 
+class _SafeRotatingFileHandler(logging.handlers.RotatingFileHandler):
+    """RotatingFileHandler that survives a failed rollover (Windows).
+
+    On Windows the rename in doRollover raises PermissionError (WinError 32) when
+    another process still has the log file open. The stock handler then retries on
+    every record and floods stderr with "Logging error" tracebacks. Here a failed
+    rollover keeps writing to the current file and retries after a back-off.
+    """
+
+    _RETRY_AFTER_S = 60.0
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._blocked_until = 0.0
+
+    def shouldRollover(self, record: logging.LogRecord) -> bool:
+        if time.monotonic() < self._blocked_until:
+            return False
+        return super().shouldRollover(record)
+
+    def doRollover(self) -> None:
+        try:
+            super().doRollover()
+        except OSError:
+            self._blocked_until = time.monotonic() + self._RETRY_AFTER_S
+            if self.stream is None:
+                self.stream = self._open()
+
+
 def configure_logging(log_level: str = "info") -> None:
     """Configure stdlib logging (4 rotating JSONL handlers) and structlog.
 
@@ -66,6 +97,7 @@ def configure_logging(log_level: str = "info") -> None:
     level = getattr(logging, log_level.upper(), logging.INFO)
 
     root = logging.getLogger()
+    # baseFilename is always absolute, so compare absolute paths (a relative path never matched).
     existing_filenames = {getattr(h, "baseFilename", None) for h in root.handlers}
 
     log_dir = pathlib.Path("logs")
@@ -84,10 +116,10 @@ def configure_logging(log_level: str = "info") -> None:
     )
 
     for filename, prefix in _FILE_MAP.items():
-        filepath = str(log_dir / filename)
+        filepath = os.path.abspath(log_dir / filename)
         if filepath in existing_filenames:
             continue
-        handler = logging.handlers.RotatingFileHandler(
+        handler = _SafeRotatingFileHandler(
             filepath, maxBytes=10 * 1024 * 1024, backupCount=7, encoding="utf-8"
         )
         handler.setFormatter(json_formatter)

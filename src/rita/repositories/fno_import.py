@@ -6,7 +6,7 @@ PERSONAL DATA: every method takes ``user_id`` as a required argument and filters
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Iterable, Optional
 
 from sqlalchemy import case, delete, func, select
@@ -29,11 +29,17 @@ def _chunks(items: list, n: int = _CHUNK) -> Iterable[list]:
 
 
 def _bulk(db: Session, model: type, user_id: str, run_id: str, rows: list[dict]) -> int:
+    # created_at is strictly increasing in file order: readers sort on it to recover import order
+    # within a posting date, and a coarse clock (Windows) would otherwise tie and fall to the random id.
+    base = datetime.now(timezone.utc)
+    n = 0
     for chunk in _chunks(rows):
         db.bulk_insert_mappings(model, [
-            {**r, "id": str(uuid.uuid4()), "user_id": user_id, "import_run_id": run_id}
-            for r in chunk
+            {"created_at": base + timedelta(microseconds=n + i), **r, "id": str(uuid.uuid4()),
+             "user_id": user_id, "import_run_id": run_id}
+            for i, r in enumerate(chunk)
         ])
+        n += len(chunk)
     return len(rows)
 
 

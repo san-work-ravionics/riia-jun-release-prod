@@ -502,7 +502,7 @@ def test_qa_generator_reads_only_the_closes_fixture(tmp_path):
     """))
     env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
     subprocess.run([sys.executable, str(spy)], cwd=tmp_path, env=env, check=True, capture_output=True, timeout=120)
-    seen = json.loads(log.read_text())
+    seen = json.loads(log.read_text(encoding="utf-8"))
     noise = (sys.prefix, sys.base_prefix, str(tmp_path / "spy.py"), str(GEN))
     ours = [(k, p, m) for k, p, m in seen
             if not any(p.startswith(n) for n in noise) and not p.endswith((".pyc", ".so", ".dylib"))
@@ -517,7 +517,7 @@ def test_qa_generator_reads_only_the_closes_fixture(tmp_path):
 
 
 def test_qa_generator_imports_stdlib_only_and_has_no_network_or_db_calls():
-    src = GEN.read_text()
+    src = GEN.read_text(encoding="utf-8")
     tree = ast.parse(src)
     mods = set()
     for n in ast.walk(tree):
@@ -565,11 +565,11 @@ def _pii_hits(text: str) -> dict:
 @pytest.mark.parametrize("path", [h.SAMPLE_DIR / n for n in h.NAMES.values()] + [h.FIXTURE, GEN],
                          ids=lambda p: p.name)
 def test_qa_no_personal_identifiers_in_committed_sample_assets(path):
-    assert _pii_hits(path.read_text()) == {}
+    assert _pii_hits(path.read_text(encoding="utf-8")) == {}
 
 
 def test_qa_pnl_title_block_is_explicitly_synthetic():
-    head = (h.SAMPLE_DIR / h.NAMES["pnl"]).read_text().splitlines()[:3]
+    head = (h.SAMPLE_DIR / h.NAMES["pnl"]).read_text(encoding="utf-8").splitlines()[:3]
     assert any("SAMPLE" in x.upper() or "synthetic" in x.lower() for x in head)
     assert not any(re.search(r"client id\s*,\s*[A-Z]{2}\d", x, re.I) for x in head)
 
@@ -1008,14 +1008,14 @@ def _fn_body(src: str, name: str) -> str:
 
 @pytest.mark.parametrize("dom_id", _IDS)
 def test_qa_js_dom_ids_exist_exactly_once(dom_id):
-    html = HTML.read_text()
+    html = HTML.read_text(encoding="utf-8")
     assert len(re.findall(rf'\bid="{re.escape(dom_id)}"', html)) == 1
 
 
 def test_qa_js_banner_precedes_tabs_and_inline_handlers_are_bound_on_window():
-    html = HTML.read_text()
+    html = HTML.read_text(encoding="utf-8")
     assert html.index('id="ta-sample-banner"') < html.index('id="ta-tabs"')
-    main = (JS_DIR / "main.js").read_text()
+    main = (JS_DIR / "main.js").read_text(encoding="utf-8")
     for fn in ("taSampleLoad", "taSampleRemove"):
         assert re.search(rf"window\.{fn}\s*=\s*{fn}\s*;", main), fn
         assert re.search(rf"import\s*{{[^}}]*\b{fn}\b[^}}]*}}\s*from\s*'\./trade-import\.js'", main), fn
@@ -1028,7 +1028,7 @@ def test_qa_js_banner_precedes_tabs_and_inline_handlers_are_bound_on_window():
 
 
 def test_qa_js_server_strings_in_innerhtml_sinks_are_escaped():
-    src = (JS_DIR / "trade-import.js").read_text()
+    src = (JS_DIR / "trade-import.js").read_text(encoding="utf-8")
     for fn in ("_renderSample", "taSampleLoad"):
         body = _fn_body(src, fn)
         for call in re.findall(r"setEl\(([^;]*)\);", body):
@@ -1040,9 +1040,9 @@ def test_qa_js_server_strings_in_innerhtml_sinks_are_escaped():
 
 
 def test_qa_js_no_data_copy_points_to_sample_and_cta_hidden_logic_present():
-    ta = (JS_DIR / "trade-analytics.js").read_text()
+    ta = (JS_DIR / "trade-analytics.js").read_text(encoding="utf-8")
     assert "load sample data" in ta
-    assert "_show('ta-empty-cta', !(s && s.has_data))" in (JS_DIR / "trade-import.js").read_text()
+    assert "_show('ta-empty-cta', !(s && s.has_data))" in (JS_DIR / "trade-import.js").read_text(encoding="utf-8")
 
 
 _HARNESS = r"""

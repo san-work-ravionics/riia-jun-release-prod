@@ -452,7 +452,7 @@ def test_expiry_months_widened_and_base_yaml_parity():
     from pathlib import Path
 
     import yaml
-    base = yaml.safe_load((Path(__file__).resolve().parents[2] / "config/base.yaml").read_text())["trade_analysis"]
+    base = yaml.safe_load((Path(__file__).resolve().parents[2] / "config/base.yaml").read_text(encoding="utf-8"))["trade_analysis"]
     full = [4, 5, 6, 7, 8, 9, 10, 11]
     assert TradeAnalysisSettings().expiry_months == full and base["expiry_months"] == full
     for k in ("spot_flat_band_pct", "spot_rel_min_days", "spot_rel_min_closing_days", "spot_rel_min_bucket_days",

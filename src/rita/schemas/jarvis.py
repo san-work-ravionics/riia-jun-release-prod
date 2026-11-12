@@ -384,17 +384,6 @@ class AstaTraceOut(BaseModel):
 
 # ── chat cards (rev 1 B3: discriminated union on ``kind``) ─────────────────────
 
-class CardHoldingOut(BaseModel):
-    instrument_id: str
-    allocation_pct: int
-    model_action: ModelAction | None = None
-
-
-class WindowDatesOut(BaseModel):
-    start: date
-    end: date
-
-
 class GoalCardData(BaseModel):
     location: str
     currency: str
@@ -404,107 +393,46 @@ class GoalCardData(BaseModel):
     plan_updated_at: datetime | None = None
 
 
-class SelectionCardData(BaseModel):
-    location: str
-    currency: str
-    target_return: float
-    meets_goal: bool
-    tolerance: Tolerance | None = None
-    n_tolerances: int
-    holdings: list[CardHoldingOut]
-    fit_return: float | None = None
-    test_return: float | None = None
-    test_mdd: float | None = None
-    gap: float | None = None
-    test_window: WindowDatesOut
-    method_weights: str
-
-
-class ClosestCardData(BaseModel):
-    target_return: float
-    holdings: list[CardHoldingOut]
-    fit_return: float | None = None
-    test_return: float | None = None
-    gap: float | None = None
-    cap_fit: float
-    cap_test: float
-
-
-class WhyRowOut(BaseModel):
-    instrument_id: str
-    allocation_pct: int
-    fit_return: float | None = None
-    test_return: float | None = None
-    test_mdd: float | None = None
-    today_action: ModelAction | None = None
-
-
-class ExcludedRowOut(BaseModel):
-    instrument_id: str
-    reason: str
-
-
-class WhyCardData(BaseModel):
-    tolerance: Tolerance | None = None
-    n_tolerances: int
-    rows: list[WhyRowOut]
-    excluded: list[ExcludedRowOut] = []
-
-
-class TrackingCardHoldingOut(BaseModel):
-    instrument_id: str
-    entry_close: float | None = None
-    today_action: ModelAction | None = None
-
-
-class TrackingCardData(BaseModel):
-    entry_date: date
-    sl_drawdown_limit: float | None = None
-    next_reset: date | None = None
-    holdings: list[TrackingCardHoldingOut]
-
-
-class ProgressCardData(BaseModel):
-    source: Literal["saved", "model_sleeves", "mixed"]
-    as_of: date | None = None
-    year_start: date
-    ytd_return: float | None = None
-    target_to_date: float | None = None
-    required_return: float | None = None
-    status: str | None = None
-    reason: str | None = None
-
-
-class ProposalCardData(BaseModel):
-    required_return: float | None = None
-    effective_return: float | None = None
-    holdings: list[CardHoldingOut]
-    test_return: float | None = None
-    reselections_next: int
-    max_reselections: int
-
-
-class WhatIfRowOut(BaseModel):
-    instrument_id: str
-    sl_distance: float | None = None
-
-
-class WhatIfCardData(BaseModel):
-    ytd_return: float
-    required_return: float | None = None
-    status: str
-    reason: str
-    rows: list[WhatIfRowOut]
-
-
 class HedgeCardData(BaseModel):
     n_hedged: int
     coverage: int
     updated_at: datetime | None = None
 
 
-class ExcludedCardData(BaseModel):
-    rows: list[ExcludedRowOut]
+class BucketRowOut(BaseModel):
+    key: Literal["idx", "eq", "com", "alt"]
+    ytd_return: float | None = None
+    target_to_date: float | None = None
+    gap: float | None = None
+    at_risk: bool | None = None
+
+
+class BucketProgressCardData(BaseModel):
+    """F45 Phase D: the bucket-level roll-up (``wn_on_track``)."""
+
+    buckets: list[BucketRowOut]
+    n_at_risk: int
+    n_on_track: int
+    n_no_data: int
+
+
+class BucketStatusCardData(BaseModel):
+    """F45 Phase D: one bucket (``wn_bucket_status``); the UI maps ``key`` to its label."""
+
+    key: Literal["idx", "eq", "com", "alt"]
+    ytd_return: float | None = None
+    target_to_date: float | None = None
+    gap: float | None = None
+    at_risk: bool | None = None
+    instruments: list[str] = []
+
+
+class HedgeSignalCardData(BaseModel):
+    """F45 Phase D: buckets past the at-risk limit (``wn_hedge_signal`` / ``wn_what_needs_hedging``)."""
+
+    at_risk_buckets: list[Literal["idx", "eq", "com", "alt"]]
+    all_on_track: bool
+    fno_link: str
 
 
 class GoalCard(BaseModel):
@@ -512,58 +440,32 @@ class GoalCard(BaseModel):
     data: GoalCardData
 
 
-class SelectionCard(BaseModel):
-    kind: Literal["selection"] = "selection"
-    data: SelectionCardData
-
-
-class ClosestCard(BaseModel):
-    kind: Literal["closest"] = "closest"
-    data: ClosestCardData
-
-
-class WhyCard(BaseModel):
-    kind: Literal["why"] = "why"
-    data: WhyCardData
-
-
-class TrackingCard(BaseModel):
-    kind: Literal["tracking"] = "tracking"
-    data: TrackingCardData
-
-
-class ProgressCard(BaseModel):
-    kind: Literal["progress"] = "progress"
-    data: ProgressCardData
-
-
-class ProposalCard(BaseModel):
-    kind: Literal["proposal"] = "proposal"
-    data: ProposalCardData
-
-
-class WhatIfCard(BaseModel):
-    kind: Literal["what_if"] = "what_if"
-    data: WhatIfCardData
-
-
 class HedgeCard(BaseModel):
     kind: Literal["hedge"] = "hedge"
     data: HedgeCardData
 
 
-class ExcludedCard(BaseModel):
-    kind: Literal["excluded"] = "excluded"
-    data: ExcludedCardData
+class BucketProgressCard(BaseModel):
+    kind: Literal["bucket_progress"] = "bucket_progress"
+    data: BucketProgressCardData
+
+
+class BucketStatusCard(BaseModel):
+    kind: Literal["bucket_status"] = "bucket_status"
+    data: BucketStatusCardData
+
+
+class HedgeSignalCard(BaseModel):
+    kind: Literal["hedge_signal"] = "hedge_signal"
+    data: HedgeSignalCardData
 
 
 CardOut = Annotated[
-    Union[GoalCard, SelectionCard, ClosestCard, WhyCard, TrackingCard, ProgressCard, ProposalCard,
-          WhatIfCard, HedgeCard, ExcludedCard],
+    Union[GoalCard, HedgeCard, BucketProgressCard, BucketStatusCard, HedgeSignalCard],
     Field(discriminator="kind"),
 ]
-CARD_KINDS = ("goal", "selection", "closest", "why", "tracking", "progress", "proposal",
-              "what_if", "hedge", "excluded")
+# the cards the chat can emit: the saved plan, the FnO hedge plan and the F45 bucket cards
+CARD_KINDS = ("goal", "hedge", "bucket_progress", "bucket_status", "hedge_signal")
 
 
 # ── A1–A3 (Workflow) ───────────────────────────────────────────────────────────
@@ -686,6 +588,7 @@ class InstrumentRowOut(BaseModel):
     pnl: float | None = None
     ret: float | None = None
     model_action: ModelAction | None = None
+    invested_fraction: float | None = None
     sl_distance: float | None = None
     sl_hit: bool | None = None
     engines_available: list[Literal["rita", "fno", "asta"]] = []
@@ -772,3 +675,84 @@ class InstrumentPageOut(BaseModel):
     currency: str | None = None
     as_of: date | None = None
     engines: list[InstrumentEngineOut]
+
+
+# ── F43 Phase 5: "What I Need" retirement plan in Jarvis ─────────────────────
+
+from rita.schemas.retirement_plan import (  # noqa: E402
+    RetirementPlanInputs,
+    RetirementPlanOut,
+    RetirementPlanResult,
+)
+
+from pydantic.alias_generators import to_camel  # noqa: E402
+
+_CAMEL = ConfigDict(alias_generator=to_camel, populate_by_name=True, from_attributes=True)
+
+
+class BucketInstrumentOut(BaseModel):
+    model_config = _CAMEL
+    instrument_id: str
+    allocation_pct: float | None = None
+    ytd_return: float | None = None
+
+
+class BucketMonthOut(BaseModel):
+    """F45 Phase B: one calendar month of a bucket — cumulative target vs cumulative actual."""
+    model_config = _CAMEL
+    month: date                      # month end (the last row: the latest close)
+    target: float                    # cumulative, pro-rated annual rate
+    actual: float | None = None      # cumulative weighted return; None = no price data that month
+    at_risk: bool | None = None
+
+
+class BucketBreakdownOut(BaseModel):
+    model_config = _CAMEL
+    key: Literal["idx", "eq", "com", "alt"]
+    target_rate: float
+    target_to_date: float
+    ytd_return: float | None = None
+    gap: float | None = None
+    at_risk: bool | None = None
+    monthly_target: float | None = None
+    instruments: list[BucketInstrumentOut] = []
+    monthly: list[BucketMonthOut] = []
+
+
+class ScenarioSpreadOut(BaseModel):
+    pessimistic: float
+    optimistic: float
+
+
+class JarvisRetirementPlanOut(BaseModel):
+    model_config = _CAMEL
+    plan: RetirementPlanOut
+    scenario_spread: ScenarioSpreadOut
+    bucket_breakdown: list[BucketBreakdownOut] = []
+
+
+class WaterfallOut(BaseModel):
+    need_all: float
+    portfolio_value: float
+    house_release: float
+    savings: float
+    target: float
+
+
+class ScenarioResultOut(BaseModel):
+    result: RetirementPlanResult
+    waterfall: WaterfallOut
+    discounted_target: float | None = None
+
+
+class JarvisRetirementPlanCalcIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    inputs: RetirementPlanInputs
+    scenarios: list[Literal["pessimistic", "base", "optimistic"]] = ["pessimistic", "base", "optimistic"]
+    spread: ScenarioSpreadOut
+    discount_rate: float | None = None
+
+
+class JarvisRetirementPlanCalcOut(BaseModel):
+    scenarios: dict[str, ScenarioResultOut]

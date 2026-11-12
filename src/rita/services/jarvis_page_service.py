@@ -12,16 +12,19 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
+import structlog
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from rita.config import get_settings
+
 from rita.core.goal_targets import target_to_date
 from rita.interfaces.mcp_client import McpCallError, McpRequestClient
 from rita.repositories.jarvis import JarvisMessageRepo, JarvisSessionRepo
 from rita.schemas.goal_selection import GoalOut, RequiredReturnOut
 from rita.schemas.jarvis import (
     AstaTraceOut,
+    BucketBreakdownOut,
     ChartMarkerOut,
     ChipOut,
     ClosePointOut,
@@ -48,13 +51,17 @@ from rita.schemas.jarvis import (
     StateOut,
 )
 from rita.services import jarvis_templates as T
+from rita.services.bucket_status_service import compute_bucket_breakdown
 from rita.services.journey_service import plan_is_newer
 from rita.services.user_portfolio_service import location_currency
+
+log = structlog.get_logger(__name__)
 
 TRACKED = ("tracking", "reselect_proposed", "back_to_plan")
 
 ENGINE_LABELS = {"rita": "RITA model (DDQN)", "fno": "FnO σ levels — not a model",
                  "asta": "ASTA model (NIFTY only)", "held": "Your holdings"}
+
 
 
 class PageError(Exception):
@@ -73,6 +80,8 @@ def _call(mcp: McpRequestClient, tool: str, args: dict[str, Any], model: type[Ba
         if exc.code == "not_found":
             return None
         raise PageError(exc.code, f"{tool}: {exc.code}") from exc
+    if res.structured is None:
+        return None
     return model.model_validate(res.structured)
 
 
@@ -165,7 +174,7 @@ class JarvisPageService:
             goal=goal, plan_stale=stale, journey=j,
             session=SessionStateOut(session_id=sess.session_id, status=sess.status,
                                     last_activity_at=sess.last_activity_at) if sess else None,
-            messages=msgs, chips=[ChipOut(**c) for c in T.chips_for(j.state if j else None)],
+            messages=msgs, chips=[ChipOut(**c) for c in T.chips()],
             chat_model="ready" if journey_intents.is_ready() else "not_loaded", live_holdings=live)
 
     # ── A5 ─────────────────────────────────────────────────────────────────────
@@ -262,7 +271,8 @@ class JarvisPageService:
                     (x.allocation_pct for x in (perf.holdings if perf else []) if x.instrument_id == inst), None),
                 shares=h.shares if h else None, last_close=(h.last_close if h else None) or (tr.last_close if ok else None),
                 pnl=h.pnl if h else None, ret=held_ret.get(inst),
-                model_action=tr.today_action if ok else None, sl_distance=tr.sl_distance if ok else None,
+                model_action=tr.today_action if ok else None,
+                invested_fraction=tr.invested_fraction if ok else None, sl_distance=tr.sl_distance if ok else None,
                 sl_hit=tr.sl_hit if ok else None, engines_available=available))
 
         engines: list[EngineRowOut] = []
@@ -443,3 +453,84 @@ class JarvisPageService:
                                    rationale=d.rationale if d else None, performance=perf,
                                    method=at.method.model_dump(),
                                    asta=at.model_copy(update={"detail": None}), **base)
+
+    # ── F43 Phase 5: "What I Need" retirement plan ───────────────────────────
+
+    def _bucket_breakdown(self, location: str, plan_inputs: Any) -> list[BucketBreakdownOut]:
+        try:
+            pf = self.portfolio(location)
+            instruments = pf.instruments or []
+        except Exception:
+            log.exception("jarvis.bucket_breakdown.portfolio_failed", location=location)
+            return []
+        return compute_bucket_breakdown(instruments, pf.perf, plan_inputs,
+                                        month_returns=self._bucket_month_returns(instruments, pf.perf, location))
+
+    def _bucket_month_returns(self, instruments: list[Any], perf: Any, location: str):
+        """Month-end cumulative returns per held instrument; the running month is pinned to the
+        instrument's own period return so the last row equals the YTD figure.  Never fails the page."""
+        if perf is None or perf.year_start is None or perf.as_of is None:
+            return None
+        try:
+            from rita.services.portfolio_pnl_service import PortfolioPnlService
+            held = [i for i in instruments if i.ret is not None]
+            out = PortfolioPnlService(self._db).month_end_returns(
+                [i.instrument_id for i in held], perf.year_start, perf.as_of)
+            for i in held:
+                if i.instrument_id in out:
+                    out[i.instrument_id][perf.as_of] = i.ret
+            return out
+        except Exception:
+            log.exception("jarvis.bucket_month_returns_failed", location=location)
+            return None
+
+    def retirement_plan(self, location: str):
+        from rita.schemas.jarvis import JarvisRetirementPlanOut, ScenarioSpreadOut
+        from rita.services.retirement_plan_service import RetirementPlanService
+
+        svc = RetirementPlanService(self._db)
+        user_id = self._user.id if self._user else None
+        plan = svc.load(user_id, location)
+        cfg = get_settings().retirement_plan.scenario_spread
+        spread = ScenarioSpreadOut(pessimistic=cfg.pessimistic, optimistic=cfg.optimistic)
+        breakdown: list[BucketBreakdownOut] = []
+        if plan.saved:
+            breakdown = self._bucket_breakdown(location, plan.inputs)
+        return JarvisRetirementPlanOut(plan=plan, scenario_spread=spread, bucket_breakdown=breakdown)
+
+    def calculate_retirement_plan(self, body):
+        from rita.core.retirement_plan import ASSET_KEYS
+        from rita.schemas.jarvis import (
+            JarvisRetirementPlanCalcOut,
+            ScenarioResultOut,
+            WaterfallOut,
+        )
+        from rita.services.retirement_plan_service import calculate
+
+        spread_map = {"pessimistic": body.spread.pessimistic, "base": 0.0, "optimistic": body.spread.optimistic}
+        scenarios: dict[str, ScenarioResultOut] = {}
+        for name in body.scenarios:
+            offset = spread_map.get(name, 0.0)
+            adjusted = body.inputs.model_copy()
+            for key in ASSET_KEYS:
+                rate_field = f"{key}_rate"
+                base_rate = getattr(adjusted, rate_field)
+                if base_rate is not None:
+                    object.__setattr__(adjusted, rate_field, base_rate + offset)
+            result = calculate(adjusted)
+            wf = WaterfallOut(
+                need_all=result.need_all,
+                portfolio_value=result.value,
+                house_release=result.house_release,
+                savings=max(result.savings - result.big_expenses, 0.0),
+                target=result.target,
+            )
+            disc = None
+            if body.discount_rate is not None and adjusted.ret is not None and adjusted.now is not None:
+                years_to_ret = adjusted.ret - adjusted.now
+                if years_to_ret > 0:
+                    disc = result.target / ((1 + body.discount_rate) ** years_to_ret)
+                else:
+                    disc = result.target
+            scenarios[name] = ScenarioResultOut(result=result, waterfall=wf, discounted_target=disc)
+        return JarvisRetirementPlanCalcOut(scenarios=scenarios)

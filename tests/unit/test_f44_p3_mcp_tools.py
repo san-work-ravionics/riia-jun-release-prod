@@ -32,6 +32,19 @@ from rita.repositories.model_run_cache import ModelRunCacheRepository
 
 from .f44_p3_helpers import FakeArtifacts, PolicyModel, indicator_frame
 
+
+_REAL_CONNECT = socket.socket.connect
+
+
+def _loopback_ok(refuse):
+    """Network guard that still lets loopback through: on Windows asyncio builds its event loop from a
+    127.0.0.1 socketpair, which is not network access."""
+    def connect(self, address, *a, **k):
+        if isinstance(address, tuple) and address and address[0] in ("127.0.0.1", "::1", "localhost"):
+            return _REAL_CONNECT(self, address, *a, **k)
+        return refuse(self, address, *a, **k)
+    return connect
+
 P3_TOOLS = {"whatineed.get_goal", "portfolio.select_for_goal", "portfolio.required_return",
             "portfolio.model_runs"}
 SYSTEM = McpIdentity(transport="memory", caller="system")
@@ -98,7 +111,7 @@ def _err(res):
 # ── catalogue ──────────────────────────────────────────────────────────────────
 
 def test_registry_has_22_tools_with_schemas_and_no_user_id():
-    assert P3_TOOLS <= set(mt.REGISTRY) and mt.tools_registered() == 22
+    assert P3_TOOLS <= set(mt.REGISTRY) and mt.tools_registered() == 23
     for name in P3_TOOLS:
         spec = mt.REGISTRY[name]
         assert spec.output_json_schema() is not None and not spec.stdio
@@ -149,7 +162,7 @@ def test_portfolio_tools_answer_the_system_identity_without_require_user(tool_db
     assert req.structuredContent["status"] == "on_track"
     assert [i["instrument_id"] for i in runs.structuredContent["instruments"]] == ["E1", "E2"]
     assert runs.structuredContent["excluded"] == [
-        {"instrument_id": "E3", "reason": "no_model", "detail": "no f34p25 model"}]
+        {"instrument_id": "E3", "reason": "no_model", "detail": "no f34p25 or pipeline_v2 model"}]
 
 
 def test_anonymous_caller_is_forbidden(tool_db):
@@ -221,7 +234,7 @@ def test_no_network_on_any_p3_tool(tool_db, fake_models, monkeypatch):
     def refuse(*_a, **_k):
         raise AssertionError("network access")
 
-    monkeypatch.setattr(socket.socket, "connect", refuse)
+    monkeypatch.setattr(socket.socket, "connect", _loopback_ok(refuse))
     monkeypatch.setattr(socket, "create_connection", refuse)
     monkeypatch.setattr(socket, "getaddrinfo", refuse)
     for name, args in (
@@ -237,7 +250,7 @@ def test_no_network_on_any_p3_tool(tool_db, fake_models, monkeypatch):
 
 
 def test_health_reports_22_tools(client):
-    assert client.get("/health").json()["mcp"]["tools_registered"] == 22
+    assert client.get("/health").json()["mcp"]["tools_registered"] == 23
 
 
 def test_required_return_at_year_start_is_the_goal(tool_db, fake_models):

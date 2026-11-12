@@ -28,7 +28,7 @@ _ROOT = Path(__file__).resolve().parents[1].parent
 _JS = _ROOT / "dashboard" / "js"
 _JV = _JS / "jarvis"
 _HTML = _ROOT / "dashboard" / "jarvis.html"
-_FIXTURE = json.loads((Path(__file__).parent / "fixtures" / "f44_p4_contract.json").read_text())
+_FIXTURE = json.loads((Path(__file__).parent / "fixtures" / "f44_p4_contract.json").read_text(encoding="utf-8"))
 _MODULES = sorted(p.name for p in _JV.glob("*.js"))
 _needs_node = pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
 
@@ -37,7 +37,7 @@ HOSTILE = "<img src=x onerror=\"alert(1)\">'\""
 
 def _node(script: str):
     r = subprocess.run(["node", "--input-type=module", "-e", script], cwd=_JS,
-                       capture_output=True, text=True, timeout=60)
+                       capture_output=True, text=True, encoding="utf-8", timeout=60)
     assert r.returncode == 0, r.stderr[-3000:]
     return json.loads(r.stdout.strip().splitlines()[-1])
 
@@ -60,13 +60,13 @@ const jr = (body, status = 200) => ({ ok: status < 400, status, statusText: 'x',
 
 
 def _src(name: str) -> str:
-    return (_JV / name).read_text()
+    return (_JV / name).read_text(encoding="utf-8")
 
 
 def test_all_design_modules_present():
     assert set(_MODULES) == {"main.js", "copy.js", "esc.js", "format.js", "chat.js", "plan.js",
                              "portfolio.js", "instrument.js", "concepts.js", "regions.js",
-                             "region-period.js"}
+                             "region-period.js", "instrument-rows.js", "what-i-need.js", "wn-model.js", "wn-plots.js"}
 
 
 # ── stale token (A2, A3, A4, A5, A6) ───────────────────────────────────────────
@@ -149,15 +149,22 @@ const FX = {fx};
 const H = {json.dumps(HOSTILE)};
 const chat = await import(base + 'jarvis/chat.js?v=3');
 const plan = await import(base + 'jarvis/plan.js?v=3');
-const pf = await import(base + 'jarvis/portfolio.js?v=3');
-const inst = await import(base + 'jarvis/instrument.js?v=3');
+const pf = await import(base + 'jarvis/portfolio.js?v=5');
+const inst = await import(base + 'jarvis/instrument.js?v=6');
 const hostile = o => JSON.parse(JSON.stringify(o), (k, v) =>
   (['instrument_id','text','label','basis','note','name','setup','reason','live_replay_note','currency'].includes(k)
    && typeof v === 'string') ? H : v);
 const out = {{}};
 for (const [kind, card] of Object.entries(FX.cards)) out['card_' + kind] = chat.cardHtml(hostile(card));
 out.bubble_user = chat.bubbleHtml('user', H);
-out.bubble_assistant = chat.bubbleHtml('assistant', H, [hostile(FX.cards.selection)]);
+out.bubble_assistant = chat.bubbleHtml('assistant', H, [hostile(FX.cards.goal)]);
+// the bucket cards carry a bucket key / instrument ids / a link from the server: hostile there too
+const bs = hostile(FX.cards.bucket_status); bs.data.key = H; bs.data.instruments = [H];
+out.card_bucket_status = chat.cardHtml(bs);
+const bp = hostile(FX.cards.bucket_progress); bp.data.buckets[0].key = H;
+out.card_bucket_progress = chat.cardHtml(bp);
+const hs = hostile(FX.cards.hedge_signal); hs.data.at_risk_buckets = [H]; hs.data.fno_link = H;
+out.card_hedge_signal = chat.cardHtml(hs);
 out.chips = chat.chipsHtml([{{ label: H, text: H }}]);
 const st = hostile(FX.A4_state);
 out.plan = plan.goalHtml(st.journey) + plan.selectionHtml(st.journey, st.live_holdings) + plan.excludedHtml(
@@ -184,8 +191,9 @@ for (const e of a6.engines) {{
 console.log(JSON.stringify(out));""")
     for key, html in r.items():
         assert "<img" not in html, key
-    for key in ("card_goal", "card_selection", "card_closest", "card_why", "card_tracking", "card_proposal",
-                "card_what_if", "card_excluded", "bubble_user", "bubble_assistant", "chips", "plan", "grid",
+    for key in (*(f"card_{kind}" for kind in _FIXTURE["cards"] if kind != "hedge"),   # every card with server strings
+                # (the hedge card renders two numbers only)
+                "bubble_user", "bubble_assistant", "chips", "plan", "grid",
                 "engines", "levels_rita", "rationale_rita", "toggle_rita", "loc_inst", "loc_pf", "loc_pick",
                 "geo_table"):
         _assert_escaped(r[key])
@@ -210,8 +218,8 @@ def test_delegated_grid_click_passes_raw_id_and_url_encodes_it():
 store.auth_token = 'fresh';
 const urls = [];
 globalThis.fetch = async (url) => {{ urls.push(url); return jr({{ instrument_id: 'x', engines: [] }}); }};
-const pf = await import(base + 'jarvis/portfolio.js?v=3');
-const inst = await import(base + 'jarvis/instrument.js?v=3');
+const pf = await import(base + 'jarvis/portfolio.js?v=5');
+const inst = await import(base + 'jarvis/instrument.js?v=6');
 let picked = null;
 pf.initGrid(id => {{ picked = id; }});
 const H = {json.dumps(HOSTILE)};
@@ -263,7 +271,7 @@ def test_only_window_binding_is_close_chart_modal():
 # ── FC-IMP ─────────────────────────────────────────────────────────────────────
 
 def _exports(path: Path) -> set[str]:
-    s = path.read_text()
+    s = path.read_text(encoding="utf-8")
     names = set(re.findall(r"export\s+(?:async\s+)?(?:function|const|let|class)\s+(\w+)", s))
     for group in re.findall(r"export\s*\{([^}]*)\}", s):
         names |= {g.split(" as ")[-1].strip() for g in group.split(",") if g.strip()}
@@ -282,14 +290,16 @@ def test_fc_imp_named_imports_resolve(name):
                 assert n in exported, f"FC-IMP: {n} not exported by {spec} (imported in {name})"
 
 
-def test_intra_jarvis_imports_share_one_cache_bust_query():
-    """Every ./x.js import carries the same ?v= (a module imported under two URLs would load twice)."""
-    qs = set()
+def test_each_jarvis_module_is_imported_under_one_cache_bust_query():
+    """A module imported under two URLs loads twice (two instances).  Every import of a given ./x.js
+    must carry the same ?v= (modules may be bumped independently of each other)."""
+    by_module: dict[str, set[str]] = {}
     for name in _MODULES:
         for spec in re.findall(r"from\s*'(\./[^']+)'", _src(name)):
             assert "?v=" in spec, f"{name}: {spec}"
-            qs.add(spec.split("?")[1])
-    assert qs == {"v=3"}
+            mod, q = spec.split("?")
+            by_module.setdefault(mod, set()).add(q)
+    assert {m: q for m, q in by_module.items() if len(q) > 1} == {}
 
 
 @_needs_node
@@ -346,8 +356,8 @@ const FX = {fx};
 const clone = o => JSON.parse(JSON.stringify(o));
 const chat = await import(base + 'jarvis/chat.js?v=3');
 const plan = await import(base + 'jarvis/plan.js?v=3');
-const pf = await import(base + 'jarvis/portfolio.js?v=3');
-const inst = await import(base + 'jarvis/instrument.js?v=3');
+const pf = await import(base + 'jarvis/portfolio.js?v=5');
+const inst = await import(base + 'jarvis/instrument.js?v=6');
 const cx = await import(base + 'jarvis/concepts.js?v=3');
 for (const [kind, card] of Object.entries(FX.cards)) chat.cardHtml({{ kind, data: rec('card.' + kind, clone(card.data)) }});
 for (const state of ['tracking', 'selected', 'cant_reach', 'reselect_proposed', 'back_to_plan']) {{
@@ -400,9 +410,18 @@ for (const key of ['A6_instrument', 'A6_instrument_excluded']) {{
 }}
 for (const state of ['tracking', 'selected', 'reselect_proposed']) {{
   const st = clone(FX.A4_state); st.journey.state = state;
-  const data = {{ state: rec('A4', st), pf: rec('A5', clone(FX.A5_portfolio)), inst: rec('A6', clone(FX.A6_instrument)) }};
+  const pfs = Object.fromEntries(['europe', 'india', 'us'].map(l => [l, rec('A5', clone(FX.A5_portfolio))]));
+  const data = {{ state: rec('A4', st), pf: pfs.europe, pfs, inst: rec('A6', clone(FX.A6_instrument)),
+                 mcp: [{{ timestamp: '2026-11-08T10:00:00', tool_name: 'portfolio.pnl', status: 'ok' }}] }};
   for (const step of cx.STEPS) cx.panelHtml(step, data);
-  cx.statusText(data.state, data.pf, 'europe'); cx.stepBarHtml(data.state.journey.state);
+  cx.statusText(data.pf, data.pfs);
+  chat.highlightsHtml(data.state, data.pf, 'europe');
+}}
+{{
+  const noJourney = clone(FX.A4_state); noJourney.journey = null;                 // plan saved, no journey
+  chat.highlightsHtml(rec('A4', noJourney), rec('A5', clone(FX.A5_portfolio)), 'india');
+  chat.highlightsHtml(null, null, 'us');
+  chat.groupsHtml();
 }}
 console.log(JSON.stringify(Object.fromEntries(Object.entries(seen).map(([k, v]) => [k, [...v].sort()]))));""")
 
@@ -449,43 +468,44 @@ _DESIGN_IDS = """jv-loc-tabs jv-tab-chat jv-tab-portfolio jv-status-model sec-jv
 jv-chat-input jv-chat-send jv-chat-chips jv-chat-error sec-jv-plan jv-plan-goal jv-plan-selection jv-plan-method
 jv-plan-excluded jv-plan-tracking jv-plan-proposal jv-plan-empty sec-jv-portfolio jv-pf-source jv-pf-kpis
 jv-pnl-chart jv-pnl-empty jv-target-kpis jv-target-chart jv-target-required jv-grid jv-grid-body jv-grid-empty
-jv-engine-table jv-engine-chart jv-engine-note sec-jv-instrument jv-inst-title jv-inst-engines jv-inst-chart
-jv-sleeve-chart jv-sleeve-wrap jv-inst-levels jv-rationale jv-inst-status chart-modal chart-modal-title
+jv-engine-table jv-engine-chart jv-engine-note sec-jv-instrument
+jv-sleeve-chart jv-sleeve-wrap jv-rationale chart-modal chart-modal-title
 chart-modal-img jv-pf-status sec-jv-locations sec-jv-universe jv-geo-map jv-geo-map-empty jv-geo-map-note
-jv-geo-table-wrap jv-geo-table jv-geo-table-empty jv-pf-detail-title""".split() + [
+jv-geo-table-wrap jv-geo-table jv-geo-table-empty jv-pf-detail-title
+jv-chat-highlights jv-chat-groups sec-jv-questions jv-chat-mic jv-chat-speak jv-chat-voice-status""".split() + [
     f"jv-loc-{k}-{loc}" for loc in ("europe", "india", "us") for k in ("col", "ccy", "meta", "avg", "pf", "inst")]
 
 
 def test_html_has_every_design_id_once():
-    html = _HTML.read_text()
+    html = _HTML.read_text(encoding="utf-8")
     ids = re.findall(r'\bid="([^"]+)"', html)
     for i in _DESIGN_IDS:
         assert ids.count(i) == 1, i
     assert len(ids) == len(set(ids))
 
 
-def test_html_loads_main_v3_and_chartjs():
-    html = _HTML.read_text()
-    assert '<script type="module" src="./js/jarvis/main.js?v=3"></script>' in html
+def test_html_loads_versioned_main_and_chartjs():
+    html = _HTML.read_text(encoding="utf-8")
+    assert re.search(r'<script type="module" src="\./js/jarvis/main\.js\?v=\d+"></script>', html)
     assert "chart.js@4.4.0/dist/chart.umd.min.js" in html
 
 
 def test_html_keeps_the_stub_login_gate_verbatim():
-    html = _HTML.read_text()
+    html = _HTML.read_text(encoding="utf-8")
     gate = html[html.index("<script>"):html.index("</script>") + len("</script>")]
     assert "// Login gate (F44: Jarvis requires login)." in gate
     assert "window.location.href = '/auth/google/login';" in gate
     assert "sessionStorage.setItem('post_login_redirect', window.location.href);" in gate
     stub = subprocess.run(["git", "-C", str(_ROOT), "show", "9ddb068:dashboard/jarvis.html"],
-                          capture_output=True, text=True)
+                          capture_output=True, text=True, encoding="utf-8")
     if stub.returncode == 0:                                             # history available
         s = stub.stdout
         assert gate == s[s.index("<script>"):s.index("</script>") + len("</script>")]
 
 
 def test_charts_sit_in_chart_wraps_with_titles():
-    html = _HTML.read_text()
-    for cid in ("jv-pnl-chart", "jv-target-chart", "jv-engine-chart", "jv-inst-chart", "jv-sleeve-chart", "jv-geo-map"):
+    html = _HTML.read_text(encoding="utf-8")
+    for cid in ("jv-pnl-chart", "jv-target-chart", "jv-engine-chart", "jv-sleeve-chart", "jv-geo-map"):
         i = html.index(f'id="{cid}"')
         wrap = html.rfind('class="chart-wrap"', 0, i)
         assert wrap != -1 and 'class="chart-title"' in html[wrap:i], cid
@@ -494,9 +514,9 @@ def test_charts_sit_in_chart_wraps_with_titles():
 # ── Concepts page ──────────────────────────────────────────────────────────────
 
 def test_html_concepts_view_ids():
-    html = _HTML.read_text()
+    html = _HTML.read_text(encoding="utf-8")
     ids = re.findall(r'\bid="([^"]+)"', html)
-    for i in ("jv-tab-concepts", "jv-view-concepts", "jv-cx-steps", "jv-cx-flow", "jv-cx-status", "jv-cx-tabs", "jv-cx-panel"):
+    for i in ("jv-tab-concepts", "jv-view-concepts", "jv-cx-status", "jv-cx-tabs", "jv-cx-panel"):
         assert ids.count(i) == 1, i
 
 
@@ -507,24 +527,31 @@ def test_concepts_every_step_renders_with_and_without_data():
 const FX = {fx};
 const cx = await import(base + 'jarvis/concepts.js?v=3');
 const {{ COPY }} = await import(base + 'jarvis/copy.js?v=3');
-const full = {{ state: FX.A4_state, pf: FX.A5_portfolio, inst: FX.A6_instrument }};
+const mcp = [{{ timestamp: '2026-11-08T10:00:00', tool_name: 'portfolio.pnl', status: 'ok' }}];
+const full = {{ state: FX.A4_state, pf: FX.A5_portfolio, pfs: {{ europe: FX.A5_portfolio, india: FX.A5_portfolio, us: FX.A5_portfolio }},
+               inst: FX.A6_instrument, mcp }};
 const out = {{}};
 for (const s of cx.STEPS) {{
   const a = cx.panelHtml(s, full), b = cx.panelHtml(s, {{}});
-  out[s] = {{ full: a.includes('concept-desc') && (a.match(/chart-wrap/g) || []).length === 2,
-              empty: b.includes('cx-empty') || s === 's2' || s === 's8',
+  out[s] = {{ wraps: (a.match(/chart-wrap/g) || []).length, desc: a.includes('concept-desc'),
+              empty: b.includes('cx-empty'),
               canvas: (a.match(/<canvas id="([^"]+)"/g) || []).length,
               copy: ['tab', 'who', 'kind', 'desc', 'c1', 'c2'].every(k => COPY[`cx.${{s}}.${{k}}`]) }};
 }}
-const hostile = JSON.parse(JSON.stringify(FX.A4_state));
-hostile.journey.selection.ladder[0].tolerance = {json.dumps(HOSTILE)};
-hostile.live_holdings[0].instrument_id = {json.dumps(HOSTILE)};
-out.escaped = !cx.panelHtml('s1', {{ state: hostile }}).includes('<img') && !cx.flowTableHtml().includes('<img');
+const hostile = JSON.parse(JSON.stringify(FX.A5_portfolio));
+hostile.instruments[0].instrument_id = {json.dumps(HOSTILE)};
+const hostileState = JSON.parse(JSON.stringify(FX.A4_state));
+hostileState.journey.selection.ladder[0].tolerance = {json.dumps(HOSTILE)};
+const hostileMcp = [{{ timestamp: {json.dumps(HOSTILE)}, tool_name: {json.dumps(HOSTILE)}, status: {json.dumps(HOSTILE)} }}];
+out.escaped = cx.STEPS.every(s => !cx.panelHtml(s, {{ state: hostileState, pf: hostile, pfs: {{ europe: hostile }}, mcp: hostileMcp }}).includes('<img'));
 console.log(JSON.stringify(out));""")
     assert r.pop("escaped") is True
     for step, v in r.items():
-        assert v["full"] and v["empty"] and v["copy"], (step, v)
-    assert sum(v["canvas"] for v in r.values()) >= 9
+        assert v["desc"] and v["empty"] and v["copy"], (step, v)
+    assert {k: v["wraps"] for k, v in r.items()} == {"s1": 2, "s2": 2, "s3": 2, "s4": 2, "s5": 2, "s6": 2,
+                                                       "s7": 2, "s8": 3}                # the MCP stage has three panels
+    assert {k: v["canvas"] for k, v in r.items()} == {"s1": 1, "s2": 0, "s3": 2, "s4": 2, "s5": 2, "s6": 1,
+                                                        "s7": 2, "s8": 1}
 
 
 # ── P4c: portfolio page on the RITA Portfolio Builder layout ───────────────────
@@ -567,7 +594,7 @@ def test_html_portfolio_view_children_parsed():
                 self.cur = c.parent
 
     p = _P()
-    p.feed(_HTML.read_text())
+    p.feed(_HTML.read_text(encoding="utf-8"))
     assert p.mismatch == []
     view = p.ids["jv-view-portfolio"][0]
     kids = [(c.tag, c.attrs.get("id"), c.attrs.get("class")) for c in view.children]
@@ -639,7 +666,7 @@ console.log(JSON.stringify({{
     assert r["sortRetDesc"] == ["C", "A", "B", "D"] and r["sortRetAsc"] == ["B", "A", "C", "D"]
     assert r["sortId"] == ["D", "C", "B", "A"]
     assert r["label"] == ["+10.0%", "+2.0% (est.)", "—"]
-    assert "No instruments for India yet." in r["empty"]
+    assert "No portfolio instruments for India yet." in r["empty"]          # the page lists the user's instruments only
     assert r["meta"] == "1 instruments"
 
 
@@ -649,7 +676,7 @@ def test_columns_each_in_own_currency_and_kpi_fields():
     fx = json.dumps(_FIXTURE)
     r = _node(_PRELUDE + f"""
 const FX = {fx};
-const pf = await import(base + 'jarvis/portfolio.js?v=3');
+const pf = await import(base + 'jarvis/portfolio.js?v=5');
 const rg = await import(base + 'jarvis/regions.js?v=3');
 const clone = o => JSON.parse(JSON.stringify(o));
 const inr = clone(FX.A5_portfolio); inr.location = 'india'; inr.currency = 'INR';
@@ -739,6 +766,11 @@ for (const p of pending.splice(0)) {{
 for (let i = 0; i < 20 && !pending.length; i++) await new Promise(r => setTimeout(r, 5));
 const a6 = pending.map(p => p.url);
 for (const p of pending.splice(0)) p.res(jr({{ detail: 'no A6 here' }}, 500));
+let settled = false; done.then(() => {{ settled = true; }});
+for (let i = 0; i < 40 && !settled; i++) {{            // the auto-open retries a failed grid A6 once: answer it too
+  for (const p of pending.splice(0)) p.res(jr({{ detail: 'no A6 here' }}, 500));
+  await new Promise(r => setTimeout(r, 5));
+}}
 await done;
 const g = id => els[id] || {{}};
 console.log(JSON.stringify({{ before, a6, charts,
@@ -758,10 +790,13 @@ console.log(JSON.stringify({{ before, a6, charts,
     eur, ind, us = r["pf"]
     assert "My portfolio" in eur and "My portfolio" in us
     assert ind == "Couldn't load — india down"
-    assert all("jv-loc-row" in h for h in r["inst"])                     # G still rendered for every column
+    # the page lists the user's own (held or picked) instruments only: Europe's A5 holds E1; India's A5 failed
+    # and the US A5 has no row for a US instrument, so those columns show the portfolio-empty note
+    assert "jv-loc-row" in r["inst"][0] and all("jv-loc-row" not in h for h in r["inst"][1:])
+    assert "No portfolio instruments for India yet." in r["inst"][1] and "No portfolio instruments for US yet." in r["inst"][2]
     assert r["ccy"] == ["EUR", "INR", "USD"]
     assert ["jv-geo-map", "scatter"] in r["charts"]
-    assert "E1" in r["table"] and "NVIDIA" in r["table"] and "AEX" in r["table"]
+    assert "E1" in r["table"] and "NVIDIA" not in r["table"] and "AEX" not in r["table"]   # portfolio instruments only
     assert r["status"] == ["", True]
     assert r["title"] == "Europe in detail · EUR" and r["active"] is True
     assert r["stale"] == {"europe": False, "india": True, "us": False}

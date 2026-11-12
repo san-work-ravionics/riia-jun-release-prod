@@ -43,6 +43,7 @@ from rita.schemas.jarvis import (
     TargetPointOut,
 )
 from rita.services.goal_selection_service import GoalSelectionService
+from rita.services.fx_service import FxService
 from rita.services.user_portfolio_service import UserPortfolioService, holding_cash, location_currency
 
 _LOOKBACK_DAYS = 15     # closes fetched before a period start to find its base close
@@ -62,6 +63,7 @@ class _SavedRow:
     created: date
     holdings: list[dict]
     legacy: bool
+    total_eur: float | None = None   # the saved portfolio's total in EUR (allocation-only value basis)
 
 
 @dataclass
@@ -143,14 +145,15 @@ class PortfolioPnlService:
             return []
         rows = self._rows.list_by_key_and_location(key.key_id, location)
         if rows:
-            return [_SavedRow(r.portfolio_id, r.name, _created(r), list(r.holdings or []), False)
+            return [_SavedRow(r.portfolio_id, r.name, _created(r), list(r.holdings or []), False,
+                             r.total_value_eur)
                     for r in rows]
         out = []
         for r in self._rows.list_by_key_and_location(key.key_id, None):
             hs = [h for h in (r.holdings or [])
                   if self._ups.instrument_location(str(h.get("instrument_id", ""))) == location]
             if hs:
-                out.append(_SavedRow(r.portfolio_id, r.name, _created(r), hs, True))
+                out.append(_SavedRow(r.portfolio_id, r.name, _created(r), hs, True, r.total_value_eur))
         return out
 
     def _closes(self, instrument: str, start: date, end: date) -> pd.Series:
@@ -184,6 +187,41 @@ class PortfolioPnlService:
         frame = pd.concat(series, axis=1).sort_index().ffill().dropna()
         values = frame.sum(axis=1) + cash
         return _from_base(values, start, end)
+
+    @staticmethod
+    def _alloc_only(row: _SavedRow) -> bool:
+        """True when no holding of the row has a share count at all (``shares`` missing or null, e.g. index
+        holdings saved by allocation % only).  An explicit 0 is a cash holding, not an unknown count."""
+        return bool(row.holdings) and all(h.get("shares") is None for h in row.holdings)
+
+    def _alloc_values(self, row: _SavedRow, start: date, end: date) -> pd.Series:
+        """Return path for a row saved by allocation % only: Σ w_i × close_t / close_start, w = allocation / 100
+        (buy-and-hold from the entry date), base 1.0.  Drives return % only — never money (no shares, no amount)."""
+        if not self._alloc_only(row):
+            return pd.Series(dtype=float)
+        series = []
+        for h in row.holdings:
+            w = float(h.get("allocation_pct") or 0.0) / 100.0
+            c = _from_base(self._closes(str(h["instrument_id"]), start, end), start, end)
+            if w > 0 and not c.empty:
+                series.append(c / float(c.iloc[0]) * w)
+        if not series:
+            return pd.Series(dtype=float)
+        frame = pd.concat(series, axis=1).sort_index().ffill().dropna()
+        return frame.sum(axis=1)
+
+    def _alloc_money(self, row: _SavedRow, currency: str, start: date, end: date) -> pd.Series:
+        """Value path for an allocation-only row: the saved total (EUR) × the row's allocation share, grown
+        by the allocation-weighted return, in the location currency at the EUR rate on the entry date
+        (so P&L is the instruments' move, not FX).  Empty when the row has no saved total or no rate."""
+        growth = self._alloc_values(row, start, end)
+        if growth.empty or not row.total_eur:
+            return pd.Series(dtype=float)
+        fx = FxService(self._db).rate("EUR", currency, row.created)
+        if fx is None:
+            return pd.Series(dtype=float)
+        share = sum(float(h.get("allocation_pct") or 0.0) for h in row.holdings) / 100.0
+        return growth / float(growth.iloc[0]) * (row.total_eur * share * fx.rate)
 
     def _sleeve_values(self, seg: _Segment, start: date, end: date) -> tuple[pd.Series, float]:
         """Buy-and-drift of the segment's sleeves over bars in (start, end]; returns the value
@@ -270,6 +308,8 @@ class PortfolioPnlService:
             if end <= start and k + 1 < len(relevant):
                 continue
             vals = self._saved_values(r, start, end)
+            if not len(vals):
+                vals = self._alloc_values(r, start, end)
             if len(vals) >= 1:
                 periods.append(_Period(start, end, "saved", vals))
         periods.sort(key=lambda p: p.start)
@@ -301,7 +341,7 @@ class PortfolioPnlService:
         if rows and label in ("saved", "mixed"):
             active = relevant[-1] if relevant else rows[-1]
             out.entry_date = active.created
-            out.money = self._money(active, path_as_of)
+            out.money = self._money(active, path_as_of, currency)
             out.holdings = self._saved_holdings(active, path_as_of)
             out.coverage = self._saved_coverage(out.money, active)
         elif segs:
@@ -323,8 +363,10 @@ class PortfolioPnlService:
                 dates.append(d)
         return max(dates) if dates else None
 
-    def _money(self, row: _SavedRow, as_of: date) -> MoneyOut:
+    def _money(self, row: _SavedRow, as_of: date, currency: str) -> MoneyOut:
         vals = self._saved_values(row, row.created, as_of)
+        if not len(vals):
+            vals = self._alloc_money(row, currency, row.created, as_of)
         cash = float(sum(holding_cash(h) or 0.0 for h in row.holdings))
         money = MoneyOut(portfolio_id=row.portfolio_id, name=row.name, legacy_note=row.legacy, cash=cash)
         if len(vals):
@@ -352,7 +394,9 @@ class PortfolioPnlService:
             iid = str(h.get("instrument_id", "")).upper()
             shares = h.get("shares")
             c = _from_base(self._closes(iid, row.created, as_of), row.created, as_of)
-            if not isinstance(shares, (int, float)) or isinstance(shares, bool) or shares <= 0:
+            if self._alloc_only(row):
+                status, ret = ("ok", float(c.iloc[-1] / c.iloc[0] - 1.0)) if len(c) else ("no_price_data", None)
+            elif not isinstance(shares, (int, float)) or isinstance(shares, bool) or shares <= 0:
                 status, ret = "no_shares", None
             elif len(c) == 0:
                 status, ret = "no_price_data", None
@@ -362,9 +406,31 @@ class PortfolioPnlService:
                                      return_since=ret, status=status))
         return out
 
+    def month_end_returns(self, instrument_ids: list[str], start: date, end: date) -> dict[str, dict[date, float]]:
+        """F45 Phase B: each instrument's cumulative close-to-close return at every calendar month end
+        from ``start`` to ``end`` (the running month is keyed ``end``).  Same base bar as
+        ``_saved_holdings``.  Instruments without prices are left out.  Read-only."""
+        from rita.services.bucket_status_service import month_key
+
+        out: dict[str, dict[date, float]] = {}
+        for iid in instrument_ids:
+            c = _from_base(self._closes(iid, start, end), start, end)
+            if len(c) < 2:
+                continue
+            ret = c / c.iloc[0] - 1.0
+            by_month: dict[date, float] = {}
+            for ts, v in ret.items():
+                if ts.date() > start:
+                    by_month[month_key(ts.date(), end)] = float(v)      # later bars overwrite: month's last
+            if by_month:
+                out[iid] = by_month
+        return out
+
     @staticmethod
     def _saved_coverage(money: MoneyOut, row: _SavedRow) -> float:
-        priced = {h.instrument_id for h in money.holdings if h.last_close is not None and h.shares}
+        alloc_only = PortfolioPnlService._alloc_only(row)
+        priced = {h.instrument_id for h in money.holdings
+                  if h.last_close is not None and (h.shares or alloc_only)}
         total = sum(float(h.get("allocation_pct") or 0.0) for h in row.holdings) or 1.0
         covered = sum(float(h.get("allocation_pct") or 0.0) for h in row.holdings
                       if str(h.get("instrument_id", "")).upper() in priced)

@@ -7,22 +7,25 @@
 // ensureDevToken(true) → one retry). The only window binding is closeChartModal (modal markup).
 import { ensureDevToken } from '../shared/dev-auth.js';
 import { closeChartModal } from '../rita/chart-modal.js';
-import { t } from './copy.js?v=3';
+import { t } from './copy.js?v=21';
 import {
   warmup, openSession, sendMessage, loadState, initChat, renderHistory, renderChips, appendBubble,
+  initGroups, initVoice, speakReply, renderHighlights,
   appendPending, showChatError, setBusy,
-} from './chat.js?v=3';
+} from './chat.js?v=5';
 import { renderPlan } from './plan.js?v=3';
 import {
-  loadPortfolio, renderPortfolio, renderDetailHeader, initGrid, markSelected,
-} from './portfolio.js?v=3';
-import { loadInstrument, renderInstrument, renderInstrumentError, initInstrument } from './instrument.js?v=3';
-import { renderConcepts, initConcepts } from './concepts.js?v=3';
+  loadPortfolio, renderPortfolio, renderDetailHeader, initGrid, markSelected, sortInstruments,
+} from './portfolio.js?v=5';
+import { loadInstrument, renderInstrument, renderInstrumentError, initInstrument, clearInstrument } from './instrument.js?v=6';
+import { rowCells, fillRowCells } from './instrument-rows.js?v=1';
+import { renderConcepts, initConcepts } from './concepts.js?v=8';
+import { loadWhatINeed, initWhatINeed } from './what-i-need.js?v=11';
 import {
   LOCS, loadGeography, locCurrency, loadEurRates, renderTotalPanel,
   renderColumn, renderUniverse, initGeoTable,
-} from './regions.js?v=3';
-import { initRegionPeriod, renderRegionPeriod, clearRegionPeriod } from './region-period.js?v=3';
+} from './regions.js?v=5';
+import { initRegionPeriod, renderRegionPeriod, clearRegionPeriod } from './region-period.js?v=4';
 
 window.closeChartModal = closeChartModal;
 
@@ -32,6 +35,8 @@ export const S = {
   geo: null, geoErr: null,                                    // G — cached once per page session
   pfs: {}, pfErr: {}, pfStale: _perLoc(true), pfGen: _perLoc(0), // A5 per location
   sort: { col: 'ret', asc: false }, pfSeq: 0, detailLoc: null, mapHidden: false,
+  instData: Object.fromEntries(LOCS.map(l => [l, {}])),        // A6 promise per location + instrument (grid Entry/Exit/Comments)
+  instRows: Object.fromEntries(LOCS.map(l => [l, {}])),        // the grid cells built from each resolved A6
   regionMode: false,                                          // P4c: single-region drill-down
   eurRates: {}, geoFilter: null,                             // total EUR panel + scatter/table filter
 };
@@ -106,15 +111,18 @@ function showTab(tab) {
   _byId('jv-tab-chat')?.classList.toggle('is-active', tab === 'chat');
   _byId('jv-tab-portfolio')?.classList.toggle('is-active', tab === 'portfolio');
   _byId('jv-tab-concepts')?.classList.toggle('is-active', tab === 'concepts');
-  for (const v of ['chat', 'portfolio', 'concepts']) { const el = _byId(`jv-view-${v}`); if (el) el.hidden = tab !== v; }
+  _byId('jv-tab-whatineed')?.classList.toggle('is-active', tab === 'whatineed');
+  for (const v of ['chat', 'portfolio', 'concepts', 'whatineed']) { const el = _byId(`jv-view-${v}`); if (el) el.hidden = tab !== v; }
   if (tab === 'portfolio') {
     showAllRegions();                                                // reset to overview; clicking a loc drills in
     if (_pfNeedsLoad()) loadPortfolioSection();
     else if (S.mapHidden) _renderUniverse();                        // CR-P4c-1: drawn while hidden → redraw
   } else {
-    _applyLocNavHighlight(S.loc);                                   // restore location highlight in chat/concepts
+    // chat / concepts follow the location; What I Need is the overall view, so no location is highlighted
+    _applyLocNavHighlight(tab === 'whatineed' ? null : S.loc);
   }
   if (tab === 'concepts') loadConceptsSection();
+  if (tab === 'whatineed') loadWhatINeed();
 }
 
 function initTabs() {
@@ -122,12 +130,20 @@ function initTabs() {
     const b = e.target.closest('button[data-loc]');
     if (!b || !LOCS.includes(b.dataset.loc)) return;
     const loc = b.dataset.loc;
+    if (S.tab === 'whatineed') {
+      // the overall page has nothing per region: the region menu takes you to that region's view
+      if (loc !== S.loc) selectLocation(loc);                     // sets S.loc synchronously, before the portfolio loads
+      showTab('portfolio');
+      showRegionView(loc);
+      return;
+    }
     if (S.tab === 'portfolio') showRegionView(loc);                 // drill into single-region view
     if (loc !== S.loc) selectLocation(loc);
   });
   _byId('jv-tab-chat')?.addEventListener('click', () => showTab('chat'));
   _byId('jv-tab-portfolio')?.addEventListener('click', () => showTab('portfolio'));
   _byId('jv-tab-concepts')?.addEventListener('click', () => showTab('concepts'));
+  _byId('jv-tab-whatineed')?.addEventListener('click', () => showTab('whatineed'));
   _byId('jv-region-back')?.addEventListener('click', showAllRegions);  // breadcrumb back → overview
   // Delegated: "Show details" button → change location; card body → toggle scatter/table filter.
   _byId('sec-jv-locations')?.addEventListener('click', e => {
@@ -146,13 +162,14 @@ function initTabs() {
 }
 
 // ── location / chat section ────────────────────────────────────────────────────
-async function selectLocation(loc) {
+async function selectLocation(loc, { writeUrl = true } = {}) {
   const seq = ++S.seq;
   S.loc = loc;
   S.state = null;
   S.sessionId = null;
   S.inst = null;
-  try { history.replaceState(null, '', `#${loc}`); } catch { /* file:// or sandboxed */ }
+  // The URL only gets a #location when the user picks one (not for the default chosen at first load).
+  if (writeUrl) { try { history.replaceState(null, '', `#${loc}`); } catch { /* file:// or sandboxed */ } }
   document.querySelectorAll('#jv-loc-tabs button[data-loc]').forEach(b => b.classList.toggle('is-active', b.dataset.loc === loc));
   _markActiveColumn(loc);
   if (S.tab === 'portfolio') _renderDetail(loc, { openFirst: false });   // from cache, no request
@@ -172,6 +189,7 @@ async function selectLocation(loc) {
   renderHistory(state.messages);
   renderChips(state.chips);
   renderPlan(state);
+  renderHighlights(state, S.pfs[loc] || null, loc);
   try {
     const sess = await openSession(loc);                            // A2
     if (seq === S.seq) S.sessionId = sess.session_id;
@@ -187,6 +205,7 @@ function _refreshState(loc) {
     if (S.loc !== loc) return;
     S.state = st;
     renderPlan(st);
+    renderHighlights(st, S.pfs[loc] || null, loc);
   }).catch(() => { /* the reply's journey is already rendered */ });
 }
 
@@ -210,6 +229,7 @@ async function onSend(text) {
     if (S.loc !== loc) return;
     setModel('ready');
     appendBubble('assistant', res.reply.text, res.reply.cards);
+    speakReply(res.reply.text);
     renderChips(res.reply.chips);
     renderPlan(S.state, res.journey || null);
     _invalidatePf(loc);                                             // only this location's A5
@@ -242,6 +262,33 @@ function _pfNeedsLoad() {
 function _invalidatePf(loc) {
   S.pfStale[loc] = true;
   S.pfGen[loc] += 1;                                                // an in-flight A5 for loc is dropped
+  S.instData[loc] = {};                                             // the per-instrument A6 answers go with it
+  S.instRows[loc] = {};
+}
+
+// One A6 per instrument of this location, at most 4 at a time (largest weight first), shared with the first
+// openInstrument; each answer fills its grid row (Entry, Exit, Comments). A failed call is not cached: that row
+// shows "—" and fills in when the row is clicked.
+const _DASH = { entry: '—', exit: '—', comment: '—' };
+
+async function _rowCell(loc, cache, id) {
+  if (S.instRows[loc][id]) return;
+  let p = cache[id];
+  if (!p) { p = loadInstrument(loc, id); cache[id] = p; }
+  let data = null;
+  try { data = await p; } catch { if (cache[id] === p) delete cache[id]; }
+  if (S.instData[loc] !== cache) return;                            // invalidated while in flight
+  const cells = rowCells(data);
+  if (cells) S.instRows[loc][id] = cells;
+  if (S.detailLoc === loc) fillRowCells(id, cells || _DASH);
+}
+
+function _loadRowCells(loc, pf) {
+  const cache = S.instData[loc];
+  const ids = sortInstruments(pf.instruments).map(row => row.instrument_id);
+  let next = 0;
+  const worker = async () => { while (next < ids.length) await _rowCell(loc, cache, ids[next++]); };
+  for (let k = 0; k < 4; k += 1) worker();
 }
 
 // One A5 request per location at a time; a response that an invalidation overtook is dropped.
@@ -316,17 +363,20 @@ async function _renderDetail(loc, { openFirst = true } = {}) {
     renderDetailHeader(loc, locCurrency(loc, null));
     if (S.pfErr[loc]) _byIdText('jv-pf-source', t('err.load', { message: S.pfErr[loc] }));
     if (sec) sec.hidden = true;
+    clearInstrument();
     S.detailLoc = null;
     return;
   }
-  const first = renderPortfolio(pf, loc);
+  const first = renderPortfolio(pf, loc, S.instRows[loc]);
   S.detailLoc = loc;
-  if (!openFirst) { if (sec) sec.hidden = true; return; }
+  _loadRowCells(loc, pf);
+  if (!openFirst) { if (sec) sec.hidden = true; clearInstrument(); return; }
   if (first) {
     if (sec) sec.hidden = false;
-    await openInstrument(first);
+    await openInstrument(first, true);
   } else if (sec) {
     sec.hidden = true;
+    clearInstrument();
   }
 }
 
@@ -365,15 +415,19 @@ export async function loadPortfolioSection() {
   if (detail) await detail;
 }
 
-async function openInstrument(inst) {
+// A grid click always fetches fresh; only the first auto-open reuses the grid's request.
+async function openInstrument(inst, useCache = false) {
   const loc = S.loc;
   markSelected(inst);
   const title = _byId('jv-inst-title');
   if (title) title.textContent = `${inst} · …`;
   try {
-    const data = await loadInstrument(loc, inst);                   // A6
+    const cached = useCache && S.instData[loc] && S.instData[loc][inst];
+    const data = (cached && await cached.catch(() => null)) || await loadInstrument(loc, inst);   // A6
     if (S.loc !== loc) return;
     S.inst = data;
+    const cells = rowCells(data);
+    if (cells && S.instRows[loc]) { S.instRows[loc][inst] = cells; fillRowCells(inst, cells); }
     renderInstrument(data, null, { slLimit: _slLimit(inst) });
   } catch (e) {
     if (S.loc === loc) renderInstrumentError(e.message);
@@ -383,10 +437,10 @@ async function openInstrument(inst) {
 // ── concepts: the user's own numbers from A4 / A5 / A6 (loaded here only when not yet loaded) ──
 async function loadConceptsSection() {
   const loc = S.loc;
-  renderConcepts({ state: S.state, pf: S.pfs[loc] || null, inst: S.inst }, loc);
-  if (S.state && (S.pfStale[loc] || !S.pfs[loc] || S.detailLoc !== loc)) {
+  renderConcepts({ state: S.state, pf: S.pfs[loc] || null, pfs: S.pfs, inst: S.inst }, loc);
+  if (S.state && (S.pfStale[loc] || LOCS.some(l => !S.pfs[l]) || S.detailLoc !== loc)) {
     await loadPortfolioSection();
-    if (S.loc === loc && S.tab === 'concepts') renderConcepts({ state: S.state, pf: S.pfs[loc] || null, inst: S.inst }, loc);
+    if (S.loc === loc && S.tab === 'concepts') renderConcepts({ state: S.state, pf: S.pfs[loc] || null, pfs: S.pfs, inst: S.inst }, loc);
   }
 }
 
@@ -400,16 +454,19 @@ async function boot() {
   applyStaticCopy();
   initTabs();
   initChat(onSend);
+  initGroups(onSend);
+  initVoice(onSend);
   initGrid(openInstrument);
   initGeoTable(_onSort);
   initInstrument();
   initConcepts();
+  initWhatINeed();
   initRegionPeriod();
   showTab('chat');
   await ensureDevToken();                                           // localhost: dev token (prod: login gate)
   warmup().then(r => setModel(r && r.status === 'ready' ? 'ready' : 'unavailable'))
           .catch(() => setModel('unavailable'));                     // A1, non-blocking
-  await selectLocation(_initialLoc());
+  await selectLocation(_initialLoc(), { writeUrl: false });
 }
 
 if (typeof document !== 'undefined' && document.addEventListener) {

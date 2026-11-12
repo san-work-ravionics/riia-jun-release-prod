@@ -5,9 +5,9 @@ import re
 from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parents[2]
-_HTML = (_ROOT / "dashboard" / "fno.html").read_text()
-_GREEKS = (_ROOT / "dashboard" / "js" / "fno" / "greeks.js").read_text()
-_STRESS = (_ROOT / "dashboard" / "js" / "fno" / "stress.js").read_text()
+_HTML = (_ROOT / "dashboard" / "fno.html").read_text(encoding="utf-8")
+_GREEKS = (_ROOT / "dashboard" / "js" / "fno" / "greeks.js").read_text(encoding="utf-8")
+_STRESS = (_ROOT / "dashboard" / "js" / "fno" / "stress.js").read_text(encoding="utf-8")
 
 
 def test_net_greeks_is_a_table_with_four_greek_columns():

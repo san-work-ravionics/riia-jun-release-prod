@@ -53,6 +53,7 @@ P3_TOOLS = {"whatineed.get_goal", "portfolio.select_for_goal", "portfolio.requir
             "portfolio.model_runs"}  # F44 P3 (user + system, not on stdio)
 P4_TOOLS = {"journey.get_current", "journey.save", "portfolio.pnl", "portfolio.sleeve_trace",
             "fno.sigma_levels", "market.asta_trace"}  # F44 P4 (only fno.sigma_levels on stdio)
+F45_TOOLS = {"whatineed.bucket_status"}  # F45 Phase D (user auth, not on stdio)
 ALIASES = {"ask_rita", "rita_market_overview", "rita_monitor"}
 STDIO_TOOLS = {"portfolio.optimal_allocation", "market.overview", "market.ask", "market.fx_rate",
                "fno.sigma_levels"} | ALIASES
@@ -138,8 +139,8 @@ def _fake_classify():
 # ── catalogue + import rules ───────────────────────────────────────────────────
 
 def test_registry_has_p1_tools_and_aliases():
-    assert set(mt.REGISTRY) == P1_TOOLS | P2_TOOLS | P3_TOOLS | P4_TOOLS | ALIASES
-    assert mt.tools_registered() == 22
+    assert set(mt.REGISTRY) == P1_TOOLS | P2_TOOLS | P3_TOOLS | P4_TOOLS | F45_TOOLS | ALIASES
+    assert mt.tools_registered() == 23
 
 
 def test_no_tool_has_a_user_id_input():
@@ -147,7 +148,7 @@ def test_no_tool_has_a_user_id_input():
         async with memory_client(identity_for(_user("alice"), "jarvis")) as c:
             return await c.list_tools()
     tools = _run(go())
-    assert {t.name for t in tools} == P1_TOOLS | P2_TOOLS | P3_TOOLS | P4_TOOLS | ALIASES
+    assert {t.name for t in tools} == P1_TOOLS | P2_TOOLS | P3_TOOLS | P4_TOOLS | F45_TOOLS | ALIASES
     for t in tools:
         props = (t.inputSchema or {}).get("properties", {})
         assert "user_id" not in props, t.name

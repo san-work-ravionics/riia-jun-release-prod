@@ -17,8 +17,9 @@ currency EUR when unset).
 """
 from __future__ import annotations
 
+import threading
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -89,6 +90,22 @@ def location_for_country(country: str | None) -> str | None:
     return country_to_location(country)
 
 
+
+_STAMP_LOCK = threading.Lock()
+_LAST_STAMP: list = [None]
+
+
+def _next_stamp() -> datetime:
+    """Naive-UTC now, strictly greater than the previous call: a coarse clock (Windows) can return the
+    same value twice, and ties fall to the random portfolio_id so "latest save" would be wrong."""
+    with _STAMP_LOCK:
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        last = _LAST_STAMP[0]
+        if last is not None and now <= last:
+            now = last + timedelta(microseconds=1)
+        _LAST_STAMP[0] = now
+        return now
+
 class UserPortfolioService:
     def __init__(self, db: Session) -> None:
         self._db = db
@@ -154,7 +171,7 @@ class UserPortfolioService:
 
         # Python timestamp with microseconds (naive UTC, like CURRENT_TIMESTAMP): func.now() has
         # 1-second resolution on SQLite, so same-second saves tied (review #8).
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        now = _next_stamp()
         new_row = UserPortfolioModel(
             portfolio_id=str(uuid.uuid4()),
             created_at=now,

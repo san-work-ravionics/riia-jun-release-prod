@@ -13,9 +13,9 @@ import pytest
 from rita.schemas import fno_console_import as S
 
 _ROOT = Path(__file__).resolve().parents[2]
-_JS = (_ROOT / "dashboard/js/fno/trade-import.js").read_text()
-_HTML = (_ROOT / "dashboard/fno.html").read_text()
-_MAIN = (_ROOT / "dashboard/js/fno/main.js").read_text()
+_JS = (_ROOT / "dashboard/js/fno/trade-import.js").read_text(encoding="utf-8")
+_HTML = (_ROOT / "dashboard/fno.html").read_text(encoding="utf-8")
+_MAIN = (_ROOT / "dashboard/js/fno/main.js").read_text(encoding="utf-8")
 _TABLES = ["personal_fno_import_runs", "personal_fno_trades", "personal_fno_pnl_lines",
            "personal_fno_pnl_charges", "personal_fno_ledger_entries"]
 
@@ -40,9 +40,9 @@ def test_window_bindings_exported_and_imported():
 
 
 def test_api_upload_exported_through_fno_api():
-    assert "export async function apiUpload" in (_ROOT / "dashboard/js/shared/api.js").read_text()
-    assert "apiUpload" in (_ROOT / "dashboard/js/fno/api.js").read_text()
-    shared = (_ROOT / "dashboard/js/shared/api.js").read_text()
+    assert "export async function apiUpload" in (_ROOT / "dashboard/js/shared/api.js").read_text(encoding="utf-8")
+    assert "apiUpload" in (_ROOT / "dashboard/js/fno/api.js").read_text(encoding="utf-8")
+    shared = (_ROOT / "dashboard/js/shared/api.js").read_text(encoding="utf-8")
     up = shared[shared.index("export async function apiUpload"):]
     assert "auth_token" in up and "Content-Type" not in up
 
@@ -80,7 +80,7 @@ def test_no_lot_sizes_or_print_in_new_modules():
              "api/v1/workflow/fno_console_import.py", "api/experience/fno_trade_import.py",
              "schemas/fno_console_import.py"]
     for f in files:
-        src = (_ROOT / "src/rita" / f).read_text()
+        src = (_ROOT / "src/rita" / f).read_text(encoding="utf-8")
         assert not re.search(r"\blot_size\b|\b(75|30)\b", src), f
         assert not re.search(r"^\s*print\(", src, re.M), f
         assert "localhost" not in src, f

@@ -33,9 +33,9 @@ from rita.services.fno_symbol_parser import parse_symbol
 from tests.unit import f42_p2_helpers as h
 
 _ROOT = Path(__file__).resolve().parents[2]
-_JS = (_ROOT / "dashboard/js/fno/trade-import.js").read_text()
-_HTML = (_ROOT / "dashboard/fno.html").read_text()
-_MAIN = (_ROOT / "dashboard/js/fno/main.js").read_text()
+_JS = (_ROOT / "dashboard/js/fno/trade-import.js").read_text(encoding="utf-8")
+_HTML = (_ROOT / "dashboard/fno.html").read_text(encoding="utf-8")
+_MAIN = (_ROOT / "dashboard/js/fno/main.js").read_text(encoding="utf-8")
 _UP = "/api/v1/workflow/fno/console-import"
 _ST = "/api/v1/experience/fno/trade-analysis/import-status"
 _TR = "/api/v1/experience/fno/trade-analysis/imported-trades"
@@ -501,22 +501,22 @@ _NEW_PY = ["models/fno_import.py", "repositories/fno_import.py", "services/conso
 
 def test_static_no_print_lot_literal_or_row_logging():
     for f in _NEW_PY:
-        src = (_ROOT / "src/rita" / f).read_text()
+        src = (_ROOT / "src/rita" / f).read_text(encoding="utf-8")
         assert "print(" not in src, f
         assert not re.search(r"\b(lot|lots|lot_size)\b\s*[=:]\s*\d+", src, re.I), f
         assert not re.search(r"log\.\w+\([^)]*(row|record|particulars|symbol)=", src), f
 
 
 def test_static_routers_layering():
-    wf = (_ROOT / "src/rita/api/v1/workflow/fno_console_import.py").read_text()
-    ex = (_ROOT / "src/rita/api/experience/fno_trade_import.py").read_text()
+    wf = (_ROOT / "src/rita/api/v1/workflow/fno_console_import.py").read_text(encoding="utf-8")
+    ex = (_ROOT / "src/rita/api/experience/fno_trade_import.py").read_text(encoding="utf-8")
     for src in (wf, ex):
         assert "rita.repositories" not in src and ".commit(" not in src
     assert "user_id" not in wf.replace("current_user.id", "")
 
 
 def test_static_repos_never_commit_and_take_user_id():
-    src = (_ROOT / "src/rita/repositories/fno_import.py").read_text()
+    src = (_ROOT / "src/rita/repositories/fno_import.py").read_text(encoding="utf-8")
     assert ".commit(" not in src and "print(" not in src
     for name, args in re.findall(r"    def ([a-z_]+)\(self,([^)]*)\)", src):
         if name.startswith("_") or name == "add":
@@ -527,7 +527,7 @@ def test_static_repos_never_commit_and_take_user_id():
 def test_static_no_filesystem_writes_in_service_and_parsers():
     for f in ("services/fno_import_service.py", "services/console_parsers.py",
               "api/v1/workflow/fno_console_import.py"):
-        src = (_ROOT / "src/rita" / f).read_text()
+        src = (_ROOT / "src/rita" / f).read_text(encoding="utf-8")
         assert not re.search(r"\bopen\(|write_bytes|write_text|NamedTemporaryFile|shutil|Path\(", src), f
 
 
@@ -562,7 +562,7 @@ def test_js_inner_html_only_with_escaped_or_static_content():
 
 
 def test_js_api_upload_helper_contract():
-    api = (_ROOT / "dashboard/js/shared/api.js").read_text()
+    api = (_ROOT / "dashboard/js/shared/api.js").read_text(encoding="utf-8")
     up = api[api.index("export async function apiUpload"):api.index("export async function apiFetch")]
     assert "Content-Type" not in up and "JSON.stringify" not in up
     assert "sessionStorage.getItem('auth_token')" in up and "Bearer" in up
@@ -572,7 +572,7 @@ def test_js_api_upload_helper_contract():
 
 
 def test_js_loader_hook_in_trade_analysis():
-    ta = (_ROOT / "dashboard/js/fno/trade-analysis.js").read_text()
+    ta = (_ROOT / "dashboard/js/fno/trade-analysis.js").read_text(encoding="utf-8")
     assert "import { loadImportPanel } from './trade-import.js'" in ta
     body = ta[ta.index("export async function loadTradeAnalysis"):]
     assert "loadImportPanel()" in body[:400]

@@ -416,6 +416,13 @@ class RetirementLocationPreset(BaseSettings):
     defaults: dict[str, Any] = {}
 
 
+class ScenarioSpreadSettings(BaseSettings):
+    model_config = SettingsConfigDict(extra="forbid")
+
+    pessimistic: float = -0.02
+    optimistic: float = 0.02
+
+
 class RetirementPlanSettings(BaseSettings):
     """F43 retirement plan presets (``retirement_plan:`` in base.yaml)."""
 
@@ -423,6 +430,7 @@ class RetirementPlanSettings(BaseSettings):
 
     default_location: str = "europe"
     locations: dict[str, RetirementLocationPreset] = {}
+    scenario_spread: ScenarioSpreadSettings = ScenarioSpreadSettings()
 
 
 class ModelLineage(BaseSettings):
@@ -432,12 +440,30 @@ class ModelLineage(BaseSettings):
 
     name: str
     engine: str = "ddqn_v2"
-    pattern: str                      # zip file name under <model.path>/<INST>/; {inst} = lower id
+    # zip file name under <model.path>/<INST>/; {inst} = lower id.  A pattern with ``*`` matches several
+    # files (a pipeline run id is in the name): the newest wins.
+    pattern: str
     source: str = ""                  # training script (repo-relative) the split is parsed from
-    train_end: date
-    val_start: date
-    val_end: date
-    backtest_start: date
+    # How the model's windows are known.  "dates": fixed dates the training script uses (all four set).
+    # "fractions": the DS pipeline's ``temporal_split`` (train / val / test by row count) reproduced on the
+    # bars that existed the day the model was trained, so the windows differ per model.
+    split_rule: Literal["dates", "fractions"] = "dates"
+    train_end: date | None = None
+    val_start: date | None = None
+    val_end: date | None = None
+    backtest_start: date | None = None
+    train_frac: float = Field(default=0.70, gt=0, lt=1)
+    val_frac: float = Field(default=0.15, gt=0, lt=1)
+    # fractions only: the derived training end is pushed this many bars later (a safe side: the
+    # reconstruction can be a few bars off if the price history changed since the model was trained)
+    margin_bars: int = Field(default=5, ge=0)
+
+    @model_validator(mode="after")
+    def _dates_rule_needs_dates(self) -> "ModelLineage":
+        if self.split_rule == "dates" and None in (self.train_end, self.val_start, self.val_end,
+                                                   self.backtest_start):
+            raise ValueError("a 'dates' lineage needs train_end, val_start, val_end and backtest_start")
+        return self
 
 
 class GoalSelectionSettings(BaseSettings):

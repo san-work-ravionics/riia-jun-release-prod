@@ -22,12 +22,14 @@ LINEAGE = ModelLineage(name="f34p25", engine="ddqn_v2", pattern="rita_ddqn_v2_{i
 
 def indicator_frame(seed: int = 0, start: str = "2021-01-01", end: str = "2026-06-30",
                     drift: float = 0.0004, vol: float = 0.01, with_ema: bool = True,
-                    freq: str = "B") -> pd.DataFrame:
-    """Indicator-complete frame with a seeded random walk (all features finite)."""
+                    freq: str = "B", calm_after: date | None = None) -> pd.DataFrame:
+    """Indicator-complete frame with a seeded random walk (all features finite).  The walk is calmer
+    after ``calm_after`` (default: the F34 training end), so the data-integrity rule ("no move after the
+    training end bigger than any before it") passes for a model trained up to that date."""
     idx = pd.date_range(start, end, freq=freq)
     rng = np.random.default_rng(seed)
     # calmer after train_end, so only an injected jump trips the data-integrity rule
-    scale = np.where(idx <= pd.Timestamp(SPLIT.train_end), 1.0, 0.6)
+    scale = np.where(idx <= pd.Timestamp(calm_after or SPLIT.train_end), 1.0, 0.6)
     r = drift + rng.normal(0.0, vol, len(idx)) * scale
     close = 100.0 * np.cumprod(1.0 + r)
     n = len(idx)
@@ -117,6 +119,9 @@ class FakeArtifacts:
         return m
 
     def lineage_split(self, lineage):
+        return self.split
+
+    def split_for(self, lineage, instrument, model_path, index):
         return self.split
 
     def load_indicator_frame(self, instrument):

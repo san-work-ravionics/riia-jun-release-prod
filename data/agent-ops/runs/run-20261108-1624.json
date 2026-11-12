@@ -1,0 +1,46 @@
+{
+  "run_id": "20261108-1624",
+  "app": "rita",
+  "request": "F45 Jarvis, one long direct session: fix start-up log-rotation errors; All Regions + India/US values from allocation; Concepts page by flow stage; Chat page (RITA Market Analysis layout + voice); chat answers only from the saved plan + portfolio; Jarvis consumes the models the DS pipeline builds; write/update the test suite; deploy v1.2.47 and v1.2.48",
+  "skill_file": "n/a",
+  "agents": [
+    {
+      "role": "engineer",
+      "status": "pass",
+      "steps_required": 5,
+      "steps_completed": 5,
+      "adherence_score": 0.7,
+      "token_estimate": 1500000,
+      "grounding_checks": {
+        "branch_created": false,
+        "code_changed": true,
+        "spec_updated": true,
+        "ruff_passed": true,
+        "contract_matches_architect": true
+      },
+      "failure_modes": [
+        "ci_test_gate_failed_twice_before_green",
+        "tests_written_and_pushed_without_being_run",
+        "stale_tests_after_behaviour_change",
+        "requirement_misread_concepts_coupled_to_chat",
+        "model_lookup_assumed_a_special_file_instead_of_following_the_pipeline",
+        "bash_heredoc_backslash_corruption"
+      ],
+      "notes": "Direct work on master in riia-jun-release-prod (no /enhance run, no architect/reviewer agents). Deployed green: v1.2.47 (2f353ce) after two CI test-gate failures (d5cd360, 7eb27f0; PATTERN-023), v1.2.48 (fa7b33f). Corrections by the user: Concepts must not be about the chat; chat must answer from the saved plan+portfolio of every region; Jarvis must consume models as the DS pipeline builds them (pipeline_v2 lineage cfdeb31). Bugs found by tests and fixed: shares:0 treated as allocation-only, chat.js imported under two cache-bust queries, Concepts status date read live_holdings. token_estimate and duration are rough estimates: session counters were not available."
+    }
+  ],
+  "overall_status": "pass",
+  "total_tokens_estimated": 1500000,
+  "duration_minutes": 480,
+  "branch": "master",
+  "merge_status": "merged",
+  "merge_commit": "fa7b33f",
+  "human_score": {
+    "accuracy": 3,
+    "relevance": 4,
+    "csat": 3,
+    "planning_ok": true,
+    "time_saved_hours": 8,
+    "notes": ""
+  }
+}
