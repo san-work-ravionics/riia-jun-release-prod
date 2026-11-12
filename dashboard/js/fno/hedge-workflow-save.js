@@ -166,7 +166,18 @@ function _renderSummary() {
     return;
   }
   if (el) { el.className = ''; el.style.marginBottom = ''; }
-  setEl('hw-save-summary', '');
+  const known = new Set(hw.portfolioHoldings.map((h) => h.instrument_id));
+  const hedgedN = hw.hedgedIds.filter((id) => known.has(id)).length;
+  const heldN = known.size;
+  const m = hw.marginImpact;
+  const marginTxt = m
+    ? `${_esc(m.currency || '')} ${Number(m.amount).toLocaleString('en-US', { maximumFractionDigits: 0 })} (${m.source === 'kite' ? 'Live' : 'Estimated'}, ${_esc(m.instrumentId)})`
+    : '—';
+  setEl(
+    'hw-save-summary',
+    `<div class="kpi-sub">${heldN} instrument${heldN !== 1 ? 's' : ''} held · ${hedgedN ? `${hedgedN} hedged` : 'none hedged'}</div>
+     <div class="kpi-sub">Margin impact: ${marginTxt}</div>`
+  );
 }
 
 function _renderSaveStatus() {

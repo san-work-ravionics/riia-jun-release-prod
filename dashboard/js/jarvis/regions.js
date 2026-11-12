@@ -248,8 +248,8 @@ export function renderTotalPanel(pfs, rates) {
     const m = p.money;
     const ccy = locCurrency(loc, pf);
     if (m) {
-      const v = _toEur(m.value_now, ccy, rates);
-      const pl = _toEur(m.pnl, ccy, rates);
+      const v = toEur(m.value_now, ccy, rates);
+      const pl = toEur(m.pnl, ccy, rates);
       if (v !== null) totalVal = (totalVal ?? 0) + v;
       if (pl !== null) totalPnl = (totalPnl ?? 0) + pl;
       if (isNum(p.ytd_return) && v !== null) { ytdWeighted = (ytdWeighted ?? 0) + p.ytd_return * v; ytdBase = (ytdBase ?? 0) + v; }

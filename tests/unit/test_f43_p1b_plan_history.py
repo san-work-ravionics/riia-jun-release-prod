@@ -271,7 +271,7 @@ def test_return_from_sign_in_restores_pending_plan_and_saves_it():
 
 def test_boot_opens_what_i_need_when_returning_to_save():
     main = (_IG / "main.js").read_text(encoding="utf-8")
-    assert "import { loadWhatINeed, hasPendingSave } from './what-i-need.js?v=64';" in main
+    assert "import { loadWhatINeed, hasPendingSave } from './what-i-need.js?v=65';" in main
     assert "const start = hasPendingSave() ? 'what-i-need' : 'investgame';" in main
     html = (Path(__file__).parent.parent.parent / "dashboard" / "investgame-app.html").read_text(encoding="utf-8")
     assert "js/investgame-app/main.js?v=69" in html

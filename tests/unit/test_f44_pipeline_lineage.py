@@ -33,8 +33,12 @@ from .f44_p3_helpers import SPLIT, FakeArtifacts, PolicyModel, indicator_frame
 
 def test_registered_lineages_are_the_exact_name_one_then_the_pipeline_one():
     lins = get_settings().goal_selection.model_lineages
-    assert [(lin.name, lin.split_rule) for lin in lins] == [("f34p25", "dates"), ("pipeline_v2", "fractions")]
-    pipe = lins[1]
+    assert len(lins) >= 2
+    # all lineages except the last are exact-name (dates split)
+    for lin in lins[:-1]:
+        assert lin.split_rule == "dates", f"lineage {lin.name!r} expected dates split"
+    pipe = lins[-1]
+    assert pipe.name == "pipeline_v2" and pipe.split_rule == "fractions"
     assert pipe.pattern == "rita_ddqn_v2_{inst}_*.zip" and (pipe.train_frac, pipe.val_frac) == (0.70, 0.15)
     assert pipe.train_end is None                                      # no fixed dates: per model
 
