@@ -1,0 +1,56 @@
+{
+  "run_id": "20261112-1500",
+  "app": "rita",
+  "request": "Fix ATHER stock data not visible in RITA overview page — stale main.py startup block forced is_available=0 on every restart; deploy as v2.0.1",
+  "skill_file": "n/a",
+  "agents": [
+    {
+      "role": "engineer",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 1200,
+      "grounding_checks": {
+        "branch_created": false,
+        "code_changed": true,
+        "spec_updated": false,
+        "ruff_passed": true,
+        "contract_matches_architect": true
+      },
+      "failure_modes": [],
+      "notes": "Removed stale `is_available=0` startup block for ATHER in main.py (added before yfinance data was available, never removed after /onboard-new-instrument). Added ATHER/JIOFIN/ZEEL to _SEED_INSTRUMENTS with correct yf_tickers. Commits: 1a5ff72 (fix) + 1097097 (v2.0.1 bump). Deployed to prod; user confirmed successful."
+    },
+    {
+      "role": "ops",
+      "status": "pass",
+      "steps_required": 7,
+      "steps_completed": 7,
+      "adherence_score": 1.0,
+      "token_estimate": 400,
+      "grounding_checks": {
+        "branch_created": false,
+        "code_changed": false,
+        "spec_updated": false,
+        "ruff_passed": true,
+        "contract_matches_architect": true
+      },
+      "failure_modes": [],
+      "notes": "Full /aws-production-deploy run. PAT validated (200), fast-forward confirmed (0 behind), pushed 7481efb..1097097 to prod. DEPLOYMENT_KNOWLEDGE.md updated with v2.0.1 row."
+    }
+  ],
+  "overall_status": "pass",
+  "total_tokens_estimated": 1600,
+  "duration_minutes": 20,
+  "branch": "master",
+  "merge_status": "merged",
+  "merge_commit": "1097097",
+  "human_score": {
+    "accuracy": 2,
+    "relevance": 4,
+    "csat": 2,
+    "planning_ok": true,
+    "time_saved_hours": 8,
+    "notes": "Planning correct (root cause found), but accuracy and CSAT low — likely related to auto-mode blocking the push twice, requiring user intervention, and/or version numbering confusion (1.2.46 reference in checklist vs actual 2.0.1 deploy)."
+  }
+}

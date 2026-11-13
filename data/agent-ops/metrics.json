@@ -1,105 +1,108 @@
 {
-  "generated_at": "2026-11-09T10:35:11",
-  "total_runs": 27,
+  "generated_at": "2026-11-13T09:22:08",
+  "total_runs": 37,
   "status_counts": {
-    "pass_with_warnings": 14,
-    "pass": 13
+    "pass_with_warnings": 17,
+    "pass": 20
   },
   "app_counts": {
     "rl": 2,
-    "rita": 8,
-    "ops": 1,
-    "fno": 16
+    "rita": 13,
+    "ops": 2,
+    "fno": 16,
+    "core": 3,
+    "ds": 1
   },
-  "total_estimated_tokens": 7788800,
-  "total_actual_tokens": 8711406,
-  "total_duration_minutes": 2794,
-  "avg_duration_minutes": 103.5,
+  "total_estimated_tokens": 9793400,
+  "total_actual_tokens": 11692308,
+  "total_duration_minutes": 4372,
+  "avg_duration_minutes": 118.2,
   "per_agent": {
     "pm": {
-      "runs": 19,
+      "runs": 24,
       "avg_adherence": 1.0,
-      "total_estimated_tokens": 600000,
-      "total_actual_tokens": 505356,
-      "token_overrun_ratio": 0.84,
+      "total_estimated_tokens": 775000,
+      "total_actual_tokens": 593390,
+      "token_overrun_ratio": 0.77,
       "top_failure_modes": {}
     },
     "architect": {
-      "runs": 19,
-      "avg_adherence": 1.0,
-      "total_estimated_tokens": 530000,
-      "total_actual_tokens": 614355,
-      "token_overrun_ratio": 1.16,
-      "top_failure_modes": {}
+      "runs": 25,
+      "avg_adherence": 0.992,
+      "total_estimated_tokens": 740000,
+      "total_actual_tokens": 817478,
+      "token_overrun_ratio": 1.1,
+      "top_failure_modes": {
+        "design 1 rule-based (rejected by user: 'Its a model based approach not a rule based approach')": 1,
+        "paths-correction-needed-riia-jun-to-aug": 1
+      }
     },
     "design_reviewer": {
-      "runs": 19,
+      "runs": 24,
       "avg_adherence": 1.0,
-      "total_estimated_tokens": 504000,
-      "total_actual_tokens": 501980,
-      "token_overrun_ratio": 1.0,
+      "total_estimated_tokens": 654000,
+      "total_actual_tokens": 635999,
+      "token_overrun_ratio": 0.97,
       "top_failure_modes": {
-        "DR-001": 1
+        "DR-001": 1,
+        "DR-004-frozen-repo-paths-pass1": 1
       }
     },
     "engineer": {
-      "runs": 26,
-      "avg_adherence": 0.975,
-      "total_estimated_tokens": 3083000,
-      "total_actual_tokens": 1699976,
-      "token_overrun_ratio": 0.55,
+      "runs": 34,
+      "avg_adherence": 0.972,
+      "total_estimated_tokens": 3538200,
+      "total_actual_tokens": 2519706,
+      "token_overrun_ratio": 0.71,
       "top_failure_modes": {
         "FC-LINT: unused import shipped, caught by CI ruff gate": 1,
         "FC-COV: new 538-line module shipped without coverage omit entry": 1,
-        "No worktree isolation \u00e2\u20ac\u201d committed directly to master (retrospective audit)": 1,
+        "No worktree isolation \u2014 committed directly to master (retrospective audit)": 1,
         "Confluence update scripts not idempotent (HTML-comment marker stripped on save) -> duplicate v1.2.30 section appended once, removed same session, scripts fixed": 1,
         "Kite callback access token discarded (masked print, per-request service) -> one extra request_token round trip": 1
       }
     },
     "code_reviewer": {
-      "runs": 17,
-      "avg_adherence": 0.985,
-      "total_estimated_tokens": 996000,
-      "total_actual_tokens": 941766,
-      "token_overrun_ratio": 0.95,
+      "runs": 22,
+      "avg_adherence": 0.989,
+      "total_estimated_tokens": 1346000,
+      "total_actual_tokens": 1455783,
+      "token_overrun_ratio": 1.08,
       "top_failure_modes": {
-        "CR-WORKTREE-FALSE-POSITIVE: spec blocking findings overridden \u00e2\u20ac\u201d specs confirmed present in worktree branch": 1
+        "CR-WORKTREE-FALSE-POSITIVE: spec blocking findings overridden \u2014 specs confirmed present in worktree branch": 1
       }
     },
     "qa": {
-      "runs": 17,
-      "avg_adherence": 0.971,
-      "total_estimated_tokens": 1225000,
-      "total_actual_tokens": 1233851,
-      "token_overrun_ratio": 1.01,
+      "runs": 22,
+      "avg_adherence": 0.966,
+      "total_estimated_tokens": 1600000,
+      "total_actual_tokens": 1955076,
+      "token_overrun_ratio": 1.22,
       "top_failure_modes": {
         "FC-004": 2,
-        "No unit tests \u00e2\u20ac\u201d no RITA backend code to test (external middleware)": 1
+        "No unit tests \u2014 no RITA backend code to test (external middleware)": 1
       }
     },
     "techwriter": {
-      "runs": 17,
-      "avg_adherence": 0.825,
-      "total_estimated_tokens": 850000,
-      "total_actual_tokens": 609167,
-      "token_overrun_ratio": 0.72,
+      "runs": 22,
+      "avg_adherence": 0.865,
+      "total_estimated_tokens": 1125000,
+      "total_actual_tokens": 1109921,
+      "token_overrun_ratio": 0.99,
       "top_failure_modes": {
         "Confluence key not present in aug workspace": 1
       }
     },
     "ops": {
-      "runs": 1,
+      "runs": 4,
       "avg_adherence": 1.0,
-      "total_estimated_tokens": 800,
+      "total_estimated_tokens": 15200,
       "total_actual_tokens": 0,
       "token_overrun_ratio": 0.0,
       "top_failure_modes": {}
     }
   },
-  "alerts": [
-    "[ALERT] techwriter adherence 0.67 < 0.7 in run 20261005-1939",
-    "[ALERT] techwriter adherence 0.67 < 0.7 in run 20261005-2005"
-  ],
+  "alerts": [],
   "skill_version_history": [
     {
       "skill_file": ".claude/commands/enhance.md",
