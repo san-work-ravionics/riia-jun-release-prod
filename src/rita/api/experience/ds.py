@@ -7,14 +7,21 @@ URL: GET /api/experience/ds/
 from __future__ import annotations
 
 import time
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 import structlog
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from rita.config import get_settings
 from rita.database import get_db
 from rita.logging_config import log_event
+from rita.schemas.ds_instrument_status import (
+    DsInstrumentBuildStatusResponse,
+    InstrumentBuildStatusItem,
+)
 
 log = structlog.get_logger()
 
@@ -155,3 +162,94 @@ def ds_payload(instrument: str = "NIFTY", db: Session = Depends(get_db)) -> dict
     )
 
     return response
+
+
+@router.get(
+    "/instrument-build-status",
+    response_model=DsInstrumentBuildStatusResponse,
+    summary="All instruments with model build status and model file existence",
+)
+def get_instrument_build_status(db: Session = Depends(get_db)) -> DsInstrumentBuildStatusResponse:
+    """Return build status for every tracked instrument.
+
+    Read-only. No db.commit().
+    Model file existence is checked via get_settings().model.path — never hardcoded.
+    """
+    from rita.repositories.instrument import InstrumentRepository
+    from rita.repositories.training import TrainingRunsRepository
+
+    settings = get_settings()
+    model_base = Path(settings.model.path)
+
+    # Latest training run per instrument symbol
+    runs_by_symbol: dict[str, Any] = {}
+    try:
+        latest_runs = TrainingRunsRepository(db).get_latest_per_instrument()
+        for run in latest_runs:
+            runs_by_symbol[run.instrument.upper()] = run
+    except Exception:
+        log.warning("experience.ds.instrument_build_status.runs_error", exc_info=True)
+
+    # All instruments (all, not just is_available)
+    try:
+        all_instruments = InstrumentRepository(db).read_all()
+    except Exception:
+        log.warning("experience.ds.instrument_build_status.instruments_error", exc_info=True)
+        all_instruments = []
+
+    items: list[InstrumentBuildStatusItem] = []
+    for inst in all_instruments:
+        symbol = inst.instrument_id.upper()
+        run = runs_by_symbol.get(symbol)
+
+        # Determine build_status
+        if run is None:
+            build_status = "never_trained"
+            last_trained = None
+            model_version = None
+            error_message = None
+        elif run.status == "complete":
+            build_status = "success"
+            last_trained = run.recorded_at.isoformat() if run.recorded_at else None
+            model_version = run.model_version
+            error_message = None
+        elif run.status == "failed":
+            build_status = "failed"
+            last_trained = run.recorded_at.isoformat() if run.recorded_at else None
+            model_version = run.model_version
+            error_message = run.notes
+        else:
+            build_status = run.status  # pending / running — surface as-is
+            last_trained = run.recorded_at.isoformat() if run.recorded_at else None
+            model_version = run.model_version
+            error_message = None
+
+        # Check for model ZIP file
+        model_file_exists = False
+        try:
+            model_dir = model_base / symbol
+            model_file_exists = any(model_dir.glob("*.zip"))
+        except OSError:
+            log.warning(
+                "experience.ds.instrument_build_status.glob_error",
+                symbol=symbol,
+                model_dir=str(model_base / symbol),
+            )
+
+        items.append(
+            InstrumentBuildStatusItem(
+                symbol=symbol,
+                name=inst.name,
+                last_trained=last_trained,
+                build_status=build_status,
+                model_version=model_version,
+                error_message=error_message,
+                model_file_exists=model_file_exists,
+            )
+        )
+
+    return DsInstrumentBuildStatusResponse(
+        instruments=items,
+        total=len(items),
+        as_of=datetime.now(timezone.utc).isoformat(),
+    )

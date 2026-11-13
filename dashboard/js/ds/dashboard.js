@@ -71,4 +71,44 @@ export async function loadDashboard() {
     }).catch(() => {});
 
   } catch(e) { console.warn('Dashboard:', e); }
+
+  // ── Instrument Model Build Status ─────────────────────────────────────────
+  const tbody = document.getElementById('ds-instrument-build-table-body');
+  const summary = document.getElementById('ds-build-status-summary');
+  try {
+    const bld = await api('/api/experience/ds/instrument-build-status');
+    if (!bld || !bld.instruments || !bld.instruments.length) {
+      if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="empty" style="padding:12px">No instruments found.</td></tr>';
+      if (summary) summary.textContent = '—';
+    } else {
+      const badgeClass = {
+        success:       'bg-success',
+        failed:        'bg-danger',
+        never_trained: 'bg-secondary',
+      };
+      if (tbody) {
+        tbody.innerHTML = bld.instruments.map(r => {
+          const cls = badgeClass[r.build_status] || 'bg-warning';
+          const lastTrained = r.last_trained ? r.last_trained.slice(0, 16).replace('T', ' ') : 'Never';
+          const version = r.model_version ?? '—';
+          const modelFile = r.model_file_exists
+            ? '<span style="color:var(--bs-success,#198754)">✓</span>'
+            : '<span style="color:var(--t3)">✗</span>';
+          return `<tr>
+            <td><strong>${r.symbol}</strong></td>
+            <td>${r.name ?? '—'}</td>
+            <td><span class="badge ${cls}">${r.build_status}</span></td>
+            <td>${lastTrained}</td>
+            <td>${version}</td>
+            <td>${modelFile}</td>
+          </tr>`;
+        }).join('');
+      }
+      if (summary) summary.textContent = `${bld.total} instruments · as of ${bld.as_of.slice(0, 16).replace('T', ' ')} UTC`;
+    }
+  } catch(e) {
+    console.warn('Instrument build status:', e);
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="color:var(--bs-danger,#dc3545);padding:12px">Failed to load instrument build status.</td></tr>';
+    if (summary) summary.textContent = '—';
+  }
 }
