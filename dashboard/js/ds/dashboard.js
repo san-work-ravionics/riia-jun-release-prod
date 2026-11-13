@@ -1,5 +1,6 @@
 import { api } from './api.js';
 import { DS_C, mkTbl, fmtPctRaw } from './utils.js';
+import { state } from './state.js';
 
 const C = DS_C;
 
@@ -9,7 +10,11 @@ function fmt(v, dec=2) {
   return isNaN(n) ? String(v) : n.toFixed(dec);
 }
 
+let _buildData = null;
+let _previewSymbol = null;
+
 export async function loadDashboard() {
+  _previewSymbol = state.activeInst?.id ?? null;
   try {
     api('/api/v1/experience/rita/training-history').then(hist => {
       if (!hist || !hist.length) return;
@@ -77,8 +82,9 @@ export async function loadDashboard() {
   const summary = document.getElementById('ds-build-status-summary');
   try {
     const bld = await api('/api/experience/ds/instrument-build-status');
+    _buildData = bld;
     if (!bld || !bld.instruments || !bld.instruments.length) {
-      if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="empty" style="padding:12px">No instruments found.</td></tr>';
+      if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="empty" style="padding:12px">No instruments found.</td></tr>';
       if (summary) summary.textContent = '—';
     } else {
       const badgeClass = {
@@ -87,14 +93,15 @@ export async function loadDashboard() {
         never_trained: 'bg-secondary',
       };
       if (tbody) {
-        tbody.innerHTML = bld.instruments.map(r => {
+        tbody.innerHTML = bld.instruments.map((r, idx) => {
           const cls = badgeClass[r.build_status] || 'bg-warning';
           const lastTrained = r.last_trained ? r.last_trained.slice(0, 16).replace('T', ' ') : 'Never';
           const version = r.model_version ?? '—';
           const modelFile = r.model_file_exists
             ? '<span style="color:var(--bs-success,#198754)">✓</span>'
             : '<span style="color:var(--t3)">✗</span>';
-          return `<tr>
+          return `<tr id="ds-build-row-${r.symbol}" onclick="dsPreviewRow('${r.symbol}')" style="cursor:pointer" class="${r.symbol === _previewSymbol ? 'table-active' : ''}">
+            <td>${idx + 1}</td>
             <td><strong>${r.symbol}</strong></td>
             <td>${r.name ?? '—'}</td>
             <td><span class="badge ${cls}">${r.build_status}</span></td>
@@ -106,9 +113,69 @@ export async function loadDashboard() {
       }
       if (summary) summary.textContent = `${bld.total} instruments · as of ${bld.as_of.slice(0, 16).replace('T', ' ')} UTC`;
     }
+    _renderPreviewPanel(_previewSymbol);
   } catch(e) {
     console.warn('Instrument build status:', e);
-    if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="color:var(--bs-danger,#dc3545);padding:12px">Failed to load instrument build status.</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="color:var(--bs-danger,#dc3545);padding:12px">Failed to load instrument build status.</td></tr>';
     if (summary) summary.textContent = '—';
   }
+}
+
+function _renderPreviewPanel(symbol) {
+  const inst = (_buildData?.instruments ?? []).find(i => i.symbol === symbol);
+  const setKpi = (id, v, cls) => { const e = document.getElementById(id); if(e){ e.textContent = v; if(cls) e.className = 'kpi-value ' + cls; } };
+  const lbl = document.getElementById('ds-preview-label');
+
+  if (!inst) {
+    ['d-return','d-cagr','d-sharpe','d-mdd','d-winrate'].forEach(id => setKpi(id, '—', ''));
+    if(lbl) lbl.textContent = '';
+    return;
+  }
+
+  const isPreview = symbol !== (state.activeInst?.id ?? null);
+  if(lbl) lbl.textContent = isPreview ? `Previewing: ${symbol}` : '';
+
+  setKpi('d-return',  inst.return_pct  != null ? fmtPctRaw(inst.return_pct, 1)  : '—', inst.return_pct  != null && inst.return_pct  >= 0 ? 'pos' : 'neg');
+  setKpi('d-cagr',    inst.cagr_pct    != null ? fmtPctRaw(inst.cagr_pct, 1)    : '—', '');
+  const sh = inst.sharpe_ratio;
+  setKpi('d-sharpe',  sh != null ? fmt(sh, 2) : '—', sh != null ? (sh >= 1 ? 'pos' : sh >= 0 ? 'neu' : 'neg') : '');
+  setKpi('d-mdd',     inst.max_drawdown_pct != null ? fmtPctRaw(inst.max_drawdown_pct, 1) : '—', 'neg');
+  setKpi('d-winrate', '—', '');
+
+  // Constraints
+  const constraintRows = [
+    { name: 'Sharpe Ratio',    met: inst.sharpe_constraint_met,   value: sh != null ? fmt(sh, 2) : '—', threshold: '≥ 1.0' },
+    { name: 'Max Drawdown',    met: inst.drawdown_constraint_met,  value: inst.max_drawdown_pct != null ? fmtPctRaw(inst.max_drawdown_pct, 1) : '—', threshold: '< 25%' },
+    { name: 'All Constraints', met: inst.constraints_met,         value: '', threshold: '' },
+  ].filter(c => c.met !== undefined && c.met !== null);
+
+  const cc = document.getElementById('dash-constraints');
+  if (cc && constraintRows.length) {
+    cc.innerHTML = constraintRows.map(c => {
+      const ok = c.met === true;
+      const cls = ok ? 'ok' : 'err';
+      return `<div class="alert-row ${cls}"><span class="alert-icon">${ok ? '✓' : '✗'}</span><span class="alert-msg">${c.name}${c.value ? ': ' + c.value : ''}</span><span class="alert-tag">${c.threshold}</span></div>`;
+    }).join('');
+  }
+
+  // Last Run Summary
+  const dg = document.getElementById('dash-goal');
+  if (dg) {
+    const rows = [
+      ['Round',     inst.last_run_round],
+      ['Timestamp', inst.last_run_timestamp ? inst.last_run_timestamp.slice(0,16).replace('T',' ') : null],
+      ['Timesteps', inst.last_run_timesteps != null ? inst.last_run_timesteps.toLocaleString() : null],
+    ].filter(([,v]) => v != null && v !== '');
+    dg.innerHTML = '<div style="padding:2px 0">' +
+      rows.map(([k,v]) => `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px"><span style="color:var(--t3)">${k}</span><span style="font-family:var(--fm);font-weight:500">${v}</span></div>`).join('') +
+      '</div>';
+  }
+}
+
+export function dsPreviewRow(symbol) {
+  _previewSymbol = symbol;
+  document.querySelectorAll('#ds-instrument-build-table-body tr').forEach(tr => tr.classList.remove('table-active'));
+  const tr = document.getElementById('ds-build-row-' + symbol);
+  if (tr) tr.classList.add('table-active');
+  _renderPreviewPanel(symbol);
 }

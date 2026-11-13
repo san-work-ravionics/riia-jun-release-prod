@@ -1,6 +1,6 @@
 import { createShow } from './nav.js';
 import { loadUnderstand, runUnderstand, vizSelectInstrument, openVizModal, closeVizModal, runPortfolioOverview } from './understand.js';
-import { loadDashboard } from './dashboard.js';
+import { loadDashboard, dsPreviewRow } from './dashboard.js';
 import { runBuild, runReuse, resetSession, checkStatus, loadInstruments, loadActiveInstrument } from './pipeline.js';
 import { loadPerformance, switchPerfTab } from './performance.js';
 import { loadRisk } from './risk.js';
@@ -70,6 +70,7 @@ window.downloadExperimentResults = downloadExperimentResults;
 window.setLanguage               = setLanguage;
 window.switchConceptTab          = switchConceptTab;
 window.loadMCP                   = loadMCP;
+window.dsPreviewRow              = dsPreviewRow;
 
 // ── Keyboard escape handlers (replicate inline listeners from ds.html) ────────
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeChartModal(); });

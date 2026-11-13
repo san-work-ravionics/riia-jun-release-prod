@@ -612,11 +612,13 @@ tr:hover td{background:var(--surface2);}
     <div class="card-hdr">
       <span class="card-title">Instrument Model Build Status</span>
       <span id="ds-build-status-summary" style="font-size:12px;color:var(--t3);margin-left:8px"></span>
+      <span id="ds-preview-label" class="badge bg-secondary ms-2" style="font-size:11px;font-weight:normal"></span>
     </div>
-    <div class="table-wrap" style="overflow-x:auto">
+    <div class="table-wrap" style="overflow-x:auto;overflow-y:auto;max-height:245px">
       <table class="table table-sm table-hover" style="width:100%;font-size:13px">
-        <thead>
+        <thead style="position:sticky;top:0;z-index:1;background-color:var(--card-bg,#fff)">
           <tr>
+            <th style="width:36px">#</th>
             <th>Symbol</th>
             <th>Name</th>
             <th>Status</th>
@@ -626,7 +628,7 @@ tr:hover td{background:var(--surface2);}
           </tr>
         </thead>
         <tbody id="ds-instrument-build-table-body">
-          <tr><td colspan="6" class="empty" style="padding:12px">Loading…</td></tr>
+          <tr><td colspan="7" class="empty" style="padding:12px">Loading…</td></tr>
         </tbody>
       </table>
     </div>

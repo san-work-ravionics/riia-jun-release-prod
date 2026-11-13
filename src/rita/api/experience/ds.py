@@ -236,6 +236,35 @@ def get_instrument_build_status(db: Session = Depends(get_db)) -> DsInstrumentBu
                 model_dir=str(model_base / symbol),
             )
 
+        # Phase 2 — per-instrument metrics from training_runs
+        return_pct = None
+        cagr_pct = None
+        sharpe_ratio = None
+        max_drawdown_pct = None
+        sharpe_constraint_met = None
+        drawdown_constraint_met = None
+        constraints_met = None
+        last_run_round = None
+        last_run_timestamp = None
+        last_run_timesteps = None
+
+        if run is not None:
+            if run.val_return is not None:
+                return_pct = run.val_return * 100
+            if run.val_cagr is not None:
+                cagr_pct = run.val_cagr * 100
+            if run.val_sharpe is not None:
+                sharpe_ratio = run.val_sharpe
+                sharpe_constraint_met = run.val_sharpe >= 1.0
+            if run.val_mdd is not None:
+                max_drawdown_pct = run.val_mdd * 100
+                drawdown_constraint_met = abs(run.val_mdd * 100) < 25.0
+            if sharpe_constraint_met is not None and drawdown_constraint_met is not None:
+                constraints_met = sharpe_constraint_met and drawdown_constraint_met
+            last_run_round = str(run.run_id) if run.run_id is not None else None
+            last_run_timestamp = run.recorded_at.isoformat() if run.recorded_at else None
+            last_run_timesteps = run.timesteps if run.timesteps is not None else None
+
         items.append(
             InstrumentBuildStatusItem(
                 symbol=symbol,
@@ -245,6 +274,17 @@ def get_instrument_build_status(db: Session = Depends(get_db)) -> DsInstrumentBu
                 model_version=model_version,
                 error_message=error_message,
                 model_file_exists=model_file_exists,
+                return_pct=return_pct,
+                cagr_pct=cagr_pct,
+                sharpe_ratio=sharpe_ratio,
+                max_drawdown_pct=max_drawdown_pct,
+                win_rate_pct=None,
+                sharpe_constraint_met=sharpe_constraint_met,
+                drawdown_constraint_met=drawdown_constraint_met,
+                constraints_met=constraints_met,
+                last_run_round=last_run_round,
+                last_run_timestamp=last_run_timestamp,
+                last_run_timesteps=last_run_timesteps,
             )
         )
 
