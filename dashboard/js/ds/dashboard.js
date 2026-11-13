@@ -129,6 +129,10 @@ function _renderPreviewPanel(symbol) {
   if (!inst) {
     ['d-return','d-cagr','d-sharpe','d-mdd','d-winrate'].forEach(id => setKpi(id, '—', ''));
     if(lbl) lbl.textContent = '';
+    const cc = document.getElementById('dash-constraints');
+    if(cc) cc.innerHTML = '';
+    const dg = document.getElementById('dash-goal');
+    if(dg) dg.innerHTML = '';
     return;
   }
 
