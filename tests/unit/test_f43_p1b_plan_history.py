@@ -274,7 +274,7 @@ def test_boot_opens_what_i_need_when_returning_to_save():
     assert "import { loadWhatINeed, hasPendingSave } from './what-i-need.js?v=65';" in main
     assert "const start = hasPendingSave() ? 'what-i-need' : 'investgame';" in main
     html = (Path(__file__).parent.parent.parent / "dashboard" / "investgame-app.html").read_text(encoding="utf-8")
-    assert "js/investgame-app/main.js?v=69" in html
+    assert "js/investgame-app/main.js?v=71" in html
 
 
 def test_google_callback_lands_on_index_which_follows_post_login_redirect():
