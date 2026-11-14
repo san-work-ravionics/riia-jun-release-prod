@@ -297,15 +297,14 @@ console.log(JSON.stringify({ first, retry: log.filter(u => !u.includes('/instrum
 
 @_needs_node
 def test_edge_current_location_a5_fails_detail_shows_error_and_hides_drilldown():
-    """Edge 1: the current location's A5 fails → jv-pf-source shows err.load, drill-down hidden, no A6."""
+    """Edge 1: the current location's A5 fails → location column shows err.load, drill-down hidden, no A6."""
     r = _main("""
 const base_route = route;
 route = url => (url.includes('portfolio?location=europe') ? jr({ detail: 'eu down' }, 500) : base_route(url));
 await m.loadPortfolioSection(); await settle();
-console.log(JSON.stringify({ src: e('jv-pf-source').textContent, sec: e('sec-jv-instrument').hidden,
+console.log(JSON.stringify({ sec: e('sec-jv-instrument').hidden,
   a6: log.filter(u => u.includes('/instrument')), col: e('jv-loc-pf-europe').textContent,
   us: e('jv-loc-pf-us').innerHTML, title: e('jv-pf-detail-title').textContent }));""")
-    assert r["src"] == "Couldn't load — eu down"
     assert r["sec"] is True and r["a6"] == []
     assert r["col"] == "Couldn't load — eu down" and "jv-loc-kpis" in r["us"]
     assert r["title"] == "Europe in detail · EUR"                        # region currency, no A5 needed

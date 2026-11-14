@@ -466,7 +466,7 @@ def test_fc004_main_reads_are_fixture_fields():
 
 _DESIGN_IDS = """jv-loc-tabs jv-tab-chat jv-tab-portfolio jv-status-model sec-jv-chat jv-chat-log jv-chat-form
 jv-chat-input jv-chat-send jv-chat-chips jv-chat-error sec-jv-plan jv-plan-goal jv-plan-selection jv-plan-method
-jv-plan-excluded jv-plan-tracking jv-plan-proposal jv-plan-empty sec-jv-portfolio jv-pf-source jv-pf-kpis
+jv-plan-excluded jv-plan-tracking jv-plan-proposal jv-plan-empty sec-jv-portfolio jv-pf-kpis
 jv-pnl-chart jv-pnl-empty jv-target-kpis jv-target-chart jv-target-required jv-grid jv-grid-body jv-grid-empty
 jv-engine-table jv-engine-chart jv-engine-note sec-jv-instrument
 jv-sleeve-chart jv-sleeve-wrap jv-rationale chart-modal chart-modal-title
@@ -617,7 +617,7 @@ def test_html_portfolio_view_children_parsed():
 
     for loc in ("europe", "india", "us"):
         assert p.ids[f"jv-loc-col-{loc}"][0].parent.attrs.get("class") == "jv-loc-grid"
-    for i in ("jv-pf-source", "jv-pf-kpis", "jv-grid", "sec-jv-instrument", "jv-engine-table", "jv-engine-chart"):
+    for i in ("jv-pf-kpis", "jv-grid", "sec-jv-instrument", "jv-engine-table", "jv-engine-chart"):
         assert inside(i, "sec-jv-portfolio"), i
     assert inside("jv-geo-map", "jv-perf-chart-wrap"), "jv-geo-map"
     assert inside("jv-geo-table", "sec-jv-universe"), "jv-geo-table"
