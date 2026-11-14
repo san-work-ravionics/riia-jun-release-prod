@@ -4,7 +4,7 @@ import { loadConcepts, switchAgentTab } from './concepts.js';
 import { loadCrispDm, switchCrispTab } from './crisp-dm.js';
 import { loadAgentPerformance, setAgentPerfPeriod, loadAgentPerfTimeline } from './agent-performance.js';
 import { loadAgentBuilds, submitTokenEstimate, toggleEstimateWidget, closeChartModal } from './agent-builds.js';
-import { loadAgentPanel, agentPanelStep, resetAgentPanel, approveAgentProposal, rejectAgentProposal } from './agent-panel.js';
+import { loadAgentPanel, agentPanelStep, resetAgentPanel, approveAgentProposal, rejectAgentProposal, setApDays } from './agent-panel.js?v=3';
 import { loadWhatINeed, hasPendingSave } from './what-i-need.js?v=65';
 import { ensureDevToken } from '../shared/dev-auth.js';
 
@@ -40,6 +40,7 @@ window.agentPanelStep = agentPanelStep;
 window.resetAgentPanel = resetAgentPanel;
 window.approveAgentProposal = approveAgentProposal;
 window.rejectAgentProposal = rejectAgentProposal;
+window.setApDays = setApDays;
 
 // ── Init ─────────────────────────────────────────────────────────────────────
 window.addEventListener('load', async () => {

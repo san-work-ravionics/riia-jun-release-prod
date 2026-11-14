@@ -31,6 +31,8 @@ def _load_april_data() -> pd.DataFrame:
 
 _asml = _load_april_data()
 
+STARTING_CAPITAL = 10_000.0
+
 # ── Session state ─────────────────────────────────────────────────────────────
 SESSION_DATA: dict[str, dict] = {}
 
@@ -99,19 +101,37 @@ def probability_agent(state: AgentState) -> AgentState:
 
 
 def portfolio_manager_agent(state: AgentState) -> AgentState:
+    """Proposes a trade only — does not execute. Execution happens in the endpoint after HITL."""
     prob = state["probability"]
     price = state["price_data"]["close"]
-    if prob > 0.70 and state["cash"] > 100:
-        investment = state["cash"] * 0.2
-        shares = investment / price
-        state["cash"] -= investment
-        state["holdings"] += shares
-        state["logs"].append(f"Portfolio Manager: EXECUTED BUY - {shares:.2f} shares at {price} EUR.")
-        state["proposal"] = {"action": "BUY", "size": "20%"}
+    cash = state["cash"]
+    holdings = state["holdings"]
+
+    if prob > 0.70 and cash >= price:
+        shares = int(cash * 0.2 / price)
+        if shares > 0:
+            state["proposal"] = {"action": "BUY", "shares": shares, "size": "20%"}
+            state["logs"].append(
+                f"Portfolio Manager: Proposed BUY {shares} share{'s' if shares != 1 else ''} "
+                f"at €{price:.2f} (20% of cash, awaiting HITL approval)."
+            )
+        else:
+            state["proposal"] = {"action": "WAIT", "shares": 0, "size": "0%"}
+            state["logs"].append("Portfolio Manager: Cash too low for a full share. WAIT.")
+    elif prob < 0.40 and holdings >= 1:
+        shares = max(1, int(holdings * 0.2))
+        shares = min(shares, int(holdings))
+        state["proposal"] = {"action": "SELL", "shares": shares, "size": "20%"}
+        state["logs"].append(
+            f"Portfolio Manager: Proposed SELL {shares} share{'s' if shares != 1 else ''} "
+            f"at €{price:.2f} (defensive reduction)."
+        )
     else:
-        state["proposal"] = {"action": "WAIT", "size": "0%"}
-        state["logs"].append("Portfolio Manager: Strategy is to WAIT.")
-    state["portfolio_value"] = state["cash"] + (state["holdings"] * price)
+        state["proposal"] = {"action": "WAIT", "shares": 0, "size": "0%"}
+        state["logs"].append("Portfolio Manager: No edge detected. WAIT.")
+
+    # Portfolio value uses pre-trade state; endpoint will override after execution.
+    state["portfolio_value"] = cash + (holdings * price)
     return state
 
 
@@ -145,14 +165,16 @@ def _build_narrator_insight(state: AgentState) -> str:
         ),
         "Bear Trending": (
             f"Sustained selling pressure placed the market in Bear Trending territory; "
-            f"at {prob:.0%} confidence, taking on exposure looked unattractive."
+            f"at {prob:.0%} confidence, taking on new exposure looked unattractive."
         ),
         "Quiet Mean-Reverting": (
             f"A low-volatility, directionless session signalled a Quiet Mean-Reverting regime — "
             f"agents adopted a measured scalping posture with {prob:.0%} historical probability."
         ),
     }
-    s1 = regime_sentences.get(regime, f"Agents detected a {regime} regime with {prob:.0%} historical success probability.")
+    s1 = regime_sentences.get(
+        regime, f"Agents detected a {regime} regime with {prob:.0%} historical success probability."
+    )
 
     if compliance.startswith("FLAGGED"):
         s2 = (
@@ -160,9 +182,16 @@ def _build_narrator_insight(state: AgentState) -> str:
             f"intraday volatility breached the 5% guardrail and the trade was blocked."
         )
     elif action == "BUY":
+        shares = state["proposal"].get("shares", 0)
         s2 = (
-            f"The Portfolio Manager committed 20% of available capital at €{price:.2f}, "
-            f"a Kelly-sized entry that cleared compliance cleanly."
+            f"The Portfolio Manager proposed buying {shares} share{'s' if shares != 1 else ''} "
+            f"at €{price:.2f} — awaiting human approval before committing capital."
+        )
+    elif action == "SELL":
+        shares = state["proposal"].get("shares", 0)
+        s2 = (
+            f"The Portfolio Manager trimmed {shares} share{'s' if shares != 1 else ''} at €{price:.2f} — "
+            f"defensive reduction executed to cut exposure in adverse conditions."
         )
     elif cash <= 100:
         s2 = (
@@ -203,9 +232,13 @@ _memory = MemorySaver()
 _graph = _workflow.compile(checkpointer=_memory)
 
 
-# ── Request/Response ──────────────────────────────────────────────────────────
+# ── Request models ────────────────────────────────────────────────────────────
 class StepRequest(BaseModel):
     day_index: int
+    thread_id: str
+
+
+class ThreadRequest(BaseModel):
     thread_id: str
 
 
@@ -222,7 +255,14 @@ async def run_day(req: StepRequest) -> dict:
     row = _asml.iloc[req.day_index]
 
     if req.thread_id not in SESSION_DATA or req.day_index == 0:
-        SESSION_DATA[req.thread_id] = {"cash": 5000.0, "holdings": 0.0, "portfolio_value": 5000.0}
+        SESSION_DATA[req.thread_id] = {
+            "cash": STARTING_CAPITAL,
+            "holdings": 0.0,
+            "portfolio_value": STARTING_CAPITAL,
+            "buy_history": [],
+            "sell_history": [],
+            "pending": None,
+        }
 
     sess = SESSION_DATA[req.thread_id]
 
@@ -253,13 +293,99 @@ async def run_day(req: StepRequest) -> dict:
     config = {"configurable": {"thread_id": req.thread_id}}
     final_state = _graph.invoke(initial_state, config)
 
-    SESSION_DATA[req.thread_id]["cash"] = final_state["cash"]
-    SESSION_DATA[req.thread_id]["holdings"] = final_state["holdings"]
-    SESSION_DATA[req.thread_id]["portfolio_value"] = final_state["portfolio_value"]
+    action = final_state["proposal"].get("action", "WAIT")
+    price = final_state["price_data"]["close"]
 
-    log.info("agent_panel.day_complete", date=final_state["date"], regime=final_state["regime"],
-             action=final_state["proposal"].get("action"), portfolio=round(final_state["portfolio_value"], 2))
-    return dict(final_state)
+    if action in ("BUY", "SELL"):
+        # Both BUY and SELL are deferred — execution requires human approval via /confirm-day
+        sess["pending"] = {
+            "action": action,
+            "date": final_state["date"],
+            "price": price,
+            "shares": final_state["proposal"].get("shares", 0),
+        }
+    else:
+        sess["pending"] = None
+
+    sess["portfolio_value"] = sess["cash"] + sess["holdings"] * price
+
+    log.info(
+        "agent_panel.day_complete",
+        date=final_state["date"],
+        regime=final_state["regime"],
+        action=action,
+        portfolio=round(sess["portfolio_value"], 2),
+    )
+
+    response = dict(final_state)
+    response["cash"] = sess["cash"]
+    response["holdings"] = sess["holdings"]
+    response["portfolio_value"] = sess["portfolio_value"]
+    response["pending"] = action in ("BUY", "SELL")
+    response["buy_history"] = sess["buy_history"]
+    response["sell_history"] = sess["sell_history"]
+    return response
+
+
+@router.post("/confirm-day")
+async def confirm_day(req: ThreadRequest) -> dict:
+    """Applies a pending BUY or SELL proposal after human approval."""
+    sess = SESSION_DATA.get(req.thread_id)
+    if not sess:
+        raise HTTPException(status_code=404, detail="Session not found")
+    pending = sess.get("pending")
+    if not pending:
+        raise HTTPException(status_code=400, detail="No pending proposal to confirm")
+
+    action = pending.get("action", "BUY")
+    shares = pending["shares"]
+    price = pending["price"]
+
+    if action == "BUY":
+        investment = shares * price
+        if investment > sess["cash"]:
+            raise HTTPException(status_code=400, detail="Insufficient cash for this purchase")
+        sess["cash"] -= investment
+        sess["holdings"] += shares
+        sess["buy_history"].append({"date": pending["date"], "price": price, "shares": shares})
+    else:  # SELL
+        actual_shares = min(shares, int(sess["holdings"]))
+        if actual_shares <= 0:
+            raise HTTPException(status_code=400, detail="No holdings to sell")
+        sess["cash"] += actual_shares * price
+        sess["holdings"] -= actual_shares
+        shares = actual_shares
+        sess["sell_history"].append({"date": pending["date"], "price": price, "shares": shares})
+
+    sess["portfolio_value"] = sess["cash"] + sess["holdings"] * price
+    sess["pending"] = None
+
+    return {
+        "status": "confirmed",
+        "action": action,
+        "cash": sess["cash"],
+        "holdings": sess["holdings"],
+        "portfolio_value": sess["portfolio_value"],
+        "shares_traded": shares,
+        "price": price,
+        "buy_history": sess["buy_history"],
+        "sell_history": sess["sell_history"],
+    }
+
+
+@router.post("/reject-day")
+async def reject_day(req: ThreadRequest) -> dict:
+    """Clears a pending BUY proposal without executing it."""
+    sess = SESSION_DATA.get(req.thread_id)
+    if not sess:
+        raise HTTPException(status_code=404, detail="Session not found")
+    sess["pending"] = None
+    return {
+        "status": "rejected",
+        "cash": sess["cash"],
+        "holdings": sess["holdings"],
+        "portfolio_value": sess["portfolio_value"],
+    }
 
 
 @router.get("/plot/{day_index}")
