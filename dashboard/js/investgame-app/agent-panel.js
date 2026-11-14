@@ -8,13 +8,17 @@ let apState = {
   dayIndex: 0,
   threadId: randomUUID(),
   loaded: false,
+  selectedDays: 10,
+  pendingAction: null,          // 'BUY' | 'SELL' | null — set while HITL panel is open
+  buyHistory: [],               // confirmed buys: [{date, price, shares}]
+  sellHistory: [],              // confirmed sells: [{date, price, shares}]
+  pendingFinalResult: null,
 };
 
-// Cancellation token — incremented each time a new typewriter starts,
-// so any in-flight typewriter stops when it checks its captured token.
+// Cancellation token — incremented each time a new typewriter starts.
 let _twToken = 0;
 
-const TOTAL_DAYS = 16;
+const STARTING_CAPITAL = 10_000;
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
@@ -22,23 +26,22 @@ export function loadAgentPanel() {
   if (apState.loaded) return;
   apState.loaded = true;
   _initApChart();
-  _showApNarrator(
-    'ABOUT THIS DEMO',
-    'RITA AI simulates a 6-agent investment system making decisions on ASML stock across ' +
-    '16 trading days in April 2026. A Context Agent reads the market regime, a Strategy Agent ' +
-    'adapts the stop-loss and target policy, a Probability Agent filters for statistical edge, ' +
-    'and a Portfolio Manager sizes positions using the Kelly Criterion — all governed by a hard ' +
-    'Compliance Gate that can veto any trade. A Narrator Agent synthesises the collaboration into ' +
-    'a two-sentence insight. Click ▶ Run Day to step through each session.',
-    8
-  );
+  _showApNarrator('ABOUT THIS DEMO', _introText(), 8);
+}
+
+export function setApDays(n) {
+  if (apState.selectedDays === n) return;
+  apState.selectedDays = n;
+  _updateDayTabs(n);
+  resetAgentPanel();
 }
 
 export async function agentPanelStep() {
   const btn = document.getElementById('ap-run-btn');
   const status = document.getElementById('agent-panel-status');
+  const totalDays = apState.selectedDays;
 
-  if (apState.dayIndex >= TOTAL_DAYS) return;
+  if (apState.dayIndex >= totalDays) return;
 
   btn.disabled = true;
   btn.textContent = t('agent.processing');
@@ -55,24 +58,41 @@ export async function agentPanelStep() {
     _appendAuditRow(result);
     _saveToHistory(result);
 
+    // Sync histories from backend
+    apState.buyHistory  = result.buy_history  || [];
+    apState.sellHistory = result.sell_history || [];
+
     if (result.collaboration_insight) {
       _showApNarrator('AGENTIC AI COLLABORATION', result.collaboration_insight, 10);
     }
 
     apState.dayIndex++;
 
-    if (apState.dayIndex >= TOTAL_DAYS) {
-      _showFinalSummary(result);
+    const isFinalDay = apState.dayIndex >= totalDays;
+    // Both BUY and SELL require HITL now
+    const isHitl = result.pending === true &&
+      (result.proposal?.action === 'BUY' || result.proposal?.action === 'SELL');
+
+    if (isFinalDay) {
       btn.textContent = t('agent.sim_complete');
-      if (status) { status.className = 'badge ok'; status.textContent = 'Done'; }
-    } else if (result.proposal && result.proposal.action === 'BUY') {
-      // Pause for human approval before the next day runs
+      if (isHitl) {
+        apState.pendingAction = result.proposal.action;
+        apState.pendingFinalResult = result;
+        _showHitl(result);
+        if (status) { status.className = 'badge warn'; status.textContent = t('agent.awaiting_decision'); }
+      } else {
+        btn.disabled = true;
+        _showFinalSummary();
+        if (status) { status.className = 'badge ok'; status.textContent = 'Done'; }
+      }
+    } else if (isHitl) {
+      apState.pendingAction = result.proposal.action;
       _showHitl(result);
       if (status) { status.className = 'badge warn'; status.textContent = t('agent.awaiting_decision'); }
     } else {
       btn.disabled = false;
       btn.textContent = `${t('agent.run_day_btn')} ${apState.dayIndex + 1}`;
-      if (status) { status.className = 'badge neu'; status.textContent = `${t('agent.day_label')} ${apState.dayIndex} / ${TOTAL_DAYS}`; }
+      if (status) { status.className = 'badge neu'; status.textContent = `${t('agent.day_label')} ${apState.dayIndex} / ${totalDays}`; }
     }
   } catch (err) {
     console.error('Agent Panel error:', err);
@@ -82,29 +102,89 @@ export async function agentPanelStep() {
   }
 }
 
-export function approveAgentProposal() {
+export async function approveAgentProposal() {
   _hideHitl();
-  _appendHitlAuditNote('Human approved the BUY proposal. Execution confirmed.');
   const btn = document.getElementById('ap-run-btn');
   const status = document.getElementById('agent-panel-status');
-  if (btn) { btn.disabled = false; btn.textContent = `${t('agent.run_day_btn')} ${apState.dayIndex + 1}`; }
-  if (status) { status.className = 'badge neu'; status.textContent = `${t('agent.day_label')} ${apState.dayIndex} / ${TOTAL_DAYS}`; }
+  const totalDays = apState.selectedDays;
+  const pendingAction = apState.pendingAction;
+  apState.pendingAction = null;
+
+  try {
+    const result = await api('/api/v1/agent-panel/confirm-day', 'POST', {
+      thread_id: apState.threadId,
+    });
+    // Add the correct triangle and update cash line
+    if (result.action === 'BUY') {
+      _addBuyMarker(result.price);
+      apState.buyHistory = result.buy_history || [];
+    } else {
+      _addSellMarker(result.price);
+      apState.sellHistory = result.sell_history || [];
+    }
+    _updateCashOnChart(result.cash);
+    const s = result.shares_traded;
+    _appendHitlAuditNote(`Approved. ${result.action} executed: ${s} share${s !== 1 ? 's' : ''} at €${result.price.toFixed(2)}.`);
+  } catch (err) {
+    console.error('Agent Panel confirm error:', err);
+    _appendHitlAuditNote('Approval failed — position not changed.');
+  }
+
+  if (apState.pendingFinalResult) {
+    apState.pendingFinalResult = null;
+    btn.disabled = true;
+    _showFinalSummary();
+    if (status) { status.className = 'badge ok'; status.textContent = 'Done'; }
+  } else {
+    if (btn) { btn.disabled = false; btn.textContent = `${t('agent.run_day_btn')} ${apState.dayIndex + 1}`; }
+    if (status) { status.className = 'badge neu'; status.textContent = `${t('agent.day_label')} ${apState.dayIndex} / ${totalDays}`; }
+  }
 }
 
-export function rejectAgentProposal() {
+export async function rejectAgentProposal() {
   _hideHitl();
-  _appendHitlAuditNote('Human rejected the BUY proposal. Position not taken.');
   const btn = document.getElementById('ap-run-btn');
   const status = document.getElementById('agent-panel-status');
-  if (btn) { btn.disabled = false; btn.textContent = `${t('agent.run_day_btn')} ${apState.dayIndex + 1}`; }
-  if (status) { status.className = 'badge neu'; status.textContent = `${t('agent.day_label')} ${apState.dayIndex} / ${TOTAL_DAYS}`; }
+  const totalDays = apState.selectedDays;
+  const pendingAction = apState.pendingAction;
+  apState.pendingAction = null;
+
+  try {
+    await api('/api/v1/agent-panel/reject-day', 'POST', {
+      thread_id: apState.threadId,
+    });
+  } catch (err) {
+    console.error('Agent Panel reject error:', err);
+  }
+  _appendHitlAuditNote(`Human rejected the ${pendingAction || 'trade'} proposal. No position change.`);
+
+  if (apState.pendingFinalResult) {
+    apState.pendingFinalResult = null;
+    btn.disabled = true;
+    _showFinalSummary();
+    if (status) { status.className = 'badge ok'; status.textContent = 'Done'; }
+  } else {
+    if (btn) { btn.disabled = false; btn.textContent = `${t('agent.run_day_btn')} ${apState.dayIndex + 1}`; }
+    if (status) { status.className = 'badge neu'; status.textContent = `${t('agent.day_label')} ${apState.dayIndex} / ${totalDays}`; }
+  }
 }
 
 export function resetAgentPanel() {
-  _twToken++; // cancel any in-flight typewriter
+  _twToken++;
   _hideHitl();
   localStorage.removeItem('riia_agent_history');
-  apState = { dayIndex: 0, threadId: randomUUID(), loaded: true };
+
+  const days = apState.selectedDays || 10;
+  apState = {
+    dayIndex: 0,
+    threadId: randomUUID(),
+    loaded: true,
+    selectedDays: days,
+    pendingAction: null,
+    buyHistory: [],
+    sellHistory: [],
+    pendingFinalResult: null,
+  };
 
   const status = document.getElementById('agent-panel-status');
   if (status) { status.className = 'badge neu'; status.textContent = t('agent.ready'); }
@@ -123,10 +203,8 @@ export function resetAgentPanel() {
   const tbody = document.getElementById('ap-audit-body');
   if (tbody) tbody.innerHTML = '';
 
-  _showApNarrator('ABOUT THIS DEMO',
-    'RITA AI simulates a 6-agent investment system making decisions on ASML stock across ' +
-    '16 trading days in April 2026. Click ▶ Run Day to begin a fresh simulation.', 8);
-
+  _updateDayTabs(days);
+  _showApNarrator('ABOUT THIS DEMO', _introText(), 8);
   _initApChart();
 }
 
@@ -137,11 +215,26 @@ function _showHitl(result) {
   const summary = document.getElementById('ap-hitl-summary');
   if (!panel) return;
   if (summary) {
-    summary.textContent =
-      `PROPOSAL: ${result.proposal.action} — ${result.proposal.size} of available cash ` +
-      `at €${result.price_data.close.toFixed(2)}. ` +
-      `Regime: ${result.regime}. Strategy: ${result.policy}. ` +
-      `Probability: ${(result.probability * 100).toFixed(0)}%.`;
+    const action = result.proposal?.action || 'TRADE';
+    const shares = result.proposal?.shares || 0;
+    const price  = result.price_data.close;
+    if (action === 'BUY') {
+      const cost = (shares * price).toFixed(2);
+      summary.textContent =
+        `PROPOSAL: BUY ${shares} share${shares !== 1 ? 's' : ''} at €${price.toFixed(2)} ` +
+        `(total cost €${cost}). ` +
+        `Regime: ${result.regime}. Strategy: ${result.policy}. ` +
+        `Probability: ${(result.probability * 100).toFixed(0)}%. ` +
+        `Cash available: €${result.cash.toFixed(2)}.`;
+    } else {
+      const proceeds = (shares * price).toFixed(2);
+      summary.textContent =
+        `PROPOSAL: SELL ${shares} share${shares !== 1 ? 's' : ''} at €${price.toFixed(2)} ` +
+        `(proceeds €${proceeds}). ` +
+        `Regime: ${result.regime}. Strategy: ${result.policy}. ` +
+        `Probability: ${(result.probability * 100).toFixed(0)}%. ` +
+        `Holdings: ${result.holdings} shares.`;
+    }
   }
   panel.style.display = 'block';
 }
@@ -155,7 +248,6 @@ function _appendHitlAuditNote(note) {
   const tbody = document.getElementById('ap-audit-body');
   if (!tbody || !tbody.firstChild) return;
   const firstRow = tbody.firstChild;
-  // Append HITL decision as a small note under the Portfolio Manager cell (col 4)
   if (firstRow.cells[4]) {
     const span = document.createElement('div');
     span.style.cssText = 'font-size:10px;color:var(--t3);margin-top:4px;font-style:italic';
@@ -164,7 +256,17 @@ function _appendHitlAuditNote(note) {
   }
 }
 
-// ── Internal helpers ──────────────────────────────────────────────────────────
+// ── Days tab helper ───────────────────────────────────────────────────────────
+
+function _updateDayTabs(active) {
+  [5, 10, 15].forEach(d => {
+    const btn = document.getElementById(`ap-days-${d}`);
+    if (!btn) return;
+    btn.className = d === active ? 'btn btn-build btn-sm' : 'btn btn-ghost btn-sm';
+  });
+}
+
+// ── Chart helpers ─────────────────────────────────────────────────────────────
 
 function _initApChart() {
   mkChart('ap-chart', {
@@ -179,11 +281,11 @@ function _initApChart() {
           backgroundColor: 'rgba(0,86,184,0.05)',
           fill: true,
           tension: 0.4,
-          pointRadius: 5,
+          pointRadius: 3,
           yAxisID: 'y',
         },
         {
-          label: 'Initial Capital €5,000',
+          label: `Capital €${STARTING_CAPITAL.toLocaleString()}`,
           data: [],
           borderColor: C.t3,
           borderWidth: 1,
@@ -199,7 +301,38 @@ function _initApChart() {
           borderWidth: 2,
           fill: false,
           tension: 0.4,
+          pointRadius: 0,
           yAxisID: 'y1',
+        },
+        {
+          label: '▲ BUY',
+          data: [],
+          type: 'line',
+          showLine: false,
+          pointStyle: 'triangle',
+          rotation: 0,
+          pointRadius: 4,
+          pointHoverRadius: 5,
+          backgroundColor: 'rgba(26,107,60,0.9)',
+          borderColor: '#1A6B3C',
+          borderWidth: 2,
+          yAxisID: 'y',
+          spanGaps: false,
+        },
+        {
+          label: '▼ SELL',
+          data: [],
+          type: 'line',
+          showLine: false,
+          pointStyle: 'triangle',
+          rotation: 180,
+          pointRadius: 4,
+          pointHoverRadius: 5,
+          backgroundColor: 'rgba(155,28,28,0.9)',
+          borderColor: '#9B1C1C',
+          borderWidth: 2,
+          yAxisID: 'y',
+          spanGaps: false,
         },
       ],
     },
@@ -218,7 +351,7 @@ function _initApChart() {
           position: 'left',
           beginAtZero: false,
           min: 0,
-          max: 10000,
+          max: STARTING_CAPITAL * 2,
           grid: { display: false },
           ticks: { color: C.t3, font: { family: 'IBM Plex Mono' } },
           title: { display: true, text: 'Capital (€)' },
@@ -236,17 +369,52 @@ function _updateApChart(result) {
   const d = chart.data;
   d.labels.push(result.date);
   d.datasets[0].data.push(result.price_data.close);
-  d.datasets[1].data.push(5000);
+  d.datasets[1].data.push(STARTING_CAPITAL);
   d.datasets[2].data.push(result.cash);
+  // Both BUY and SELL markers are null until confirmed via HITL
+  d.datasets[3].data.push(null);
+  d.datasets[4].data.push(null);
   chart.update('none');
 }
+
+function _addBuyMarker(price) {
+  const chart = Chart.getChart('ap-chart');
+  if (!chart) return;
+  const d3 = chart.data.datasets[3].data;
+  if (d3.length > 0) d3[d3.length - 1] = price;
+  chart.update('none');
+}
+
+function _addSellMarker(price) {
+  const chart = Chart.getChart('ap-chart');
+  if (!chart) return;
+  const d4 = chart.data.datasets[4].data;
+  if (d4.length > 0) d4[d4.length - 1] = price;
+  chart.update('none');
+}
+
+function _updateCashOnChart(newCash) {
+  const chart = Chart.getChart('ap-chart');
+  if (!chart) return;
+  const d2 = chart.data.datasets[2].data;
+  if (d2.length > 0) d2[d2.length - 1] = newCash;
+  chart.update('none');
+}
+
+// ── Widget / audit helpers ────────────────────────────────────────────────────
 
 function _updateApWidgets(result) {
   _setEl('ap-run-date', result.date || '—');
   _setEl('ap-regime', result.regime || '—');
   _setEl('ap-policy', result.policy || '—');
   _setEl('ap-probability', result.probability != null ? `${(result.probability * 100).toFixed(0)}%` : '—');
-  _setEl('ap-proposal', result.proposal ? `${result.proposal.action} ${result.proposal.size}` : '—');
+
+  const action = result.proposal?.action || '—';
+  const shares = result.proposal?.shares;
+  const proposalText = (action === 'BUY' || action === 'SELL') && shares
+    ? `${action} ${shares} sh`
+    : action;
+  _setEl('ap-proposal', proposalText);
 
   const comp = document.getElementById('ap-compliance');
   if (comp) {
@@ -292,32 +460,77 @@ function _showApNarrator(title, text, speed = 10) {
   const myToken = ++_twToken;
   let i = 0;
   function type() {
-    if (myToken !== _twToken) return; // cancelled by a newer call
-    if (i < text.length) {
-      textEl.innerHTML += text.charAt(i);
-      i++;
+    if (myToken !== _twToken) return;
+    if (i >= text.length) return;
+    // Jump through HTML tags instantly so only visible text characters are timed
+    if (text[i] === '<') {
+      const end = text.indexOf('>', i);
+      i = end !== -1 ? end + 1 : text.length;
+      textEl.innerHTML = text.substring(0, i);
+      type();
+    } else {
+      textEl.innerHTML = text.substring(0, ++i);
       setTimeout(type, speed);
     }
   }
   type();
 }
 
-function _showFinalSummary(result) {
-  const profit = result.portfolio_value - 5000;
-  const roi = (profit / 5000) * 100;
-  const sign = profit >= 0 ? '+' : '';
-  const outcome = profit >= 0
-    ? 'Bull Trending regimes drove high-conviction entries while the Compliance Gate kept the system disciplined on volatile days.'
-    : 'Conservative probability filters and volatile sessions limited exposure — agents prioritised capital preservation over forced entries.';
-
-  _showApNarrator(
-    'SIMULATION COMPLETE — FINAL REPORT',
-    `RITA AI completed its 16-day ASML simulation. Starting capital of €5,000 closed at ` +
-    `€${result.portfolio_value.toFixed(2)}, a net ${profit >= 0 ? 'gain' : 'loss'} of ` +
-    `€${Math.abs(profit).toFixed(2)} (${sign}${roi.toFixed(2)}%) with ${result.holdings.toFixed(2)} shares held. ` +
-    outcome,
-    10
+function _introText() {
+  const n = apState.selectedDays;
+  return (
+    `RITA AI simulates a 6-agent investment system making decisions on ASML stock across ` +
+    `${n} trading days in April 2026. Starting capital: €10,000. The Portfolio Manager buys or sells ` +
+    `in whole shares — 20% of available cash per buy, 20% of holdings per sell. ` +
+    `Both BUY and SELL proposals pause for your Human-in-the-Loop approval before execution. ` +
+    `Use the 5 / 10 / 15 day selector to change the run length, then click ▶ Run Day to begin.`
   );
+}
+
+function _showFinalSummary() {
+  const bh = apState.buyHistory  || [];
+  const sh = apState.sellHistory || [];
+
+  const totalBuyShares  = bh.reduce((s, b) => s + b.shares, 0);
+  const totalSellShares = sh.reduce((s, b) => s + b.shares, 0);
+  const avgBuyPrice  = totalBuyShares  > 0 ? bh.reduce((s, b) => s + b.price * b.shares, 0) / totalBuyShares  : null;
+  const avgSellPrice = totalSellShares > 0 ? sh.reduce((s, b) => s + b.price * b.shares, 0) / totalSellShares : null;
+
+  const chart = Chart.getChart('ap-chart');
+  const lastPrice = chart?.data.datasets[0].data.at(-1) ?? 0;
+  const lastCash  = chart?.data.datasets[2].data.at(-1) ?? 0;
+  const netHoldings  = totalBuyShares - totalSellShares;
+  const sharesValue  = netHoldings * lastPrice;
+  const portfolioValue = lastCash + sharesValue;
+  const profit = portfolioValue - STARTING_CAPITAL;
+  const roi    = (profit / STARTING_CAPITAL) * 100;
+  const isProfit = profit >= 0;
+  const sign   = isProfit ? '+' : '−';
+  const returnColor = isProfit ? 'var(--build)' : 'var(--danger)';
+
+  const pl = (n, word) => `${n} ${word}${n !== 1 ? 's' : ''}`;
+
+  const netSpan = `<span style="color:${returnColor}">${sign}€${Math.abs(profit).toFixed(2)} (${sign}${roi.toFixed(2)}%)</span>`;
+
+  const sharesDetail = netHoldings > 0
+    ? `shares €${sharesValue.toFixed(2)} (holding ${pl(netHoldings, 'share')})`
+    : 'shares €0.00 (no position)';
+
+  const buysLine  = avgBuyPrice  !== null
+    ? `${pl(bh.length, 'trade')}, ${pl(totalBuyShares, 'share')}, avg entry €${avgBuyPrice.toFixed(2)}.`
+    : 'None.';
+  const sellsLine = avgSellPrice !== null
+    ? `${pl(sh.length, 'trade')}, ${pl(totalSellShares, 'share')}, avg exit €${avgSellPrice.toFixed(2)}.`
+    : 'None.';
+
+  const text = [
+    `RITA AI completed the ${apState.selectedDays}-day ASML simulation.`,
+    `Cash €${lastCash.toFixed(2)} and ${sharesDetail} = Final Portfolio €${portfolioValue.toFixed(2)} — net ${netSpan}.`,
+    `Buys: ${buysLine}`,
+    `Sells: ${sellsLine}`,
+  ].join(' ');
+
+  _showApNarrator('SIMULATION COMPLETE — FINAL REPORT', text, 10);
 }
 
 function _setEl(id, html) {
