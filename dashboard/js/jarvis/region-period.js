@@ -3,8 +3,9 @@
 // Period tabs drive the instrument returns chart and hedge assessment.
 import { esc } from './esc.js?v=3';
 import { t } from './copy.js?v=21';
-import { fmtPctPoint, fmtRate, isNum } from './format.js?v=3';
+import { fmtPctPoint, fmtRate, fmtMoney, fmtDate, isNum } from './format.js?v=3';
 import { allInstruments } from './regions.js?v=5';
+import { mkChart, chartOpts, C } from '../shared/charts.js';
 
 let _period = 'daily';
 let _loc = null;
@@ -12,6 +13,33 @@ let _pf = null;
 let _geo = null;
 
 const DIVISOR = { daily: 252, weekly: 52, monthly: 12 };
+// Number of trailing data points shown per period (series is daily).
+const SERIES_WINDOW = { daily: 5, weekly: 20, monthly: 60 };
+
+function _renderPnl() {
+  const m = _pf && _pf.perf && _pf.perf.money;
+  if (!m) return;
+  const all = m.series || [];
+  const n = SERIES_WINDOW[_period] || all.length;
+  const series = all.slice(-n);
+  const wrap = document.getElementById('jv-pnl-chart')?.closest('.chart-wrap');
+  const empty = document.getElementById('jv-pnl-empty');
+  if (series.length < 2) {
+    if (wrap) wrap.hidden = true;
+    if (empty) { empty.hidden = false; }
+    return;
+  }
+  if (wrap) wrap.hidden = false;
+  if (empty) empty.hidden = true;
+  const labels = series.map(p => fmtDate(p.date));
+  mkChart('jv-pnl-chart', {
+    type: 'line',
+    data: { labels, datasets: [{ label: t('pf.kpi.pnl'), data: series.map(p => p.pnl),
+      borderColor: C.run, backgroundColor: 'rgba(0,86,184,.08)', fill: true,
+      pointRadius: 0, borderWidth: 1.6, tension: 0.15 }] },
+    options: chartOpts('', v => fmtMoney(v, _pf.currency), labels),
+  });
+}
 
 function _sign(v) { return isNum(v) ? (v > 0 ? 'pos' : v < 0 ? 'neg' : '') : ''; }
 
@@ -96,6 +124,7 @@ function _render() {
   const insts = _portInsts(_pf, _geo, _loc);
   _renderKpis(_actual(insts, _period), _target(_pf, _period));
   _renderHedge(_pf, _loc);
+  _renderPnl();
 }
 
 export function initRegionPeriod() {
